@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Volume2, VolumeX } from "lucide-react";
+import meteorAudio from "@/assets/meteor.mp3.asset.json";
 
 const AudioControls = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -38,7 +39,7 @@ const AudioControls = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <audio ref={audioRef} src="/audio/background-music.mp3" loop preload="auto" />
+      <audio ref={audioRef} src={meteorAudio.url} loop preload="auto" />
       <button
         onClick={togglePlay}
         className="rounded-full border border-cream/20 bg-background/30 p-2.5 text-cream/60 backdrop-blur-sm transition-colors hover:text-[#FFFFFF]"
