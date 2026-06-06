@@ -25,7 +25,7 @@ const WaitlistForm = () => {
       if (error) throw error;
 
       toast({
-        title: "You're in! Welcome to Launch Island 🌴",
+        title: "You're in! Welcome to Rocket 🚀",
         description: "Check your inbox for a confirmation.",
       });
       setEmail("");
