@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Reckless';
+  src: url('/fonts/Reckless-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --background: 30 10% 5%;
+    --foreground: 40 30% 95%;
+
+    --card: 30 10% 8%;
+    --card-foreground: 40 30% 95%;
+
+    --popover: 30 10% 8%;
+    --popover-foreground: 40 30% 95%;
+
+    --primary: 40 70% 55%;
+    --primary-foreground: 30 10% 5%;
+
+    --secondary: 30 10% 12%;
+    --secondary-foreground: 40 30% 90%;
+
+    --muted: 30 10% 15%;
+    --muted-foreground: 40 10% 60%;
+
+    --accent: 40 70% 55%;
+    --accent-foreground: 30 10% 5%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 40 30% 95%;
+
+    --border: 40 15% 20%;
+    --input: 40 15% 20%;
+    --ring: 40 70% 55%;
+
+    --radius: 0.75rem;
+
+    --gold: 40 70% 55%;
+    --gold-glow: 40 80% 65%;
+    --cream: 40 30% 95%;
+
+    --sidebar-background: 30 10% 5%;
+    --sidebar-foreground: 40 30% 95%;
+    --sidebar-primary: 40 70% 55%;
+    --sidebar-primary-foreground: 30 10% 5%;
+    --sidebar-accent: 30 10% 12%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 40 15% 20%;
+    --sidebar-ring: 40 70% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 40px hsl(40 70% 55% / 0.3), 0 0 80px hsl(40 70% 55% / 0.1);
+  }
+
+  .text-glow-sm {
+    text-shadow: 0 0 20px hsl(40 70% 55% / 0.2);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 1s ease-out forwards;
+}
+
+.animate-fade-in-up-delay-1 {
+  animation: fade-in-up 1s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up-delay-2 {
+  animation: fade-in-up 1s ease-out 0.4s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up-delay-3 {
+  animation: fade-in-up 1s ease-out 0.6s forwards;
+  opacity: 0;
+}
