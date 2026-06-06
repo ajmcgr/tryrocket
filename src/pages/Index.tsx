@@ -30,10 +30,10 @@ const Index = () => {
           <img
             src={rocketLogo.url}
             alt="Rocket"
-            className="animate-fade-in-up h-[120px] w-auto invert"
+            className="animate-fade-in-up h-[50px] w-auto invert"
           />
 
-          <h1 className="animate-fade-in-up-delay-1 mt-8 font-serif text-5xl font-normal leading-[1.05] tracking-tight text-cream text-glow sm:text-6xl md:text-7xl lg:text-8xl">
+          <h1 className="animate-fade-in-up-delay-1 mt-8 font-sans font-medium leading-[1.05] tracking-tight text-cream text-glow" style={{ fontSize: '78px' }}>
             Vibe Code Your Idea
           </h1>
 
