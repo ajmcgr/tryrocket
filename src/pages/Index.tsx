@@ -51,6 +51,14 @@ const Index = () => {
           Contact
         </a>
         <a
+          href="https://x.com/tryrocketai"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-cream/30 transition-colors hover:text-[#FFFFFF]"
+        >
+          X
+        </a>
+        <a
           href="https://www.instagram.com/tryrocketai/"
           target="_blank"
           rel="noopener noreferrer"
