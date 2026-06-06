@@ -38,8 +38,8 @@ Deno.serve(async (req) => {
           ...(name?.trim() && {
             custom_fields: [{ name: 'Full Name', value: name.trim() }],
           }),
-          tags: ['launch-island'],
-          utm_source: 'launch-island',
+          tags: ['rocket'],
+          utm_source: 'rocket',
           reactivate_existing: true,
           send_welcome_email: true,
         }),
