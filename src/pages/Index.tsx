@@ -1,6 +1,7 @@
 import WaitlistForm from "@/components/WaitlistForm";
 import AudioControls from "@/components/AudioControls";
 import rocketLogo from "@/assets/rocket-logo.png.asset.json";
+import backgroundVideo from "@/assets/background.mov.asset.json";
 
 const Index = () => {
   return (
@@ -17,7 +18,7 @@ const Index = () => {
         poster="/video/poster.jpg"
         className="absolute inset-0 h-full w-full object-cover"
       >
-        <source src="/video/launch-island.mov" type="video/mp4" />
+        <source src={backgroundVideo.url} type="video/mp4" />
       </video>
 
       {/* Dark Overlay */}
@@ -26,15 +27,17 @@ const Index = () => {
       {/* Content */}
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20">
         <div className="flex max-w-2xl flex-col items-center text-center">
-          <h1 className="animate-fade-in-up">
-            <img
-              src={rocketLogo.url}
-              alt="Rocket"
-              className="h-24 w-auto invert sm:h-28 md:h-32 lg:h-40"
-            />
+          <img
+            src={rocketLogo.url}
+            alt="Rocket"
+            className="animate-fade-in-up h-[120px] w-auto invert"
+          />
+
+          <h1 className="animate-fade-in-up-delay-1 mt-8 font-serif text-5xl font-normal leading-[1.05] tracking-tight text-cream text-glow sm:text-6xl md:text-7xl lg:text-8xl">
+            Vibe Code Your Idea
           </h1>
 
-          <p className="animate-fade-in-up-delay-1 mt-6 text-lg font-light tracking-wide text-cream/80 text-glow-sm sm:text-xl">
+          <p className="animate-fade-in-up-delay-2 mt-6 text-lg font-light tracking-wide text-cream/80 text-glow-sm sm:text-xl">
             The fastest way for vibe coders to turn ideas into products.
           </p>
 
