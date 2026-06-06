@@ -14,9 +14,8 @@ const Index = () => {
         playsInline
         // @ts-ignore
         webkit-playsinline="true"
-        preload="metadata"
-        poster="/video/poster.jpg"
-        className="absolute inset-0 h-full w-full object-cover"
+        preload="auto"
+        className="absolute inset-0 h-full w-full object-cover bg-background"
       >
         <source src={backgroundVideo.url} type="video/mp4" />
       </video>
