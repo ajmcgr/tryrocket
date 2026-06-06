@@ -1,5 +1,6 @@
 import WaitlistForm from "@/components/WaitlistForm";
 import AudioControls from "@/components/AudioControls";
+import rocketLogo from "@/assets/rocket-logo.png.asset.json";
 
 const Index = () => {
   return (
@@ -25,8 +26,12 @@ const Index = () => {
       {/* Content */}
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20">
         <div className="flex max-w-2xl flex-col items-center text-center">
-          <h1 className="animate-fade-in-up font-display text-5xl font-medium tracking-tight text-cream text-glow sm:text-6xl md:text-7xl lg:text-8xl">
-            Rocket
+          <h1 className="animate-fade-in-up">
+            <img
+              src={rocketLogo.url}
+              alt="Rocket"
+              className="h-24 w-auto invert sm:h-28 md:h-32 lg:h-40"
+            />
           </h1>
 
           <p className="animate-fade-in-up-delay-1 mt-6 text-lg font-light tracking-wide text-cream/80 text-glow-sm sm:text-xl">
