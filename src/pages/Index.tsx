@@ -26,11 +26,13 @@ const Index = () => {
       {/* Content */}
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20">
         <div className="flex max-w-2xl flex-col items-center text-center">
-          <img
-            src={rocketLogo.url}
-            alt="Rocket"
-            className="animate-fade-in-up h-[50px] w-auto"
-          />
+          <a href="https://tryrocket.ai" target="_blank" rel="noopener noreferrer">
+            <img
+              src={rocketLogo.url}
+              alt="Rocket"
+              className="animate-fade-in-up h-[50px] w-auto"
+            />
+          </a>
 
           <h1 className="animate-fade-in-up-delay-1 mt-8 text-[52px] sm:text-[78px] leading-[1.05] tracking-tight text-cream text-glow" style={{ fontFamily: 'Reckless, serif', fontWeight: 500 }}>
             Vibe Code Your Idea
