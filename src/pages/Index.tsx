@@ -32,11 +32,11 @@ const Index = () => {
             className="animate-fade-in-up h-[50px] w-auto invert"
           />
 
-          <h1 className="animate-fade-in-up-delay-1 mt-8 leading-[1.05] tracking-tight text-cream text-glow" style={{ fontSize: '78px', fontFamily: 'Reckless, serif', fontWeight: 500 }}>
+          <h1 className="animate-fade-in-up-delay-1 mt-8 text-[52px] sm:text-[78px] leading-[1.05] tracking-tight text-cream text-glow" style={{ fontFamily: 'Reckless, serif', fontWeight: 500 }}>
             Vibe Code Your Idea
           </h1>
 
-          <p className="animate-fade-in-up-delay-2 mt-6 text-lg font-light tracking-wide text-cream/80 text-glow-sm sm:text-xl">
+          <p className="animate-fade-in-up-delay-2 mt-6 text-base sm:text-xl font-light tracking-wide text-cream/80 text-glow-sm">
             The fastest way for vibe coders to turn ideas into products.
           </p>
 
