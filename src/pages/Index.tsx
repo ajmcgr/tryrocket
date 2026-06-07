@@ -1,6 +1,6 @@
 import WaitlistForm from "@/components/WaitlistForm";
 import AudioControls from "@/components/AudioControls";
-import rocketLogo from "@/assets/rocket-logo.png.asset.json";
+import rocketLogo from "@/assets/rocket-logo-white.png.asset.json";
 import backgroundVideo from "@/assets/background.mov.asset.json";
 
 const Index = () => {
@@ -29,7 +29,7 @@ const Index = () => {
           <img
             src={rocketLogo.url}
             alt="Rocket"
-            className="animate-fade-in-up h-[50px] w-auto invert"
+            className="animate-fade-in-up h-[50px] w-auto"
           />
 
           <h1 className="animate-fade-in-up-delay-1 mt-8 text-[52px] sm:text-[78px] leading-[1.05] tracking-tight text-cream text-glow" style={{ fontFamily: 'Reckless, serif', fontWeight: 500 }}>
