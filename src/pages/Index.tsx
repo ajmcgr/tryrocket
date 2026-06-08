@@ -24,7 +24,7 @@ const Index = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/50" />
 
       {/* Content */}
-      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20">
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-10 sm:py-20">
         <div className="flex max-w-2xl flex-col items-center text-center">
           <a href="https://tryrocket.ai" target="_blank" rel="noopener noreferrer">
             <img
