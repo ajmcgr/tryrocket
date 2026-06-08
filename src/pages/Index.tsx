@@ -1,6 +1,5 @@
 import WaitlistForm from "@/components/WaitlistForm";
 import AudioControls from "@/components/AudioControls";
-import rocketLogo from "@/assets/rocket-logo-white.png.asset.json";
 import backgroundVideo from "@/assets/background.mov.asset.json";
 
 const Index = () => {
