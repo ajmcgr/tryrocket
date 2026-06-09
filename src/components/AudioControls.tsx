@@ -9,11 +9,6 @@ const AudioControls = () => {
   useEffect(() => {
     if (!audioRef.current) return;
     audioRef.current.volume = 0.4;
-
-    // Try to autoplay; if blocked, user must press the button to start.
-    audioRef.current.play().then(() => {
-      setIsPlaying(true);
-    }).catch(() => {});
   }, []);
 
   const togglePlay = () => {
