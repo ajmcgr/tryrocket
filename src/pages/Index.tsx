@@ -25,7 +25,7 @@ const Index = () => {
       {/* Content */}
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-10 sm:py-20">
         <div className="flex max-w-2xl flex-col items-center text-center">
-          <h1 className="animate-fade-in-up-delay-1 text-[52px] sm:text-[78px] leading-[1.05] tracking-tight text-cream text-glow" style={{ fontFamily: 'Reckless, serif', fontWeight: 500 }}>
+          <h1 className="animate-fade-in-up-delay-1 text-5xl font-medium sm:text-6xl md:text-7xl lg:text-8xl leading-[1.05] tracking-tight text-cream text-glow" style={{ fontFamily: 'Reckless, serif' }}>
             Rocket
           </h1>
 

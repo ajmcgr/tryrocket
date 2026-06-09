@@ -10,21 +10,10 @@ const AudioControls = () => {
     if (!audioRef.current) return;
     audioRef.current.volume = 0.4;
 
-    // Try to autoplay
+    // Try to autoplay; if blocked, user must press the button to start.
     audioRef.current.play().then(() => {
       setIsPlaying(true);
-    }).catch(() => {
-      // Browser blocked autoplay — start on first user interaction
-      const resumeAudio = () => {
-        if (audioRef.current) {
-          audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-        }
-        document.removeEventListener("click", resumeAudio);
-        document.removeEventListener("touchstart", resumeAudio);
-      };
-      document.addEventListener("click", resumeAudio, { once: true });
-      document.addEventListener("touchstart", resumeAudio, { once: true });
-    });
+    }).catch(() => {});
   }, []);
 
   const togglePlay = () => {
