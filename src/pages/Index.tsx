@@ -4,7 +4,7 @@ import backgroundVideo from "@/assets/background.mov.asset.json";
 
 const Index = () => {
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen min-h-[100dvh] overflow-hidden">
       {/* Video Background */}
       <video
         autoPlay
@@ -23,7 +23,7 @@ const Index = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/50" />
 
       {/* Content */}
-      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-10 sm:py-20">
+      <main className="relative z-10 flex min-h-screen min-h-[100dvh] flex-col items-center justify-center px-6 py-20">
         <div className="flex max-w-2xl flex-col items-center text-center">
           <h1 className="animate-fade-in-up-delay-1 text-5xl font-medium sm:text-6xl md:text-7xl lg:text-8xl leading-[1.05] tracking-tight text-cream text-glow" style={{ fontFamily: 'Reckless, serif' }}>
             Rocket
