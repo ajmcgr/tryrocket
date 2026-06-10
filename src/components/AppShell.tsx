@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LogOut, User as UserIcon, Bell, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase as _sb } from "@/integrations/supabase/client";
