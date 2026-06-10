@@ -159,7 +159,8 @@ const Index = () => {
               </Button>
             </div>
           </div>
-
+        </div>
+      </section>
 
       {/* FAQ */}
       <section id="faq" className="border-t border-neutral-200/60 bg-neutral-50/50">
