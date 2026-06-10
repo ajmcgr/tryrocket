@@ -77,7 +77,7 @@ const Pricing = () => {
               <ul className="mt-6 space-y-3 text-sm">
                 {[
                   "3,000 Rocket Credits / month",
-                  "Unlimited saved brands",
+                  "Unlimited saved Brand Assets",
                   "Export tools",
                   "Priority generation",
                 ].map((f) => (
