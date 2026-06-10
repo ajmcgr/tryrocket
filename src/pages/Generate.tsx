@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Loader2, Plus, Settings as SettingsIcon, History } from "lucide-react";
+import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, CreditCard } from "lucide-react";
 const supabase = _sb as any;
 
 const MESSAGES = [
@@ -16,14 +16,9 @@ const MESSAGES = [
 ];
 
 const SAMPLE_PROMPTS = [
-  { emoji: "🤖", label: "AI writing assistant", url: "https://typingmind.com" },
-  { emoji: "📨", label: "Indie newsletter platform", url: "https://buttondown.com" },
-  { emoji: "🎨", label: "Design tool for founders", url: "https://tldraw.com" },
-  { emoji: "📊", label: "Analytics for SaaS", url: "https://plausible.io" },
-  { emoji: "🛠️", label: "Developer productivity app", url: "https://raycast.com" },
-  { emoji: "🛒", label: "E-commerce side project", url: "https://gumroad.com" },
-  { emoji: "🎙️", label: "Podcast / creator tool", url: "https://riverside.fm" },
-  { emoji: "📱", label: "Mobile habit tracker", url: "https://streaksapp.com" },
+  { label: "Brand an AI writing assistant", url: "https://typingmind.com" },
+  { label: "Brand an indie newsletter platform", url: "https://buttondown.com" },
+  { label: "Brand a developer productivity app", url: "https://raycast.com" },
 ];
 
 const Generate = () => {
