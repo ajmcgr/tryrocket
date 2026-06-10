@@ -249,6 +249,12 @@ Deno.serve(async (req) => {
             .from("user_usage")
             .update({ credits_extra: (u?.credits_extra || 0) + credits })
             .eq("user_id", userId);
+          await admin.from("credit_transactions").insert({
+            user_id: userId,
+            kind: "purchased",
+            credits,
+            meta: { stripe_session_id: s.id, product },
+          });
           if (RESEND_API_KEY) {
             const email = await getEmail(admin, userId);
             if (email)
@@ -309,7 +315,7 @@ Deno.serve(async (req) => {
           .from("user_usage")
           .update({
             plan,
-            monthly_limit: plan === "growth" ? 3000 : 500,
+            monthly_limit: plan === "growth" ? 3000 : 100,
           })
           .eq("user_id", row.user_id);
         break;
@@ -324,7 +330,7 @@ Deno.serve(async (req) => {
           .maybeSingle();
         if (!row) break;
         await admin.from("subscriptions").update({ status: "canceled", plan: "free" }).eq("user_id", row.user_id);
-        await admin.from("user_usage").update({ plan: "free", monthly_limit: 500 }).eq("user_id", row.user_id);
+        await admin.from("user_usage").update({ plan: "free", monthly_limit: 100 }).eq("user_id", row.user_id);
         break;
       }
       case "invoice.payment_succeeded":
