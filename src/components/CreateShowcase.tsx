@@ -287,11 +287,43 @@ const MessagingContent = () => (
   </div>
 );
 
+const LogoContent = () => (
+  <div className="flex h-full flex-col p-7">
+    <div className="flex items-center justify-between">
+      <Tag>Logo</Tag>
+      <span className="font-mono text-[10px] text-neutral-400">SVG · PNG</span>
+    </div>
+    <div className="mt-6 flex flex-1 items-center justify-center rounded-2xl bg-neutral-50 ring-1 ring-neutral-100">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-900 text-white">
+          <Rocket className="h-4 w-4" />
+        </div>
+        <span className="font-serif text-3xl font-semibold tracking-tight text-neutral-900">
+          recruit<span className="text-indigo-600">ai</span>
+        </span>
+      </div>
+    </div>
+    <div className="mt-4 flex items-center gap-2">
+      {["#0F172A", "#4F46E5", "#A5B4FC", "#F5F5F4"].map((c) => (
+        <span
+          key={c}
+          className="h-5 w-5 rounded-full ring-1 ring-neutral-200"
+          style={{ backgroundColor: c }}
+        />
+      ))}
+    </div>
+    <div className="mt-4 border-t border-neutral-100 pt-3">
+      <Meta>Visual Identity</Meta>
+    </div>
+  </div>
+);
+
 /* Ordered card definitions */
 const CARDS: { id: string; minH: string; mobileH: string; render: () => React.ReactNode }[] = [
   { id: "positioning", minH: "min-h-[380px]", mobileH: "min-h-[360px]", render: PositioningContent },
   { id: "tagline", minH: "min-h-[280px]", mobileH: "min-h-[300px]", render: TaglineContent },
   { id: "ph", minH: "min-h-[320px]", mobileH: "min-h-[320px]", render: ProductHuntContent },
+  { id: "logo", minH: "min-h-[320px]", mobileH: "min-h-[340px]", render: LogoContent },
   { id: "founder", minH: "min-h-[300px]", mobileH: "min-h-[320px]", render: FounderContent },
   { id: "linkedin", minH: "min-h-[280px]", mobileH: "min-h-[300px]", render: LinkedInContent },
   { id: "launch", minH: "min-h-[360px]", mobileH: "min-h-[360px]", render: LaunchStrategyContent },
@@ -310,8 +342,7 @@ const CreateShowcase = () => {
 
       <div className="relative mx-auto max-w-7xl px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-indigo-600">The Output</p>
-          <h2 className="mt-3 font-serif text-4xl leading-[1.05] tracking-tight text-neutral-900 sm:text-6xl">
+          <h2 className="font-display text-4xl leading-[1.05] tracking-tight text-neutral-900 sm:text-6xl">
             What can you create<br /> with <span className="italic">Rocket?</span>
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-neutral-600">
