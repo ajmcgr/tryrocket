@@ -49,7 +49,7 @@ const Generate = () => {
       <form onSubmit={submit} className="mx-auto mt-10 flex w-full flex-col gap-3 sm:flex-row">
         <input type="text" placeholder="https://myproduct.com" value={url} onChange={(e) => setUrl(e.target.value)} required disabled={loading} className="h-12 flex-1 rounded-xl border border-neutral-200 bg-white px-4 text-base outline-none ring-neutral-300 transition focus:ring-2" />
         <button type="submit" disabled={loading || !url} className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-brand px-6 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover disabled:opacity-60">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Generate Rocket <ArrowRight className="h-4 w-4" /></>}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Generate Brand <ArrowRight className="h-4 w-4" /></>}
         </button>
       </form>
       {loading && (

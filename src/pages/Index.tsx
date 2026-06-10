@@ -44,7 +44,7 @@ const Index = () => {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">
-              <Link to="/signup">Generate Rocket <ArrowRight className="h-4 w-4" /></Link>
+              <Link to="/signup">Generate Brand <ArrowRight className="h-4 w-4" /></Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="rounded-full">
               <a href="https://trylaunch.ai" target="_blank" rel="noreferrer">View example</a>
@@ -65,7 +65,7 @@ const Index = () => {
                   <span className="text-sm text-neutral-400">https://</span>
                   <span className="text-sm font-medium text-neutral-900">myproduct.com</span>
                   <div className="ml-auto rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
-                    Generate Rocket
+                    Generate Brand
                   </div>
                 </div>
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
