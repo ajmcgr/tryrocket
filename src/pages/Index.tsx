@@ -224,7 +224,7 @@ const Index = () => {
               <p className="text-sm text-neutral-500">We're here to help you build something great.</p>
             </div>
             <Button asChild className="rounded-full">
-              <a href="mailto:hello@tryrocket.ai">Contact Support</a>
+              <a href="mailto:alex@tryrocket.ai">Contact Support</a>
             </Button>
           </div>
         </div>
