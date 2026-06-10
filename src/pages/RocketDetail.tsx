@@ -109,7 +109,7 @@ const RocketDetail = () => {
     <div>
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <Link to="/dashboard" className="text-xs text-neutral-500 hover:text-neutral-900">← Dashboard</Link>
+          <Link to="/projects" className="text-xs text-neutral-500 hover:text-neutral-900">← Projects</Link>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">{rocket.product_name}</h1>
           <a href={rocket.product_url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">{rocket.product_url} <ExternalLink className="h-3 w-3" /></a>
         </div>

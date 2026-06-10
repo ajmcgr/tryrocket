@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { supabase as _sb } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Plus, Settings as SettingsIcon, History } from "lucide-react";
+const supabase = _sb as any;
 
 const MESSAGES = [
   "Analyzing product…",
   "Understanding positioning…",
   "Identifying audience…",
   "Writing launch assets…",
-  "Preparing your Rocket…",
+  "Preparing your Brand…",
   "Almost ready…",
 ];
 
@@ -21,6 +23,14 @@ const Generate = () => {
   const { toast } = useToast();
   const nav = useNavigate();
   const autoRan = useRef(false);
+  const { user } = useAuth();
+  const [history, setHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("rockets").select("id, product_name, product_url, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20)
+      .then(({ data }: any) => setHistory(data || []));
+  }, [user]);
 
   useEffect(() => {
     if (!loading) return;
@@ -59,22 +69,50 @@ const Generate = () => {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl py-12 text-center">
-      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Generate your brand</h1>
-      <p className="mt-3 text-base text-neutral-600">Paste your product URL. We'll handle the rest.</p>
-      <form onSubmit={submit} className="mx-auto mt-10 flex w-full flex-col gap-3 sm:flex-row">
-        <input type="text" placeholder="https://myproduct.com" value={url} onChange={(e) => setUrl(e.target.value)} required disabled={loading} className="h-12 flex-1 rounded-xl border border-neutral-200 bg-white px-4 text-base outline-none ring-neutral-300 transition focus:ring-2" />
-        <button type="submit" disabled={loading || !url} className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-brand px-6 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover disabled:opacity-60">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Generate Brand <ArrowRight className="h-4 w-4" /></>}
-        </button>
-      </form>
-      {loading && (
-        <div className="mt-12 rounded-2xl border border-neutral-200 bg-white p-8">
-          <Loader2 className="mx-auto h-6 w-6 animate-spin text-neutral-400" />
-          <p className="mt-4 text-sm font-medium text-neutral-700">{MESSAGES[msgIdx]}</p>
-          <p className="mt-1 text-xs text-neutral-500">This takes ~30 seconds.</p>
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_1fr]">
+      <aside className="hidden md:flex md:flex-col rounded-2xl border border-neutral-200 bg-white p-3 min-h-[600px]">
+        <Link to="/create" className="inline-flex items-center gap-2 rounded-xl bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+          <Plus className="h-4 w-4" /> New Brand
+        </Link>
+        <div className="mt-5 px-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+          <History className="h-3 w-3" /> History
         </div>
-      )}
+        <div className="mt-2 flex-1 overflow-y-auto">
+          {history.length === 0 ? (
+            <p className="px-2 py-3 text-xs text-neutral-400">No brands yet.</p>
+          ) : (
+            <ul className="space-y-0.5">
+              {history.map((h) => (
+                <li key={h.id}>
+                  <Link to={`/rocket/${h.id}`} className="block truncate rounded-lg px-2 py-1.5 text-xs text-neutral-700 hover:bg-neutral-100">
+                    {h.product_name || h.product_url}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <Link to="/settings" className="mt-3 inline-flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-neutral-700 hover:bg-neutral-100">
+          <SettingsIcon className="h-4 w-4" /> Settings
+        </Link>
+      </aside>
+
+      <div className="py-12 text-center">
+        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Generate your brand</h1>
+        <form onSubmit={submit} className="mx-auto mt-10 flex w-full max-w-2xl flex-col gap-3 sm:flex-row">
+          <input type="text" placeholder="https://myproduct.com" value={url} onChange={(e) => setUrl(e.target.value)} required disabled={loading} className="h-12 flex-1 rounded-xl border border-neutral-200 bg-white px-4 text-base outline-none ring-neutral-300 transition focus:ring-2" />
+          <button type="submit" disabled={loading || !url} className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-brand px-6 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover disabled:opacity-60">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Generate Brand <ArrowRight className="h-4 w-4" /></>}
+          </button>
+        </form>
+        {loading && (
+          <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-neutral-200 bg-white p-8">
+            <Loader2 className="mx-auto h-6 w-6 animate-spin text-neutral-400" />
+            <p className="mt-4 text-sm font-medium text-neutral-700">{MESSAGES[msgIdx]}</p>
+            <p className="mt-1 text-xs text-neutral-500">This takes ~30 seconds.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

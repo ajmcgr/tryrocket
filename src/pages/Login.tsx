@@ -13,7 +13,7 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
   const { toast } = useToast();
   const nav = useNavigate();
   const loc = useLocation() as { state?: { from?: string } };
-  const next = loc.state?.from || "/dashboard";
+  const next = loc.state?.from || "/create";
   const isSignup = mode === "signup";
 
   const submit = async (e: React.FormEvent) => {
@@ -21,7 +21,7 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
     setLoading(true);
     try {
       const fn = isSignup
-        ? supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/dashboard` } })
+        ? supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/create` } })
         : supabase.auth.signInWithPassword({ email, password });
       const { error } = await fn;
       if (error) throw error;
