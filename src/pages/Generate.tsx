@@ -624,6 +624,12 @@ const Generate = () => {
           </div>
         </div>
       )}
+      <OutOfCreditsModal
+        open={!!outOfCredits}
+        needed={outOfCredits?.needed}
+        remaining={outOfCredits?.remaining}
+        onClose={() => setOutOfCredits(null)}
+      />
     </div>
   );
 };
