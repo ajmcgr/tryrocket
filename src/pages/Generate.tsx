@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X } from "lucide-react";
+import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X, Copy, Save, RefreshCw, ExternalLink, Type, Bold, Palette } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 const supabase = _sb as any;
 
@@ -36,6 +36,19 @@ const Generate = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [usage, setUsage] = useState<{ used: number; limit: number; extra: number } | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
+  const [result, setResult] = useState<null | {
+    rocketId: string;
+    productName: string;
+    productUrl: string;
+    asset: { id: string; title: string; content: string };
+  }>(null);
+  const [regen, setRegen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  // Canvas style state (mirrors core /editor text tools)
+  const [fontSize, setFontSize] = useState(56);
+  const [fontWeight, setFontWeight] = useState(700);
+  const [textColor, setTextColor] = useState("#0A0A0A");
+  const [bgColor, setBgColor] = useState("#F5F3EE");
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("gen_sidebar_open") !== "0";
@@ -127,11 +140,104 @@ const Generate = () => {
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      nav(`/rocket/${(data as any).rocket_id}`);
+      const rocketId = (data as any).rocket_id as string;
+      await loadResult(rocketId);
+      // Refresh sidebar history
+      if (user) {
+        supabase.from("rockets").select("id, product_name, product_url, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20)
+          .then(({ data }: any) => setHistory(data || []));
+      }
+      setLoading(false);
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
       setLoading(false);
     }
+  };
+
+  const loadResult = async (rocketId: string) => {
+    const [r, a] = await Promise.all([
+      supabase.from("rockets").select("id, product_name, product_url").eq("id", rocketId).maybeSingle(),
+      supabase.from("rocket_assets").select("id, title, asset_type, content").eq("rocket_id", rocketId),
+    ]);
+    const assets = (a.data || []) as any[];
+    const hero =
+      assets.find((x) => x.asset_type === "positioning_tagline") ||
+      assets.find((x) => x.asset_type === "positioning_value_prop") ||
+      assets[0];
+    if (!r.data || !hero) {
+      toast({ title: "Could not load result", variant: "destructive" });
+      return;
+    }
+    setResult({
+      rocketId,
+      productName: r.data.product_name,
+      productUrl: r.data.product_url || "",
+      asset: { id: hero.id, title: hero.title, content: hero.content || "" },
+    });
+  };
+
+  const updateAssetContent = (next: string) => {
+    setResult((prev) => (prev ? { ...prev, asset: { ...prev.asset, content: next } } : prev));
+  };
+
+  const saveAsset = async () => {
+    if (!result) return;
+    setSaving(true);
+    const { error } = await supabase.from("rocket_assets").update({ content: result.asset.content }).eq("id", result.asset.id);
+    setSaving(false);
+    if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    toast({ title: "Saved" });
+  };
+
+  const regenAsset = async () => {
+    if (!result) return;
+    setRegen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("regenerate-asset", { body: { asset_id: result.asset.id } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      updateAssetContent((data as any).content || "");
+      toast({ title: "Regenerated", description: "1 credit used." });
+    } catch (e: any) {
+      toast({ title: "Regenerate failed", description: e.message, variant: "destructive" });
+    } finally {
+      setRegen(false);
+    }
+  };
+
+  const copyAsset = () => {
+    if (!result) return;
+    navigator.clipboard.writeText(result.asset.content);
+    toast({ title: "Copied" });
+  };
+
+  const openInEditor = () => {
+    if (!result) return;
+    // Seed /editor with this asset as a single text element + matching canvas bg.
+    const seed = [
+      {
+        id: Math.random().toString(36).slice(2, 9),
+        kind: "text",
+        x: 120, y: 220, w: 720, h: 220,
+        visible: true, locked: false,
+        text: result.asset.content || result.productName,
+        color: textColor,
+        fontSize, fontWeight,
+        fontFamily: "Inter, sans-serif",
+      },
+    ];
+    try {
+      localStorage.setItem("rocket.editor.v1", JSON.stringify(seed));
+      localStorage.setItem("rocket.editor.bg.v1", bgColor);
+    } catch {}
+    nav("/editor");
+  };
+
+  const newAsset = () => {
+    setResult(null);
+    setUrl("");
+    setImages([]);
+    autoRan.current = false;
   };
 
   useEffect(() => {
@@ -149,7 +255,7 @@ const Generate = () => {
   }, []);
 
   return (
-    <div className={`relative grid grid-cols-1 ${sidebarOpen ? "md:grid-cols-[260px_minmax(0,1fr)]" : "md:grid-cols-[minmax(0,1fr)]"} h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-200`}>
+    <div className={`relative grid grid-cols-1 ${sidebarOpen ? (result ? "md:grid-cols-[260px_minmax(0,440px)_minmax(0,1fr)]" : "md:grid-cols-[260px_minmax(0,1fr)]") : (result ? "md:grid-cols-[minmax(0,440px)_minmax(0,1fr)]" : "md:grid-cols-[minmax(0,1fr)]")} h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-200`}>
       {!sidebarOpen && (
         <button
           onClick={toggleSidebar}
@@ -162,9 +268,9 @@ const Generate = () => {
       {sidebarOpen && (
       <aside className="hidden md:flex md:flex-col border-r border-neutral-200 bg-white overflow-hidden">
         <div className="p-3">
-          <Link to="/create" className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
+          <button onClick={newAsset} className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
             <Plus className="h-4 w-4" /> New Brand Asset
-          </Link>
+          </button>
         </div>
         <div className="px-4 pt-2 pb-1 flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Saved Brand Assets</span>
@@ -233,19 +339,21 @@ const Generate = () => {
       </aside>
       )}
 
-      <div className="relative flex flex-col">
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className={`relative flex flex-col ${result ? "border-r border-neutral-200 bg-white" : ""}`}>
+        <div className={`flex-1 flex flex-col items-center ${result ? "justify-start pt-12" : "justify-center"} px-6 py-16 text-center`}>
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10">
             <Sparkles className="h-5 w-5 text-brand" />
           </div>
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
-            What brand do you want to build?
+          <h1 className={`mt-6 font-semibold tracking-tight text-neutral-900 ${result ? "text-2xl" : "text-3xl sm:text-4xl"}`}>
+            {result ? "Refine or generate another" : "What brand do you want to build?"}
           </h1>
-          <p className="mt-3 max-w-xl text-base text-neutral-500">
-            Rocket generates a complete brand kit — logos, colors, fonts, voice, and launch copy — from your product URL in seconds.
-          </p>
+          {!result && (
+            <p className="mt-3 max-w-xl text-base text-neutral-500">
+              Rocket generates a complete brand kit — logos, colors, fonts, voice, and launch copy — from your product URL in seconds.
+            </p>
+          )}
 
-          {!loading && (
+          {!loading && !result && (
             <div className="mt-10 w-full max-w-xl">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Try an example</p>
               <div className="mt-4 flex flex-col items-center gap-2.5">
@@ -270,10 +378,31 @@ const Generate = () => {
               <p className="mt-1 text-xs text-neutral-500">This takes ~30 seconds.</p>
             </div>
           )}
+
+          {result && !loading && (
+            <div className="mt-8 w-full max-w-md text-left">
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Just generated</p>
+                <p className="mt-1 text-sm font-semibold text-neutral-900 truncate">{result.productName}</p>
+                {result.productUrl && (
+                  <p className="mt-0.5 truncate text-xs text-neutral-500">{result.productUrl}</p>
+                )}
+                <Link
+                  to={`/rocket/${result.rocketId}`}
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+                >
+                  View full brand kit <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+              <p className="mt-6 text-xs text-neutral-500">
+                Edit the canvas on the right, or open it in the full editor for shapes, layers and more.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="sticky bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent px-6 pb-6 pt-4">
-          <form onSubmit={submit} className="mx-auto w-full max-w-2xl">
+          <form onSubmit={submit} className={`mx-auto w-full ${result ? "max-w-md" : "max-w-2xl"}`}>
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
               {images.length > 0 && (
                 <div className="mb-2 flex flex-wrap gap-2">
@@ -333,6 +462,92 @@ const Generate = () => {
           </form>
         </div>
       </div>
+
+      {result && (
+        <div className="hidden md:flex flex-col bg-neutral-100">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-white px-4 py-2">
+            <div className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-2 py-1">
+              <Type className="h-3.5 w-3.5 text-neutral-500" />
+              <input
+                type="number"
+                min={12}
+                max={160}
+                value={fontSize}
+                onChange={(e) => setFontSize(Number(e.target.value) || 12)}
+                className="w-12 bg-transparent text-xs text-neutral-800 outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setFontWeight((w) => (w >= 700 ? 400 : 700))}
+              aria-label="Toggle bold"
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-md border border-neutral-200 text-neutral-700 hover:bg-neutral-50 ${fontWeight >= 700 ? "bg-neutral-900 text-white hover:bg-neutral-900" : ""}`}
+            >
+              <Bold className="h-3.5 w-3.5" />
+            </button>
+            <label className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-600">
+              Text
+              <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="h-4 w-6 cursor-pointer rounded border border-neutral-200" />
+            </label>
+            <label className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-600">
+              <Palette className="h-3.5 w-3.5 text-neutral-500" /> BG
+              <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="h-4 w-6 cursor-pointer rounded border border-neutral-200" />
+            </label>
+
+            <div className="ml-auto flex items-center gap-1">
+              <button type="button" onClick={copyAsset} className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900">
+                <Copy className="h-3.5 w-3.5" /> Copy
+              </button>
+              <button type="button" onClick={saveAsset} disabled={saving} className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50">
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save
+              </button>
+              <button type="button" onClick={regenAsset} disabled={regen} className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50">
+                {regen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerate
+              </button>
+              <button
+                type="button"
+                onClick={openInEditor}
+                className="ml-1 inline-flex h-7 items-center gap-1 rounded-md bg-neutral-900 px-2.5 text-xs font-medium text-white hover:bg-neutral-800"
+              >
+                Open in Editor <ExternalLink className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* Canvas */}
+          <div className="flex-1 overflow-auto p-6">
+            <div className="mx-auto max-w-3xl">
+              <div className="mb-2 flex items-center justify-between text-xs text-neutral-500">
+                <span className="font-medium text-neutral-700">{result.asset.title}</span>
+                <span>{result.productName}</span>
+              </div>
+              <div
+                className="aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 shadow-sm"
+                style={{ background: bgColor }}
+              >
+                <div className="flex h-full w-full items-center justify-center p-10">
+                  <textarea
+                    value={result.asset.content}
+                    onChange={(e) => updateAssetContent(e.target.value)}
+                    spellCheck={false}
+                    className="h-full w-full resize-none bg-transparent text-center leading-tight tracking-tight outline-none"
+                    style={{
+                      color: textColor,
+                      fontSize: `${fontSize}px`,
+                      fontWeight,
+                      fontFamily: "Inter, sans-serif",
+                    }}
+                  />
+                </div>
+              </div>
+              <p className="mt-3 text-center text-xs text-neutral-400">
+                Click the text to edit. Use the toolbar above for quick styling, or open in the full editor.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
