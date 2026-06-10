@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LogOut, User as UserIcon, Bell, CreditCard, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +18,8 @@ const supabase = _sb as any;
 const AppShell = () => {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
+  const isFullBleed = location.pathname.startsWith("/create");
   const [credits, setCredits] = useState<{ used: number; limit: number; extra: number; plan: string } | null>(null);
 
   useEffect(() => {
@@ -33,19 +35,14 @@ const AppShell = () => {
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <div className="flex h-16 w-full items-center px-6">
           <Logo to="/projects" />
-          <nav className="hidden items-center gap-7 text-sm font-medium text-neutral-600 md:flex">
-            <NavLink to="/projects" className={({ isActive }) => isActive ? "text-neutral-900" : "hover:text-neutral-900"}>Projects</NavLink>
-            <NavLink to="/create" className={({ isActive }) => isActive ? "text-neutral-900" : "hover:text-neutral-900"}>Create</NavLink>
-            <NavLink to="/settings" className={({ isActive }) => isActive ? "text-neutral-900" : "hover:text-neutral-900"}>Settings</NavLink>
-          </nav>
-          <div className="flex items-center gap-3">
-            {credits && (
-              <span className="hidden rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-700 sm:inline">
-                <span className="capitalize">{credits.plan}</span> · {remaining?.toLocaleString()} credits
-              </span>
-            )}
+          <div className="ml-auto flex items-center gap-2">
+            <nav className="hidden items-center gap-1 text-sm font-medium text-neutral-700 md:flex">
+              <NavLink to="/projects" className={({ isActive }) => `rounded-lg border px-3 py-1.5 transition ${isActive ? "border-neutral-200 bg-white text-neutral-900" : "border-transparent hover:bg-neutral-100"}`}>Projects</NavLink>
+              <NavLink to="/create" className={({ isActive }) => `rounded-lg border px-3 py-1.5 transition ${isActive ? "border-neutral-200 bg-white text-neutral-900" : "border-transparent hover:bg-neutral-100"}`}>Create</NavLink>
+              <NavLink to="/settings" className={({ isActive }) => `rounded-lg border px-3 py-1.5 transition ${isActive ? "border-neutral-200 bg-white text-neutral-900" : "border-transparent hover:bg-neutral-100"}`}>Settings</NavLink>
+            </nav>
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none focus:ring-2 focus:ring-neutral-300" aria-label="Account menu">
                 <Avatar className="h-8 w-8 border border-neutral-200">
@@ -82,7 +79,7 @@ const AppShell = () => {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-10">
+      <main className={isFullBleed ? "w-full" : "mx-auto max-w-6xl px-6 py-10"}>
         <Outlet />
       </main>
     </div>
