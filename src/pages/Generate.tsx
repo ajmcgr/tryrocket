@@ -303,13 +303,8 @@ const Generate = () => {
       )}
       {sidebarOpen && (
       <aside className="hidden md:flex md:flex-col border-r border-neutral-200 bg-white overflow-hidden">
-        <div className="p-3">
-          <button onClick={newAsset} className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
-            <Plus className="h-4 w-4" /> New Brand Asset
-          </button>
-        </div>
-        <div className="px-4 pt-2 pb-1 flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Saved Brand Assets</span>
+        <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Saved Chats</span>
           <button
             onClick={toggleSidebar}
             aria-label="Collapse sidebar"
@@ -318,9 +313,14 @@ const Generate = () => {
             <PanelLeftClose className="h-3.5 w-3.5" />
           </button>
         </div>
+        <div className="px-3 pb-3 border-b border-neutral-200">
+          <button onClick={newAsset} className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
+            <Plus className="h-4 w-4" /> New chat
+          </button>
+        </div>
         <div className="flex-1 overflow-y-auto px-2 py-2">
           {history.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-neutral-400">No Brand Assets yet.</p>
+            <p className="px-2 py-3 text-xs text-neutral-400">No chats yet.</p>
           ) : (
             <ul className="space-y-0.5">
               {history.map((h) => (
