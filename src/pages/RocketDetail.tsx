@@ -3,8 +3,9 @@ import { Link, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 const supabase = _sb as any;
 import { useToast } from "@/hooks/use-toast";
-import { Copy, RefreshCw, Save, ExternalLink, Loader2, Download, Rocket as RocketIcon } from "lucide-react";
+import { Copy, RefreshCw, Save, ExternalLink, Loader2, Download, Rocket as RocketIcon, FileText, FileArchive, Cloud, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import JSZip from "jszip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,7 @@ const RocketDetail = () => {
   const [rocket, setRocket] = useState<any>(null);
   const [assets, setAssets] = useState<any[]>([]);
   const [regenId, setRegenId] = useState<string | null>(null);
+  const [driveLoading, setDriveLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -84,6 +86,21 @@ const RocketDetail = () => {
 
   const exportMarkdown = () => {
     if (!rocket) return;
+    const md = buildCombinedMarkdown();
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slug()}-rocket.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: "Markdown file downloaded." });
+  };
+
+  const slug = () =>
+    rocket?.product_name?.replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9\-]/g, "") || "rocket";
+
+  const buildCombinedMarkdown = () => {
     let md = `# ${rocket.product_name}\n\n${rocket.product_url}\n\n`;
     GROUPS.forEach((g) => {
       const items = assets.filter((a) => g.prefixes.some((p) => a.asset_type.startsWith(p)));
@@ -91,14 +108,106 @@ const RocketDetail = () => {
       md += `\n## ${g.title}\n\n`;
       items.forEach((a) => { md += `### ${a.title}\n\n${a.content}\n\n`; });
     });
-    const blob = new Blob([md], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${rocket.product_name.replace(/\s+/g, "-").toLowerCase()}-rocket.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "Exported", description: "Markdown file downloaded." });
+    return md;
+  };
+
+  const buildZipBlob = async () => {
+    const zip = new JSZip();
+    const root = zip.folder(`${slug()}-rocket`)!;
+    root.file("README.md", buildCombinedMarkdown());
+    GROUPS.forEach((g) => {
+      const items = assets.filter((a) => g.prefixes.some((p) => a.asset_type.startsWith(p)));
+      if (!items.length) return;
+      const folder = root.folder(g.key)!;
+      items.forEach((a) => {
+        const fname = (a.title || a.asset_type).replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9\-]/g, "") + ".md";
+        folder.file(fname, `# ${a.title}\n\n${a.content}\n`);
+      });
+    });
+    return zip.generateAsync({ type: "blob" });
+  };
+
+  const exportZip = async () => {
+    if (!rocket) return;
+    try {
+      const blob = await buildZipBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${slug()}-rocket.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Exported", description: "ZIP file downloaded." });
+    } catch (e: any) {
+      toast({ title: "ZIP export failed", description: e?.message || String(e), variant: "destructive" });
+    }
+  };
+
+  const getGoogleAccessToken = async (clientId: string): Promise<string> => {
+    // Load Google Identity Services script once
+    if (!(window as any).google?.accounts?.oauth2) {
+      await new Promise<void>((resolve, reject) => {
+        const existing = document.getElementById("gis-script");
+        if (existing) { existing.addEventListener("load", () => resolve()); return; }
+        const s = document.createElement("script");
+        s.id = "gis-script";
+        s.src = "https://accounts.google.com/gsi/client";
+        s.async = true; s.defer = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load Google Identity Services"));
+        document.head.appendChild(s);
+      });
+    }
+    return new Promise<string>((resolve, reject) => {
+      const tc = (window as any).google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: "https://www.googleapis.com/auth/drive.file",
+        callback: (resp: any) => {
+          if (resp?.error) reject(new Error(resp.error_description || resp.error));
+          else resolve(resp.access_token);
+        },
+      });
+      tc.requestAccessToken({ prompt: "" });
+    });
+  };
+
+  const exportToDrive = async () => {
+    if (!rocket) return;
+    const clientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID as string | undefined;
+    if (!clientId) {
+      toast({
+        title: "Google Drive not configured",
+        description: "Add VITE_GOOGLE_CLIENT_ID (a Google OAuth Web Client ID) to enable Drive upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setDriveLoading(true);
+    try {
+      const token = await getGoogleAccessToken(clientId);
+      const blob = await buildZipBlob();
+      const metadata = { name: `${slug()}-rocket.zip`, mimeType: "application/zip" };
+      const form = new FormData();
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+      form.append("file", blob);
+      const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Drive upload failed (${res.status}): ${text}`);
+      }
+      const data = await res.json();
+      toast({
+        title: "Saved to Google Drive",
+        description: data.webViewLink ? "Click to open in Drive." : "Upload complete.",
+      });
+      if (data.webViewLink) window.open(data.webViewLink, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({ title: "Drive upload failed", description: e?.message || String(e), variant: "destructive" });
+    } finally { setDriveLoading(false); }
   };
 
   if (!rocket) return <div className="text-sm text-neutral-500">Loading…</div>;
@@ -114,9 +223,26 @@ const RocketDetail = () => {
           <a href={rocket.product_url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">{rocket.product_url} <ExternalLink className="h-3 w-3" /></a>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="rounded-full" onClick={exportMarkdown}>
-            <Download className="h-4 w-4" /> Export Markdown
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="rounded-full">
+                {driveLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                Export <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={exportMarkdown}>
+                <FileText className="mr-2 h-4 w-4" /> Markdown (.md)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportZip}>
+                <FileArchive className="mr-2 h-4 w-4" /> ZIP (.zip)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={exportToDrive} disabled={driveLoading}>
+                <Cloud className="mr-2 h-4 w-4" /> Send to Google Drive
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="rounded-full"><RocketIcon className="h-4 w-4" /> Launch to…</Button>
