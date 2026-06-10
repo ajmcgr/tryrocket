@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LogOut, User as UserIcon, Bell, CreditCard, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +18,8 @@ const supabase = _sb as any;
 const AppShell = () => {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
+  const isFullBleed = location.pathname.startsWith("/create");
   const [credits, setCredits] = useState<{ used: number; limit: number; extra: number; plan: string } | null>(null);
 
   useEffect(() => {
@@ -77,7 +79,7 @@ const AppShell = () => {
           </div>
         </div>
       </header>
-      <main className="w-full">
+      <main className={isFullBleed ? "w-full" : "mx-auto max-w-6xl px-6 py-10"}>
         <Outlet />
       </main>
     </div>
