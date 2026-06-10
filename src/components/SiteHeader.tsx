@@ -3,7 +3,7 @@ import Logo from "./Logo";
 import { Button } from "./ui/button";
 import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -22,6 +22,32 @@ const LANGUAGES = [
 
 const SiteHeader = () => {
   const [lang, setLang] = useState(LANGUAGES[0]);
+
+  useEffect(() => {
+    const m = document.cookie.match(/googtrans=\/[a-z-]+\/([a-z-]+)/i);
+    const code = m?.[1];
+    if (code) {
+      const found = LANGUAGES.find((l) => l.code === code);
+      if (found) setLang(found);
+    }
+  }, []);
+
+  const setLanguage = (l: typeof LANGUAGES[number]) => {
+    setLang(l);
+    const host = window.location.hostname;
+    const domains = ["", host, "." + host];
+    // Clear existing googtrans cookies
+    domains.forEach((d) => {
+      document.cookie = `googtrans=;path=/;${d ? `domain=${d};` : ""}expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    });
+    if (l.code !== "en") {
+      const value = `/en/${l.code}`;
+      document.cookie = `googtrans=${value};path=/`;
+      document.cookie = `googtrans=${value};path=/;domain=${host}`;
+      document.cookie = `googtrans=${value};path=/;domain=.${host}`;
+    }
+    window.location.reload();
+  };
   const { user, loading, signOut } = useAuth();
   const nav = useNavigate();
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
@@ -47,7 +73,7 @@ const SiteHeader = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto bg-white text-neutral-900 border-neutral-200">
               {LANGUAGES.map((l) => (
-                <DropdownMenuItem key={l.code} onSelect={() => setLang(l)} className="gap-2 text-neutral-900 focus:bg-neutral-100 focus:text-neutral-900">
+                <DropdownMenuItem key={l.code} onSelect={() => setLanguage(l)} className="gap-2 text-neutral-900 focus:bg-neutral-100 focus:text-neutral-900">
                   {l.code === lang.code ? <Check className="h-4 w-4" /> : <span className="w-4" />}
                   <span className="text-base leading-none">{l.flag}</span>
                   <span>{l.label}</span>
