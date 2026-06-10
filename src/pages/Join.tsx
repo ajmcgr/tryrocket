@@ -26,7 +26,7 @@ const Index = () => {
       <main className="relative z-10 flex min-h-screen min-h-[100dvh] flex-col items-center justify-center px-6 py-20">
         <div className="flex max-w-2xl flex-col items-center text-center">
           <h1 className="animate-fade-in-up-delay-1 text-5xl font-medium sm:text-6xl md:text-7xl lg:text-8xl leading-[1.05] tracking-tight text-cream text-glow" style={{ fontFamily: 'Reckless, serif' }}>
-            Make Your Product a Brand.
+            Make Your Product a Brand
           </h1>
 
           <p className="animate-fade-in-up-delay-2 mt-6 text-base sm:text-xl font-light tracking-wide text-cream/80 text-glow-sm">
