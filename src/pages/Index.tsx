@@ -74,6 +74,42 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Use Cases */}
+      <section id="use-cases" className="border-t border-neutral-200/60">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">What can you build with Rocket?</h2>
+            <p className="mt-4 text-lg text-neutral-600">
+              From indie side projects to full SaaS launches — Rocket brands them all.
+            </p>
+          </div>
+          <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {[
+              { emoji: "🚀", title: "SaaS products" },
+              { emoji: "🤖", title: "AI tools" },
+              { emoji: "📱", title: "Mobile apps" },
+              { emoji: "📨", title: "Newsletters" },
+              { emoji: "🛒", title: "E-commerce stores" },
+              { emoji: "🎨", title: "Creator brands" },
+              { emoji: "🏢", title: "Agencies & studios" },
+              { emoji: "🧩", title: "Chrome extensions" },
+              { emoji: "🎙️", title: "Podcasts" },
+              { emoji: "📚", title: "Courses & ebooks" },
+              { emoji: "🛠️", title: "Dev tools" },
+              { emoji: "💡", title: "Side projects" },
+            ].map(({ emoji, title }) => (
+              <div
+                key={title}
+                className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-4 transition hover:border-brand/30 hover:shadow-sm"
+              >
+                <span className="text-2xl leading-none" aria-hidden>{emoji}</span>
+                <span className="text-sm font-medium text-neutral-800">{title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section id="features" className="border-t border-neutral-200/60 bg-neutral-50/50">
         <div className="mx-auto max-w-6xl px-6 py-24">
