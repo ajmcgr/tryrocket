@@ -499,8 +499,8 @@ const Index = () => {
                 value={`item-${i}`}
                 className="rounded-2xl border border-neutral-200 bg-white transition-all duration-300 hover:border-brand/30 data-[state=open]:ring-1 data-[state=open]:ring-brand data-[state=open]:shadow-lg data-[state=open]:shadow-brand/5"
               >
-                <AccordionTrigger className="px-6 py-5 text-left text-lg font-semibold text-neutral-900">{f.q}</AccordionTrigger>
-                <AccordionContent className="px-6 pb-5 text-neutral-600 leading-relaxed">{f.a}</AccordionContent>
+                <AccordionTrigger className="px-6 py-5 text-left text-base font-semibold text-neutral-900">{f.q}</AccordionTrigger>
+                <AccordionContent className="px-6 pb-5 text-sm text-neutral-600 leading-relaxed">{f.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
