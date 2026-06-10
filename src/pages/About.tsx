@@ -34,8 +34,11 @@ const About = () => (
             href="https://x.com/alexmacgregor__"
             target="_blank"
             rel="noreferrer"
-            className="font-bold text-brand hover:underline"
+            className="inline-flex items-center gap-2 font-bold text-brand underline underline-offset-4"
           >
+            <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-current">
+              <path d="M18.244 2H21.5l-7.5 8.57L22.5 22h-6.86l-5.37-6.62L4.1 22H.84l8.04-9.19L.5 2h7.02l4.86 6.06L18.244 2Zm-2.4 18h1.9L7.27 4H5.25l10.594 16Z" />
+            </svg>
             Follow me on X
           </a>
         </p>
