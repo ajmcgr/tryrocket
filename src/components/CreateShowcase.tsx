@@ -36,8 +36,12 @@ const MobileCard = ({ i, className = "", children }: CardProps) => (
   </article>
 );
 
-const Tag = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600">
+const Tag = ({ children, variant = "light" }: { children: React.ReactNode; variant?: "light" | "dark" }) => (
+  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+    variant === "dark"
+      ? "bg-white/15 text-white/95 ring-1 ring-white/20 backdrop-blur-sm"
+      : "bg-neutral-100 text-neutral-600"
+  }`}>
     {children}
   </span>
 );
