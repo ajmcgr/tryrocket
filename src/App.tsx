@@ -10,6 +10,7 @@ import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Generate from "./pages/Generate.tsx";
+import { Navigate } from "react-router-dom";
 import RocketDetail from "./pages/RocketDetail.tsx";
 import Settings from "./pages/Settings.tsx";
 import About from "./pages/About.tsx";
@@ -43,8 +44,10 @@ const App = () => (
             <Route path="/tools" element={<Tools />} />
             <Route path="/tools/:slug" element={<ToolDetail />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/generate" element={<Generate />} />
+              <Route path="/projects" element={<Dashboard />} />
+              <Route path="/create" element={<Generate />} />
+              <Route path="/dashboard" element={<Navigate to="/projects" replace />} />
+              <Route path="/generate" element={<Navigate to="/create" replace />} />
               <Route path="/rocket/:id" element={<RocketDetail />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

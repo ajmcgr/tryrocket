@@ -27,7 +27,7 @@ const Index = () => {
     e.preventDefault();
     const trimmed = url.trim();
     if (!trimmed) return;
-    const target = `/generate?url=${encodeURIComponent(trimmed)}`;
+    const target = `/create?url=${encodeURIComponent(trimmed)}`;
     if (user) nav(target);
     else nav("/signup", { state: { from: target } });
   };
