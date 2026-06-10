@@ -4,6 +4,7 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 const supabase = _sb as any;
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowRight, Plus, ExternalLink } from "lucide-react";
+import ProjectSidebar from "@/components/ProjectSidebar";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -30,7 +31,10 @@ const Dashboard = () => {
   const pct = total ? Math.min(100, (used / total) * 100) : 0;
 
   return (
-    <div>
+    <div className="flex h-[calc(100vh-4rem)] w-full">
+      <ProjectSidebar />
+      <main className="flex-1 overflow-auto bg-neutral-50">
+        <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>

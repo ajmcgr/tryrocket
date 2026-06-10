@@ -96,6 +96,9 @@ const Editor = () => {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] w-full bg-neutral-100">
+      <ProjectSidebar />
+      {/* existing editor layout continues */}
+      <div className="flex flex-1">
       {/* Left: tools + layers */}
       <aside className="flex w-64 flex-col border-r border-neutral-200 bg-white">
         <div className="border-b border-neutral-200 p-3">
