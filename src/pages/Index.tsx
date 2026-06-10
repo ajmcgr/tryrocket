@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb } from "lucide-react";
+import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X } from "lucide-react";
+import { useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -152,13 +153,16 @@ const Index = () => {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = url.trim();
-    if (!trimmed) return;
+    if (!trimmed && images.length === 0) return;
     let finalUrl = trimmed;
-    if (selected.length > 0) {
+    if (trimmed && selected.length > 0) {
       const focus = selected.join(",");
       finalUrl = `${finalUrl.replace(/#focus=.*$/, "").trim()}#focus=${focus}`;
     }
-    const target = `/create?url=${encodeURIComponent(finalUrl)}`;
+    if (images.length > 0) {
+      try { sessionStorage.setItem("gen_images", JSON.stringify(images)); } catch {}
+    }
+    const target = finalUrl ? `/create?url=${encodeURIComponent(finalUrl)}` : "/create";
     if (user) nav(target);
     else nav("/signup", { state: { from: target } });
   };
