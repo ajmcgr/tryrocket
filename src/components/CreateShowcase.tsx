@@ -1,4 +1,10 @@
 import { Rocket, Mail, Quote, TrendingUp, Users, CheckCircle2, BookOpen, LayoutTemplate, Image as ImageIcon, Component, Shapes, Star, BarChart3 } from "lucide-react";
+import logoAsset from "@/assets/showcase/logo.png";
+import guidelinesAsset from "@/assets/showcase/guidelines.png";
+import templatesAsset from "@/assets/showcase/templates.png";
+import photosAsset from "@/assets/showcase/photos.png";
+import graphicsAsset from "@/assets/showcase/graphics.png";
+import iconsAsset from "@/assets/showcase/icons.png";
 
 type CardProps = {
   i: number;
@@ -293,15 +299,8 @@ const LogoContent = () => (
       <Tag>Logo</Tag>
       <span className="font-mono text-[10px] text-neutral-400">SVG · PNG</span>
     </div>
-    <div className="mt-6 flex flex-1 items-center justify-center rounded-2xl bg-neutral-50 ring-1 ring-neutral-100">
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-900 text-white">
-          <Rocket className="h-4 w-4" />
-        </div>
-        <span className="font-serif text-3xl font-semibold tracking-tight text-neutral-900">
-          recruit<span className="text-indigo-600">ai</span>
-        </span>
-      </div>
+    <div className="mt-6 flex flex-1 items-center justify-center overflow-hidden rounded-2xl bg-neutral-50 ring-1 ring-neutral-100">
+      <img src={logoAsset} alt="RecruitAI logo" loading="lazy" width={800} height={800} className="h-full w-full object-contain" />
     </div>
     <div className="mt-4 flex items-center gap-2">
       {["#0F172A", "#4F46E5", "#A5B4FC", "#F5F5F4"].map((c) => (
@@ -324,21 +323,11 @@ const GuidelinesContent = () => (
       <Tag>Brand Guidelines</Tag>
       <BookOpen className="h-4 w-4 text-neutral-400" />
     </div>
-    <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-400">Section 03 · Logo Usage</p>
-    <h3 className="mt-2 font-serif text-2xl leading-tight tracking-tight text-neutral-900">
-      Clear space &amp; minimum size.
-    </h3>
-    <div className="mt-5 grid grid-cols-2 gap-3">
-      <div className="rounded-xl bg-neutral-50 p-4 ring-1 ring-neutral-100">
-        <div className="mx-auto h-8 w-8 rounded-md bg-neutral-900" />
-        <p className="mt-2 text-center font-mono text-[10px] text-neutral-500">1x clear</p>
-      </div>
-      <div className="rounded-xl bg-neutral-50 p-4 ring-1 ring-neutral-100">
-        <div className="mx-auto h-8 w-8 rounded-md bg-indigo-600" />
-        <p className="mt-2 text-center font-mono text-[10px] text-neutral-500">Min 24px</p>
-      </div>
+    <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-400">Section 03 · Logo System</p>
+    <div className="mt-3 flex-1 overflow-hidden rounded-xl bg-neutral-50 ring-1 ring-neutral-100">
+      <img src={guidelinesAsset} alt="RecruitAI brand guidelines spread" loading="lazy" width={928} height={1152} className="h-full w-full object-cover" />
     </div>
-    <div className="mt-auto border-t border-neutral-100 pt-3">
+    <div className="mt-4 border-t border-neutral-100 pt-3">
       <Meta>Brand System</Meta>
     </div>
   </div>
@@ -350,22 +339,10 @@ const TemplatesContent = () => (
       <Tag>Brand Templates</Tag>
       <LayoutTemplate className="h-4 w-4 text-neutral-400" />
     </div>
-    <h3 className="mt-5 font-serif text-2xl leading-tight tracking-tight text-neutral-900">
-      Ready-to-ship templates.
-    </h3>
-    <div className="mt-6 grid grid-cols-3 gap-2">
-      {[
-        "from-indigo-500 to-violet-500",
-        "from-neutral-900 to-neutral-700",
-        "from-rose-400 to-orange-400",
-        "from-emerald-500 to-teal-500",
-        "from-sky-400 to-indigo-500",
-        "from-amber-400 to-pink-500",
-      ].map((g, k) => (
-        <div key={k} className={`aspect-[3/4] rounded-lg bg-gradient-to-br ${g} ring-1 ring-white/40`} />
-      ))}
+    <div className="mt-5 flex-1 overflow-hidden rounded-xl ring-1 ring-neutral-100">
+      <img src={templatesAsset} alt="Branded social templates" loading="lazy" width={1024} height={1024} className="h-full w-full object-cover" />
     </div>
-    <div className="mt-auto pt-4">
+    <div className="mt-4">
       <Meta>Social · Pitch · Email</Meta>
     </div>
   </div>
@@ -377,11 +354,8 @@ const PhotosContent = () => (
       <Tag>Photos</Tag>
       <ImageIcon className="h-4 w-4 text-neutral-400" />
     </div>
-    <div className="mt-5 grid flex-1 grid-cols-3 gap-2">
-      <div className="col-span-2 row-span-2 rounded-xl bg-gradient-to-br from-amber-200 via-rose-200 to-indigo-300" />
-      <div className="rounded-xl bg-gradient-to-br from-emerald-300 to-teal-400" />
-      <div className="rounded-xl bg-gradient-to-br from-neutral-200 to-neutral-400" />
-      <div className="col-span-3 rounded-xl bg-gradient-to-r from-indigo-300 via-violet-300 to-pink-300" />
+    <div className="mt-5 flex-1 overflow-hidden rounded-xl ring-1 ring-neutral-100">
+      <img src={photosAsset} alt="Brand photography mood board" loading="lazy" width={1024} height={1024} className="h-full w-full object-cover" />
     </div>
     <div className="mt-4 flex items-center justify-between">
       <Meta>Art Direction</Meta>
@@ -416,15 +390,15 @@ const ComponentsContent = () => (
 );
 
 const GraphicsContent = () => (
-  <div className="relative flex h-full flex-col justify-between overflow-hidden bg-gradient-to-br from-violet-600 via-fuchsia-500 to-rose-500 p-7 text-white">
-    <div className="flex items-center justify-between">
+  <div className="relative flex h-full flex-col justify-between overflow-hidden p-7 text-white">
+    <img src={graphicsAsset} alt="Hero brand artwork" loading="lazy" width={1024} height={1024} className="absolute inset-0 h-full w-full object-cover" />
+    <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/30" />
+    <div className="relative flex items-center justify-between">
       <Tag>
         <span className="text-white/90">Graphics</span>
       </Tag>
       <Shapes className="h-4 w-4 text-white/70" />
     </div>
-    <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full border border-white/30" />
-    <div aria-hidden className="pointer-events-none absolute bottom-6 right-6 h-20 w-20 rotate-12 rounded-2xl bg-white/15 backdrop-blur" />
     <div className="relative">
       <h3 className="font-serif text-[34px] leading-[0.95] tracking-tight">
         Hero<br />artwork.
@@ -440,18 +414,10 @@ const IconsContent = () => (
       <Tag>Icons</Tag>
       <Star className="h-4 w-4 text-neutral-400" />
     </div>
-    <h3 className="mt-5 font-serif text-2xl leading-tight tracking-tight text-neutral-900">Custom icon set.</h3>
-    <div className="mt-6 grid grid-cols-4 gap-3">
-      {[Rocket, Star, Users, Mail, BarChart3, BookOpen, Shapes, CheckCircle2].map((I, k) => (
-        <div
-          key={k}
-          className="flex aspect-square items-center justify-center rounded-xl bg-neutral-50 text-neutral-700 ring-1 ring-neutral-100"
-        >
-          <I className="h-4 w-4" />
-        </div>
-      ))}
+    <div className="mt-5 flex-1 overflow-hidden rounded-xl bg-neutral-50 ring-1 ring-neutral-100">
+      <img src={iconsAsset} alt="Custom icon set" loading="lazy" width={1264} height={848} className="h-full w-full object-cover" />
     </div>
-    <div className="mt-auto pt-4">
+    <div className="mt-4">
       <Meta>32 glyphs · stroke 1.5</Meta>
     </div>
   </div>
