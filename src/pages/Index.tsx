@@ -13,10 +13,10 @@ const FAQS = [
   { q: "What types of brand assets can I create?", a: "Choose from 12 asset types: Brand Guidelines, Brand Templates, Logos, Colors, Fonts, Brand Voice, Photos, Components, Graphics, Icons, Charts, and Launch Copy. Every Rocket generates a full kit across all categories, organized and ready to export." },
   { q: "How long does it take?", a: "About 30–60 seconds. You'll see a live progress UI, then land on your editable Rocket." },
   { q: "Can I edit and regenerate sections?", a: "Yes. Every section has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit." },
-  { q: "What's a credit?", a: "One full Rocket = 1 credit. Free plan gets 500 credits/month. Growth gets 3,000. You can also top up with credit packs." },
+  { q: "What's a credit?", a: "Credits power every generation. Text assets cost 1 credit; images cost more. Free plan gets 100 credits/month, Pro gets 3,000. Top up anytime with credit packs." },
   { q: "Where can I launch from Rocket?", a: "We pre-fill submissions for Product Hunt, BetaList, There's An AI For That, Hacker News, Peerlist, Uneed, Alternative.me, G2, Indie Hackers, and one-click handoff to Launch." },
-  { q: "Do you support custom domains / branding?", a: "Yes — Growth plan exports as Markdown and PDF with your brand colors." },
-  { q: "Is there a free trial of Growth?", a: "7 days free, no card required on the Free plan to start." },
+  { q: "Do you support custom domains / branding?", a: "Yes — Pro plan exports as Markdown and PDF with your brand colors." },
+  { q: "Is there a free trial of Pro?", a: "7 days free, no card required on the Free plan to start." },
   { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You'll keep access until the end of the period." },
 ];
 
@@ -451,7 +451,7 @@ const Index = () => {
               </div>
               <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {["500 Rocket Credits / month", "All output types", "Save & edit Brand Assets"].map((f) => (
+                {["100 Rocket Credits / month", "All output types", "Save & edit Brand Assets"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
                     <span className="text-neutral-700">{f}</span>
@@ -486,12 +486,12 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Growth */}
+            {/* Pro */}
             <div className="relative rounded-2xl border border-neutral-200 bg-neutral-100 p-8 text-neutral-900">
               <div className="absolute -top-3 right-6 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white">
                 7-day free trial
               </div>
-              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Growth</div>
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
               <div className="mt-3 flex items-baseline gap-1">
                 <span className="text-5xl font-semibold tracking-tight">$20</span>
                 <span className="text-neutral-500">/month</span>
