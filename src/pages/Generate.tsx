@@ -15,6 +15,17 @@ const MESSAGES = [
   "Almost ready…",
 ];
 
+const SAMPLE_PROMPTS = [
+  { emoji: "🤖", label: "AI writing assistant", url: "https://typingmind.com" },
+  { emoji: "📨", label: "Indie newsletter platform", url: "https://buttondown.com" },
+  { emoji: "🎨", label: "Design tool for founders", url: "https://tldraw.com" },
+  { emoji: "📊", label: "Analytics for SaaS", url: "https://plausible.io" },
+  { emoji: "🛠️", label: "Developer productivity app", url: "https://raycast.com" },
+  { emoji: "🛒", label: "E-commerce side project", url: "https://gumroad.com" },
+  { emoji: "🎙️", label: "Podcast / creator tool", url: "https://riverside.fm" },
+  { emoji: "📱", label: "Mobile habit tracker", url: "https://streaksapp.com" },
+];
+
 const Generate = () => {
   const [params] = useSearchParams();
   const [url, setUrl] = useState(params.get("url") ?? "");
@@ -110,6 +121,26 @@ const Generate = () => {
             <Loader2 className="mx-auto h-6 w-6 animate-spin text-neutral-400" />
             <p className="mt-4 text-sm font-medium text-neutral-700">{MESSAGES[msgIdx]}</p>
             <p className="mt-1 text-xs text-neutral-500">This takes ~30 seconds.</p>
+          </div>
+        )}
+        {!loading && (
+          <div className="mx-auto mt-12 max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Need inspiration? Try a sample
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {SAMPLE_PROMPTS.map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => setUrl(p.url)}
+                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-700 transition hover:border-brand/40 hover:bg-brand/5 hover:text-neutral-900"
+                >
+                  <span aria-hidden>{p.emoji}</span>
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const FAQS = [
   { q: "What does Rocket actually generate?", a: "A complete launch kit from a single URL: positioning, taglines, value props, audience, founder bio, X/LinkedIn posts, Product Hunt copy, directory submissions, launch strategy, and a full launch checklist." },
+  { q: "What types of brand assets are included?", a: "Every Rocket comes with a full Brand Kit: Guidelines, Brand Templates, Logos, Colors, Fonts, Brand voice, Photos, Components, Graphics, Icons, and Charts — all organized and ready to export." },
   { q: "How long does it take?", a: "About 30–60 seconds. You'll see a live progress UI, then land on your editable Rocket." },
   { q: "Can I edit and regenerate sections?", a: "Yes. Every section has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit." },
   { q: "What's a credit?", a: "One full Rocket = 1 credit. Free plan gets 500 credits/month. Growth gets 3,000. You can also top up with credit packs." },
@@ -70,6 +71,42 @@ const Index = () => {
               Generate Brand <ArrowRight className="h-4 w-4" />
             </Button>
           </form>
+        </div>
+      </section>
+
+      {/* Use Cases */}
+      <section id="use-cases" className="border-t border-neutral-200/60">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">What can you build with Rocket?</h2>
+            <p className="mt-4 text-lg text-neutral-600">
+              From indie side projects to full SaaS launches — Rocket brands them all.
+            </p>
+          </div>
+          <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {[
+              { emoji: "🚀", title: "SaaS products" },
+              { emoji: "🤖", title: "AI tools" },
+              { emoji: "📱", title: "Mobile apps" },
+              { emoji: "📨", title: "Newsletters" },
+              { emoji: "🛒", title: "E-commerce stores" },
+              { emoji: "🎨", title: "Creator brands" },
+              { emoji: "🏢", title: "Agencies & studios" },
+              { emoji: "🧩", title: "Chrome extensions" },
+              { emoji: "🎙️", title: "Podcasts" },
+              { emoji: "📚", title: "Courses & ebooks" },
+              { emoji: "🛠️", title: "Dev tools" },
+              { emoji: "💡", title: "Side projects" },
+            ].map(({ emoji, title }) => (
+              <div
+                key={title}
+                className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-4 transition hover:border-brand/30 hover:shadow-sm"
+              >
+                <span className="text-2xl leading-none" aria-hidden>{emoji}</span>
+                <span className="text-sm font-medium text-neutral-800">{title}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
