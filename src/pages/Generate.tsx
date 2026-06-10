@@ -44,7 +44,7 @@ const Generate = () => {
 
   return (
     <div className="mx-auto max-w-2xl py-12 text-center">
-      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Generate your Rocket</h1>
+      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Generate your brand</h1>
       <p className="mt-3 text-base text-neutral-600">Paste your product URL. We'll handle the rest.</p>
       <form onSubmit={submit} className="mx-auto mt-10 flex w-full flex-col gap-3 sm:flex-row">
         <input type="text" placeholder="https://myproduct.com" value={url} onChange={(e) => setUrl(e.target.value)} required disabled={loading} className="h-12 flex-1 rounded-xl border border-neutral-200 bg-white px-4 text-base outline-none ring-neutral-300 transition focus:ring-2" />

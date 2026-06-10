@@ -38,7 +38,7 @@ const BlogPost = () => {
           <h3 className="text-2xl font-semibold tracking-tight">Ready to launch?</h3>
           <p className="mt-2 text-neutral-600">Generate your complete launch kit in 60 seconds.</p>
           <Button asChild size="lg" className="mt-6">
-            <Link to="/signup">Generate your Rocket <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/signup">Generate your brand <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
       </main>
