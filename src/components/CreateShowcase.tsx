@@ -394,15 +394,13 @@ const ComponentsContent = () => (
 const GraphicsContent = () => (
   <div className="relative flex h-full flex-col justify-between overflow-hidden p-7 text-white">
     <img src={graphicsAsset} alt="Hero brand artwork" loading="lazy" width={1024} height={1024} className="absolute inset-0 h-full w-full object-cover" />
-    <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/30" />
+    <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/40" />
     <div className="relative flex items-center justify-between">
-      <Tag>
-        <span className="text-white/90">Graphics</span>
-      </Tag>
-      <Shapes className="h-4 w-4 text-white/70" />
+      <Tag variant="dark">Graphics</Tag>
+      <Shapes className="h-4 w-4 text-white/80" />
     </div>
     <div className="relative">
-      <h3 className="font-serif text-[34px] leading-[0.95] tracking-tight">
+      <h3 className="font-serif text-[34px] leading-[0.95] tracking-tight drop-shadow-sm">
         Hero<br />artwork.
       </h3>
       <p className="mt-5 text-[11px] uppercase tracking-[0.2em] text-white/80">Editorial Illustration</p>
