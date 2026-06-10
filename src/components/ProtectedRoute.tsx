@@ -5,7 +5,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return <div className="grid min-h-screen place-items-center bg-white text-sm text-neutral-500">Loading…</div>;
-  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;
   return <>{children}</>;
 };
 
