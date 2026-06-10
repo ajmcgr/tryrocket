@@ -34,7 +34,7 @@ const Index = () => {
         <div className="mx-auto max-w-6xl px-6 pt-20 pb-24 text-center sm:pt-28 sm:pb-32">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/70 px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-brand" />
-            AI Launch Co-Pilot for Vibe Coders
+            AI Branding for Vibe Coders
           </div>
           <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Make Your Product a Brand
@@ -64,7 +64,7 @@ const Index = () => {
                 <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
                   <span className="text-sm text-neutral-400">https://</span>
                   <span className="text-sm font-medium text-neutral-900">myproduct.com</span>
-                  <div className="ml-auto rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white">
+                  <div className="ml-auto rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
                     Generate Rocket
                   </div>
                 </div>
@@ -143,16 +143,16 @@ const Index = () => {
             </div>
 
             {/* Growth */}
-            <div className="relative rounded-2xl border border-neutral-900 bg-neutral-900 p-8 text-white">
+            <div className="relative rounded-2xl border border-neutral-200 bg-neutral-100 p-8 text-neutral-900">
               <div className="absolute -top-3 right-6 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white">
                 7-day free trial
               </div>
-              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-400">Growth</div>
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Growth</div>
               <div className="mt-3 flex items-baseline gap-1">
                 <span className="text-5xl font-semibold tracking-tight">$20</span>
-                <span className="text-neutral-400">/month</span>
+                <span className="text-neutral-500">/month</span>
               </div>
-              <p className="mt-2 text-sm text-neutral-400">For founders shipping fast.</p>
+              <p className="mt-2 text-sm text-neutral-600">For founders shipping fast.</p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
                   "3,000 Rocket Credits / month",
