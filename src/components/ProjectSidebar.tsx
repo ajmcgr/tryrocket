@@ -11,12 +11,43 @@ import {
   Zap,
   ArrowRight,
   Loader2,
+  MoreHorizontal,
+  Pin,
+  PinOff,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 const supabase = _sb as any;
 
 type Props = {
@@ -29,6 +60,9 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
   const { toast } = useToast();
   const location = useLocation();
   const [history, setHistory] = useState<any[]>([]);
+  const [renaming, setRenaming] = useState<any | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleting, setDeleting] = useState<any | null>(null);
   const [usage, setUsage] = useState<{
     used: number;
     limit: number;
@@ -52,13 +86,7 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("rockets")
-      .select("id, product_name, product_url, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20)
-      .then(({ data }: any) => setHistory(data || []));
+    loadHistory();
     supabase
       .from("user_usage")
       .select("monthly_limit, credits_used, credits_extra")
@@ -74,6 +102,68 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
           })
       );
   }, [user]);
+
+  const loadHistory = () => {
+    if (!user) return;
+    supabase
+      .from("rockets")
+      .select("id, product_name, product_url, created_at, pinned")
+      .eq("user_id", user.id)
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then(({ data }: any) => setHistory(data || []));
+  };
+
+  const togglePin = async (h: any) => {
+    const next = !h.pinned;
+    setHistory((prev) =>
+      [...prev.map((x) => (x.id === h.id ? { ...x, pinned: next } : x))].sort(
+        (a, b) =>
+          Number(b.pinned) - Number(a.pinned) ||
+          (a.created_at < b.created_at ? 1 : -1)
+      )
+    );
+    const { error } = await supabase
+      .from("rockets")
+      .update({ pinned: next })
+      .eq("id", h.id);
+    if (error) {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
+      loadHistory();
+    }
+  };
+
+  const submitRename = async () => {
+    if (!renaming) return;
+    const name = renameValue.trim();
+    if (!name) return;
+    const id = renaming.id;
+    setHistory((prev) => prev.map((x) => (x.id === id ? { ...x, product_name: name } : x)));
+    setRenaming(null);
+    const { error } = await supabase
+      .from("rockets")
+      .update({ product_name: name })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Rename failed", description: error.message, variant: "destructive" });
+      loadHistory();
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    const id = deleting.id;
+    setHistory((prev) => prev.filter((x) => x.id !== id));
+    setDeleting(null);
+    const { error } = await supabase.from("rockets").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      loadHistory();
+    } else {
+      toast({ title: "Deleted" });
+    }
+  };
 
   const buyPack = async (product: string) => {
     setBuying(product);
