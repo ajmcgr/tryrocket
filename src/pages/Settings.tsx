@@ -80,8 +80,9 @@ export const ProfileSettings = () => {
 
   const uploadAvatar = async (file: File) => {
     if (!user || !file) return;
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Invalid file", description: "Please choose an image.", variant: "destructive" });
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      toast({ title: "Invalid file", description: "Use JPEG, PNG, or WebP.", variant: "destructive" });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -90,19 +91,27 @@ export const ProfileSettings = () => {
     }
     setUploadingAvatar(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const extMap: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+      const ext = extMap[file.type] || "png";
       const path = `${user.id}/avatar-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
-      if (upErr) throw upErr;
+      if (upErr) {
+        console.error("[avatar upload] supabase error:", upErr);
+        throw upErr;
+      }
       const { data } = supabase.storage.from("avatars").getPublicUrl(path);
       const url = data.publicUrl;
       setAvatarUrl(url);
       const { error: updErr } = await supabase.auth.updateUser({ data: { avatar_url: url } });
-      if (updErr) throw updErr;
+      if (updErr) {
+        console.error("[avatar updateUser] supabase error:", updErr);
+        throw updErr;
+      }
       await supabase.auth.refreshSession();
       toast({ title: "Avatar updated" });
     } catch (e: any) {
-      toast({ title: "Upload failed", description: e.message, variant: "destructive" });
+      console.error("[avatar upload] failed:", e);
+      toast({ title: "Upload failed", description: e?.message || String(e), variant: "destructive" });
     } finally { setUploadingAvatar(false); }
   };
 
