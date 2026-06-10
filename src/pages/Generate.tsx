@@ -389,7 +389,7 @@ const Generate = () => {
           </h1>
           {!result && (
             <p className="mt-3 max-w-xl text-base text-neutral-500">
-              Rocket generates a complete brand kit — logos, colors, fonts, voice, and launch copy — from your product URL in seconds.
+              Rocket generates a complete brand system — brand guidelines, brand templates, logos, colors, fonts, brand voice, photos, components, graphics, icons, and launch copy — from your product URL in seconds.
             </p>
           )}
 
