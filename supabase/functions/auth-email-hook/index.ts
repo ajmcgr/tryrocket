@@ -1,5 +1,6 @@
 import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
+// deploy trigger
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
 const FROM_EMAIL = Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>";
