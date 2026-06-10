@@ -31,7 +31,7 @@ const SiteFooter = () => (
         </div>
         <div>
           <div className={HEADER}>Support</div>
-          <ul className="mt-4 space-y-2.5 text-sm font-medium text-neutral-700">
+          <ul className="mt-4 space-y-2.5 text-sm font-normal text-neutral-600">
             <li><a href="mailto:alex@tryrocket.ai" className="hover:text-neutral-900">Support</a></li>
             <li><Link to="/privacy" className="hover:text-neutral-900">Privacy Policy</Link></li>
             <li><Link to="/terms" className="hover:text-neutral-900">Terms of Service</Link></li>
