@@ -3,6 +3,7 @@ import { Rnd } from "react-rnd";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import ProjectSidebar from "@/components/ProjectSidebar";
 import {
   Type, Square, Circle as CircleIcon, Image as ImageIcon, Trash2,
   Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
@@ -202,6 +203,7 @@ const Editor = () => {
           </div>
         )}
       </aside>
+    </div>
     </div>
   );
 };
