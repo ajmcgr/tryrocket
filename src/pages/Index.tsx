@@ -325,12 +325,11 @@ const Index = () => {
                       </div>
                       <h3 className="mt-6 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">{row.title}</h3>
                       <p className="mt-4 text-base leading-relaxed text-neutral-600">{row.desc}</p>
-                      <Link
-                        to="/create"
-                        className="mt-7 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover"
-                      >
-                        Start free <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
+                      <Button asChild className="mt-7">
+                        <Link to="/create">
+                          Start free <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
                       <ul className="mt-7 space-y-3">
                         {row.bullets.map((b) => (
                           <li key={b} className="flex items-start gap-2.5 text-sm text-neutral-700">
