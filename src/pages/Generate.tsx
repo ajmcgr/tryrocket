@@ -108,7 +108,7 @@ const Generate = () => {
   }, []);
 
   return (
-    <div className={`grid grid-cols-1 ${sidebarOpen ? "md:grid-cols-[260px_1fr]" : "md:grid-cols-[0_1fr]"} h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-200`}>
+    <div className={`relative grid grid-cols-1 ${sidebarOpen ? "md:grid-cols-[260px_1fr]" : "md:grid-cols-[0_1fr]"} h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-200`}>
       {!sidebarOpen && (
         <button
           onClick={toggleSidebar}
