@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, CreditCard, Zap, ArrowRight } from "lucide-react";
+import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 const supabase = _sb as any;
 
@@ -34,6 +34,18 @@ const Generate = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [usage, setUsage] = useState<{ used: number; limit: number; extra: number } | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("gen_sidebar_open") !== "0";
+  });
+
+  const toggleSidebar = () => {
+    setSidebarOpen((v) => {
+      const next = !v;
+      try { localStorage.setItem("gen_sidebar_open", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -96,8 +108,17 @@ const Generate = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] h-[calc(100vh-4rem)]">
-      <aside className="hidden md:flex md:flex-col border-r border-neutral-200 bg-white">
+    <div className={`relative grid grid-cols-1 ${sidebarOpen ? "md:grid-cols-[260px_1fr]" : "md:grid-cols-[0_1fr]"} h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-200`}>
+      {!sidebarOpen && (
+        <button
+          onClick={toggleSidebar}
+          aria-label="Open sidebar"
+          className="absolute left-3 top-3 z-20 hidden md:inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+        >
+          <PanelLeftOpen className="h-3.5 w-3.5" /> Show panel
+        </button>
+      )}
+      <aside className={`${sidebarOpen ? "hidden md:flex" : "hidden"} md:flex-col border-r border-neutral-200 bg-white overflow-hidden`}>
         <div className="p-3">
           <Link to="/create" className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
             <Plus className="h-4 w-4" /> New Brand Asset
@@ -105,7 +126,13 @@ const Generate = () => {
         </div>
         <div className="px-4 pt-2 pb-1 flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Saved Brand Assets</span>
-          <PanelLeftClose className="h-3.5 w-3.5 text-neutral-400" />
+          <button
+            onClick={toggleSidebar}
+            aria-label="Collapse sidebar"
+            className="rounded p-1 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+          >
+            <PanelLeftClose className="h-3.5 w-3.5" />
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto px-2 py-2">
           {history.length === 0 ? (
