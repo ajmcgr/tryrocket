@@ -10,7 +10,7 @@ const FAQS = [
   { q: "How long does it take?", a: "About 30–60 seconds. You'll see a live progress UI, then land on your editable Rocket." },
   { q: "Can I edit and regenerate sections?", a: "Yes. Every section has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit." },
   { q: "What's a credit?", a: "One full Rocket = 1 credit. Free plan gets 500 credits/month. Growth gets 3,000. You can also top up with credit packs." },
-  { q: "Where can I launch from Rocket?", a: "We pre-fill submissions for Product Hunt, BetaList, There's An AI For That, Hacker News, Peerlist, Uneed, Alternative.me, G2, Indie Hackers, and one-click handoff to TryLaunch.ai." },
+  { q: "Where can I launch from Rocket?", a: "We pre-fill submissions for Product Hunt, BetaList, There's An AI For That, Hacker News, Peerlist, Uneed, Alternative.me, G2, Indie Hackers, and one-click handoff to Launch." },
   { q: "Do you support custom domains / branding?", a: "Yes — Growth plan exports as Markdown and PDF with your brand colors." },
   { q: "Is there a free trial of Growth?", a: "7 days free, no card required on the Free plan to start." },
   { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You'll keep access until the end of the period." },
@@ -99,7 +99,7 @@ const Index = () => {
               { icon: ListChecks, title: "Launch Strategy", desc: "Channels, communities, content ideas, and a full launch checklist." },
               { icon: Sparkles, title: "Founder Profile", desc: "X bio, LinkedIn headline, founder tagline — ready to paste." },
               { icon: Zap, title: "Instant Generation", desc: "One URL in. A complete launch kit out. Edit and regenerate any section." },
-              { icon: RocketIcon, title: "Launch on TryLaunch.ai", desc: "Ship your Rocket straight to TryLaunch when you're ready to go live." },
+              { icon: RocketIcon, title: "Launch on Launch", desc: "Ship your Rocket straight to Launch when you're ready to go live." },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:shadow-md">
                 <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand text-brand-foreground">

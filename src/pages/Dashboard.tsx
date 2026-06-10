@@ -92,7 +92,7 @@ const Dashboard = () => {
       <a href="https://trylaunch.ai" target="_blank" rel="noreferrer" className="mt-10 flex items-center justify-between rounded-2xl border border-neutral-900 bg-neutral-900 p-5 text-white transition hover:bg-neutral-800">
         <div>
           <div className="text-sm font-semibold">Ready to go live?</div>
-          <div className="text-xs text-neutral-300">Launch on TryLaunch.ai</div>
+          <div className="text-xs text-neutral-300">Launch on Launch</div>
         </div>
         <ExternalLink className="h-4 w-4" />
       </a>

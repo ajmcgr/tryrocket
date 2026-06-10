@@ -13,7 +13,7 @@ const About = () => (
         We built Rocket so a solo founder can drop in a URL and walk away with a complete launch kit in under a minute: positioning, taglines, founder bio, social copy, Product Hunt assets, directory submissions, and a full launch checklist.
       </p>
       <p className="mt-4 text-lg leading-relaxed text-neutral-700">
-        Rocket is built by the team behind <a href="https://trylaunch.ai" target="_blank" rel="noreferrer" className="text-brand hover:underline">TryLaunch.ai</a>. We've helped thousands of indie founders ship — and we think the next million products deserve to be brands, not just apps.
+        Rocket is built by the team behind <a href="https://trylaunch.ai" target="_blank" rel="noreferrer" className="text-brand hover:underline">Launch</a>. We've helped thousands of indie founders ship — and we think the next million products deserve to be brands, not just apps.
       </p>
       <div className="mt-12 rounded-2xl border border-neutral-200 bg-neutral-50 p-8">
         <h2 className="text-xl font-semibold">Our promise</h2>

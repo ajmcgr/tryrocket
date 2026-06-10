@@ -134,7 +134,7 @@ const RocketDetail = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <a href="https://trylaunch.ai" target="_blank" rel="noreferrer">
-                  Launch on TryLaunch.ai <ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  Launch on Launch <ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" />
                 </a>
               </DropdownMenuItem>
             </DropdownMenuContent>
