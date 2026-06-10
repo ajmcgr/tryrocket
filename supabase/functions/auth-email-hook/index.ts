@@ -1,5 +1,3 @@
-import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
-
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
 const FROM_EMAIL = Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>";
@@ -40,10 +38,21 @@ Deno.serve(async (req) => {
     if (!HOOK_SECRET) throw new Error("SEND_EMAIL_HOOK_SECRET not configured");
 
     const payload = await req.text();
-    const headers = Object.fromEntries(req.headers);
-    const secret = HOOK_SECRET.replace(/^v1,whsec_/, "");
-    const wh = new Webhook(secret);
-    const data = wh.verify(payload, headers) as {
+    const id = req.headers.get("webhook-id") || "";
+    const timestamp = req.headers.get("webhook-timestamp") || "";
+    const sigHeader = req.headers.get("webhook-signature") || "";
+    const secretB64 = HOOK_SECRET.replace(/^v1,whsec_/, "");
+    const secretBytes = Uint8Array.from(atob(secretB64), (c) => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey("raw", secretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const toSign = new TextEncoder().encode(`${id}.${timestamp}.${payload}`);
+    const sigBuf = await crypto.subtle.sign("HMAC", key, toSign);
+    const expected = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
+    const provided = sigHeader.split(" ").map((s) => s.replace(/^v1,/, ""));
+    if (!provided.includes(expected)) {
+      console.error("Invalid signature");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401 });
+    }
+    const data = JSON.parse(payload) as {
       user: { email: string };
       email_data: {
         token: string;
