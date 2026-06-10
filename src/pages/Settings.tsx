@@ -22,6 +22,7 @@ const Settings = () => {
   const loc = useLocation();
   const [newPassword, setNewPassword] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string>((user as any)?.user_metadata?.avatar_url || "");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [username, setUsername] = useState<string>((user as any)?.user_metadata?.username || "");
   const [emailsEnabled, setEmailsEnabled] = useState<boolean>(() => localStorage.getItem("notif_emails") !== "0");
 
@@ -56,6 +57,34 @@ const Settings = () => {
     } catch (e: any) {
       toast({ title: "Save failed", description: e.message, variant: "destructive" });
     } finally { setLoading(null); }
+  };
+
+  const uploadAvatar = async (file: File) => {
+    if (!user || !file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please choose an image.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Too large", description: "Max 5 MB.", variant: "destructive" });
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      const url = data.publicUrl;
+      setAvatarUrl(url);
+      const { error: updErr } = await supabase.auth.updateUser({ data: { avatar_url: url } });
+      if (updErr) throw updErr;
+      await supabase.auth.refreshSession();
+      toast({ title: "Avatar updated" });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e.message, variant: "destructive" });
+    } finally { setUploadingAvatar(false); }
   };
 
   const toggleEmails = (v: boolean) => {
@@ -112,13 +141,34 @@ const Settings = () => {
             {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
             <AvatarFallback className="bg-neutral-100 text-sm text-neutral-700">{(user?.email?.[0] || "U").toUpperCase()}</AvatarFallback>
           </Avatar>
-          <input
-            type="url"
-            placeholder="Avatar image URL"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            className="h-10 flex-1 rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none ring-neutral-300 focus:ring-2"
-          />
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <label className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
+              {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload image"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingAvatar}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); e.target.value = ""; }}
+              />
+            </label>
+            {avatarUrl && (
+              <button
+                type="button"
+                onClick={() => setAvatarUrl("")}
+                className="h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                Remove
+              </button>
+            )}
+            <input
+              type="url"
+              placeholder="Or paste image URL"
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              className="h-10 min-w-[180px] flex-1 rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none ring-neutral-300 focus:ring-2"
+            />
+          </div>
         </div>
         <div className="mt-4">
           <label className="text-xs font-medium text-neutral-600">Username</label>
