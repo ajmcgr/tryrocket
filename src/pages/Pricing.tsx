@@ -41,7 +41,7 @@ const Pricing = () => {
               </div>
               <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {["500 Rocket Credits / month", "All output types", "Save & edit brands"].map((f) => (
+                {["100 Rocket Credits / month", "All output types", "Save & edit brands", "Limited project history"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
                     <span className="text-neutral-700">{f}</span>
@@ -80,6 +80,8 @@ const Pricing = () => {
                   "Unlimited saved Brand Assets",
                   "Export tools",
                   "Priority generation",
+                  "Full asset history",
+                  "Early access to new generators",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
