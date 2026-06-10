@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as _sb } from "@/integrations/supabase/client";
+const supabase = _sb as any;
 import { useToast } from "@/hooks/use-toast";
 import { Copy, RefreshCw, Save, ExternalLink, Loader2 } from "lucide-react";
 

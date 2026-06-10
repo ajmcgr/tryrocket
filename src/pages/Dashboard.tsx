@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as _sb } from "@/integrations/supabase/client";
+const supabase = _sb as any;
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowRight, Plus, ExternalLink } from "lucide-react";
 
