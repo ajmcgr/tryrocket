@@ -48,13 +48,15 @@ const Pricing = () => {
                   </li>
                 ))}
               </ul>
-              <div className="mt-6 grid grid-cols-2 gap-2">
-                {OUTPUT_TYPES.map((item) => (
-                  <div key={item} className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/60 px-3 py-2 text-xs text-neutral-700">
-                    <Check className="h-3 w-3 shrink-0 text-brand" />
-                    <span>{item}</span>
-                  </div>
-                ))}
+              <div className="mt-8 border-t border-neutral-200/80 pt-6">
+                <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {OUTPUT_TYPES.map((item) => (
+                    <span key={item} className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
               <Button asChild variant="outline" className="mt-8 w-full">
                 <Link to="/signup">Sign up free</Link>
@@ -85,13 +87,15 @@ const Pricing = () => {
                   </li>
                 ))}
               </ul>
-              <div className="mt-6 grid grid-cols-2 gap-2">
-                {OUTPUT_TYPES.map((item) => (
-                  <div key={item} className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white/60 px-3 py-2 text-xs text-neutral-700">
-                    <Check className="h-3 w-3 shrink-0 text-brand" />
-                    <span>{item}</span>
-                  </div>
-                ))}
+              <div className="mt-8 border-t border-neutral-200/80 pt-6">
+                <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {OUTPUT_TYPES.map((item) => (
+                    <span key={item} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-700 ring-1 ring-neutral-200">
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
               <Button asChild className="mt-8 w-full">
                 <Link to="/signup">Start free trial</Link>
