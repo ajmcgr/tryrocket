@@ -79,7 +79,18 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;c
 </html>`;
 }
 
-export type Template = "welcome" | "rocket_generated" | "trial_started" | "payment_succeeded" | "credits_purchased";
+export type Template =
+  | "welcome"
+  | "rocket_generated"
+  | "trial_started"
+  | "payment_succeeded"
+  | "credits_purchased"
+  | "auth_signup"
+  | "auth_magiclink"
+  | "auth_recovery"
+  | "auth_invite"
+  | "auth_email_change"
+  | "auth_reauth";
 
 export function buildEmail(template: Template, data: any): { subject: string; html: string } {
   switch (template) {
@@ -140,6 +151,72 @@ export function buildEmail(template: Template, data: any): { subject: string; ht
           bodyHtml: `<p>Your credit pack is on your account and ready to use.</p>`,
           ctaLabel: "Generate a Brand",
           ctaUrl: "https://tryrocket.ai/create",
+        }),
+      };
+    case "auth_signup":
+      return {
+        subject: "Confirm your Rocket account",
+        html: renderEmail({
+          preheader: "One click to verify your email.",
+          title: "Confirm your email to launch Rocket.",
+          bodyHtml: `<p>Welcome to Rocket — your AI launch co-pilot. Tap the button below to confirm your email and start generating brands.</p>`,
+          ctaLabel: "Confirm email",
+          ctaUrl: data?.confirmation_url,
+        }),
+      };
+    case "auth_magiclink":
+      return {
+        subject: "Your Rocket sign-in link",
+        html: renderEmail({
+          preheader: "Tap to sign in to Rocket.",
+          title: "Sign in to Rocket.",
+          bodyHtml: `<p>Click the button below to sign in. This link expires shortly and can only be used once.</p>`,
+          ctaLabel: "Sign in to Rocket",
+          ctaUrl: data?.confirmation_url,
+        }),
+      };
+    case "auth_recovery":
+      return {
+        subject: "Reset your Rocket password",
+        html: renderEmail({
+          preheader: "Set a new password for your Rocket account.",
+          title: "Reset your password.",
+          bodyHtml: `<p>We received a request to reset your Rocket password. Click below to set a new one. If you didn't request this, you can safely ignore this email.</p>`,
+          ctaLabel: "Reset password",
+          ctaUrl: data?.confirmation_url,
+        }),
+      };
+    case "auth_invite":
+      return {
+        subject: "You've been invited to Rocket",
+        html: renderEmail({
+          preheader: "Accept your invite to join Rocket.",
+          title: "You're invited to Rocket.",
+          bodyHtml: `<p>You've been invited to join Rocket. Click below to accept and set up your account.</p>`,
+          ctaLabel: "Accept invite",
+          ctaUrl: data?.confirmation_url,
+        }),
+      };
+    case "auth_email_change":
+      return {
+        subject: "Confirm your new email",
+        html: renderEmail({
+          preheader: "Verify your new Rocket email address.",
+          title: "Confirm your new email address.",
+          bodyHtml: `<p>Click below to confirm <strong>${data?.new_email ?? "your new email"}</strong> as the new email on your Rocket account.</p>`,
+          ctaLabel: "Confirm new email",
+          ctaUrl: data?.confirmation_url,
+        }),
+      };
+    case "auth_reauth":
+      return {
+        subject: `Your Rocket verification code: ${data?.token ?? ""}`,
+        html: renderEmail({
+          preheader: "Use this code to verify it's you.",
+          title: "Verify it's you.",
+          bodyHtml: `<p>Enter this code in Rocket to continue:</p>
+                     <p style="font-size:28px;font-weight:700;letter-spacing:4px;margin:18px 0;">${data?.token ?? ""}</p>
+                     <p>If you didn't request this, you can ignore this email.</p>`,
         }),
       };
   }
