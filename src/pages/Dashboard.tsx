@@ -37,7 +37,7 @@ const Dashboard = () => {
           <p className="mt-1 text-sm text-neutral-500">Welcome back{user?.email ? `, ${user.email}` : ""}.</p>
         </div>
         <Link to="/generate" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
-          <Plus className="h-4 w-4" /> New Rocket
+          <Plus className="h-4 w-4" /> New Brand
         </Link>
       </div>
 
@@ -71,7 +71,7 @@ const Dashboard = () => {
           {rockets.length === 0 ? (
             <div className="p-10 text-center">
               <p className="text-sm text-neutral-500">No Rockets yet.</p>
-              <Link to="/generate" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground hover:bg-brand-hover">Generate your first Rocket <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link to="/generate" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground hover:bg-brand-hover">Generate your first Brand <ArrowRight className="h-3.5 w-3.5" /></Link>
             </div>
           ) : (
             <ul className="divide-y divide-neutral-200">
