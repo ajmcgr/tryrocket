@@ -138,19 +138,20 @@ export const ProfileSettings = () => {
           {avatarUrl && (
             <button
               type="button"
-              onClick={() => setAvatarUrl("")}
+              onClick={async () => {
+                setAvatarUrl("");
+                try {
+                  await supabase.auth.updateUser({ data: { avatar_url: "" } });
+                  await supabase.auth.refreshSession();
+                } catch (e: any) {
+                  toast({ title: "Couldn't remove", description: e?.message || String(e), variant: "destructive" });
+                }
+              }}
               className="h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >
               Remove
             </button>
           )}
-          <input
-            type="url"
-            placeholder="Or paste image URL"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            className="h-10 min-w-[180px] flex-1 rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none ring-neutral-300 focus:ring-2"
-          />
         </div>
       </div>
       <div className="mt-4">
