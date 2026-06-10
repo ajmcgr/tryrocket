@@ -396,7 +396,7 @@ const Index = () => {
               </div>
               <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {["500 Rocket Credits / month", "All output types", "Save & edit brands"].map((f) => (
+                {["500 Rocket Credits / month", "All output types", "Save & edit Brand Assets"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
                     <span className="text-neutral-700">{f}</span>
@@ -445,7 +445,7 @@ const Index = () => {
               <ul className="mt-6 space-y-3 text-sm">
                 {[
                   "3,000 Rocket Credits / month",
-                  "Unlimited saved brands",
+                  "Unlimited saved Brand Assets",
                   "Export tools",
                   "Priority generation",
                 ].map((f) => (
