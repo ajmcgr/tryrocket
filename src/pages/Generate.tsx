@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Loader2 } from "lucide-react";
@@ -14,11 +14,13 @@ const MESSAGES = [
 ];
 
 const Generate = () => {
-  const [url, setUrl] = useState("");
+  const [params] = useSearchParams();
+  const [url, setUrl] = useState(params.get("url") ?? "");
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
   const { toast } = useToast();
   const nav = useNavigate();
+  const autoRan = useRef(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -28,7 +30,12 @@ const Generate = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let normalized = url.trim();
+    await runGenerate(url);
+  };
+
+  const runGenerate = async (raw: string) => {
+    let normalized = raw.trim();
+    if (!normalized) return;
     if (!/^https?:\/\//i.test(normalized)) normalized = "https://" + normalized;
     setLoading(true);
     try {
@@ -41,6 +48,15 @@ const Generate = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const incoming = params.get("url");
+    if (incoming && !autoRan.current) {
+      autoRan.current = true;
+      runGenerate(incoming);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="mx-auto max-w-2xl py-12 text-center">
