@@ -108,7 +108,7 @@ const Generate = () => {
   }, []);
 
   return (
-    <div className={`relative grid grid-cols-1 ${sidebarOpen ? "md:grid-cols-[260px_1fr]" : "md:grid-cols-[0_1fr]"} h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-200`}>
+    <div className={`relative grid grid-cols-1 ${sidebarOpen ? "md:grid-cols-[260px_minmax(0,1fr)]" : "md:grid-cols-[minmax(0,1fr)]"} h-[calc(100vh-4rem)] transition-[grid-template-columns] duration-200`}>
       {!sidebarOpen && (
         <button
           onClick={toggleSidebar}
@@ -118,7 +118,8 @@ const Generate = () => {
           <PanelLeftOpen className="h-3.5 w-3.5" /> Show panel
         </button>
       )}
-      <aside className={`${sidebarOpen ? "hidden md:flex" : "hidden"} md:flex-col border-r border-neutral-200 bg-white overflow-hidden`}>
+      {sidebarOpen && (
+      <aside className="hidden md:flex md:flex-col border-r border-neutral-200 bg-white overflow-hidden">
         <div className="p-3">
           <Link to="/create" className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
             <Plus className="h-4 w-4" /> New Brand Asset
@@ -189,6 +190,7 @@ const Generate = () => {
           </Popover>
         </div>
       </aside>
+      )}
 
       <div className="relative flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
