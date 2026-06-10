@@ -288,7 +288,7 @@ const MessagingContent = () => (
 );
 
 /* Ordered card definitions */
-const CARDS: { id: string; minH: string; mobileH: string; render: () => JSX.Element }[] = [
+const CARDS: { id: string; minH: string; mobileH: string; render: () => React.ReactNode }[] = [
   { id: "positioning", minH: "min-h-[380px]", mobileH: "min-h-[360px]", render: PositioningContent },
   { id: "tagline", minH: "min-h-[280px]", mobileH: "min-h-[300px]", render: TaglineContent },
   { id: "ph", minH: "min-h-[320px]", mobileH: "min-h-[320px]", render: ProductHuntContent },
