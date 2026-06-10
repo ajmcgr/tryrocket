@@ -445,10 +445,18 @@ const Generate = () => {
           <form onSubmit={submit} className={`mx-auto w-full ${result ? "max-w-md" : "max-w-2xl"}`}>
             {!result && (
               <div className="mb-3">
-                <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-500">What do you need help with?</p>
+                <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+                  What do you need help with?
+                  {usage && (
+                    <span className="ml-2 normal-case tracking-normal text-neutral-400">
+                      · {(usage.limit + usage.extra - usage.used).toLocaleString()} credits left
+                    </span>
+                  )}
+                </p>
                 <div className="flex flex-wrap justify-center gap-1.5">
                   {WORKFLOW_CHIPS.map((c) => {
                     const active = workflow === c.id;
+                    const cost = c.id === "auto" ? null : workflowCost(c.id, costFor);
                     return (
                       <button
                         key={c.id}
@@ -459,10 +467,16 @@ const Generate = () => {
                       >
                         <c.Icon className="h-3.5 w-3.5" />
                         {c.label}
+                        {cost ? (
+                          <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${active ? "bg-white/25 text-brand-foreground" : "bg-neutral-100 text-neutral-500"}`}>
+                            {cost}
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}
                 </div>
+                <p className="mt-1.5 text-center text-[10px] text-neutral-400">Number = credits used for this workflow.</p>
               </div>
             )}
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
