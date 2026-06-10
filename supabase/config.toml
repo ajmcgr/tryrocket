@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = true
+
+[functions.request-password-reset]
+verify_jwt = false
+
+[functions.reset-password]
+verify_jwt = false
