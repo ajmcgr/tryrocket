@@ -43,7 +43,7 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center"><Logo /></div>
         <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">{isSignup ? "Create your account" : "Sign in"}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{isSignup ? "Create your account" : "Log in"}</h1>
           <p className="mt-1.5 text-sm text-neutral-500">{isSignup ? "Start with 500 free credits." : "Welcome back."}</p>
 
           <button onClick={google} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50">
@@ -59,12 +59,12 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
             <input type="email" required placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3.5 text-sm outline-none ring-neutral-300 transition focus:ring-2" />
             <input type="password" required minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3.5 text-sm outline-none ring-neutral-300 transition focus:ring-2" />
             <button type="submit" disabled={loading} className="inline-flex h-11 w-full items-center justify-center rounded-full bg-brand text-sm font-medium text-brand-foreground transition hover:bg-brand-hover disabled:opacity-60">
-              {loading ? "…" : isSignup ? "Create account" : "Sign in"}
+              {loading ? "…" : isSignup ? "Create account" : "Log in"}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-neutral-500">
-            {isSignup ? (<>Already have an account? <Link to="/login" className="font-medium text-neutral-900 hover:underline">Sign in</Link></>) : (<>No account? <Link to="/signup" className="font-medium text-neutral-900 hover:underline">Sign up</Link></>)}
+            {isSignup ? (<>Already have an account? <Link to="/login" className="font-medium text-neutral-900 hover:underline">Log in</Link></>) : (<>No account? <Link to="/signup" className="font-medium text-neutral-900 hover:underline">Sign up</Link></>)}
           </p>
         </div>
       </div>

@@ -138,7 +138,7 @@ const Index = () => {
                 ))}
               </ul>
               <Button asChild variant="outline" className="mt-8 w-full rounded-full">
-                <Link to="/signup">Get started free</Link>
+                <Link to="/signup">Sign up free</Link>
               </Button>
             </div>
 
@@ -220,7 +220,7 @@ const Index = () => {
             Generate your first Rocket in under 60 seconds.
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link to="/signup">Get started free <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/signup">Sign up free <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
       </section>
