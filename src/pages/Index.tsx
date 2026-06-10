@@ -139,28 +139,96 @@ const Index = () => {
               A complete Brand Kit, generated for you in seconds.
             </p>
           </div>
-          <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {[
-              { label: "Brand Guidelines", icon: Target },
-              { label: "Brand Templates", icon: ListChecks },
-              { label: "Logos", icon: RocketIcon },
-              { label: "Colors", icon: Palette },
-              { label: "Fonts", icon: BookOpen },
-              { label: "Brand voice", icon: Megaphone },
-              { label: "Photos", icon: Sparkles },
-              { label: "Components", icon: Puzzle },
-              { label: "Graphics", icon: Zap },
-              { label: "Icons", icon: Wrench },
-              { label: "Charts", icon: ListChecks },
-              { label: "Launch Copy", icon: ArrowRight },
-            ].map(({ label, icon: Icon }) => (
-              <div key={label} className="group flex flex-col items-center justify-center rounded-2xl border border-neutral-200 bg-white p-6 text-center transition hover:-translate-y-1 hover:shadow-lg">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 text-brand transition group-hover:bg-brand group-hover:text-white">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <span className="mt-4 text-sm font-semibold text-neutral-900">{label}</span>
+          <div className="mt-14 grid auto-rows-[160px] grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+            {/* Brand Guidelines — large feature */}
+            <div className="group col-span-2 row-span-2 flex flex-col justify-end overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 p-8 text-white shadow-xl shadow-blue-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md transition-transform group-hover:scale-110">
+                <Target className="h-6 w-6" />
               </div>
-            ))}
+              <h3 className="text-2xl font-bold tracking-tight">Brand Guidelines</h3>
+              <p className="mt-2 text-sm leading-relaxed text-white/80">The definitive source of truth for your brand's visual identity.</p>
+            </div>
+
+            {/* Brand Templates — wide */}
+            <div className="col-span-2 flex items-center gap-4 rounded-3xl bg-gradient-to-br from-rose-500 to-pink-600 p-6 text-white shadow-lg shadow-rose-100 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
+                <ListChecks className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold">Brand Templates</h3>
+            </div>
+
+            {/* Logos */}
+            <div className="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-500 p-6 text-center text-white shadow-lg shadow-cyan-50 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <RocketIcon className="mb-2 h-8 w-8" />
+              <span className="text-sm font-bold">Logos</span>
+            </div>
+
+            {/* Colors */}
+            <div className="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-orange-400 to-amber-500 p-6 text-center text-white shadow-lg shadow-amber-50 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <Palette className="mb-2 h-8 w-8" />
+              <span className="text-sm font-bold">Colors</span>
+            </div>
+
+            {/* Brand Voice — wide */}
+            <div className="col-span-2 flex items-center justify-between rounded-3xl bg-gradient-to-br from-violet-500 to-purple-600 p-6 text-white shadow-lg shadow-purple-100 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <div>
+                <h3 className="text-lg font-bold">Brand voice</h3>
+                <p className="mt-1 text-xs text-white/70">Messaging that resonates.</p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
+                <Megaphone className="h-6 w-6" />
+              </div>
+            </div>
+
+            {/* Fonts — large */}
+            <div className="group col-span-2 row-span-2 flex flex-col rounded-3xl bg-gradient-to-br from-teal-400 to-emerald-600 p-8 text-white shadow-lg shadow-emerald-100 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <div className="mb-4 font-serif text-6xl font-black opacity-20 transition-opacity group-hover:opacity-40">Aa</div>
+              <div className="mt-auto">
+                <h3 className="text-2xl font-bold tracking-tight">Fonts</h3>
+                <p className="mt-2 text-sm text-white/80">Curated font pairings for every medium.</p>
+              </div>
+            </div>
+
+            {/* Photos */}
+            <div className="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-sky-400 to-indigo-500 p-6 text-center text-white shadow-lg shadow-sky-50 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <Sparkles className="mb-2 h-8 w-8" />
+              <span className="text-sm font-bold">Photos</span>
+            </div>
+
+            {/* Components */}
+            <div className="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-slate-700 to-slate-900 p-6 text-center text-white shadow-lg shadow-slate-200 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <Puzzle className="mb-2 h-8 w-8 text-indigo-400" />
+              <span className="text-sm font-bold">Components</span>
+            </div>
+
+            {/* Graphics — wide */}
+            <div className="col-span-2 flex items-center justify-center gap-4 rounded-3xl bg-gradient-to-br from-fuchsia-500 to-purple-700 p-6 text-white shadow-lg shadow-fuchsia-100 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <Zap className="h-8 w-8" />
+              <h3 className="text-lg font-bold">Graphics</h3>
+            </div>
+
+            {/* Icons */}
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-neutral-200 bg-neutral-100 p-6 text-center text-neutral-800 transition-all duration-300 hover:-translate-y-1 hover:bg-neutral-200">
+              <Wrench className="mb-2 h-8 w-8 text-indigo-500" />
+              <span className="text-sm font-bold">Icons</span>
+            </div>
+
+            {/* Charts */}
+            <div className="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-800 p-6 text-center text-white shadow-lg shadow-indigo-100 transition-all duration-300 hover:-translate-y-1 hover:brightness-110">
+              <ListChecks className="mb-2 h-8 w-8" />
+              <span className="text-sm font-bold">Charts</span>
+            </div>
+
+            {/* Launch Copy — extra wide footer */}
+            <div className="col-span-2 flex items-center justify-between rounded-3xl bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 p-6 text-white shadow-xl shadow-orange-100 transition-all duration-300 hover:-translate-y-1 hover:brightness-110 lg:col-span-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
+                  <ArrowRight className="h-5 w-5" />
+                </div>
+                <h3 className="text-xl font-bold">Launch Copy</h3>
+              </div>
+              <span className="hidden rounded-full bg-white/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest backdrop-blur-md sm:inline">Ready to convert</span>
+            </div>
           </div>
         </div>
       </section>
