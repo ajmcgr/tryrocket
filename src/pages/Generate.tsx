@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, CreditCard } from "lucide-react";
+import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, CreditCard, Zap, ArrowRight } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 const supabase = _sb as any;
 
 const MESSAGES = [
@@ -31,12 +32,32 @@ const Generate = () => {
   const autoRan = useRef(false);
   const { user } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
+  const [usage, setUsage] = useState<{ used: number; limit: number; extra: number } | null>(null);
+  const [buying, setBuying] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     supabase.from("rockets").select("id, product_name, product_url, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20)
       .then(({ data }: any) => setHistory(data || []));
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("user_usage").select("monthly_limit, credits_used, credits_extra").eq("user_id", user.id).maybeSingle()
+      .then(({ data }: any) => data && setUsage({ used: data.credits_used, limit: data.monthly_limit, extra: data.credits_extra || 0 }));
+  }, [user]);
+
+  const buyPack = async (product: string) => {
+    setBuying(product);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe-checkout", { body: { product } });
+      if (error) throw error;
+      if ((data as any)?.url) window.location.href = (data as any).url;
+    } catch (e: any) {
+      toast({ title: "Checkout failed", description: e.message, variant: "destructive" });
+      setBuying(null);
+    }
+  };
 
   useEffect(() => {
     if (!loading) return;
