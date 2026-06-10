@@ -123,6 +123,26 @@ const Generate = () => {
             <p className="mt-1 text-xs text-neutral-500">This takes ~30 seconds.</p>
           </div>
         )}
+        {!loading && (
+          <div className="mx-auto mt-12 max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Need inspiration? Try a sample
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {SAMPLE_PROMPTS.map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => setUrl(p.url)}
+                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-700 transition hover:border-brand/40 hover:bg-brand/5 hover:text-neutral-900"
+                >
+                  <span aria-hidden>{p.emoji}</span>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
