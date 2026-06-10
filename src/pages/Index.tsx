@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -125,6 +125,25 @@ const Index = () => {
   const nav = useNavigate();
   const [url, setUrl] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onPickFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const next: string[] = [];
+    for (const f of Array.from(files)) {
+      if (!f.type.startsWith("image/")) continue;
+      if (f.size > 8 * 1024 * 1024) continue;
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = reject;
+        r.readAsDataURL(f);
+      });
+      next.push(dataUrl);
+    }
+    setImages((prev) => [...prev, ...next].slice(0, 6));
+  };
 
   const CATEGORIES = [
     { label: "Brand Guidelines", slug: "brand-guidelines" },
@@ -152,13 +171,16 @@ const Index = () => {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = url.trim();
-    if (!trimmed) return;
+    if (!trimmed && images.length === 0) return;
     let finalUrl = trimmed;
-    if (selected.length > 0) {
+    if (trimmed && selected.length > 0) {
       const focus = selected.join(",");
       finalUrl = `${finalUrl.replace(/#focus=.*$/, "").trim()}#focus=${focus}`;
     }
-    const target = `/create?url=${encodeURIComponent(finalUrl)}`;
+    if (images.length > 0) {
+      try { sessionStorage.setItem("gen_images", JSON.stringify(images)); } catch {}
+    }
+    const target = finalUrl ? `/create?url=${encodeURIComponent(finalUrl)}` : "/create";
     if (user) nav(target);
     else nav("/signup", { state: { from: target } });
   };
@@ -189,23 +211,57 @@ const Index = () => {
             Paste your URL or describe your idea.
           </p>
           <form onSubmit={onSubmit} className="mx-auto mt-6 w-full max-w-2xl">
-            <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
-              <input
-                type="text"
-                required
-                placeholder="Paste your URL or describe your idea..."
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 outline-none"
-              />
-              <button
-                type="submit"
-                disabled={!url}
-                aria-label="Generate brand"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
-              >
-                <ArrowUp className="h-4 w-4" />
-              </button>
+            <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
+              {images.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {images.map((src, i) => (
+                    <div key={i} className="relative h-14 w-14 overflow-hidden rounded-lg border border-neutral-200">
+                      <img src={src} alt={`upload ${i + 1}`} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setImages((p) => p.filter((_, j) => j !== i))}
+                        className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black"
+                        aria-label="Remove image"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { onPickFiles(e.target.files); e.target.value = ""; }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label="Attach images"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </button>
+                <input
+                  type="text"
+                  placeholder="Paste your URL, describe your idea, or attach images..."
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!url && images.length === 0}
+                  aria-label="Generate brand"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+              </div>
             </div>
             <p className="mt-2 text-center text-xs text-neutral-400">Enter to send · Shift+Enter for newline</p>
           </form>

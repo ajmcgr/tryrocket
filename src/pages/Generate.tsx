@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight } from "lucide-react";
+import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 const supabase = _sb as any;
 
@@ -27,6 +27,8 @@ const Generate = () => {
   const [url, setUrl] = useState(params.get("url") ?? "");
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
+  const [images, setImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const nav = useNavigate();
   const autoRan = useRef(false);
@@ -45,6 +47,38 @@ const Generate = () => {
       try { localStorage.setItem("gen_sidebar_open", next ? "1" : "0"); } catch {}
       return next;
     });
+  };
+
+  // Hydrate images from sessionStorage (passed from homepage form)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("gen_images");
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) setImages(arr);
+        sessionStorage.removeItem("gen_images");
+      }
+    } catch {}
+  }, []);
+
+  const onPickFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const next: string[] = [];
+    for (const f of Array.from(files)) {
+      if (!f.type.startsWith("image/")) continue;
+      if (f.size > 8 * 1024 * 1024) {
+        toast({ title: "Image too large", description: `${f.name} exceeds 8MB.`, variant: "destructive" });
+        continue;
+      }
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = reject;
+        r.readAsDataURL(f);
+      });
+      next.push(dataUrl);
+    }
+    setImages((prev) => [...prev, ...next].slice(0, 6));
   };
 
   useEffect(() => {
@@ -79,16 +113,18 @@ const Generate = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await runGenerate(url);
+    await runGenerate(url, images);
   };
 
-  const runGenerate = async (raw: string) => {
+  const runGenerate = async (raw: string, imgs: string[] = []) => {
     let normalized = raw.trim();
-    if (!normalized) return;
-    if (!/^https?:\/\//i.test(normalized)) normalized = "https://" + normalized;
+    if (!normalized && imgs.length === 0) return;
+    if (normalized && !/^https?:\/\//i.test(normalized)) normalized = "https://" + normalized;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-rocket", { body: { product_url: normalized } });
+      const { data, error } = await supabase.functions.invoke("generate-rocket", {
+        body: { product_url: normalized || null, images: imgs },
+      });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       nav(`/rocket/${(data as any).rocket_id}`);
@@ -100,9 +136,14 @@ const Generate = () => {
 
   useEffect(() => {
     const incoming = params.get("url");
-    if (incoming && !autoRan.current) {
+    let pendingImgs: string[] = [];
+    try {
+      const raw = sessionStorage.getItem("gen_images");
+      if (raw) pendingImgs = JSON.parse(raw) || [];
+    } catch {}
+    if ((incoming || pendingImgs.length) && !autoRan.current) {
       autoRan.current = true;
-      runGenerate(incoming);
+      runGenerate(incoming || "", pendingImgs);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -233,24 +274,60 @@ const Generate = () => {
 
         <div className="sticky bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent px-6 pb-6 pt-4">
           <form onSubmit={submit} className="mx-auto w-full max-w-2xl">
-            <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
-              <input
-                type="text"
-                placeholder="Paste your product URL — e.g. https://myproduct.com"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                required
-                disabled={loading}
-                className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 outline-none"
-              />
-              <button
-                type="submit"
-                disabled={loading || !url}
-                aria-label="Generate brand"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-              </button>
+            <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
+              {images.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {images.map((src, i) => (
+                    <div key={i} className="relative h-14 w-14 overflow-hidden rounded-lg border border-neutral-200">
+                      <img src={src} alt={`upload ${i + 1}`} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setImages((p) => p.filter((_, j) => j !== i))}
+                        disabled={loading}
+                        className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black"
+                        aria-label="Remove image"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { onPickFiles(e.target.files); e.target.value = ""; }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                  aria-label="Attach images"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-40"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </button>
+                <input
+                  type="text"
+                  placeholder="Paste your product URL or attach images"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  disabled={loading}
+                  className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={loading || (!url && images.length === 0)}
+                  aria-label="Generate brand"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <p className="mt-2 text-center text-xs text-neutral-400">Enter to send · Shift+Enter for newline</p>
           </form>
