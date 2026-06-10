@@ -100,6 +100,25 @@ const Index = () => {
               Generate Brand <ArrowRight className="h-4 w-4" />
             </Button>
           </form>
+          <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-2">
+            {CATEGORIES.map((cat) => {
+              const isActive = selected.includes(cat.slug);
+              return (
+                <button
+                  key={cat.slug}
+                  type="button"
+                  onClick={() => toggleCategory(cat.slug)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition border ${
+                    isActive
+                      ? "bg-brand text-white border-brand"
+                      : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
