@@ -36,8 +36,12 @@ const MobileCard = ({ i, className = "", children }: CardProps) => (
   </article>
 );
 
-const Tag = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600">
+const Tag = ({ children, variant = "light" }: { children: React.ReactNode; variant?: "light" | "dark" }) => (
+  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+    variant === "dark"
+      ? "bg-white/15 text-white/95 ring-1 ring-white/20 backdrop-blur-sm"
+      : "bg-neutral-100 text-neutral-600"
+  }`}>
     {children}
   </span>
 );
@@ -69,15 +73,13 @@ const PositioningContent = () => (
 
 const TaglineContent = () => (
   <div className="flex h-full flex-col justify-between bg-gradient-to-br from-neutral-950 to-neutral-800 p-7 text-white">
-    <Tag>
-      <span className="text-neutral-200">Tagline</span>
-    </Tag>
+    <Tag variant="dark">Tagline</Tag>
     <div>
       <h3 className="font-serif text-[34px] leading-[0.95] tracking-tight">
         Hire Faster.<br />
         <span className="italic text-indigo-300">Hire Smarter.</span>
       </h3>
-      <p className="mt-6 text-[11px] uppercase tracking-[0.2em] text-neutral-400">Brand Messaging</p>
+      <p className="mt-6 text-[11px] uppercase tracking-[0.2em] text-neutral-300">Brand Messaging</p>
     </div>
   </div>
 );
@@ -392,15 +394,13 @@ const ComponentsContent = () => (
 const GraphicsContent = () => (
   <div className="relative flex h-full flex-col justify-between overflow-hidden p-7 text-white">
     <img src={graphicsAsset} alt="Hero brand artwork" loading="lazy" width={1024} height={1024} className="absolute inset-0 h-full w-full object-cover" />
-    <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/30" />
+    <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/40" />
     <div className="relative flex items-center justify-between">
-      <Tag>
-        <span className="text-white/90">Graphics</span>
-      </Tag>
-      <Shapes className="h-4 w-4 text-white/70" />
+      <Tag variant="dark">Graphics</Tag>
+      <Shapes className="h-4 w-4 text-white/80" />
     </div>
     <div className="relative">
-      <h3 className="font-serif text-[34px] leading-[0.95] tracking-tight">
+      <h3 className="font-serif text-[34px] leading-[0.95] tracking-tight drop-shadow-sm">
         Hero<br />artwork.
       </h3>
       <p className="mt-5 text-[11px] uppercase tracking-[0.2em] text-white/80">Editorial Illustration</p>
