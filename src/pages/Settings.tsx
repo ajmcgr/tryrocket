@@ -22,6 +22,7 @@ const Settings = () => {
   const loc = useLocation();
   const [newPassword, setNewPassword] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string>((user as any)?.user_metadata?.avatar_url || "");
+  const [username, setUsername] = useState<string>((user as any)?.user_metadata?.username || "");
   const [emailsEnabled, setEmailsEnabled] = useState<boolean>(() => localStorage.getItem("notif_emails") !== "0");
 
   useEffect(() => {
@@ -39,7 +40,13 @@ const Settings = () => {
   const saveProfile = async () => {
     setLoading("profile");
     try {
-      const payload: any = { data: { avatar_url: avatarUrl } };
+      const u = username.trim().replace(/^@/, "");
+      if (u && !/^[a-zA-Z0-9_]{2,30}$/.test(u)) {
+        toast({ title: "Invalid username", description: "2–30 letters, numbers, or underscores.", variant: "destructive" });
+        setLoading(null);
+        return;
+      }
+      const payload: any = { data: { avatar_url: avatarUrl, username: u } };
       if (newPassword) payload.password = newPassword;
       const { error } = await supabase.auth.updateUser(payload);
       if (error) throw error;
@@ -112,6 +119,20 @@ const Settings = () => {
             onChange={(e) => setAvatarUrl(e.target.value)}
             className="h-10 flex-1 rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none ring-neutral-300 focus:ring-2"
           />
+        </div>
+        <div className="mt-4">
+          <label className="text-xs font-medium text-neutral-600">Username</label>
+          <div className="mt-1 flex items-center rounded-lg border border-neutral-200 bg-white pl-3 ring-neutral-300 focus-within:ring-2">
+            <span className="text-sm text-neutral-400">@</span>
+            <input
+              type="text"
+              maxLength={30}
+              placeholder="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="h-10 flex-1 rounded-r-lg bg-transparent px-2 text-sm outline-none"
+            />
+          </div>
         </div>
         <div className="mt-4">
           <label className="text-xs font-medium text-neutral-600">New password</label>

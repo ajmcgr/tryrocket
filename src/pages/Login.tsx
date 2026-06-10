@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 const Login = ({ mode = "login" as "login" | "signup" }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const nav = useNavigate();
@@ -18,10 +19,17 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSignup) {
+      const u = username.trim().replace(/^@/, "");
+      if (!/^[a-zA-Z0-9_]{2,30}$/.test(u)) {
+        toast({ title: "Invalid username", description: "2–30 letters, numbers, or underscores.", variant: "destructive" });
+        return;
+      }
+    }
     setLoading(true);
     try {
       const fn = isSignup
-        ? supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/create` } })
+        ? supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/create`, data: { username: username.trim().replace(/^@/, "") } } })
         : supabase.auth.signInWithPassword({ email, password });
       const { error } = await fn;
       if (error) throw error;
@@ -59,6 +67,22 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
           </div>
 
           <form onSubmit={submit} className="space-y-3">
+            {isSignup && (
+              <div className="flex items-center rounded-lg border border-neutral-200 bg-white pl-3 ring-neutral-300 transition focus-within:ring-2">
+                <span className="text-sm text-neutral-400">@</span>
+                <input
+                  type="text"
+                  required
+                  minLength={2}
+                  maxLength={30}
+                  pattern="[a-zA-Z0-9_]+"
+                  placeholder="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="h-11 flex-1 rounded-r-lg bg-transparent px-2 text-sm outline-none"
+                />
+              </div>
+            )}
             <input type="email" required placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3.5 text-sm outline-none ring-neutral-300 transition focus:ring-2" />
             <input type="password" required minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3.5 text-sm outline-none ring-neutral-300 transition focus:ring-2" />
             {!isSignup && (

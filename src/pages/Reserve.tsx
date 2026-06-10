@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import HandleReserveForm from "@/components/HandleReserveForm";
 import AudioControls from "@/components/AudioControls";
 import backgroundVideo from "@/assets/background.mov.asset.json";
+import rocketLogo from "@/assets/rocket-logo-white-2.png.asset.json";
 
 const Reserve = () => {
   const shareSubject = encodeURIComponent("Reserve your founder handle on Rocket");
@@ -23,11 +24,16 @@ const Reserve = () => {
 
       <main className="relative z-10 flex min-h-screen min-h-[100dvh] flex-col items-center justify-center px-6 py-20">
         <div className="flex w-full max-w-2xl flex-col items-center text-center">
+          <img
+            src={rocketLogo.url}
+            alt="Rocket"
+            className="animate-fade-in-up mb-6 h-16 w-auto sm:h-20"
+          />
           <h1
             className="animate-fade-in-up-delay-1 text-5xl font-medium leading-[1.05] tracking-tight text-cream text-glow sm:text-6xl md:text-7xl"
             style={{ fontFamily: "Reckless, serif" }}
           >
-            Reserve Your Handle
+            Make Your Product a Brand
           </h1>
           <p className="animate-fade-in-up-delay-2 mt-6 max-w-md text-base font-light tracking-wide text-cream/80 text-glow-sm sm:text-xl">
             Reserve your identity. Build your brand.
