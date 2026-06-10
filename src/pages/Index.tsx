@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowRight, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -76,36 +76,126 @@ const Index = () => {
 
       {/* Use Cases */}
       <section id="use-cases" className="border-t border-neutral-200/60">
-        <div className="mx-auto max-w-6xl px-6 py-20">
+        <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">What can you brand with Rocket?</h2>
+            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">What can you brand with Rocket?</h2>
             <p className="mt-4 text-lg text-neutral-600">
               From indie side projects to full SaaS launches — Rocket brands them all.
             </p>
           </div>
-          <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {[
-              { emoji: "🚀", title: "SaaS products" },
-              { emoji: "🤖", title: "AI tools" },
-              { emoji: "📱", title: "Mobile apps" },
-              { emoji: "📨", title: "Newsletters" },
-              { emoji: "🛒", title: "E-commerce stores" },
-              { emoji: "🎨", title: "Creator brands" },
-              { emoji: "🏢", title: "Agencies & studios" },
-              { emoji: "🧩", title: "Chrome extensions" },
-              { emoji: "🎙️", title: "Podcasts" },
-              { emoji: "📚", title: "Courses & ebooks" },
-              { emoji: "🛠️", title: "Dev tools" },
-              { emoji: "💡", title: "Side projects" },
-            ].map(({ emoji, title }) => (
-              <div
-                key={title}
-                className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-4 transition hover:border-brand/30 hover:shadow-sm"
-              >
-                <span className="text-2xl leading-none" aria-hidden>{emoji}</span>
-                <span className="text-sm font-medium text-neutral-800">{title}</span>
+          <div className="mt-14 grid auto-rows-[160px] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
+            {/* Feature: SaaS products */}
+            <div className="group relative col-span-2 row-span-2 cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 to-indigo-700 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-200">
+              <div className="relative flex h-full flex-col justify-between p-8 text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md">
+                  <Zap className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold tracking-tight">SaaS products</h3>
+                  <p className="mt-2 max-w-xs text-indigo-100 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    Launch your next software empire with a complete brand system.
+                  </p>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* AI tools */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-tr from-violet-600 to-fuchsia-400 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
+                <Sparkles className="mb-3 h-8 w-8 opacity-90" />
+                <span className="font-bold tracking-tight">AI tools</span>
+              </div>
+            </div>
+
+            {/* Mobile apps */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-sky-400 to-blue-600 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
+                <Smartphone className="mb-3 h-8 w-8 opacity-90" />
+                <span className="font-bold tracking-tight">Mobile apps</span>
+              </div>
+            </div>
+
+            {/* Newsletters */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-tr from-orange-400 to-amber-600 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
+                <Mail className="mb-3 h-8 w-8 opacity-90" />
+                <span className="font-bold tracking-tight">Newsletters</span>
+              </div>
+            </div>
+
+            {/* Creator brands */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-bl from-emerald-400 to-teal-600 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
+                <Palette className="mb-3 h-8 w-8 opacity-90" />
+                <span className="font-bold tracking-tight">Creator brands</span>
+              </div>
+            </div>
+
+            {/* E-commerce - wide */}
+            <div className="group relative col-span-2 cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full items-center justify-between p-7 text-white">
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight sm:text-2xl">E-commerce stores</h3>
+                  <p className="text-sm text-rose-100">Conversion-focused retail branding.</p>
+                </div>
+                <div className="rounded-full bg-white/20 p-4 transition-transform group-hover:scale-110">
+                  <ShoppingBag className="h-7 w-7" />
+                </div>
+              </div>
+            </div>
+
+            {/* Agencies */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-900 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
+                <Building2 className="mb-3 h-8 w-8 opacity-90" />
+                <span className="font-bold tracking-tight">Agencies</span>
+              </div>
+            </div>
+
+            {/* Chrome extensions */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-yellow-300 to-yellow-500 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-slate-900">
+                <Puzzle className="mb-3 h-8 w-8 opacity-90" />
+                <span className="font-bold tracking-tight">Extensions</span>
+              </div>
+            </div>
+
+            {/* Podcasts */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-red-500 to-red-700 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
+                <Mic className="mb-3 h-8 w-8 opacity-90" />
+                <span className="font-bold tracking-tight">Podcasts</span>
+              </div>
+            </div>
+
+            {/* Courses */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-amber-300 to-orange-400 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
+                <BookOpen className="mb-3 h-8 w-8 opacity-90" />
+                <span className="font-bold tracking-tight">Courses</span>
+              </div>
+            </div>
+
+            {/* Dev tools */}
+            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-100 transition-all duration-500 hover:-translate-y-1 hover:bg-slate-200 hover:shadow-xl">
+              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-slate-700">
+                <Wrench className="mb-3 h-8 w-8 opacity-70" />
+                <span className="font-bold tracking-tight">Dev tools</span>
+              </div>
+            </div>
+
+            {/* Side projects - wide */}
+            <div className="group relative col-span-2 cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-800 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative flex h-full items-center justify-between p-7 text-white">
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight sm:text-2xl">Side projects</h3>
+                  <p className="text-sm text-blue-100">Turn weekend ideas into polished ventures.</p>
+                </div>
+                <div className="rounded-full bg-white/20 p-4 transition-transform group-hover:rotate-12">
+                  <Lightbulb className="h-7 w-7" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
