@@ -54,9 +54,6 @@ const Index = () => {
           <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Make Your Product a Brand
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-neutral-600 sm:text-xl">
-            Rocket helps you brand your app with AI.
-          </p>
           <p className="mx-auto mt-10 max-w-2xl text-base text-neutral-600">
             Paste your product URL. We'll handle the rest.
           </p>
