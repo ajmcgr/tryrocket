@@ -63,12 +63,12 @@ const Pricing = () => {
               </Button>
             </div>
 
-            {/* Growth */}
+            {/* Pro */}
             <div className="relative rounded-2xl border border-neutral-200 bg-neutral-100 p-8 text-neutral-900">
               <div className="absolute -top-3 right-6 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white">
                 7-day free trial
               </div>
-              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Growth</div>
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
               <div className="mt-3 flex items-baseline gap-1">
                 <span className="text-5xl font-semibold tracking-tight">$20</span>
                 <span className="text-neutral-500">/month</span>
@@ -102,6 +102,29 @@ const Pricing = () => {
               <Button asChild className="mt-8 w-full">
                 <Link to="/signup">Start free trial</Link>
               </Button>
+            </div>
+          </div>
+
+          {/* Credit packs */}
+          <div className="mt-14">
+            <div className="text-center">
+              <h2 className="text-3xl font-semibold tracking-tight">Need more credits?</h2>
+              <p className="mt-2 text-neutral-600">One-time credit packs. Never expire. Stack with your plan.</p>
+            </div>
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[
+                { credits: "500", price: "$5", note: "Starter pack" },
+                { credits: "1,500", price: "$10", note: "Most popular", highlight: true },
+                { credits: "5,000", price: "$25", note: "Best value" },
+              ].map((p) => (
+                <div key={p.credits} className={`rounded-2xl border p-6 ${p.highlight ? "border-brand bg-brand/5" : "border-neutral-200 bg-white"}`}>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">{p.note}</div>
+                  <div className="mt-2 flex items-baseline gap-1">
+                    <span className="text-4xl font-semibold tracking-tight">{p.price}</span>
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-neutral-900">{p.credits} credits</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
