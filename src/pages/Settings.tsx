@@ -121,6 +121,20 @@ const Settings = () => {
           />
         </div>
         <div className="mt-4">
+          <label className="text-xs font-medium text-neutral-600">Username</label>
+          <div className="mt-1 flex items-center rounded-lg border border-neutral-200 bg-white pl-3 ring-neutral-300 focus-within:ring-2">
+            <span className="text-sm text-neutral-400">@</span>
+            <input
+              type="text"
+              maxLength={30}
+              placeholder="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="h-10 flex-1 rounded-r-lg bg-transparent px-2 text-sm outline-none"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
           <label className="text-xs font-medium text-neutral-600">New password</label>
           <input
             type="password"
