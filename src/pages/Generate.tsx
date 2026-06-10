@@ -75,7 +75,7 @@ const Generate = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] h-[calc(100vh-4rem)]">
+    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] h-[calc(100vh-3.5rem)]">
       <aside className="hidden md:flex md:flex-col border-r border-neutral-200 bg-white">
         <div className="p-3">
           <Link to="/create" className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
