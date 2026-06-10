@@ -20,7 +20,7 @@ const AppShell = () => {
   const nav = useNavigate();
   const location = useLocation();
   const isFullBleed = location.pathname.startsWith("/create");
-  const isFullBleedRoute = isFullBleed || location.pathname.startsWith("/editor");
+  const isFullBleedRoute = isFullBleed || location.pathname.startsWith("/editor") || location.pathname.startsWith("/projects");
   const [credits, setCredits] = useState<{ used: number; limit: number; extra: number; plan: string } | null>(null);
 
   useEffect(() => {
