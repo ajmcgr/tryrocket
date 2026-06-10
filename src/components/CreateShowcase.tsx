@@ -513,7 +513,7 @@ const CreateShowcase = () => {
 
       <div className="relative mx-auto max-w-7xl px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-4xl leading-[1.05] tracking-tight text-neutral-900 sm:text-6xl">
+          <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-neutral-900 sm:text-6xl">
             What can you create<br /> with <span className="italic">Rocket?</span>
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-neutral-600">
