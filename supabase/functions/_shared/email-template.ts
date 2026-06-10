@@ -91,19 +91,19 @@ export function buildEmail(template: Template, data: any): { subject: string; ht
           title: `Welcome to Rocket${data?.name ? `, ${data.name}` : ""}.`,
           bodyHtml: `<p>You're in. Rocket helps you brand your app with AI — drop in a product URL and we'll generate your full launch kit in under 60 seconds.</p>
                      <p>You start with <strong>500 free credits</strong>. No card required.</p>`,
-          ctaLabel: "Generate your first Rocket",
-          ctaUrl: "https://tryrocket.ai/generate",
+          ctaLabel: "Generate your first Brand",
+          ctaUrl: "https://tryrocket.ai/create",
         }),
       };
     case "rocket_generated":
       return {
-        subject: `Your Rocket for ${data?.product_name ?? "your product"} is ready`,
+        subject: `Your Brand for ${data?.product_name ?? "your product"} is ready`,
         html: renderEmail({
           preheader: "Your launch kit is ready to review.",
-          title: `Your Rocket for ${data?.product_name ?? "your product"} is ready.`,
+          title: `Your Brand for ${data?.product_name ?? "your product"} is ready.`,
           bodyHtml: `<p>We've generated your complete launch kit — positioning, taglines, social copy, founder bio, Product Hunt assets, directory submissions, and a full launch checklist.</p>
                      <p>Review it, tweak anything you want, and ship.</p>`,
-          ctaLabel: "Open your Rocket",
+          ctaLabel: "Open your Brand",
           ctaUrl: `https://tryrocket.ai/rocket/${data?.rocket_id ?? ""}`,
         }),
       };
@@ -115,8 +115,8 @@ export function buildEmail(template: Template, data: any): { subject: string; ht
           title: "Your 7-day Growth trial is live.",
           bodyHtml: `<p>You now have <strong>3,000 credits/month</strong>, priority generation, and exports unlocked.</p>
                      <p>If you cancel before day 7, you won't be charged.</p>`,
-          ctaLabel: "Go to dashboard",
-          ctaUrl: "https://tryrocket.ai/dashboard",
+          ctaLabel: "Go to projects",
+          ctaUrl: "https://tryrocket.ai/projects",
         }),
       };
     case "payment_succeeded":
@@ -138,8 +138,8 @@ export function buildEmail(template: Template, data: any): { subject: string; ht
           preheader: "Your credits are live.",
           title: `${data?.credits ?? 0} credits added to your account.`,
           bodyHtml: `<p>Your credit pack is on your account and ready to use.</p>`,
-          ctaLabel: "Generate a Rocket",
-          ctaUrl: "https://tryrocket.ai/generate",
+          ctaLabel: "Generate a Brand",
+          ctaUrl: "https://tryrocket.ai/create",
         }),
       };
   }
