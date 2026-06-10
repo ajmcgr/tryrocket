@@ -1,23 +1,44 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import alexAvatar from "@/assets/alex-macgregor.png.asset.json";
 
 const About = () => (
   <div className="min-h-screen bg-white text-neutral-900">
     <SiteHeader />
     <main className="mx-auto max-w-3xl px-6 py-20">
       <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">About Rocket</h1>
-      <p className="mt-6 text-lg leading-relaxed text-neutral-700">
-        Rocket exists because building is the easy part now. Anyone with an idea and an afternoon can vibe-code an app. The hard part — the part that decides whether 10 people try it or 10,000 — is branding and launching.
+      <p className="mt-8 text-lg leading-relaxed text-neutral-700">
+        Rocket is a platform where founders turn raw ideas into launch-ready brands.
+      </p>
+      <p className="mt-6 font-semibold text-neutral-900">Hello there!</p>
+      <p className="mt-4 text-lg leading-relaxed text-neutral-700">
+        We believe the future of software is being built by founders who use AI to ship at a speed that was impossible just a few years ago. Our mission is to help these builders position, brand, and market their products so they actually get discovered.
       </p>
       <p className="mt-4 text-lg leading-relaxed text-neutral-700">
-        We built Rocket so a solo founder can drop in a URL and walk away with a complete launch kit in under a minute: positioning, taglines, founder bio, social copy, Product Hunt assets, directory submissions, and a full launch checklist.
+        Founders drop in a URL and Rocket generates a complete launch kit — positioning, taglines, founder bio, social copy, Product Hunt assets, directory submissions, and a full launch checklist — in under a minute.
       </p>
       <p className="mt-4 text-lg leading-relaxed text-neutral-700">
-        Rocket is built by the team behind <a href="https://trylaunch.ai" target="_blank" rel="noreferrer" className="text-brand hover:underline">Launch</a>. We've helped thousands of indie founders ship — and we think the next million products deserve to be brands, not just apps.
+        Whether you're shipping your first AI tool or your tenth product, Rocket is where you turn shipping into a real launch. Join thousands of founders who are redefining what it means to build software.
       </p>
-      <div className="mt-12 rounded-2xl border border-neutral-200 bg-neutral-50 p-8">
-        <h2 className="text-xl font-semibold">Our promise</h2>
-        <p className="mt-3 text-neutral-700">No fluff. No generic AI slop. Every Rocket is specific, founder-voiced, and ready-to-paste — or your credit back.</p>
+
+      <div className="mt-16">
+        <img
+          src={alexAvatar.url}
+          alt="Alex MacGregor"
+          className="h-32 w-32 rounded-2xl object-cover"
+        />
+        <h3 className="mt-5 text-xl font-bold text-neutral-900">Alex MacGregor</h3>
+        <p className="font-bold text-neutral-900">Founder, Rocket</p>
+        <p className="mt-3">
+          <a
+            href="https://x.com/alexmacgregor__"
+            target="_blank"
+            rel="noreferrer"
+            className="font-bold text-brand hover:underline"
+          >
+            Follow me on X
+          </a>
+        </p>
       </div>
     </main>
     <SiteFooter />
