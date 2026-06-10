@@ -46,7 +46,7 @@ const Index = () => {
             <Button asChild size="lg">
               <Link to="/signup">Generate Brand <ArrowRight className="h-4 w-4" /></Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="rounded-full">
+            <Button asChild variant="outline" size="lg">
               <a href="https://trylaunch.ai" target="_blank" rel="noreferrer">View example</a>
             </Button>
           </div>
@@ -137,7 +137,7 @@ const Index = () => {
                   </li>
                 ))}
               </ul>
-              <Button asChild variant="outline" className="mt-8 w-full rounded-full">
+              <Button asChild variant="outline" className="mt-8 w-full">
                 <Link to="/signup">Sign up free</Link>
               </Button>
             </div>
