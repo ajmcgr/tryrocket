@@ -39,7 +39,7 @@ const SiteFooter = () => (
         </div>
         <div>
           <div className={HEADER}>Resources</div>
-          <ul className="mt-4 space-y-2.5 text-sm font-medium text-neutral-700">
+          <ul className="mt-4 space-y-2.5 text-sm font-normal text-neutral-600">
             {articles.slice(0, 10).map((a) => (
               <li key={a.slug}><Link to={`/blog/${a.slug}`} className="hover:text-neutral-900">{a.title}</Link></li>
             ))}
