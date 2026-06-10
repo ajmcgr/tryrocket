@@ -15,6 +15,17 @@ const MESSAGES = [
   "Almost ready…",
 ];
 
+const SAMPLE_PROMPTS = [
+  { emoji: "🤖", label: "AI writing assistant", url: "https://typingmind.com" },
+  { emoji: "📨", label: "Indie newsletter platform", url: "https://buttondown.com" },
+  { emoji: "🎨", label: "Design tool for founders", url: "https://tldraw.com" },
+  { emoji: "📊", label: "Analytics for SaaS", url: "https://plausible.io" },
+  { emoji: "🛠️", label: "Developer productivity app", url: "https://raycast.com" },
+  { emoji: "🛒", label: "E-commerce side project", url: "https://gumroad.com" },
+  { emoji: "🎙️", label: "Podcast / creator tool", url: "https://riverside.fm" },
+  { emoji: "📱", label: "Mobile habit tracker", url: "https://streaksapp.com" },
+];
+
 const Generate = () => {
   const [params] = useSearchParams();
   const [url, setUrl] = useState(params.get("url") ?? "");
