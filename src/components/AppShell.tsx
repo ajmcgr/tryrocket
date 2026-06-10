@@ -53,17 +53,30 @@ const AppShell = () => {
                   <AvatarFallback className="bg-neutral-100 text-xs font-medium text-neutral-700">{initial}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-white">
-                <DropdownMenuLabel className="truncate text-xs font-normal text-neutral-500">{user?.email}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link to="/settings#profile"><UserIcon className="mr-2 h-4 w-4" /> Profile</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to="/settings#notifications"><Bell className="mr-2 h-4 w-4" /> Notifications</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to="/settings#account"><ShieldAlert className="mr-2 h-4 w-4" /> Account</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to="/settings#billing"><CreditCard className="mr-2 h-4 w-4" /> Billing</Link></DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={async () => { await signOut(); nav("/"); }}>
-                  <LogOut className="mr-2 h-4 w-4" /> Sign out
-                </DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-64 bg-white rounded-xl border border-neutral-200 shadow-lg p-0">
+                <div className="px-4 pt-3 pb-3 border-b border-neutral-100">
+                  <p className="text-xs text-neutral-500">Signed in as</p>
+                  <p className="mt-0.5 truncate text-sm font-medium text-neutral-900">{user?.email}</p>
+                </div>
+                <div className="py-2">
+                  <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
+                    <Link to="/settings#billing">Account &amp; billing</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
+                    <Link to="/settings#profile">Team</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
+                    <Link to="/pricing">Plans</Link>
+                  </DropdownMenuItem>
+                </div>
+                <div className="border-t border-neutral-100 py-2">
+                  <DropdownMenuItem
+                    onClick={async () => { await signOut(); nav("/"); }}
+                    className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer"
+                  >
+                    Sign out
+                  </DropdownMenuItem>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
