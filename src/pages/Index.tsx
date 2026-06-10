@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowRight, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb } from "lucide-react";
+import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -87,18 +87,26 @@ const Index = () => {
           <p className="mx-auto mt-10 max-w-2xl text-base text-neutral-600">
             Paste your URL or describe your idea.
           </p>
-          <form onSubmit={onSubmit} className="mx-auto mt-6 flex w-full max-w-2xl flex-col items-stretch gap-3 sm:flex-row">
-            <input
-              type="text"
-              required
-              placeholder="Paste your URL or describe your idea..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="h-14 flex-1 rounded-2xl border border-neutral-200 bg-white px-5 text-base outline-none ring-neutral-300 transition focus:ring-2"
-            />
-            <Button type="submit" size="lg" className="h-14 px-7 text-base">
-              Generate Brand <ArrowRight className="h-4 w-4" />
-            </Button>
+          <form onSubmit={onSubmit} className="mx-auto mt-6 w-full max-w-2xl">
+            <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
+              <input
+                type="text"
+                required
+                placeholder="Paste your URL or describe your idea..."
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!url}
+                aria-label="Generate brand"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mt-2 text-center text-xs text-neutral-400">Enter to send · Shift+Enter for newline</p>
           </form>
           <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-2">
             {CATEGORIES.map((cat) => {
