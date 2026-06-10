@@ -51,7 +51,26 @@ function requireGeminiKey() {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
   return GEMINI_API_KEY;
 }
-async function geminiJSON<T = any>(opts: { system: string; user: string; images?: Array<{ mimeType: string; data: string }>; temperature?: number }): Promise<T> {
+function tryParseJsonLoose(raw: string): any {
+  if (!raw) throw new Error("empty AI response");
+  const stripped = raw.replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
+  try { return JSON.parse(stripped); } catch {}
+  // Find outermost {...}
+  const first = stripped.indexOf("{");
+  const last = stripped.lastIndexOf("}");
+  if (first !== -1 && last !== -1 && last > first) {
+    const slice = stripped.slice(first, last + 1);
+    try { return JSON.parse(slice); } catch {}
+    // Repair: strip trailing commas, control chars
+    const repaired = slice
+      .replace(/,(\s*[}\]])/g, "$1")
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+    return JSON.parse(repaired);
+  }
+  throw new Error("no JSON object found in AI response");
+}
+
+async function geminiJSON<T = any>(opts: { system: string; user: string; images?: Array<{ mimeType: string; data: string }>; temperature?: number }): Promise<{ parsed: T; rawPreview: string }> {
   const key = requireGeminiKey();
   const parts: any[] = [{ text: opts.user }];
   for (const img of opts.images || []) {
@@ -71,11 +90,14 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; images?
   );
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
   const data = await res.json();
+  const finish = data?.candidates?.[0]?.finishReason;
   const raw = (data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
-  try { return JSON.parse(raw); } catch {
-    const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-    return JSON.parse(cleaned);
+  const rawPreview = raw.slice(0, 500);
+  if (finish && finish !== "STOP" && finish !== "MAX_TOKENS") {
+    // continue anyway
   }
+  const parsed = tryParseJsonLoose(raw);
+  return { parsed, rawPreview };
 }
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -133,26 +155,69 @@ async function fetchSite(url: string): Promise<string> {
   }
 }
 
+function isValidUrl(s: string): boolean {
+  try {
+    const u = new URL(s);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch { return false; }
+}
+
+function jsonResponse(body: unknown, status: number, corsHeaders: Record<string, string>) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = cors(req);
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
+  let step = "init";
   try {
-    requireGeminiKey();
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } });
-    const { data: userData } = await userClient.auth.getUser();
-    const user = userData?.user;
-    if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
-    const { product_url, images: imagesRaw } = await req.json();
-    const hasUrl = typeof product_url === "string" && product_url.length > 0;
-    const imagesIn: string[] = Array.isArray(imagesRaw) ? imagesRaw.filter((s: any) => typeof s === "string") : [];
-    if (!hasUrl && imagesIn.length === 0) {
-      return new Response(JSON.stringify({ error: "Provide a product_url or at least one image" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // 1. Env validation
+    step = "env_check";
+    const requiredEnv: Array<[string, string | undefined]> = [
+      ["GEMINI_API_KEY", GEMINI_API_KEY],
+      ["SUPABASE_URL", SUPABASE_URL],
+      ["SUPABASE_ANON_KEY", SUPABASE_ANON_KEY],
+      ["SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY],
+    ];
+    for (const [name, val] of requiredEnv) {
+      if (!val) {
+        console.error("missing env", name);
+        return jsonResponse({ error: "missing_environment_variable", variable: name }, 500, corsHeaders);
+      }
     }
-    // Parse data URLs into inlineData parts (cap 6 images, ~6MB each)
+
+    // 2. Auth
+    step = "auth";
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return jsonResponse({ error: "unauthorized", details: "missing Authorization header" }, 401, corsHeaders);
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } });
+    const { data: userData, error: authErr } = await userClient.auth.getUser();
+    if (authErr) console.error("auth error", authErr);
+    const user = userData?.user;
+    if (!user) return jsonResponse({ error: "unauthorized", details: authErr?.message ?? "no user" }, 401, corsHeaders);
+
+    // 3. Body parsing
+    step = "body_parse";
+    let body: any = {};
+    try { body = await req.json(); } catch (e) {
+      return jsonResponse({ error: "invalid_body", details: (e as Error).message }, 400, corsHeaders);
+    }
+    console.log("generate-rocket body", { hasInput: !!body?.input, hasUrl: !!body?.product_url, imageCount: Array.isArray(body?.images) ? body.images.length : 0 });
+
+    const rawInput: string = typeof body?.input === "string" && body.input.trim().length > 0
+      ? body.input.trim()
+      : (typeof body?.product_url === "string" ? body.product_url.trim() : "");
+    const imagesRaw = body?.images;
+    const imagesIn: string[] = Array.isArray(imagesRaw) ? imagesRaw.filter((s: any) => typeof s === "string") : [];
+    if (!rawInput && imagesIn.length === 0) {
+      return jsonResponse({ error: "invalid_input", details: "Provide a product URL, a free-text idea, or at least one image" }, 400, corsHeaders);
+    }
+
+    const isUrl = !!rawInput && isValidUrl(rawInput);
+    const productUrl = isUrl ? rawInput : "";
+    const freeText = isUrl ? "" : rawInput;
+
+    // Parse images
     const inlineImages: Array<{ mimeType: string; data: string }> = [];
     for (const src of imagesIn.slice(0, 6)) {
       const m = src.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
@@ -163,49 +228,124 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: usage } = await admin.from("user_usage").select("*").eq("user_id", user.id).maybeSingle();
-    if (!usage) throw new Error("usage row missing");
-    const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
-    if (remaining < 1) {
-      return new Response(JSON.stringify({ error: "Out of credits", code: "no_credits" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // 4. User usage row — auto-create if missing
+    step = "user_usage";
+    let { data: usage, error: usageErr } = await admin.from("user_usage").select("*").eq("user_id", user.id).maybeSingle();
+    if (usageErr) {
+      console.error("usage select error", usageErr);
+      return jsonResponse({ error: "database_select_failed", step, details: usageErr.message }, 500, corsHeaders);
+    }
+    if (!usage) {
+      const now = new Date();
+      const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const { data: created, error: createErr } = await admin.from("user_usage").insert({
+        user_id: user.id,
+        plan: "free",
+        monthly_limit: 500,
+        credits_used: 0,
+        credits_extra: 0,
+        current_period_start: now.toISOString(),
+        current_period_end: periodEnd.toISOString(),
+      }).select().single();
+      if (createErr) {
+        console.error("usage insert error", createErr);
+        return jsonResponse({ error: "database_insert_failed", step: "user_usage_create", details: createErr.message }, 500, corsHeaders);
+      }
+      usage = created;
     }
 
-    const siteText = hasUrl ? await fetchSite(product_url) : "";
+    // 5. Credits
+    step = "credits";
+    const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
+    if (remaining < 1) {
+      return jsonResponse({ error: "insufficient_credits", code: "no_credits" }, 402, corsHeaders);
+    }
 
-    const system = `You are Rocket, an AI launch co-pilot for vibe coders. Given a product URL, scraped text, and/or attached reference images (logos, screenshots, mockups), you generate a complete launch kit. Use the images to inform brand voice, visual descriptors, and product understanding when present. Always respond as a single JSON object with the requested keys. Keep each value tight, concrete, and ready-to-paste. No markdown headings; plain text or short bullet lists where appropriate (use "- " for bullets).`;
+    // 6. Optional scrape
+    step = "scrape";
+    const siteText = isUrl ? await fetchSite(productUrl) : "";
+
+    // 7. AI prompt
+    step = "ai_prompt";
+    const system = `You are Rocket, an AI launch co-pilot for vibe coders. Given a product URL, scraped text, a free-text product idea, and/or attached reference images (logos, screenshots, mockups), you generate a complete launch kit. Use the images and any free-text idea to inform brand voice, visual descriptors, and product understanding. You MUST respond as a single valid JSON object only — no markdown fences, no commentary, no trailing text. Every value must be a non-empty string. Keep each value tight, concrete, and ready-to-paste. Use "- " for bullet lines.`;
     const keys = ASSET_PLAN.map((a) => a.asset_type).join(", ");
-    const user_prompt = `Product URL: ${hasUrl ? product_url : "(none provided)"}\n\nScraped page content:\n"""${siteText || (hasUrl ? "(no content fetched — infer from URL)" : "(no URL — infer everything from the attached images)")}"""\n\n${inlineImages.length ? `The user attached ${inlineImages.length} reference image(s). Examine them carefully — they may include the product UI, logo, mockups, or brand inspiration.\n\n` : ""}Return a JSON object with EXACTLY these keys, each a string: product_name, ${keys}. Tones: confident, founder-led, specific. For social posts, write the actual post copy. For checklists and use cases, use "- " bullets. For Launch Readiness Score, give a number 0-100 with 1-2 sentence rationale.`;
+    const contextBlock = isUrl
+      ? `Product URL: ${productUrl}\n\nScraped page content:\n"""${siteText || "(no content fetched — infer from URL)"}"""`
+      : freeText
+        ? `Product idea (free text from user):\n"""${freeText}"""`
+        : `(no URL or text — infer everything from the attached images)`;
+    const user_prompt = `${contextBlock}\n\n${inlineImages.length ? `The user attached ${inlineImages.length} reference image(s). Examine them carefully — they may include the product UI, logo, mockups, or brand inspiration.\n\n` : ""}Return a single JSON object with EXACTLY these keys, each a non-empty string: product_name, ${keys}. Tones: confident, founder-led, specific. For social posts, write the actual post copy. For checklists and use cases, use "- " bullets. For Launch Readiness Score, give a number 0-100 with 1-2 sentence rationale. RESPOND WITH JSON ONLY.`;
 
-    const parsed: any = await geminiJSON({ system, user: user_prompt, images: inlineImages, temperature: 0.7 });
-    const product_name = parsed.product_name || (hasUrl ? new URL(product_url).hostname.replace("www.", "") : "Untitled Brand");
+    // 8. AI request + parse
+    step = "ai_request";
+    let parsed: any;
+    let rawPreview = "";
+    try {
+      const result = await geminiJSON({ system, user: user_prompt, images: inlineImages, temperature: 0.7 });
+      parsed = result.parsed;
+      rawPreview = result.rawPreview;
+    } catch (e) {
+      console.error("ai_request_failed", e);
+      return jsonResponse({ error: "ai_request_failed", step, details: (e as Error).message, raw_preview: rawPreview }, 500, corsHeaders);
+    }
+    if (!parsed || typeof parsed !== "object") {
+      console.error("ai_response_parsing_failed", rawPreview);
+      return jsonResponse({ error: "ai_response_parsing_failed", step: "ai_parse", details: "AI did not return a JSON object", raw_preview: rawPreview }, 500, corsHeaders);
+    }
 
+    // Derive product name fallback
+    let product_name: string = (typeof parsed.product_name === "string" && parsed.product_name.trim()) || "";
+    if (!product_name) {
+      if (isUrl) {
+        try { product_name = new URL(productUrl).hostname.replace(/^www\./, ""); } catch { product_name = "Untitled Brand"; }
+      } else if (freeText) {
+        product_name = freeText.slice(0, 60);
+      } else {
+        product_name = "Untitled Brand";
+      }
+    }
+
+    // 9. Rocket insert
+    step = "rocket_insert";
     const { data: rocket, error: rErr } = await admin
       .from("rockets")
-      .insert({ user_id: user.id, product_url: hasUrl ? product_url : "", product_name, status: "ready" })
+      .insert({ user_id: user.id, product_url: productUrl || freeText || "", product_name, status: "ready" })
       .select()
       .single();
-    if (rErr) throw rErr;
+    if (rErr) {
+      console.error("rocket insert error", rErr);
+      return jsonResponse({ error: "database_insert_failed", step, details: rErr.message }, 500, corsHeaders);
+    }
 
+    // 10. Assets insert
+    step = "assets_insert";
     const assets = ASSET_PLAN.map((a) => ({
       rocket_id: rocket.id,
       asset_type: a.asset_type,
       title: a.title,
-      content: String(parsed[a.asset_type] ?? "").trim(),
+      content: String(parsed[a.asset_type] ?? "").trim() || "(not generated — please regenerate)",
     }));
     const { error: aErr } = await admin.from("rocket_assets").insert(assets);
-    if (aErr) throw aErr;
+    if (aErr) {
+      console.error("assets insert error", aErr);
+      return jsonResponse({ error: "database_insert_failed", step, details: aErr.message, rocket_id: rocket.id }, 500, corsHeaders);
+    }
 
-    await admin.from("user_usage").update({ credits_used: usage.credits_used + 1 }).eq("user_id", user.id);
+    // 11. Decrement credits
+    step = "credits_decrement";
+    const { error: decErr } = await admin.from("user_usage").update({ credits_used: usage.credits_used + 1 }).eq("user_id", user.id);
+    if (decErr) console.error("credits decrement failed (non-fatal)", decErr);
 
+    // 12. Side-effect email
     if (RESEND_API_KEY && user.email) {
       sendBranded(RESEND_API_KEY, FROM_EMAIL, user.email, "rocket_generated", {
         product_name, rocket_id: rocket.id,
       }).catch((e) => console.error("email send failed", e));
     }
 
-    return new Response(JSON.stringify({ rocket_id: rocket.id }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return jsonResponse({ rocket_id: rocket.id }, 200, corsHeaders);
   } catch (e) {
-    console.error(e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    console.error("server_error at step", step, e);
+    return jsonResponse({ error: "server_error", step, details: (e as Error).message }, 500, corsHeaders);
   }
 });
