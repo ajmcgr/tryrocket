@@ -24,7 +24,7 @@ const SiteHeader = () => {
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center px-6">
         <Logo />
-        <nav className="ml-10 hidden items-center gap-7 text-sm font-medium text-neutral-600 md:flex">
+        <nav className="ml-10 hidden items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
           <a href="/#pricing" className="hover:text-neutral-900">Pricing</a>
           <Link to="/blog" className="hover:text-neutral-900">Resources</Link>
         </nav>
@@ -44,7 +44,7 @@ const SiteHeader = () => {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Link to="/login" className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 sm:inline">Log in</Link>
+          <Link to="/login" className="hidden text-sm font-semibold text-neutral-600 hover:text-neutral-900 sm:inline">Log in</Link>
           <Button asChild size="lg" className="rounded-lg px-6 py-3 text-sm">
             <Link to="/signup">Sign up <ArrowRight className="h-3.5 w-3.5" /></Link>
           </Button>
