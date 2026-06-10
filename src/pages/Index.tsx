@@ -78,7 +78,7 @@ const Index = () => {
       <section id="use-cases" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">What can you build with Rocket?</h2>
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">What can you brand with Rocket?</h2>
             <p className="mt-4 text-lg text-neutral-600">
               From indie side projects to full SaaS launches — Rocket brands them all.
             </p>
