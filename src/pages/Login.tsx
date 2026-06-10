@@ -61,6 +61,11 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
           <form onSubmit={submit} className="space-y-3">
             <input type="email" required placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3.5 text-sm outline-none ring-neutral-300 transition focus:ring-2" />
             <input type="password" required minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3.5 text-sm outline-none ring-neutral-300 transition focus:ring-2" />
+            {!isSignup && (
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-xs font-medium text-neutral-500 hover:text-neutral-900 hover:underline">Forgot password?</Link>
+              </div>
+            )}
             <Button type="submit" disabled={loading} size="lg" className="w-full">
               {loading ? "…" : isSignup ? "Create account" : "Log in"}
             </Button>
