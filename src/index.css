@@ -4,7 +4,8 @@
 
 @font-face {
   font-family: 'Reckless';
-  src: url('/fonts/Reckless-Regular.ttf') format('truetype');
+  src: url('/fonts/Reckless-Regular.otf') format('opentype'),
+       url('/fonts/Reckless-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -20,7 +21,8 @@
 
 @font-face {
   font-family: 'Reckless';
-  src: url('/fonts/Reckless-Bold.ttf') format('truetype');
+  src: url('/fonts/Reckless-Bold.otf') format('opentype'),
+       url('/fonts/Reckless-Bold.ttf') format('truetype');
   font-weight: 600 900;
   font-style: normal;
   font-display: swap;
