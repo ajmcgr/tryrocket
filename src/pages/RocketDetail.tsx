@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 const supabase = _sb as any;
 import { useToast } from "@/hooks/use-toast";
-import { Copy, RefreshCw, Save, ExternalLink, Loader2, Download, Rocket as RocketIcon, FileText, FileArchive, Cloud, ChevronDown } from "lucide-react";
+import { Copy, RefreshCw, Save, ExternalLink, Loader2, Download, Rocket as RocketIcon, FileText, FileArchive, Cloud, ChevronDown, Wand2, Image as ImageIcon, Megaphone, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import JSZip from "jszip";
 import {
@@ -15,15 +15,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const GROUPS: { key: string; title: string; prefixes: string[] }[] = [
-  { key: "positioning", title: "Positioning", prefixes: ["positioning_"] },
-  { key: "audience", title: "Audience", prefixes: ["audience_"] },
-  { key: "founder", title: "Founder Profile", prefixes: ["founder_"] },
-  { key: "launch", title: "Launch Copy", prefixes: ["launch_"] },
-  { key: "social", title: "Social Content", prefixes: ["social_"] },
-  { key: "strategy", title: "Launch Strategy", prefixes: ["strategy_"] },
-  { key: "checklist", title: "Launch Checklist", prefixes: ["checklist_"] },
+type Group = { key: string; title: string; prefixes: string[] };
+const GROUPS: Group[] = [
+  { key: "positioning",     title: "Positioning",              prefixes: ["positioning_"] },
+  { key: "audience",        title: "Audience",                 prefixes: ["audience_"] },
+  { key: "founder",         title: "Founder Profile",          prefixes: ["founder_bio", "founder_tagline", "founder_x_bio", "founder_linkedin"] },
+  { key: "design_concepts", title: "Logo & Visual Concepts",   prefixes: ["design_image_"] },
+  { key: "design_brief",    title: "Visual Style Brief",       prefixes: ["design_style_", "design_color_", "design_typography"] },
+  { key: "launch",          title: "Launch Copy",              prefixes: ["launch_", "founder_story"] },
+  { key: "social",          title: "Social Content",           prefixes: ["social_"] },
+  { key: "promote",         title: "Outreach & PR",            prefixes: ["promote_"] },
+  { key: "strategy",        title: "Launch Strategy",          prefixes: ["strategy_"] },
+  { key: "checklist",       title: "Launch Checklist",         prefixes: ["checklist_"] },
 ];
+
+const WORKFLOW_META: Record<string, { label: string; Icon: any }> = {
+  brand:   { label: "Brand It",   Icon: Wand2 },
+  design:  { label: "Design It",  Icon: ImageIcon },
+  launch:  { label: "Launch It",  Icon: RocketIcon },
+  promote: { label: "Promote It", Icon: Megaphone },
+};
 
 const DIRECTORIES: { name: string; href: (name: string, url: string, tagline: string) => string }[] = [
   { name: "Product Hunt", href: (n, u) => `https://www.producthunt.com/posts/new?url=${encodeURIComponent(u)}&name=${encodeURIComponent(n)}` },
@@ -68,8 +79,30 @@ const RocketDetail = () => {
       const { data, error } = await supabase.functions.invoke("regenerate-asset", { body: { asset_id: assetId } });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      setAssets((prev) => prev.map((x) => x.id === assetId ? { ...x, content: (data as any).content } : x));
+      const d = data as any;
+      setAssets((prev) => prev.map((x) => x.id === assetId ? {
+        ...x,
+        ...(d.content !== undefined ? { content: d.content } : {}),
+        ...(d.image_url ? { image_url: d.image_url, image_prompt: d.image_prompt ?? x.image_prompt } : {}),
+      } : x));
       toast({ title: "Regenerated", description: "1 credit used." });
+    } catch (e: any) {
+      toast({ title: "Failed", description: e.message, variant: "destructive" });
+    } finally { setRegenId(null); }
+  };
+
+  const regenerateVariation = async (assetId: string) => {
+    setRegenId(assetId);
+    try {
+      const { data, error } = await supabase.functions.invoke("regenerate-asset", { body: { asset_id: assetId, variation: true } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const d = data as any;
+      setAssets((prev) => prev.map((x) => x.id === assetId ? {
+        ...x,
+        ...(d.image_url ? { image_url: d.image_url, image_prompt: d.image_prompt ?? x.image_prompt } : {}),
+      } : x));
+      toast({ title: "Variation generated", description: "1 credit used." });
     } catch (e: any) {
       toast({ title: "Failed", description: e.message, variant: "destructive" });
     } finally { setRegenId(null); }
@@ -106,7 +139,11 @@ const RocketDetail = () => {
       const items = assets.filter((a) => g.prefixes.some((p) => a.asset_type.startsWith(p)));
       if (!items.length) return;
       md += `\n## ${g.title}\n\n`;
-      items.forEach((a) => { md += `### ${a.title}\n\n${a.content}\n\n`; });
+      items.forEach((a) => {
+        md += `### ${a.title}\n\n${a.content}\n\n`;
+        if (a.kind === "image" && a.image_url) md += `![${a.title}](${a.image_url})\n\n`;
+        if (a.kind === "image" && a.image_prompt) md += `**Prompt:** ${a.image_prompt}\n\n`;
+      });
     });
     return md;
   };
@@ -115,15 +152,24 @@ const RocketDetail = () => {
     const zip = new JSZip();
     const root = zip.folder(`${slug()}-rocket`)!;
     root.file("README.md", buildCombinedMarkdown());
-    GROUPS.forEach((g) => {
+    for (const g of GROUPS) {
       const items = assets.filter((a) => g.prefixes.some((p) => a.asset_type.startsWith(p)));
-      if (!items.length) return;
+      if (!items.length) continue;
       const folder = root.folder(g.key)!;
-      items.forEach((a) => {
+      for (const a of items) {
         const fname = (a.title || a.asset_type).replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9\-]/g, "") + ".md";
         folder.file(fname, `# ${a.title}\n\n${a.content}\n`);
-      });
-    });
+        if (a.kind === "image" && a.image_url) {
+          try {
+            const res = await fetch(a.image_url);
+            const buf = await res.arrayBuffer();
+            folder.file(fname.replace(/\.md$/, ".png"), buf);
+          } catch (e) {
+            console.error("zip fetch image failed", a.image_url, e);
+          }
+        }
+      }
+    }
     return zip.generateAsync({ type: "blob" });
   };
 
@@ -213,13 +259,20 @@ const RocketDetail = () => {
   if (!rocket) return <div className="text-sm text-neutral-500">Loading…</div>;
 
   const tagline = assets.find((a) => a.asset_type === "positioning_tagline")?.content || "";
+  const workflowKey: string = rocket.workflow || "brand";
+  const wfMeta = WORKFLOW_META[workflowKey] || WORKFLOW_META.brand;
 
   return (
     <div>
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <Link to="/projects" className="text-xs text-neutral-500 hover:text-neutral-900">← Projects</Link>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{rocket.product_name}</h1>
+          <div className="mt-2 flex items-center gap-2">
+            <h1 className="text-3xl font-semibold tracking-tight">{rocket.product_name}</h1>
+            <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] font-medium text-neutral-600">
+              <wfMeta.Icon className="h-3 w-3" /> {wfMeta.label}
+            </span>
+          </div>
           <a href={rocket.product_url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">{rocket.product_url} <ExternalLink className="h-3 w-3" /></a>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -272,6 +325,7 @@ const RocketDetail = () => {
         {GROUPS.map((g) => {
           const items = assets.filter((a) => g.prefixes.some((p) => a.asset_type.startsWith(p)));
           if (!items.length) return null;
+          const hasImages = items.some((a) => a.kind === "image");
           return (
             <section key={g.key}>
               <div className="flex items-center justify-between">
@@ -280,14 +334,74 @@ const RocketDetail = () => {
                   <Copy className="h-3.5 w-3.5" /> Copy section
                 </button>
               </div>
-              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className={`mt-4 grid grid-cols-1 gap-4 ${hasImages ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
                 {items.map((a) => (
-                  <AssetCard key={a.id} asset={a} regenerating={regenId === a.id} onSave={save} onRegenerate={regenerate} onChange={(v) => setAssets((p) => p.map((x) => x.id === a.id ? { ...x, content: v } : x))} />
+                  a.kind === "image" ? (
+                    <ImageAssetCard key={a.id} asset={a} regenerating={regenId === a.id} onRegenerate={regenerate} onVariation={regenerateVariation} />
+                  ) : (
+                    <AssetCard key={a.id} asset={a} regenerating={regenId === a.id} onSave={save} onRegenerate={regenerate} onChange={(v) => setAssets((p) => p.map((x) => x.id === a.id ? { ...x, content: v } : x))} />
+                  )
                 ))}
               </div>
             </section>
           );
         })}
+      </div>
+    </div>
+  );
+};
+
+const ImageAssetCard = ({ asset, regenerating, onRegenerate, onVariation }: any) => {
+  const { toast } = useToast();
+  const downloadPng = async () => {
+    if (!asset.image_url) return;
+    try {
+      const res = await fetch(asset.image_url);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${asset.title.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
+    }
+  };
+  return (
+    <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+      <h3 className="text-sm font-semibold tracking-tight">{asset.title}</h3>
+      <div className="mt-3 aspect-square w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+        {asset.image_url ? (
+          <img src={asset.image_url} alt={asset.title} className="h-full w-full object-contain" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-400">
+            No image — try Regenerate
+          </div>
+        )}
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-neutral-700 whitespace-pre-wrap">{asset.content}</p>
+      {asset.image_prompt && (
+        <details className="mt-2 text-[11px] text-neutral-500">
+          <summary className="cursor-pointer hover:text-neutral-700">View AI prompt</summary>
+          <p className="mt-1 rounded-md bg-neutral-50 p-2 font-mono text-[11px] leading-relaxed text-neutral-700">{asset.image_prompt}</p>
+        </details>
+      )}
+      <div className="mt-3 flex flex-wrap items-center gap-1">
+        <IconBtn onClick={() => onRegenerate(asset.id)} label="Regenerate" disabled={regenerating}>
+          {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+        </IconBtn>
+        <IconBtn onClick={() => onVariation(asset.id)} label="Generate variation" disabled={regenerating}>
+          <Shuffle className="h-3.5 w-3.5" />
+        </IconBtn>
+        <IconBtn onClick={downloadPng} label="Download PNG" disabled={!asset.image_url}>
+          <Download className="h-3.5 w-3.5" />
+        </IconBtn>
+        {asset.image_prompt && (
+          <IconBtn onClick={() => { navigator.clipboard.writeText(asset.image_prompt); toast({ title: "Prompt copied" }); }} label="Copy prompt">
+            <Copy className="h-3.5 w-3.5" />
+          </IconBtn>
+        )}
       </div>
     </div>
   );
