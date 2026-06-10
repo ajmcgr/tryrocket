@@ -130,13 +130,19 @@ const Generate = () => {
   };
 
   const runGenerate = async (raw: string, imgs: string[] = []) => {
-    let normalized = raw.trim();
-    if (!normalized && imgs.length === 0) return;
-    if (normalized && !/^https?:\/\//i.test(normalized)) normalized = "https://" + normalized;
+    const trimmed = raw.trim();
+    if (!trimmed && imgs.length === 0) return;
+    // Detect URL vs free text. Only prepend https:// for things that look like a domain.
+    const looksLikeUrl =
+      /^https?:\/\//i.test(trimmed) ||
+      (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed) && !/\s/.test(trimmed));
+    const normalized = looksLikeUrl
+      ? (/^https?:\/\//i.test(trimmed) ? trimmed : "https://" + trimmed)
+      : trimmed;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-rocket", {
-        body: { product_url: normalized || null, images: imgs },
+        body: { input: normalized || null, product_url: normalized || null, images: imgs },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
