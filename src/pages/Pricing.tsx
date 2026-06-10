@@ -76,7 +76,7 @@ const Pricing = () => {
               <p className="mt-2 text-sm text-neutral-600">For founders shipping fast.</p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
-                  "3,000 Rocket Credits / month",
+                  "3,000 credits / month",
                   "Unlimited saved Brand Assets",
                   "Export tools",
                   "Priority generation",
