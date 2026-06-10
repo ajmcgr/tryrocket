@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X, Copy, Save, RefreshCw, ExternalLink, Type, Bold, Palette, Wand2, ImageIcon, Rocket as RocketIcon, Megaphone } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 const supabase = _sb as any;
+import { useCreditCosts, workflowCost } from "@/hooks/useCreditCosts";
+import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 
 const MESSAGES = [
   "Analyzing product…",
@@ -46,6 +48,8 @@ const Generate = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [usage, setUsage] = useState<{ used: number; limit: number; extra: number } | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
+  const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
+  const { costFor } = useCreditCosts();
   const [result, setResult] = useState<null | {
     rocketId: string;
     productName: string;
@@ -156,7 +160,15 @@ const Generate = () => {
         body: { input: normalized || null, product_url: normalized || null, images: imgs, workflow: wf },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const d: any = data;
+      if (d?.error) {
+        if (d?.code === "no_credits" || d?.error === "insufficient_credits") {
+          setOutOfCredits({ needed: d?.needed, remaining: d?.remaining });
+          setLoading(false);
+          return;
+        }
+        throw new Error(d.error);
+      }
       const rocketId = (data as any).rocket_id as string;
       await loadResult(rocketId);
       // Refresh sidebar history
@@ -212,9 +224,16 @@ const Generate = () => {
     try {
       const { data, error } = await supabase.functions.invoke("regenerate-asset", { body: { asset_id: result.asset.id } });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const d: any = data;
+      if (d?.error) {
+        if (d?.code === "no_credits") {
+          setOutOfCredits({ needed: d?.needed, remaining: d?.remaining });
+          return;
+        }
+        throw new Error(d.error);
+      }
       updateAssetContent((data as any).content || "");
-      toast({ title: "Regenerated", description: "1 credit used." });
+      toast({ title: "Regenerated", description: `${(data as any).credits_charged ?? 1} credits used.` });
     } catch (e: any) {
       toast({ title: "Regenerate failed", description: e.message, variant: "destructive" });
     } finally {
