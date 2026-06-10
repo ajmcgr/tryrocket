@@ -21,7 +21,7 @@ const LANGUAGES = [
 const SiteHeader = () => {
   const [lang, setLang] = useState(LANGUAGES[0]);
   return (
-    <header className="sticky top-0 z-50 border-b border-neutral-200/60 bg-white/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center px-6">
         <Logo />
         <nav className="ml-10 hidden items-center gap-7 text-sm font-medium text-neutral-600 md:flex">
