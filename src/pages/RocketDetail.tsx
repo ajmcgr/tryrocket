@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, RefreshCw, Save, ExternalLink, Loader2, Download, Rocket as RocketIcon, FileText, FileArchive, Cloud, ChevronDown, Wand2, Image as ImageIcon, Megaphone, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import JSZip from "jszip";
+import { useCreditCosts } from "@/hooks/useCreditCosts";
+import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +57,8 @@ const RocketDetail = () => {
   const [assets, setAssets] = useState<any[]>([]);
   const [regenId, setRegenId] = useState<string | null>(null);
   const [driveLoading, setDriveLoading] = useState(false);
+  const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
+  const { costFor } = useCreditCosts();
 
   useEffect(() => {
     if (!id) return;
@@ -78,14 +82,17 @@ const RocketDetail = () => {
     try {
       const { data, error } = await supabase.functions.invoke("regenerate-asset", { body: { asset_id: assetId } });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       const d = data as any;
+      if (d?.error) {
+        if (d?.code === "no_credits") { setOutOfCredits({ needed: d?.needed, remaining: d?.remaining }); return; }
+        throw new Error(d.error);
+      }
       setAssets((prev) => prev.map((x) => x.id === assetId ? {
         ...x,
         ...(d.content !== undefined ? { content: d.content } : {}),
         ...(d.image_url ? { image_url: d.image_url, image_prompt: d.image_prompt ?? x.image_prompt } : {}),
       } : x));
-      toast({ title: "Regenerated", description: "1 credit used." });
+      toast({ title: "Regenerated", description: `${d.credits_charged ?? 1} credits used.` });
     } catch (e: any) {
       toast({ title: "Failed", description: e.message, variant: "destructive" });
     } finally { setRegenId(null); }
@@ -96,13 +103,16 @@ const RocketDetail = () => {
     try {
       const { data, error } = await supabase.functions.invoke("regenerate-asset", { body: { asset_id: assetId, variation: true } });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       const d = data as any;
+      if (d?.error) {
+        if (d?.code === "no_credits") { setOutOfCredits({ needed: d?.needed, remaining: d?.remaining }); return; }
+        throw new Error(d.error);
+      }
       setAssets((prev) => prev.map((x) => x.id === assetId ? {
         ...x,
         ...(d.image_url ? { image_url: d.image_url, image_prompt: d.image_prompt ?? x.image_prompt } : {}),
       } : x));
-      toast({ title: "Variation generated", description: "1 credit used." });
+      toast({ title: "Variation generated", description: `${d.credits_charged ?? 1} credits used.` });
     } catch (e: any) {
       toast({ title: "Failed", description: e.message, variant: "destructive" });
     } finally { setRegenId(null); }
@@ -337,9 +347,9 @@ const RocketDetail = () => {
               <div className={`mt-4 grid grid-cols-1 gap-4 ${hasImages ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
                 {items.map((a) => (
                   a.kind === "image" ? (
-                    <ImageAssetCard key={a.id} asset={a} regenerating={regenId === a.id} onRegenerate={regenerate} onVariation={regenerateVariation} />
+                    <ImageAssetCard key={a.id} asset={a} regenerating={regenId === a.id} onRegenerate={regenerate} onVariation={regenerateVariation} costFor={costFor} />
                   ) : (
-                    <AssetCard key={a.id} asset={a} regenerating={regenId === a.id} onSave={save} onRegenerate={regenerate} onChange={(v) => setAssets((p) => p.map((x) => x.id === a.id ? { ...x, content: v } : x))} />
+                    <AssetCard key={a.id} asset={a} regenerating={regenId === a.id} onSave={save} onRegenerate={regenerate} onChange={(v) => setAssets((p) => p.map((x) => x.id === a.id ? { ...x, content: v } : x))} costFor={costFor} />
                   )
                 ))}
               </div>
@@ -347,12 +357,20 @@ const RocketDetail = () => {
           );
         })}
       </div>
+      <OutOfCreditsModal
+        open={!!outOfCredits}
+        needed={outOfCredits?.needed}
+        remaining={outOfCredits?.remaining}
+        onClose={() => setOutOfCredits(null)}
+      />
     </div>
   );
 };
 
-const ImageAssetCard = ({ asset, regenerating, onRegenerate, onVariation }: any) => {
+const ImageAssetCard = ({ asset, regenerating, onRegenerate, onVariation, costFor }: any) => {
   const { toast } = useToast();
+  const regenCost = costFor?.(asset.asset_type, 25) ?? 25;
+  const varCost = costFor?.("logo_variation", 10) ?? 10;
   const downloadPng = async () => {
     if (!asset.image_url) return;
     try {
@@ -388,10 +406,10 @@ const ImageAssetCard = ({ asset, regenerating, onRegenerate, onVariation }: any)
         </details>
       )}
       <div className="mt-3 flex flex-wrap items-center gap-1">
-        <IconBtn onClick={() => onRegenerate(asset.id)} label="Regenerate" disabled={regenerating}>
+        <IconBtn onClick={() => onRegenerate(asset.id)} label={`Regenerate (${regenCost} credits)`} disabled={regenerating}>
           {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </IconBtn>
-        <IconBtn onClick={() => onVariation(asset.id)} label="Generate variation" disabled={regenerating}>
+        <IconBtn onClick={() => onVariation(asset.id)} label={`Generate variation (${varCost} credits)`} disabled={regenerating}>
           <Shuffle className="h-3.5 w-3.5" />
         </IconBtn>
         <IconBtn onClick={downloadPng} label="Download PNG" disabled={!asset.image_url}>
@@ -407,16 +425,20 @@ const ImageAssetCard = ({ asset, regenerating, onRegenerate, onVariation }: any)
   );
 };
 
-const AssetCard = ({ asset, regenerating, onSave, onRegenerate, onChange }: any) => {
+const AssetCard = ({ asset, regenerating, onSave, onRegenerate, onChange, costFor }: any) => {
   const { toast } = useToast();
+  const regenCost = costFor?.(asset.asset_type, 1) ?? 1;
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-tight">{asset.title}</h3>
+        <h3 className="text-sm font-semibold tracking-tight">
+          {asset.title}
+          <span className="ml-2 rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">{regenCost}</span>
+        </h3>
         <div className="flex items-center gap-1">
           <IconBtn onClick={() => { navigator.clipboard.writeText(asset.content); toast({ title: "Copied" }); }} label="Copy"><Copy className="h-3.5 w-3.5" /></IconBtn>
           <IconBtn onClick={() => onSave(asset.id, asset.content)} label="Save"><Save className="h-3.5 w-3.5" /></IconBtn>
-          <IconBtn onClick={() => onRegenerate(asset.id)} label="Regenerate" disabled={regenerating}>
+          <IconBtn onClick={() => onRegenerate(asset.id)} label={`Regenerate (${regenCost} credits)`} disabled={regenerating}>
             {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           </IconBtn>
         </div>

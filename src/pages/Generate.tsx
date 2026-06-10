@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X, Copy, Save, RefreshCw, ExternalLink, Type, Bold, Palette, Wand2, ImageIcon, Rocket as RocketIcon, Megaphone } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 const supabase = _sb as any;
+import { useCreditCosts, workflowCost } from "@/hooks/useCreditCosts";
+import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 
 const MESSAGES = [
   "Analyzing product…",
@@ -46,6 +48,8 @@ const Generate = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [usage, setUsage] = useState<{ used: number; limit: number; extra: number } | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
+  const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
+  const { costFor } = useCreditCosts();
   const [result, setResult] = useState<null | {
     rocketId: string;
     productName: string;
@@ -156,7 +160,15 @@ const Generate = () => {
         body: { input: normalized || null, product_url: normalized || null, images: imgs, workflow: wf },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const d: any = data;
+      if (d?.error) {
+        if (d?.code === "no_credits" || d?.error === "insufficient_credits") {
+          setOutOfCredits({ needed: d?.needed, remaining: d?.remaining });
+          setLoading(false);
+          return;
+        }
+        throw new Error(d.error);
+      }
       const rocketId = (data as any).rocket_id as string;
       await loadResult(rocketId);
       // Refresh sidebar history
@@ -212,9 +224,16 @@ const Generate = () => {
     try {
       const { data, error } = await supabase.functions.invoke("regenerate-asset", { body: { asset_id: result.asset.id } });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const d: any = data;
+      if (d?.error) {
+        if (d?.code === "no_credits") {
+          setOutOfCredits({ needed: d?.needed, remaining: d?.remaining });
+          return;
+        }
+        throw new Error(d.error);
+      }
       updateAssetContent((data as any).content || "");
-      toast({ title: "Regenerated", description: "1 credit used." });
+      toast({ title: "Regenerated", description: `${(data as any).credits_charged ?? 1} credits used.` });
     } catch (e: any) {
       toast({ title: "Regenerate failed", description: e.message, variant: "destructive" });
     } finally {
@@ -426,10 +445,18 @@ const Generate = () => {
           <form onSubmit={submit} className={`mx-auto w-full ${result ? "max-w-md" : "max-w-2xl"}`}>
             {!result && (
               <div className="mb-3">
-                <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-500">What do you need help with?</p>
+                <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+                  What do you need help with?
+                  {usage && (
+                    <span className="ml-2 normal-case tracking-normal text-neutral-400">
+                      · {(usage.limit + usage.extra - usage.used).toLocaleString()} credits left
+                    </span>
+                  )}
+                </p>
                 <div className="flex flex-wrap justify-center gap-1.5">
                   {WORKFLOW_CHIPS.map((c) => {
                     const active = workflow === c.id;
+                    const cost = c.id === "auto" ? null : workflowCost(c.id, costFor);
                     return (
                       <button
                         key={c.id}
@@ -440,10 +467,16 @@ const Generate = () => {
                       >
                         <c.Icon className="h-3.5 w-3.5" />
                         {c.label}
+                        {cost ? (
+                          <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${active ? "bg-white/25 text-brand-foreground" : "bg-neutral-100 text-neutral-500"}`}>
+                            {cost}
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}
                 </div>
+                <p className="mt-1.5 text-center text-[10px] text-neutral-400">Number = credits used for this workflow.</p>
               </div>
             )}
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
@@ -591,6 +624,12 @@ const Generate = () => {
           </div>
         </div>
       )}
+      <OutOfCreditsModal
+        open={!!outOfCredits}
+        needed={outOfCredits?.needed}
+        remaining={outOfCredits?.remaining}
+        onClose={() => setOutOfCredits(null)}
+      />
     </div>
   );
 };

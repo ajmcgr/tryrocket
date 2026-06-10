@@ -93,13 +93,19 @@ Deno.serve(async (req) => {
     const { data: usage } = await admin.from("user_usage").select("*").eq("user_id", user.id).maybeSingle();
     if (!usage) throw new Error("usage row missing");
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
-    if (remaining < 1) {
-      return new Response(JSON.stringify({ error: "Out of credits", code: "no_credits" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
 
     const { data: asset } = await admin.from("rocket_assets").select("*, rockets!inner(*)").eq("id", asset_id).maybeSingle();
     if (!asset) return new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (asset.rockets.user_id !== user.id) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    // DB-driven cost lookup
+    const { data: costRow } = await admin.from("credit_costs").select("credits").eq("asset_type", asset.asset_type).maybeSingle();
+    const fallbackKey = asset.kind === "image" ? (variation ? "logo_variation" : "image_regeneration") : asset.asset_type;
+    const { data: fbRow } = costRow ? { data: costRow } : await admin.from("credit_costs").select("credits").eq("asset_type", fallbackKey).maybeSingle();
+    const cost = (costRow?.credits ?? fbRow?.credits ?? (asset.kind === "image" ? 10 : 1)) as number;
+    if (remaining < cost) {
+      return new Response(JSON.stringify({ error: "Out of credits", code: "no_credits", needed: cost, remaining }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // ===== Image asset regeneration =====
     if (asset.kind === "image") {
@@ -117,8 +123,12 @@ Deno.serve(async (req) => {
         if (upErr) throw new Error(`storage upload: ${upErr.message}`);
         const { data: pub } = admin.storage.from("rocket-images").getPublicUrl(path);
         await admin.from("rocket_assets").update({ image_url: pub.publicUrl, image_prompt: finalPrompt }).eq("id", asset_id);
-        await admin.from("user_usage").update({ credits_used: usage.credits_used + 1 }).eq("user_id", user.id);
-        return new Response(JSON.stringify({ image_url: pub.publicUrl, image_prompt: finalPrompt }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await admin.from("user_usage").update({ credits_used: usage.credits_used + cost }).eq("user_id", user.id);
+        await admin.from("credit_transactions").insert({
+          user_id: user.id, rocket_id: asset.rocket_id, asset_type: asset.asset_type,
+          kind: "spent", credits: cost, meta: { regenerate: true, variation: !!variation },
+        });
+        return new Response(JSON.stringify({ image_url: pub.publicUrl, image_prompt: finalPrompt, credits_charged: cost }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } catch (e) {
         return new Response(JSON.stringify({ error: "image_generation_failed", details: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -131,9 +141,13 @@ Deno.serve(async (req) => {
     const newContent = await geminiText({ system: sys, user: usr, temperature: 0.8 });
 
     await admin.from("rocket_assets").update({ content: newContent }).eq("id", asset_id);
-    await admin.from("user_usage").update({ credits_used: usage.credits_used + 1 }).eq("user_id", user.id);
+    await admin.from("user_usage").update({ credits_used: usage.credits_used + cost }).eq("user_id", user.id);
+    await admin.from("credit_transactions").insert({
+      user_id: user.id, rocket_id: asset.rocket_id, asset_type: asset.asset_type,
+      kind: "spent", credits: cost, meta: { regenerate: true },
+    });
 
-    return new Response(JSON.stringify({ content: newContent }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ content: newContent, credits_charged: cost }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

@@ -44,6 +44,18 @@ const AppShell = () => {
             <NavLink to="/projects" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            {credits && (
+              <a
+                href="/pricing"
+                target="_blank"
+                rel="noreferrer"
+                title="Credits remaining — click to view pricing"
+                className="hidden items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 md:inline-flex"
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${(remaining ?? 0) <= 0 ? "bg-red-500" : "bg-brand"}`} />
+                {(remaining ?? 0).toLocaleString()} credits
+              </a>
+            )}
             <a href="mailto:alex@tryrocket.ai" className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex">Support</a>
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none focus:ring-2 focus:ring-neutral-300" aria-label="Account menu">
