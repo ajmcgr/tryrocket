@@ -1,35 +1,25 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check } from "lucide-react";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
+import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
+const FAQS = [
+  { q: "What does Rocket actually generate?", a: "A complete launch kit from a single URL: positioning, taglines, value props, audience, founder bio, X/LinkedIn posts, Product Hunt copy, directory submissions, launch strategy, and a full launch checklist." },
+  { q: "How long does it take?", a: "About 30–60 seconds. You'll see a live progress UI, then land on your editable Rocket." },
+  { q: "Can I edit and regenerate sections?", a: "Yes. Every section has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit." },
+  { q: "What's a credit?", a: "One full Rocket = 1 credit. Free plan gets 500 credits/month. Growth gets 3,000. You can also top up with credit packs." },
+  { q: "Where can I launch from Rocket?", a: "We pre-fill submissions for Product Hunt, BetaList, There's An AI For That, Hacker News, Peerlist, Uneed, Alternative.me, G2, Indie Hackers, and one-click handoff to TryLaunch.ai." },
+  { q: "Do you support custom domains / branding?", a: "Yes — Growth plan exports as Markdown and PDF with your brand colors." },
+  { q: "Is there a free trial of Growth?", a: "7 days free, no card required on the Free plan to start." },
+  { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You'll keep access until the end of the period." },
+];
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-white text-neutral-900 antialiased">
-      {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-neutral-200/60 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <a href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-neutral-900 text-white">
-              <RocketIcon className="h-4 w-4" />
-            </span>
-            Rocket
-          </a>
-          <nav className="hidden items-center gap-8 text-sm font-medium text-neutral-600 md:flex">
-            <a href="#features" className="hover:text-neutral-900">Features</a>
-            <a href="#pricing" className="hover:text-neutral-900">Pricing</a>
-            <a href="https://trylaunch.ai" target="_blank" rel="noreferrer" className="hover:text-neutral-900">TryLaunch</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link to="/login" className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 sm:inline">Sign in</Link>
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800"
-            >
-              Get started
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -38,36 +28,27 @@ const Index = () => {
           className="pointer-events-none absolute inset-x-0 -top-40 -z-10 mx-auto h-[600px] w-[1200px] rounded-full opacity-50 blur-3xl"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(255,165,90,0.35), rgba(255,165,90,0) 70%), radial-gradient(closest-side, rgba(120,140,255,0.25), rgba(120,140,255,0) 70%)",
+              "radial-gradient(closest-side, rgba(59,130,246,0.30), rgba(59,130,246,0) 70%), radial-gradient(closest-side, rgba(120,140,255,0.20), rgba(120,140,255,0) 70%)",
           }}
         />
         <div className="mx-auto max-w-6xl px-6 pt-20 pb-24 text-center sm:pt-28 sm:pb-32">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/70 px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-orange-500" />
+            <Sparkles className="h-3.5 w-3.5 text-brand" />
             AI Launch Co-Pilot for Vibe Coders
           </div>
           <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
-            Vibe Code Your Idea.
+            Make Your Product a Brand.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-neutral-600 sm:text-xl">
-            AI made building easy. Rocket helps you launch.
+            Rocket helps you brand your app with AI.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-neutral-900/10 transition hover:bg-neutral-800"
-            >
-              Generate Rocket
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <a
-              href="https://trylaunch.ai"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
-            >
-              View example
-            </a>
+            <Button asChild size="lg">
+              <Link to="/signup">Generate Rocket <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="rounded-full">
+              <a href="https://trylaunch.ai" target="_blank" rel="noreferrer">View example</a>
+            </Button>
           </div>
 
           {/* Mock preview */}
@@ -90,7 +71,7 @@ const Index = () => {
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {["Positioning", "Launch Copy", "Social Content"].map((t) => (
                     <div key={t} className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-orange-500">{t}</div>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-brand">{t}</div>
                       <div className="mt-2 h-2 w-3/4 rounded bg-neutral-200" />
                       <div className="mt-1.5 h-2 w-1/2 rounded bg-neutral-200" />
                     </div>
@@ -121,7 +102,7 @@ const Index = () => {
               { icon: RocketIcon, title: "Launch on TryLaunch.ai", desc: "Ship your Rocket straight to TryLaunch when you're ready to go live." },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:shadow-md">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-neutral-900 text-white">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand text-brand-foreground">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-5 text-lg font-semibold tracking-tight">{title}</h3>
@@ -156,17 +137,14 @@ const Index = () => {
                   </li>
                 ))}
               </ul>
-              <Link
-                to="/signup"
-                className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
-              >
-                Get started free
-              </Link>
+              <Button asChild variant="outline" className="mt-8 w-full rounded-full">
+                <Link to="/signup">Get started free</Link>
+              </Button>
             </div>
 
             {/* Growth */}
             <div className="relative rounded-2xl border border-neutral-900 bg-neutral-900 p-8 text-white">
-              <div className="absolute -top-3 right-6 rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white">
+              <div className="absolute -top-3 right-6 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white">
                 7-day free trial
               </div>
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-400">Growth</div>
@@ -183,17 +161,14 @@ const Index = () => {
                   "Priority generation",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-              <Link
-                to="/signup"
-                className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-100"
-              >
-                Start free trial
-              </Link>
+              <Button asChild className="mt-8 w-full">
+                <Link to="/signup">Start free trial</Link>
+              </Button>
             </div>
           </div>
 
@@ -219,41 +194,38 @@ const Index = () => {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section id="faq" className="border-t border-neutral-200/60 bg-neutral-50/50">
+        <div className="mx-auto max-w-3xl px-6 py-24">
+          <div className="text-center">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Frequently asked</h2>
+            <p className="mt-3 text-neutral-600">Everything you wanted to know about Rocket.</p>
+          </div>
+          <Accordion type="single" collapsible className="mt-10 w-full">
+            {FAQS.map((f, i) => (
+              <AccordionItem key={i} value={`item-${i}`}>
+                <AccordionTrigger className="text-left text-base font-medium">{f.q}</AccordionTrigger>
+                <AccordionContent className="text-neutral-600">{f.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
       {/* CTA */}
-      <section className="border-t border-neutral-200/60 bg-neutral-50/50">
+      <section className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-4xl px-6 py-24 text-center">
           <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Ready to launch?</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-neutral-600">
             Generate your first Rocket in under 60 seconds.
           </p>
-          <Link
-            to="/signup"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-neutral-800"
-          >
-            Get started free
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <Button asChild size="lg" className="mt-8">
+            <Link to="/signup">Get started free <ArrowRight className="h-4 w-4" /></Link>
+          </Button>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-200/60">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-10 text-sm text-neutral-500 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="grid h-5 w-5 place-items-center rounded-md bg-neutral-900 text-white">
-              <RocketIcon className="h-3 w-3" />
-            </span>
-            <span>© Rocket 2026</span>
-          </div>
-          <div className="flex items-center gap-5">
-            <a href="mailto:alex@trylaunch.ai" className="hover:text-neutral-900">Contact</a>
-            <a href="https://x.com/tryrocketai" target="_blank" rel="noreferrer" className="hover:text-neutral-900">X</a>
-            <a href="https://www.instagram.com/tryrocketai/" target="_blank" rel="noreferrer" className="hover:text-neutral-900">Instagram</a>
-            <a href="https://discord.gg/aSkXPHhTjJ" target="_blank" rel="noreferrer" className="hover:text-neutral-900">Discord</a>
-            <a href="https://trylaunch.ai" target="_blank" rel="noreferrer" className="hover:text-neutral-900">TryLaunch.ai</a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 };

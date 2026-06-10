@@ -1,8 +1,9 @@
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Rocket as RocketIcon, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase as _sb } from "@/integrations/supabase/client";
+import Logo from "./Logo";
 const supabase = _sb as any;
 
 const AppShell = () => {
@@ -22,12 +23,7 @@ const AppShell = () => {
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/dashboard" className="flex items-center gap-2 text-base font-semibold tracking-tight">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-neutral-900 text-white">
-              <RocketIcon className="h-4 w-4" />
-            </span>
-            Rocket
-          </Link>
+          <Logo to="/dashboard" />
           <nav className="hidden items-center gap-7 text-sm font-medium text-neutral-600 md:flex">
             <NavLink to="/dashboard" className={({ isActive }) => isActive ? "text-neutral-900" : "hover:text-neutral-900"}>Dashboard</NavLink>
             <NavLink to="/generate" className={({ isActive }) => isActive ? "text-neutral-900" : "hover:text-neutral-900"}>Generate</NavLink>
