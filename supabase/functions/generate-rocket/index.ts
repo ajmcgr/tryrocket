@@ -268,7 +268,7 @@ Deno.serve(async (req) => {
       const { data: created, error: createErr } = await admin.from("user_usage").insert({
         user_id: user.id,
         plan: "free",
-        monthly_limit: 500,
+        monthly_limit: 100,
         credits_used: 0,
         credits_extra: 0,
         current_period_start: now.toISOString(),
@@ -281,12 +281,23 @@ Deno.serve(async (req) => {
       usage = created;
     }
 
-    // 5. Credits
+    // 5. Credits — DB-driven per-asset costs
     step = "credits";
+    const { data: costRows, error: costErr } = await admin.from("credit_costs").select("asset_type, credits");
+    if (costErr) {
+      console.error("credit_costs select failed", costErr);
+      return jsonResponse({ error: "database_select_failed", step, details: costErr.message }, 500, corsHeaders);
+    }
+    const costMap = new Map<string, number>();
+    for (const r of costRows || []) costMap.set(r.asset_type, r.credits);
+    const textCostFor = (t: string) => costMap.get(t) ?? 1;
+    const imageCostFor = (t: string) => costMap.get(t) ?? (costMap.get("logo_generation") ?? 25);
+    const textCostTotal = spec.text_assets.reduce((s, a) => s + textCostFor(a.asset_type), 0);
+    const imageCostTotal = Array.from({ length: spec.image_count }).reduce<number>((s, _, i) => s + imageCostFor(`design_image_${i + 1}`), 0);
+    const estimatedCost = textCostTotal + imageCostTotal;
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
-    const creditsNeeded = 1 + spec.image_count; // 1 for text + 1 per image
-    if (remaining < creditsNeeded) {
-      return jsonResponse({ error: "insufficient_credits", code: "no_credits" }, 402, corsHeaders);
+    if (remaining < estimatedCost) {
+      return jsonResponse({ error: "insufficient_credits", code: "no_credits", needed: estimatedCost, remaining }, 402, corsHeaders);
     }
 
     // 6. Optional scrape
@@ -364,6 +375,7 @@ Deno.serve(async (req) => {
 
     // 10b. Image generation for design workflow
     let imagesGenerated = 0;
+    let imageCreditsCharged = 0;
     if (spec.image_count > 0) {
       step = "image_gen";
       const imagePromises = Array.from({ length: spec.image_count }, async (_, idx) => {
@@ -399,13 +411,36 @@ Deno.serve(async (req) => {
       const { error: imgErr } = await admin.from("rocket_assets").insert(imageRows);
       if (imgErr) console.error("image assets insert error", imgErr);
       imagesGenerated = results.filter((r) => r.ok).length;
+      imageCreditsCharged = results
+        .filter((r) => r.ok)
+        .reduce((s, r) => s + imageCostFor(`design_image_${(r as any).idx}`), 0);
     }
 
-    // 11. Decrement credits
+    // 11. Decrement credits (charge only for what we actually produced)
     step = "credits_decrement";
-    const totalCharged = 1 + imagesGenerated;
+    const totalCharged = textCostTotal + imageCreditsCharged;
     const { error: decErr } = await admin.from("user_usage").update({ credits_used: usage.credits_used + totalCharged }).eq("user_id", user.id);
     if (decErr) console.error("credits decrement failed (non-fatal)", decErr);
+    // Log transactions: one row per text bundle + one row per image
+    const txnRows: any[] = [];
+    if (textCostTotal > 0) {
+      txnRows.push({
+        user_id: user.id, rocket_id: rocket.id, workflow,
+        asset_type: `workflow_${workflow}_text`, kind: "spent", credits: textCostTotal,
+        meta: { asset_types: spec.text_assets.map((a) => a.asset_type) },
+      });
+    }
+    if (imageCreditsCharged > 0) {
+      txnRows.push({
+        user_id: user.id, rocket_id: rocket.id, workflow,
+        asset_type: "design_image", kind: "spent", credits: imageCreditsCharged,
+        meta: { images_generated: imagesGenerated },
+      });
+    }
+    if (txnRows.length) {
+      const { error: txErr } = await admin.from("credit_transactions").insert(txnRows);
+      if (txErr) console.error("credit_transactions insert failed (non-fatal)", txErr);
+    }
 
     // 12. Side-effect email
     if (RESEND_API_KEY && user.email) {
@@ -414,7 +449,7 @@ Deno.serve(async (req) => {
       }).catch((e) => console.error("email send failed", e));
     }
 
-    return jsonResponse({ rocket_id: rocket.id, workflow, images_generated: imagesGenerated }, 200, corsHeaders);
+    return jsonResponse({ rocket_id: rocket.id, workflow, images_generated: imagesGenerated, credits_charged: totalCharged }, 200, corsHeaders);
   } catch (e) {
     console.error("server_error at step", step, e);
     return jsonResponse({ error: "server_error", step, details: (e as Error).message }, 500, corsHeaders);
