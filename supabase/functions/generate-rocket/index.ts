@@ -1,7 +1,78 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
-import { corsHeaders } from "../_shared/cors.ts";
-import { sendBranded } from "../_shared/email-template.ts";
-import { geminiJSON, requireGeminiKey } from "../_shared/gemini.ts";
+
+const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
+function cors(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") || "";
+  const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+const LOGO_URL = "https://id-preview--ec8b5822-131a-40d9-8a55-f90a28ced572.lovable.app/__l5e/assets-v1/d64d2310-23c4-4327-8624-7bd94b3b182e/rocket-logo-white.png";
+const BRAND = { blue: "#3B82F6", ink: "#0A0A0A", text: "#1F2937", muted: "#6B7280", border: "#E5E7EB", bg: "#F9FAFB" };
+type Template = "welcome"|"rocket_generated"|"trial_started"|"payment_succeeded"|"credits_purchased"|"auth_signup"|"auth_magiclink"|"auth_recovery"|"auth_invite"|"auth_email_change"|"auth_reauth";
+function renderEmail({ preheader, title, bodyHtml, ctaLabel, ctaUrl }: { preheader?: string; title: string; bodyHtml: string; ctaLabel?: string; ctaUrl?: string }): string {
+  const cta = ctaLabel && ctaUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 28px 0;"><tr><td align="left"><a href="${ctaUrl}" style="display:inline-block;background:${BRAND.blue};color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:9999px;font-family:Inter,Arial,sans-serif;">${ctaLabel}</a></td></tr></table>` : "";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${title}</title></head><body style="margin:0;padding:0;background:${BRAND.bg};font-family:Inter,Arial,sans-serif;color:${BRAND.text};">${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${preheader}</div>` : ""}<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${BRAND.bg};padding:32px 12px;"><tr><td align="center"><table role="presentation" width="560" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;"><tr><td style="background:${BRAND.blue};padding:28px 32px;" align="left"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="vertical-align:middle;padding-right:10px;"><img src="${LOGO_URL}" width="28" height="28" alt="Rocket" style="display:block;border:0;outline:none;text-decoration:none;width:28px;height:28px;" /></td><td style="vertical-align:middle;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;font-family:Inter,Arial,sans-serif;">Rocket</td></tr></table></td></tr><tr><td style="padding:36px 32px 32px;"><h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:-0.01em;color:${BRAND.ink};font-family:Inter,Arial,sans-serif;">${title}</h1><div style="font-size:15px;line-height:1.65;color:${BRAND.text};font-family:Inter,Arial,sans-serif;">${bodyHtml}</div>${cta}</td></tr><tr><td style="padding:20px 32px 28px;border-top:1px solid ${BRAND.border};background:#FAFAFA;"><div style="font-size:12px;color:${BRAND.muted};font-family:Inter,Arial,sans-serif;">You're getting this email from <a href="https://tryrocket.ai" style="color:${BRAND.blue};text-decoration:none;">Rocket</a> — the AI launch co-pilot for vibe coders.</div><div style="margin-top:10px;font-size:11px;color:${BRAND.muted};font-family:Inter,Arial,sans-serif;">© Rocket 2026 · Make your product a brand.</div></td></tr></table></td></tr></table></body></html>`;
+}
+function buildEmail(template: Template, data: any): { subject: string; html: string } {
+  switch (template) {
+    case "welcome": return { subject: "Welcome to Rocket 🚀", html: renderEmail({ preheader: "Your AI launch co-pilot is ready.", title: `Welcome to Rocket${data?.name ? `, ${data.name}` : ""}.`, bodyHtml: `<p>You're in. Rocket helps you brand your app with AI — drop in a product URL and we'll generate your full launch kit in under 60 seconds.</p><p>You start with <strong>500 free credits</strong>. No card required.</p>`, ctaLabel: "Generate your first Brand", ctaUrl: "https://tryrocket.ai/create" }) };
+    case "rocket_generated": return { subject: `Your Brand for ${data?.product_name ?? "your product"} is ready`, html: renderEmail({ preheader: "Your launch kit is ready to review.", title: `Your Brand for ${data?.product_name ?? "your product"} is ready.`, bodyHtml: `<p>We've generated your complete launch kit — positioning, taglines, social copy, founder bio, Product Hunt assets, directory submissions, and a full launch checklist.</p><p>Review it, tweak anything you want, and ship.</p>`, ctaLabel: "Open your Brand", ctaUrl: `https://tryrocket.ai/rocket/${data?.rocket_id ?? ""}` }) };
+    case "trial_started": return { subject: "Your Rocket Growth trial has started", html: renderEmail({ preheader: "7 days of Growth — on the house.", title: "Your 7-day Growth trial is live.", bodyHtml: `<p>You now have <strong>3,000 credits/month</strong>, priority generation, and exports unlocked.</p><p>If you cancel before day 7, you won't be charged.</p>`, ctaLabel: "Go to projects", ctaUrl: "https://tryrocket.ai/projects" }) };
+    case "payment_succeeded": return { subject: "Payment received", html: renderEmail({ preheader: `Receipt for $${((data?.amount ?? 0) / 100).toFixed(2)}.`, title: "Payment received — thank you.", bodyHtml: `<p>We received your payment of <strong>$${((data?.amount ?? 0) / 100).toFixed(2)} ${(data?.currency ?? "usd").toUpperCase()}</strong>.</p><p>You can manage your subscription anytime from Settings.</p>`, ctaLabel: "Manage billing", ctaUrl: "https://tryrocket.ai/settings" }) };
+    case "credits_purchased": return { subject: `${data?.credits ?? 0} Rocket Credits added`, html: renderEmail({ preheader: "Your credits are live.", title: `${data?.credits ?? 0} credits added to your account.`, bodyHtml: `<p>Your credit pack is on your account and ready to use.</p>`, ctaLabel: "Generate a Brand", ctaUrl: "https://tryrocket.ai/create" }) };
+    case "auth_signup": return { subject: "Confirm your Rocket account", html: renderEmail({ preheader: "One click to verify your email.", title: "Confirm your email to launch Rocket.", bodyHtml: `<p>Welcome to Rocket — your AI launch co-pilot. Tap the button below to confirm your email and start generating brands.</p>`, ctaLabel: "Confirm email", ctaUrl: data?.confirmation_url }) };
+    case "auth_magiclink": return { subject: "Your Rocket sign-in link", html: renderEmail({ preheader: "Tap to sign in to Rocket.", title: "Sign in to Rocket.", bodyHtml: `<p>Click the button below to sign in. This link expires shortly and can only be used once.</p>`, ctaLabel: "Sign in to Rocket", ctaUrl: data?.confirmation_url }) };
+    case "auth_recovery": return { subject: "Reset your Rocket password", html: renderEmail({ preheader: "Set a new password for your Rocket account.", title: "Reset your password.", bodyHtml: `<p>We received a request to reset your Rocket password. Click below to set a new one. If you didn't request this, you can safely ignore this email.</p>`, ctaLabel: "Reset password", ctaUrl: data?.confirmation_url }) };
+    case "auth_invite": return { subject: "You've been invited to Rocket", html: renderEmail({ preheader: "Accept your invite to join Rocket.", title: "You're invited to Rocket.", bodyHtml: `<p>You've been invited to join Rocket. Click below to accept and set up your account.</p>`, ctaLabel: "Accept invite", ctaUrl: data?.confirmation_url }) };
+    case "auth_email_change": return { subject: "Confirm your new email", html: renderEmail({ preheader: "Verify your new Rocket email address.", title: "Confirm your new email address.", bodyHtml: `<p>Click below to confirm <strong>${data?.new_email ?? "your new email"}</strong> as the new email on your Rocket account.</p>`, ctaLabel: "Confirm new email", ctaUrl: data?.confirmation_url }) };
+    case "auth_reauth": return { subject: `Your Rocket verification code: ${data?.token ?? ""}`, html: renderEmail({ preheader: "Use this code to verify it's you.", title: "Verify it's you.", bodyHtml: `<p>Enter this code in Rocket to continue:</p><p style="font-size:28px;font-weight:700;letter-spacing:4px;margin:18px 0;">${data?.token ?? ""}</p><p>If you didn't request this, you can ignore this email.</p>` }) };
+  }
+}
+async function sendBranded(resendKey: string, fromEmail: string, to: string, template: Template, data: any): Promise<{ ok: boolean; id?: string; error?: string }> {
+  try {
+    const { subject, html } = buildEmail(template, data);
+    const res = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: fromEmail, to: [to], subject, html }) });
+    const json = await res.json();
+    if (!res.ok) return { ok: false, error: JSON.stringify(json) };
+    return { ok: true, id: json.id };
+  } catch (e) { return { ok: false, error: (e as Error).message }; }
+}
+
+
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
+function requireGeminiKey() {
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
+  return GEMINI_API_KEY;
+}
+async function geminiJSON<T = any>(opts: { system: string; user: string; temperature?: number }): Promise<T> {
+  const key = requireGeminiKey();
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: opts.system }] },
+        contents: [{ role: "user", parts: [{ text: opts.user }] }],
+        generationConfig: { temperature: opts.temperature ?? 0.7, responseMimeType: "application/json" },
+      }),
+    },
+  );
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  const raw = (data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
+  try { return JSON.parse(raw); } catch {
+    const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    return JSON.parse(cleaned);
+  }
+}
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -43,38 +114,30 @@ const ASSET_PLAN: Array<{ asset_type: string; title: string }> = [
 
 async function fetchSite(url: string): Promise<string> {
   try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 RocketBot/1.0" },
-      redirect: "follow",
-    });
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 RocketBot/1.0" }, redirect: "follow" });
     const html = await res.text();
-    const text = html
+    return html
       .replace(/<script[\s\S]*?<\/script>/gi, " ")
       .replace(/<style[\s\S]*?<\/style>/gi, " ")
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
-      .trim();
-    return text.slice(0, 12000);
+      .trim()
+      .slice(0, 12000);
   } catch (e) {
     console.error("fetch failed", e);
     return "";
   }
 }
 
-async function callAI(systemPrompt: string, userPrompt: string): Promise<any> {
-  return await geminiJSON({ system: systemPrompt, user: userPrompt, temperature: 0.7 });
-}
-
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const corsHeaders = cors(req);
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
   try {
     requireGeminiKey();
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } });
     const { data: userData } = await userClient.auth.getUser();
     const user = userData?.user;
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -86,7 +149,6 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Check credits
     const { data: usage } = await admin.from("user_usage").select("*").eq("user_id", user.id).maybeSingle();
     if (!usage) throw new Error("usage row missing");
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
@@ -94,19 +156,15 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Out of credits", code: "no_credits" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Fetch site
     const siteText = await fetchSite(product_url);
 
-    // Generate
     const system = `You are Rocket, an AI launch co-pilot for vibe coders. Given a product URL and its scraped text, you generate a complete launch kit. Always respond as a single JSON object with the requested keys. Keep each value tight, concrete, and ready-to-paste. No markdown headings; plain text or short bullet lists where appropriate (use "- " for bullets).`;
-
     const keys = ASSET_PLAN.map((a) => a.asset_type).join(", ");
     const user_prompt = `Product URL: ${product_url}\n\nScraped page content:\n"""${siteText || "(no content fetched — infer from URL)"}"""\n\nReturn a JSON object with EXACTLY these keys, each a string: product_name, ${keys}. Tones: confident, founder-led, specific. For social posts, write the actual post copy. For checklists and use cases, use "- " bullets. For Launch Readiness Score, give a number 0-100 with 1-2 sentence rationale.`;
 
-    const parsed = await callAI(system, user_prompt);
+    const parsed: any = await geminiJSON({ system, user: user_prompt, temperature: 0.7 });
     const product_name = parsed.product_name || new URL(product_url).hostname.replace("www.", "");
 
-    // Create rocket
     const { data: rocket, error: rErr } = await admin
       .from("rockets")
       .insert({ user_id: user.id, product_url, product_name, status: "ready" })
@@ -123,28 +181,17 @@ Deno.serve(async (req) => {
     const { error: aErr } = await admin.from("rocket_assets").insert(assets);
     if (aErr) throw aErr;
 
-    // Decrement credits
-    await admin
-      .from("user_usage")
-      .update({ credits_used: usage.credits_used + 1 })
-      .eq("user_id", user.id);
+    await admin.from("user_usage").update({ credits_used: usage.credits_used + 1 }).eq("user_id", user.id);
 
-    // Auto-fire "rocket_generated" email
     if (RESEND_API_KEY && user.email) {
       sendBranded(RESEND_API_KEY, FROM_EMAIL, user.email, "rocket_generated", {
-        product_name,
-        rocket_id: rocket.id,
+        product_name, rocket_id: rocket.id,
       }).catch((e) => console.error("email send failed", e));
     }
 
-    return new Response(JSON.stringify({ rocket_id: rocket.id }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ rocket_id: rocket.id }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
-});// redeploy cors fix
+});
