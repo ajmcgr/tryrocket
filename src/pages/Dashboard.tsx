@@ -59,7 +59,7 @@ const Dashboard = () => {
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-100">
             <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <Link to="/settings" className="mt-3 inline-block text-xs font-medium text-neutral-700 hover:underline">Manage billing →</Link>
+          <Link to="/account" className="mt-3 inline-block text-xs font-medium text-neutral-700 hover:underline">Manage billing →</Link>
         </div>
       </div>
 

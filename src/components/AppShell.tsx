@@ -44,7 +44,7 @@ const AppShell = () => {
             <NavLink to="/projects" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <NavLink to="/settings" className={({ isActive }) => `hidden rounded-lg px-3 py-1.5 text-sm font-medium transition md:inline-flex ${isActive ? "text-neutral-900" : "text-neutral-700 hover:bg-neutral-100"}`}>Settings</NavLink>
+            <a href="mailto:alex@tryrocket.ai" className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex">Support</a>
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none focus:ring-2 focus:ring-neutral-300" aria-label="Account menu">
                 <Avatar className="h-8 w-8 border border-neutral-200">
@@ -59,10 +59,10 @@ const AppShell = () => {
                 </div>
                 <div className="py-2">
                   <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
-                    <Link to="/settings#billing">Account &amp; billing</Link>
+                    <Link to="/account#billing">Account &amp; billing</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
-                    <Link to="/settings#profile">Team</Link>
+                    <Link to="/account#profile">Team</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
                     <Link to="/pricing">Plans</Link>
