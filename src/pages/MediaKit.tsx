@@ -1,10 +1,10 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import rocketWhite from "@/assets/rocket-logo-white.png.asset.json";
+import rocketColor from "@/assets/rocket-logo-color.png.asset.json";
 import { Button } from "@/components/ui/button";
 
 const colors = [
-  { name: "Brand Blue", hex: "#3B82F6", swatch: "bg-brand" },
+  { name: "Brand Blue", hex: "#00A0DC", swatch: "bg-brand" },
   { name: "Ink", hex: "#0A0A0A", swatch: "bg-neutral-900" },
   { name: "Paper", hex: "#FFFFFF", swatch: "bg-white border border-neutral-200" },
   { name: "Smoke", hex: "#F5F5F5", swatch: "bg-neutral-100" },
@@ -20,21 +20,21 @@ const MediaKit = () => (
       <section className="mt-14">
         <h2 className="text-xl font-semibold tracking-tight">Logos</h2>
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-neutral-200 bg-neutral-900 p-10">
-            <img src={rocketWhite.url} alt="Rocket logo on dark" className="mx-auto h-20 w-20 object-contain" />
-            <p className="mt-6 text-center text-xs text-neutral-400">Rocket logo · Dark backgrounds</p>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-10">
+            <img src={rocketColor.url} alt="Rocket logo on light" className="mx-auto h-20 w-auto object-contain" />
+            <p className="mt-6 text-center text-xs text-neutral-500">Rocket logo · Light backgrounds</p>
             <div className="mt-4 text-center">
               <Button asChild variant="outline" size="sm" className="rounded-full">
-                <a href={rocketWhite.url} download="rocket-logo-white.png">Download PNG</a>
+                <a href={rocketColor.url} download="rocket-logo.png">Download PNG</a>
               </Button>
             </div>
           </div>
-          <div className="rounded-2xl border border-neutral-200 bg-brand p-10">
-            <img src={rocketWhite.url} alt="Rocket logo on brand" className="mx-auto h-20 w-20 object-contain" />
-            <p className="mt-6 text-center text-xs text-white/80">Rocket logo · Brand backgrounds</p>
+          <div className="rounded-2xl border border-neutral-200 bg-neutral-900 p-10">
+            <img src={rocketColor.url} alt="Rocket logo on dark" className="mx-auto h-20 w-auto object-contain" />
+            <p className="mt-6 text-center text-xs text-neutral-400">Rocket logo · Dark backgrounds</p>
             <div className="mt-4 text-center">
               <Button asChild variant="outline" size="sm" className="rounded-full">
-                <a href={rocketWhite.url} download="rocket-logo-white.png">Download PNG</a>
+                <a href={rocketColor.url} download="rocket-logo.png">Download PNG</a>
               </Button>
             </div>
           </div>
