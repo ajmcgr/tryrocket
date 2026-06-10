@@ -43,6 +43,7 @@ const Settings = () => {
       if (newPassword) payload.password = newPassword;
       const { error } = await supabase.auth.updateUser(payload);
       if (error) throw error;
+      await supabase.auth.refreshSession();
       toast({ title: "Profile saved" });
       setNewPassword("");
     } catch (e: any) {

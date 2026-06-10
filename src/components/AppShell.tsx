@@ -37,12 +37,12 @@ const AppShell = () => {
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="flex h-16 w-full items-center px-6">
           <Logo to="/projects" />
+          <nav className="ml-8 hidden items-center gap-2 text-sm font-medium text-neutral-700 md:flex">
+            <NavLink to="/projects" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
+            <NavLink to="/create" className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-brand-foreground shadow-sm transition hover:bg-brand-hover">Create</NavLink>
+          </nav>
           <div className="ml-auto flex items-center gap-2">
-            <nav className="hidden items-center gap-1 text-sm font-medium text-neutral-700 md:flex">
-              <NavLink to="/projects" className={({ isActive }) => `rounded-lg border px-3 py-1.5 transition ${isActive ? "border-neutral-200 bg-white text-neutral-900" : "border-transparent hover:bg-neutral-100"}`}>Projects</NavLink>
-              <NavLink to="/create" className={({ isActive }) => `rounded-lg border px-3 py-1.5 transition ${isActive ? "border-neutral-200 bg-white text-neutral-900" : "border-transparent hover:bg-neutral-100"}`}>Create</NavLink>
-              <NavLink to="/settings" className={({ isActive }) => `rounded-lg border px-3 py-1.5 transition ${isActive ? "border-neutral-200 bg-white text-neutral-900" : "border-transparent hover:bg-neutral-100"}`}>Settings</NavLink>
-            </nav>
+            <NavLink to="/settings" className={({ isActive }) => `hidden rounded-lg px-3 py-1.5 text-sm font-medium transition md:inline-flex ${isActive ? "text-neutral-900" : "text-neutral-700 hover:bg-neutral-100"}`}>Settings</NavLink>
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none focus:ring-2 focus:ring-neutral-300" aria-label="Account menu">
                 <Avatar className="h-8 w-8 border border-neutral-200">
