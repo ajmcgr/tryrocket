@@ -94,7 +94,7 @@ const ToolDetail = () => {
           <h3 className="text-2xl font-semibold tracking-tight">Want the full launch kit?</h3>
           <p className="mt-2 text-neutral-600">Get all of this plus positioning, social copy, and a launch plan — in one click.</p>
           <Button asChild size="lg" className="mt-6">
-            <Link to="/signup">Generate your Rocket <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/signup">Generate your brand <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
       </main>
