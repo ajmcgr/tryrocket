@@ -45,7 +45,7 @@ const SiteHeader = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           <Link to="/login" className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 sm:inline">Log in</Link>
-          <Button asChild>
+          <Button asChild size="lg" className="rounded-lg px-6 py-3 text-sm">
             <Link to="/signup">Sign up <ArrowRight className="h-3.5 w-3.5" /></Link>
           </Button>
         </div>
