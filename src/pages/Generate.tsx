@@ -123,9 +123,43 @@ const Generate = () => {
           )}
         </div>
         <div className="p-3 border-t border-neutral-200">
-          <Link to="/settings" className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
-            <CreditCard className="h-4 w-4" /> Buy credits
-          </Link>
+          <Popover>
+            <PopoverTrigger className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
+              <Sparkles className="h-4 w-4" /> Buy credits
+            </PopoverTrigger>
+            <PopoverContent side="top" align="center" className="w-[300px] rounded-2xl border border-neutral-200 bg-white p-0 shadow-xl">
+              <div className="px-4 pt-3 pb-3 border-b border-neutral-100">
+                <p className="text-sm font-semibold text-neutral-900">
+                  {usage ? (usage.limit + usage.extra - usage.used).toLocaleString() : "—"} credits left
+                </p>
+                <p className="mt-0.5 text-xs text-neutral-500">One-time top-up, never expires</p>
+              </div>
+              <div className="py-1">
+                {[
+                  { id: "pack_500", label: "500 credits", price: "$5" },
+                  { id: "pack_1500", label: "1,500 credits", price: "$10", highlight: true },
+                  { id: "pack_5000", label: "5,000 credits", price: "$25" },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => buyPack(p.id)}
+                    disabled={!!buying}
+                    className={`flex w-full items-center justify-between px-4 py-2.5 text-sm transition ${p.highlight ? "bg-brand/10 text-brand hover:bg-brand/15" : "text-neutral-800 hover:bg-neutral-50"}`}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {buying === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className={`h-4 w-4 ${p.highlight ? "text-brand" : "text-neutral-500"}`} />}
+                      <span className="font-medium">{p.label}</span>
+                    </span>
+                    <span className={p.highlight ? "text-brand" : "text-neutral-500"}>{p.price}</span>
+                  </button>
+                ))}
+              </div>
+              <Link to="/pricing" className="flex items-center justify-between border-t border-neutral-100 px-4 py-3 text-sm text-neutral-700 hover:bg-neutral-50">
+                <span>Or upgrade your plan</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </PopoverContent>
+          </Popover>
         </div>
       </aside>
 
