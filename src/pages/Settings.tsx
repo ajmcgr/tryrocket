@@ -312,7 +312,7 @@ export const BillingSettings = () => {
 
         {usage?.plan !== "growth" && (
           <ul className="mt-5 space-y-1.5 text-sm text-neutral-700">
-            {["7-day free trial", "3,000 credits / month", "Unlimited saved Brand Assets", "Export tools", "Priority generation"].map((f) => (
+            {["7-day free trial", "3,000 credits / month", "Unlimited saved Brand Assets", "Export tools", "Priority generation", "Early access to new generators"].map((f) => (
               <li key={f} className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-neutral-900" /> {f}</li>
             ))}
           </ul>
