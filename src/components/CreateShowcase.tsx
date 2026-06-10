@@ -1,4 +1,4 @@
-import { Rocket, Linkedin, Mail, Quote, TrendingUp, Users, CheckCircle2, BookOpen, LayoutTemplate, Image as ImageIcon, Component, Shapes, Star, BarChart3 } from "lucide-react";
+import { Rocket, Mail, Quote, TrendingUp, Users, CheckCircle2, BookOpen, LayoutTemplate, Image as ImageIcon, Component, Shapes, Star, BarChart3 } from "lucide-react";
 
 type CardProps = {
   i: number;
