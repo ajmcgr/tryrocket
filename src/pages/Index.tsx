@@ -78,6 +78,41 @@ const Index = () => {
         </div>
       </section>
 
+      {/* What you can create */}
+      <section id="create" className="border-t border-neutral-200/60 bg-neutral-50/50">
+        <div className="mx-auto max-w-6xl px-6 py-24">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">What can you create with Rocket?</h2>
+            <p className="mt-4 text-lg text-neutral-600">
+              A complete Brand Kit, generated for you in seconds.
+            </p>
+          </div>
+          <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {[
+              { label: "Brand Guidelines", icon: Target },
+              { label: "Brand Templates", icon: ListChecks },
+              { label: "Logos", icon: RocketIcon },
+              { label: "Colors", icon: Palette },
+              { label: "Fonts", icon: BookOpen },
+              { label: "Brand voice", icon: Megaphone },
+              { label: "Photos", icon: Sparkles },
+              { label: "Components", icon: Puzzle },
+              { label: "Graphics", icon: Zap },
+              { label: "Icons", icon: Wrench },
+              { label: "Charts", icon: ListChecks },
+              { label: "Launch Copy", icon: ArrowRight },
+            ].map(({ label, icon: Icon }) => (
+              <div key={label} className="group flex flex-col items-center justify-center rounded-2xl border border-neutral-200 bg-white p-6 text-center transition hover:-translate-y-1 hover:shadow-lg">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 text-brand transition group-hover:bg-brand group-hover:text-white">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <span className="mt-4 text-sm font-semibold text-neutral-900">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Use Cases */}
       <section id="use-cases" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
