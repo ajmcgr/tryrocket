@@ -29,7 +29,7 @@ const SiteHeader = () => {
           <Link to="/faq" className="hover:text-neutral-900">FAQ</Link>
           <Link to="/blog" className="hover:text-neutral-900">Resources</Link>
         </nav>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-6">
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm text-neutral-600 hover:text-neutral-900 focus:outline-none">
               <span className="text-base leading-none">{lang.flag}</span>
