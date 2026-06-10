@@ -265,20 +265,22 @@ const Index = () => {
             </div>
             <p className="mt-2 text-center text-xs text-neutral-400">Enter to send · Shift+Enter for newline</p>
           </form>
-          <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-2">
+          <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-1.5">
             {CATEGORIES.map((cat) => {
               const isActive = selected.includes(cat.slug);
+              const Icon = cat.Icon;
               return (
                 <button
                   key={cat.slug}
                   type="button"
                   onClick={() => toggleCategory(cat.slug)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition border ${
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                     isActive
-                      ? "bg-brand text-white border-brand"
-                      : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300"
+                      ? "border-brand bg-brand text-brand-foreground"
+                      : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
                   }`}
                 >
+                  <Icon className="h-3.5 w-3.5" />
                   {cat.label}
                 </button>
               );
