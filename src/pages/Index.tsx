@@ -58,13 +58,13 @@ const Index = () => {
             Make Your Product a Brand
           </h1>
           <p className="mx-auto mt-10 max-w-2xl text-base text-neutral-600">
-            Paste your product URL. We'll handle the rest.
+            Paste your URL or describe your idea.
           </p>
           <form onSubmit={onSubmit} className="mx-auto mt-6 flex w-full max-w-2xl flex-col items-stretch gap-3 sm:flex-row">
             <input
               type="text"
               required
-              placeholder="https://myproduct.com"
+              placeholder="Paste your URL or describe your idea..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className="h-14 flex-1 rounded-2xl border border-neutral-200 bg-white px-5 text-base outline-none ring-neutral-300 transition focus:ring-2"
