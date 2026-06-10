@@ -22,7 +22,7 @@ const SiteHeader = () => {
   const [lang, setLang] = useState(LANGUAGES[0]);
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl">
-      <div className="relative mx-auto flex h-16 max-w-6xl items-center px-6">
+      <div className="relative mx-auto flex h-14 max-w-6xl items-center px-6">
         <Logo />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
           <Link to="/pricing" className="hover:text-neutral-900">Pricing</Link>

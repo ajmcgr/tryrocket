@@ -33,9 +33,9 @@ const AppShell = () => {
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900">
+    <div className={isFullBleed ? "min-h-screen text-neutral-900" : "min-h-screen bg-neutral-50 text-neutral-900"}>
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
-        <div className="flex h-16 w-full items-center px-6">
+        <div className="flex h-14 w-full items-center px-6">
           <Logo to="/projects" />
           <div className="ml-auto flex items-center gap-2">
             <nav className="hidden items-center gap-1 text-sm font-medium text-neutral-700 md:flex">
