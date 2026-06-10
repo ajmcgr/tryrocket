@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
-import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X } from "lucide-react";
+import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X, BookMarked, LayoutTemplate, Shapes, Type as TypeIcon, Image as ImageIcon, Box, Sparkle, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -146,18 +146,18 @@ const Index = () => {
   };
 
   const CATEGORIES = [
-    { label: "Brand Guidelines", slug: "brand-guidelines" },
-    { label: "Brand Templates", slug: "brand-templates" },
-    { label: "Logos", slug: "logos" },
-    { label: "Colors", slug: "colors" },
-    { label: "Fonts", slug: "fonts" },
-    { label: "Brand voice", slug: "brand-voice" },
-    { label: "Photos", slug: "photos" },
-    { label: "Components", slug: "components" },
-    { label: "Graphics", slug: "graphics" },
-    { label: "Icons", slug: "icons" },
-    { label: "Charts", slug: "charts" },
-    { label: "Launch Copy", slug: "launch-copy" },
+    { label: "Brand Guidelines", slug: "brand-guidelines", Icon: BookMarked },
+    { label: "Brand Templates", slug: "brand-templates", Icon: LayoutTemplate },
+    { label: "Logos", slug: "logos", Icon: Shapes },
+    { label: "Colors", slug: "colors", Icon: Palette },
+    { label: "Fonts", slug: "fonts", Icon: TypeIcon },
+    { label: "Brand voice", slug: "brand-voice", Icon: Mic },
+    { label: "Photos", slug: "photos", Icon: ImageIcon },
+    { label: "Components", slug: "components", Icon: Box },
+    { label: "Graphics", slug: "graphics", Icon: Sparkle },
+    { label: "Icons", slug: "icons", Icon: Puzzle },
+    { label: "Charts", slug: "charts", Icon: BarChart3 },
+    { label: "Launch Copy", slug: "launch-copy", Icon: Megaphone },
   ];
 
   const toggleCategory = (slug: string) => {
