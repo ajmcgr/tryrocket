@@ -1,10 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { sendBranded } from "../_shared/email-template.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_EMAIL = Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>";
 
 const ASSET_PLAN: Array<{ asset_type: string; title: string }> = [
   { asset_type: "positioning_tagline", title: "Tagline" },
@@ -146,6 +149,14 @@ Deno.serve(async (req) => {
       .from("user_usage")
       .update({ credits_used: usage.credits_used + 1 })
       .eq("user_id", user.id);
+
+    // Auto-fire "rocket_generated" email
+    if (RESEND_API_KEY && user.email) {
+      sendBranded(RESEND_API_KEY, FROM_EMAIL, user.email, "rocket_generated", {
+        product_name,
+        rocket_id: rocket.id,
+      }).catch((e) => console.error("email send failed", e));
+    }
 
     return new Response(JSON.stringify({ rocket_id: rocket.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -12,6 +12,12 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Generate from "./pages/Generate.tsx";
 import RocketDetail from "./pages/RocketDetail.tsx";
 import Settings from "./pages/Settings.tsx";
+import About from "./pages/About.tsx";
+import Blog from "./pages/Blog.tsx";
+import BlogPost from "./pages/BlogPost.tsx";
+import MediaKit from "./pages/MediaKit.tsx";
+import Tools from "./pages/Tools.tsx";
+import ToolDetail from "./pages/ToolDetail.tsx";
 import AppShell from "./components/AppShell.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
@@ -30,6 +36,12 @@ const App = () => (
             <Route path="/join" element={<Join />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/media-kit" element={<MediaKit />} />
+            <Route path="/tools" element={<Tools />} />
+            <Route path="/tools/:slug" element={<ToolDetail />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/generate" element={<Generate />} />

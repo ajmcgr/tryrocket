@@ -1,10 +1,18 @@
 import Stripe from "npm:stripe@16.12.0";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { sendBranded } from "../_shared/email-template.ts";
 
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_EMAIL = Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>";
+
+async function getEmail(admin: ReturnType<typeof createClient>, userId: string): Promise<string | null> {
+  const { data } = await admin.auth.admin.getUserById(userId);
+  return data?.user?.email ?? null;
+}
 
 Deno.serve(async (req) => {
   if (!STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET) return new Response("stripe not configured", { status: 500 });
@@ -41,6 +49,10 @@ Deno.serve(async (req) => {
         if (credits > 0) {
           const { data: u } = await admin.from("user_usage").select("credits_extra").eq("user_id", userId).maybeSingle();
           await admin.from("user_usage").update({ credits_extra: (u?.credits_extra || 0) + credits }).eq("user_id", userId);
+          if (RESEND_API_KEY) {
+            const email = await getEmail(admin, userId);
+            if (email) sendBranded(RESEND_API_KEY, FROM_EMAIL, email, "credits_purchased", { credits }).catch(console.error);
+          }
         }
         if (s.mode === "subscription" && product === "growth") {
           await admin.from("subscriptions").upsert({
@@ -51,6 +63,16 @@ Deno.serve(async (req) => {
             status: "active",
           }, { onConflict: "user_id" });
           await admin.from("user_usage").update({ plan: "growth", monthly_limit: 3000 }).eq("user_id", userId);
+          if (RESEND_API_KEY) {
+            const email = await getEmail(admin, userId);
+            if (email) sendBranded(RESEND_API_KEY, FROM_EMAIL, email, "trial_started", {}).catch(console.error);
+          }
+        }
+        if (s.amount_total && s.amount_total > 0 && RESEND_API_KEY) {
+          const email = await getEmail(admin, userId);
+          if (email) sendBranded(RESEND_API_KEY, FROM_EMAIL, email, "payment_succeeded", {
+            amount: s.amount_total, currency: s.currency || "usd",
+          }).catch(console.error);
         }
         break;
       }

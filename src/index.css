@@ -21,8 +21,13 @@
     --popover: 30 10% 8%;
     --popover-foreground: 40 30% 95%;
 
-    --primary: 40 70% 55%;
-    --primary-foreground: 30 10% 5%;
+    /* Brand blue — matches reference screenshot (#3B82F6) */
+    --brand: 217 91% 60%;
+    --brand-foreground: 0 0% 100%;
+    --brand-hover: 217 91% 55%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 30 10% 12%;
     --secondary-foreground: 40 30% 90%;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Rocket as RocketIcon } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const Login = ({ mode = "login" as "login" | "signup" }) => {
   const [email, setEmail] = useState("");
@@ -41,10 +41,7 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
   return (
     <div className="grid min-h-screen place-items-center bg-white px-6 py-12 text-neutral-900">
       <div className="w-full max-w-md">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-2 text-base font-semibold tracking-tight">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-neutral-900 text-white"><RocketIcon className="h-4 w-4" /></span>
-          Rocket
-        </Link>
+        <div className="mb-8 flex justify-center"><Logo /></div>
         <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">{isSignup ? "Create your account" : "Sign in"}</h1>
           <p className="mt-1.5 text-sm text-neutral-500">{isSignup ? "Start with 500 free credits." : "Welcome back."}</p>
@@ -61,7 +58,7 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
           <form onSubmit={submit} className="space-y-3">
             <input type="email" required placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3.5 text-sm outline-none ring-neutral-300 transition focus:ring-2" />
             <input type="password" required minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 w-full rounded-lg border border-neutral-200 bg-white px-3.5 text-sm outline-none ring-neutral-300 transition focus:ring-2" />
-            <button type="submit" disabled={loading} className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-neutral-900 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60">
+            <button type="submit" disabled={loading} className="inline-flex h-11 w-full items-center justify-center rounded-full bg-brand text-sm font-medium text-brand-foreground transition hover:bg-brand-hover disabled:opacity-60">
               {loading ? "…" : isSignup ? "Create account" : "Sign in"}
             </button>
           </form>
