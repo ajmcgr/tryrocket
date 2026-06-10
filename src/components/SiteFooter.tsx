@@ -43,6 +43,7 @@ const SiteFooter = () => (
             {articles.slice(0, 10).map((a) => (
               <li key={a.slug}><Link to={`/blog/${a.slug}`} className="hover:text-neutral-900">{a.title}</Link></li>
             ))}
+            <li><Link to="/blog" className="hover:text-neutral-900">View All Resources →</Link></li>
           </ul>
         </div>
         <div>
