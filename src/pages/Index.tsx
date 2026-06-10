@@ -538,6 +538,32 @@ const Index = () => {
               </Button>
             </div>
           </div>
+
+          {/* Credit packs */}
+          <div className="mt-14 rounded-2xl border border-neutral-200 bg-white p-8">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Credit Packs</div>
+                <h3 className="mt-1 text-2xl font-semibold tracking-tight">Top up anytime</h3>
+                <p className="mt-1 text-sm text-neutral-600">One-time purchase. Never expires. Stacks with your plan credits.</p>
+              </div>
+            </div>
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[
+                { credits: "500", price: "$5", note: "Great for a couple of brand kits" },
+                { credits: "1,500", price: "$10", note: "Most popular", highlight: true },
+                { credits: "5,000", price: "$25", note: "Best value for power users" },
+              ].map((p) => (
+                <div key={p.credits} className={`rounded-xl border p-5 ${p.highlight ? "border-brand bg-brand/5" : "border-neutral-200 bg-neutral-50"}`}>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-semibold tracking-tight">{p.price}</span>
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-neutral-900">{p.credits} credits</div>
+                  <p className="mt-2 text-xs text-neutral-600">{p.note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
