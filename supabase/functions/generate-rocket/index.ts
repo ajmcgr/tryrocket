@@ -1,8 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { sendBranded } from "../_shared/email-template.ts";
+import { geminiJSON, requireGeminiKey } from "../_shared/gemini.ts";
 
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -61,35 +61,14 @@ async function fetchSite(url: string): Promise<string> {
   }
 }
 
-async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<any> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-    }),
-  });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`OpenAI ${res.status}: ${t}`);
-  }
-  const data = await res.json();
-  return JSON.parse(data.choices[0].message.content);
+async function callAI(systemPrompt: string, userPrompt: string): Promise<any> {
+  return await geminiJSON({ system: systemPrompt, user: userPrompt, temperature: 0.7 });
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
+    requireGeminiKey();
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -124,7 +103,7 @@ Deno.serve(async (req) => {
     const keys = ASSET_PLAN.map((a) => a.asset_type).join(", ");
     const user_prompt = `Product URL: ${product_url}\n\nScraped page content:\n"""${siteText || "(no content fetched — infer from URL)"}"""\n\nReturn a JSON object with EXACTLY these keys, each a string: product_name, ${keys}. Tones: confident, founder-led, specific. For social posts, write the actual post copy. For checklists and use cases, use "- " bullets. For Launch Readiness Score, give a number 0-100 with 1-2 sentence rationale.`;
 
-    const parsed = await callOpenAI(system, user_prompt);
+    const parsed = await callAI(system, user_prompt);
     const product_name = parsed.product_name || new URL(product_url).hostname.replace("www.", "");
 
     // Create rocket

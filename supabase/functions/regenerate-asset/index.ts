@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { geminiText, requireGeminiKey } from "../_shared/gemini.ts";
 
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -9,7 +9,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
+    requireGeminiKey();
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -39,18 +39,7 @@ Deno.serve(async (req) => {
     const sys = "You are Rocket, an AI launch co-pilot. Rewrite the requested launch asset. Be specific, confident, ready-to-paste. Output ONLY the new content, no preamble.";
     const usr = `Product: ${asset.rockets.product_name || asset.rockets.product_url}\nURL: ${asset.rockets.product_url}\nAsset: ${asset.title}\nCurrent content:\n"""${asset.content}"""\n\n${instruction ? `User instruction: ${instruction}` : "Generate a fresh, improved alternative."}`;
 
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_API_KEY}` },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{ role: "system", content: sys }, { role: "user", content: usr }],
-        temperature: 0.8,
-      }),
-    });
-    if (!r.ok) throw new Error(`OpenAI ${r.status}: ${await r.text()}`);
-    const d = await r.json();
-    const newContent = d.choices[0].message.content.trim();
+    const newContent = await geminiText({ system: sys, user: usr, temperature: 0.8 });
 
     await admin.from("rocket_assets").update({ content: newContent }).eq("id", asset_id);
     await admin.from("user_usage").update({ credits_used: usage.credits_used + 1 }).eq("user_id", user.id);
