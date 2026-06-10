@@ -3,7 +3,16 @@ import { Link, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 const supabase = _sb as any;
 import { useToast } from "@/hooks/use-toast";
-import { Copy, RefreshCw, Save, ExternalLink, Loader2 } from "lucide-react";
+import { Copy, RefreshCw, Save, ExternalLink, Loader2, Download, Rocket as RocketIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const GROUPS: { key: string; title: string; prefixes: string[] }[] = [
   { key: "positioning", title: "Positioning", prefixes: ["positioning_"] },
@@ -13,6 +22,18 @@ const GROUPS: { key: string; title: string; prefixes: string[] }[] = [
   { key: "social", title: "Social Content", prefixes: ["social_"] },
   { key: "strategy", title: "Launch Strategy", prefixes: ["strategy_"] },
   { key: "checklist", title: "Launch Checklist", prefixes: ["checklist_"] },
+];
+
+const DIRECTORIES: { name: string; href: (name: string, url: string, tagline: string) => string }[] = [
+  { name: "Product Hunt", href: (n, u) => `https://www.producthunt.com/posts/new?url=${encodeURIComponent(u)}&name=${encodeURIComponent(n)}` },
+  { name: "G2", href: () => "https://www.g2.com/products/new" },
+  { name: "There's An AI For That", href: () => "https://theresanaiforthat.com/submit/" },
+  { name: "Hacker News (Show HN)", href: (n, u) => `https://news.ycombinator.com/submit?t=${encodeURIComponent(`Show HN: ${n}`)}&u=${encodeURIComponent(u)}` },
+  { name: "Peerlist", href: () => "https://peerlist.io/projects/launch" },
+  { name: "BetaList", href: () => "https://betalist.com/submit" },
+  { name: "Uneed", href: () => "https://www.uneed.best/submit-a-tool" },
+  { name: "Alternative.me", href: () => "https://alternative.me/submit/" },
+  { name: "Indie Hackers", href: (n, u, t) => `https://www.indiehackers.com/new-post?title=${encodeURIComponent(`Launched: ${n} — ${t}`)}&body=${encodeURIComponent(`Just launched ${n}.\n\n${t}\n\n${u}`)}` },
 ];
 
 const RocketDetail = () => {
@@ -52,17 +73,73 @@ const RocketDetail = () => {
     } finally { setRegenId(null); }
   };
 
+  const copyGroup = (groupKey: string) => {
+    const g = GROUPS.find((x) => x.key === groupKey);
+    if (!g) return;
+    const items = assets.filter((a) => g.prefixes.some((p) => a.asset_type.startsWith(p)));
+    const text = items.map((a) => `## ${a.title}\n\n${a.content}`).join("\n\n");
+    navigator.clipboard.writeText(text);
+    toast({ title: `${g.title} copied` });
+  };
+
+  const exportMarkdown = () => {
+    if (!rocket) return;
+    let md = `# ${rocket.product_name}\n\n${rocket.product_url}\n\n`;
+    GROUPS.forEach((g) => {
+      const items = assets.filter((a) => g.prefixes.some((p) => a.asset_type.startsWith(p)));
+      if (!items.length) return;
+      md += `\n## ${g.title}\n\n`;
+      items.forEach((a) => { md += `### ${a.title}\n\n${a.content}\n\n`; });
+    });
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${rocket.product_name.replace(/\s+/g, "-").toLowerCase()}-rocket.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: "Markdown file downloaded." });
+  };
+
   if (!rocket) return <div className="text-sm text-neutral-500">Loading…</div>;
+
+  const tagline = assets.find((a) => a.asset_type === "positioning_tagline")?.content || "";
 
   return (
     <div>
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <Link to="/dashboard" className="text-xs text-neutral-500 hover:text-neutral-900">← Dashboard</Link>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">{rocket.product_name}</h1>
           <a href={rocket.product_url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">{rocket.product_url} <ExternalLink className="h-3 w-3" /></a>
         </div>
-        <a href="https://trylaunch.ai" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800">Launch on TryLaunch.ai <ExternalLink className="h-3.5 w-3.5" /></a>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" className="rounded-full" onClick={exportMarkdown}>
+            <Download className="h-4 w-4" /> Export Markdown
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="rounded-full"><RocketIcon className="h-4 w-4" /> Launch to…</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Submit to a directory</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {DIRECTORIES.map((d) => (
+                <DropdownMenuItem key={d.name} asChild>
+                  <a href={d.href(rocket.product_name, rocket.product_url, tagline)} target="_blank" rel="noreferrer">
+                    {d.name} <ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  </a>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <a href="https://trylaunch.ai" target="_blank" rel="noreferrer">
+                  Launch on TryLaunch.ai <ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" />
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="mt-10 space-y-12">
@@ -71,7 +148,12 @@ const RocketDetail = () => {
           if (!items.length) return null;
           return (
             <section key={g.key}>
-              <h2 className="text-xl font-semibold tracking-tight">{g.title}</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold tracking-tight">{g.title}</h2>
+                <button onClick={() => copyGroup(g.key)} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900">
+                  <Copy className="h-3.5 w-3.5" /> Copy section
+                </button>
+              </div>
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 {items.map((a) => (
                   <AssetCard key={a.id} asset={a} regenerating={regenId === a.id} onSave={save} onRegenerate={regenerate} onChange={(v) => setAssets((p) => p.map((x) => x.id === a.id ? { ...x, content: v } : x))} />
