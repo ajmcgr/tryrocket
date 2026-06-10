@@ -73,15 +73,13 @@ const PositioningContent = () => (
 
 const TaglineContent = () => (
   <div className="flex h-full flex-col justify-between bg-gradient-to-br from-neutral-950 to-neutral-800 p-7 text-white">
-    <Tag>
-      <span className="text-neutral-200">Tagline</span>
-    </Tag>
+    <Tag variant="dark">Tagline</Tag>
     <div>
       <h3 className="font-serif text-[34px] leading-[0.95] tracking-tight">
         Hire Faster.<br />
         <span className="italic text-indigo-300">Hire Smarter.</span>
       </h3>
-      <p className="mt-6 text-[11px] uppercase tracking-[0.2em] text-neutral-400">Brand Messaging</p>
+      <p className="mt-6 text-[11px] uppercase tracking-[0.2em] text-neutral-300">Brand Messaging</p>
     </div>
   </div>
 );
