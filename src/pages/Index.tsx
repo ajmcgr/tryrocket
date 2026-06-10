@@ -87,17 +87,15 @@ const Index = () => {
           </div>
           <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
-              { icon: Target, title: "Positioning", desc: "Taglines, value props, elevator pitch, target audience — locked in." },
-              { icon: Megaphone, title: "Launch Copy", desc: "Product Hunt, directories, X threads, LinkedIn, newsletters." },
-              { icon: ListChecks, title: "Launch Strategy", desc: "Channels, communities, content ideas, and a full launch checklist." },
-              { icon: Sparkles, title: "Founder Profile", desc: "X bio, LinkedIn headline, founder tagline — ready to paste." },
-              { icon: Zap, title: "Instant Generation", desc: "One URL in. A complete launch kit out. Edit and regenerate any section." },
-              { icon: RocketIcon, title: "Launch on Launch", desc: "Ship your Rocket straight to Launch when you're ready to go live." },
-            ].map(({ icon: Icon, title, desc }) => (
+              { emoji: "🎯", title: "Positioning", desc: "Taglines, value props, elevator pitch, target audience — locked in." },
+              { emoji: "📣", title: "Launch Copy", desc: "Product Hunt, directories, X threads, LinkedIn, newsletters." },
+              { emoji: "✅", title: "Launch Strategy", desc: "Channels, communities, content ideas, and a full launch checklist." },
+              { emoji: "✨", title: "Founder Profile", desc: "X bio, LinkedIn headline, founder tagline — ready to paste." },
+              { emoji: "⚡", title: "Instant Generation", desc: "One URL in. A complete launch kit out. Edit and regenerate any section." },
+              { emoji: "🚀", title: "Launch on Launch", desc: "Ship your Rocket straight to Launch when you're ready to go live." },
+            ].map(({ emoji, title, desc }) => (
               <div key={title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:shadow-md">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand text-brand-foreground">
-                  <Icon className="h-5 w-5" />
-                </div>
+                <div className="text-3xl leading-none" aria-hidden>{emoji}</div>
                 <h3 className="mt-5 text-lg font-semibold tracking-tight">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-neutral-600">{desc}</p>
               </div>
