@@ -23,6 +23,28 @@ const Index = () => {
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const [url, setUrl] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const CATEGORIES = [
+    { label: "Brand Guidelines", slug: "brand-guidelines" },
+    { label: "Brand Templates", slug: "brand-templates" },
+    { label: "Logos", slug: "logos" },
+    { label: "Colors", slug: "colors" },
+    { label: "Fonts", slug: "fonts" },
+    { label: "Brand voice", slug: "brand-voice" },
+    { label: "Photos", slug: "photos" },
+    { label: "Components", slug: "components" },
+    { label: "Graphics", slug: "graphics" },
+    { label: "Icons", slug: "icons" },
+    { label: "Charts", slug: "charts" },
+    { label: "Launch Copy", slug: "launch-copy" },
+  ];
+
+  const toggleCategory = (slug: string) => {
+    setSelected((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    );
+  };
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-white text-sm text-neutral-500">Loading…</div>;
 
@@ -30,7 +52,12 @@ const Index = () => {
     e.preventDefault();
     const trimmed = url.trim();
     if (!trimmed) return;
-    const target = `/create?url=${encodeURIComponent(trimmed)}`;
+    let finalUrl = trimmed;
+    if (selected.length > 0) {
+      const focus = selected.join(",");
+      finalUrl = `${finalUrl.replace(/#focus=.*$/, "").trim()}#focus=${focus}`;
+    }
+    const target = `/create?url=${encodeURIComponent(finalUrl)}`;
     if (user) nav(target);
     else nav("/signup", { state: { from: target } });
   };
@@ -73,6 +100,25 @@ const Index = () => {
               Generate Brand <ArrowRight className="h-4 w-4" />
             </Button>
           </form>
+          <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-2">
+            {CATEGORIES.map((cat) => {
+              const isActive = selected.includes(cat.slug);
+              return (
+                <button
+                  key={cat.slug}
+                  type="button"
+                  onClick={() => toggleCategory(cat.slug)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition border ${
+                    isActive
+                      ? "bg-brand text-white border-brand"
+                      : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
