@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
-import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X } from "lucide-react";
+import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X, BookMarked, LayoutTemplate, Shapes, Type as TypeIcon, Image as ImageIcon, Box, Sparkle, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -146,18 +146,18 @@ const Index = () => {
   };
 
   const CATEGORIES = [
-    { label: "Brand Guidelines", slug: "brand-guidelines" },
-    { label: "Brand Templates", slug: "brand-templates" },
-    { label: "Logos", slug: "logos" },
-    { label: "Colors", slug: "colors" },
-    { label: "Fonts", slug: "fonts" },
-    { label: "Brand voice", slug: "brand-voice" },
-    { label: "Photos", slug: "photos" },
-    { label: "Components", slug: "components" },
-    { label: "Graphics", slug: "graphics" },
-    { label: "Icons", slug: "icons" },
-    { label: "Charts", slug: "charts" },
-    { label: "Launch Copy", slug: "launch-copy" },
+    { label: "Brand Guidelines", slug: "brand-guidelines", Icon: BookMarked },
+    { label: "Brand Templates", slug: "brand-templates", Icon: LayoutTemplate },
+    { label: "Logos", slug: "logos", Icon: Shapes },
+    { label: "Colors", slug: "colors", Icon: Palette },
+    { label: "Fonts", slug: "fonts", Icon: TypeIcon },
+    { label: "Brand voice", slug: "brand-voice", Icon: Mic },
+    { label: "Photos", slug: "photos", Icon: ImageIcon },
+    { label: "Components", slug: "components", Icon: Box },
+    { label: "Graphics", slug: "graphics", Icon: Sparkle },
+    { label: "Icons", slug: "icons", Icon: Puzzle },
+    { label: "Charts", slug: "charts", Icon: BarChart3 },
+    { label: "Launch Copy", slug: "launch-copy", Icon: Megaphone },
   ];
 
   const toggleCategory = (slug: string) => {
@@ -265,20 +265,22 @@ const Index = () => {
             </div>
             <p className="mt-2 text-center text-xs text-neutral-400">Enter to send · Shift+Enter for newline</p>
           </form>
-          <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-2">
+          <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-1.5">
             {CATEGORIES.map((cat) => {
               const isActive = selected.includes(cat.slug);
+              const Icon = cat.Icon;
               return (
                 <button
                   key={cat.slug}
                   type="button"
                   onClick={() => toggleCategory(cat.slug)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition border ${
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                     isActive
-                      ? "bg-brand text-white border-brand"
-                      : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300"
+                      ? "border-brand bg-brand text-brand-foreground"
+                      : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
                   }`}
                 >
+                  <Icon className="h-3.5 w-3.5" />
                   {cat.label}
                 </button>
               );
