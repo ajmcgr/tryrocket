@@ -51,8 +51,12 @@ function requireGeminiKey() {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
   return GEMINI_API_KEY;
 }
-async function geminiJSON<T = any>(opts: { system: string; user: string; temperature?: number }): Promise<T> {
+async function geminiJSON<T = any>(opts: { system: string; user: string; images?: Array<{ mimeType: string; data: string }>; temperature?: number }): Promise<T> {
   const key = requireGeminiKey();
+  const parts: any[] = [{ text: opts.user }];
+  for (const img of opts.images || []) {
+    parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+  }
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
     {
@@ -60,7 +64,7 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; tempera
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: opts.system }] },
-        contents: [{ role: "user", parts: [{ text: opts.user }] }],
+        contents: [{ role: "user", parts }],
         generationConfig: { temperature: opts.temperature ?? 0.7, responseMimeType: "application/json" },
       }),
     },
@@ -142,9 +146,19 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { product_url } = await req.json();
-    if (!product_url || typeof product_url !== "string") {
-      return new Response(JSON.stringify({ error: "product_url required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { product_url, images: imagesRaw } = await req.json();
+    const hasUrl = typeof product_url === "string" && product_url.length > 0;
+    const imagesIn: string[] = Array.isArray(imagesRaw) ? imagesRaw.filter((s: any) => typeof s === "string") : [];
+    if (!hasUrl && imagesIn.length === 0) {
+      return new Response(JSON.stringify({ error: "Provide a product_url or at least one image" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    // Parse data URLs into inlineData parts (cap 6 images, ~6MB each)
+    const inlineImages: Array<{ mimeType: string; data: string }> = [];
+    for (const src of imagesIn.slice(0, 6)) {
+      const m = src.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if (!m) continue;
+      if (m[2].length > 8 * 1024 * 1024) continue;
+      inlineImages.push({ mimeType: m[1], data: m[2] });
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -156,18 +170,18 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Out of credits", code: "no_credits" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const siteText = await fetchSite(product_url);
+    const siteText = hasUrl ? await fetchSite(product_url) : "";
 
-    const system = `You are Rocket, an AI launch co-pilot for vibe coders. Given a product URL and its scraped text, you generate a complete launch kit. Always respond as a single JSON object with the requested keys. Keep each value tight, concrete, and ready-to-paste. No markdown headings; plain text or short bullet lists where appropriate (use "- " for bullets).`;
+    const system = `You are Rocket, an AI launch co-pilot for vibe coders. Given a product URL, scraped text, and/or attached reference images (logos, screenshots, mockups), you generate a complete launch kit. Use the images to inform brand voice, visual descriptors, and product understanding when present. Always respond as a single JSON object with the requested keys. Keep each value tight, concrete, and ready-to-paste. No markdown headings; plain text or short bullet lists where appropriate (use "- " for bullets).`;
     const keys = ASSET_PLAN.map((a) => a.asset_type).join(", ");
-    const user_prompt = `Product URL: ${product_url}\n\nScraped page content:\n"""${siteText || "(no content fetched — infer from URL)"}"""\n\nReturn a JSON object with EXACTLY these keys, each a string: product_name, ${keys}. Tones: confident, founder-led, specific. For social posts, write the actual post copy. For checklists and use cases, use "- " bullets. For Launch Readiness Score, give a number 0-100 with 1-2 sentence rationale.`;
+    const user_prompt = `Product URL: ${hasUrl ? product_url : "(none provided)"}\n\nScraped page content:\n"""${siteText || (hasUrl ? "(no content fetched — infer from URL)" : "(no URL — infer everything from the attached images)")}"""\n\n${inlineImages.length ? `The user attached ${inlineImages.length} reference image(s). Examine them carefully — they may include the product UI, logo, mockups, or brand inspiration.\n\n` : ""}Return a JSON object with EXACTLY these keys, each a string: product_name, ${keys}. Tones: confident, founder-led, specific. For social posts, write the actual post copy. For checklists and use cases, use "- " bullets. For Launch Readiness Score, give a number 0-100 with 1-2 sentence rationale.`;
 
-    const parsed: any = await geminiJSON({ system, user: user_prompt, temperature: 0.7 });
-    const product_name = parsed.product_name || new URL(product_url).hostname.replace("www.", "");
+    const parsed: any = await geminiJSON({ system, user: user_prompt, images: inlineImages, temperature: 0.7 });
+    const product_name = parsed.product_name || (hasUrl ? new URL(product_url).hostname.replace("www.", "") : "Untitled Brand");
 
     const { data: rocket, error: rErr } = await admin
       .from("rockets")
-      .insert({ user_id: user.id, product_url, product_name, status: "ready" })
+      .insert({ user_id: user.id, product_url: hasUrl ? product_url : "", product_name, status: "ready" })
       .select()
       .single();
     if (rErr) throw rErr;
