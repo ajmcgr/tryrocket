@@ -36,7 +36,7 @@ const Dashboard = () => {
           <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-neutral-500">Welcome back{user?.email ? `, ${user.email}` : ""}.</p>
         </div>
-        <Link to="/generate" className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-800">
+        <Link to="/generate" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
           <Plus className="h-4 w-4" /> New Rocket
         </Link>
       </div>
@@ -57,7 +57,7 @@ const Dashboard = () => {
             <div className="text-xs text-neutral-500">{used.toLocaleString()} / {total.toLocaleString()}</div>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-100">
-            <div className="h-full rounded-full bg-neutral-900 transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pct}%` }} />
           </div>
           <Link to="/settings" className="mt-3 inline-block text-xs font-medium text-neutral-700 hover:underline">Manage billing →</Link>
         </div>
@@ -71,7 +71,7 @@ const Dashboard = () => {
           {rockets.length === 0 ? (
             <div className="p-10 text-center">
               <p className="text-sm text-neutral-500">No Rockets yet.</p>
-              <Link to="/generate" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800">Generate your first Rocket <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <Link to="/generate" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground hover:bg-brand-hover">Generate your first Rocket <ArrowRight className="h-3.5 w-3.5" /></Link>
             </div>
           ) : (
             <ul className="divide-y divide-neutral-200">
