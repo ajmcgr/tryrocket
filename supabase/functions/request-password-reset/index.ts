@@ -44,4 +44,4 @@ Deno.serve(async (req) => {
     console.error("request-password-reset", e);
     return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
-});
+});// redeploy
