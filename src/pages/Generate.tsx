@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight } from "lucide-react";
+import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 const supabase = _sb as any;
 
@@ -27,6 +27,8 @@ const Generate = () => {
   const [url, setUrl] = useState(params.get("url") ?? "");
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
+  const [images, setImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const nav = useNavigate();
   const autoRan = useRef(false);
@@ -45,6 +47,38 @@ const Generate = () => {
       try { localStorage.setItem("gen_sidebar_open", next ? "1" : "0"); } catch {}
       return next;
     });
+  };
+
+  // Hydrate images from sessionStorage (passed from homepage form)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("gen_images");
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) setImages(arr);
+        sessionStorage.removeItem("gen_images");
+      }
+    } catch {}
+  }, []);
+
+  const onPickFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const next: string[] = [];
+    for (const f of Array.from(files)) {
+      if (!f.type.startsWith("image/")) continue;
+      if (f.size > 8 * 1024 * 1024) {
+        toast({ title: "Image too large", description: `${f.name} exceeds 8MB.`, variant: "destructive" });
+        continue;
+      }
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = reject;
+        r.readAsDataURL(f);
+      });
+      next.push(dataUrl);
+    }
+    setImages((prev) => [...prev, ...next].slice(0, 6));
   };
 
   useEffect(() => {
@@ -79,16 +113,18 @@ const Generate = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await runGenerate(url);
+    await runGenerate(url, images);
   };
 
-  const runGenerate = async (raw: string) => {
+  const runGenerate = async (raw: string, imgs: string[] = []) => {
     let normalized = raw.trim();
-    if (!normalized) return;
-    if (!/^https?:\/\//i.test(normalized)) normalized = "https://" + normalized;
+    if (!normalized && imgs.length === 0) return;
+    if (normalized && !/^https?:\/\//i.test(normalized)) normalized = "https://" + normalized;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-rocket", { body: { product_url: normalized } });
+      const { data, error } = await supabase.functions.invoke("generate-rocket", {
+        body: { product_url: normalized || null, images: imgs },
+      });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       nav(`/rocket/${(data as any).rocket_id}`);
@@ -100,9 +136,14 @@ const Generate = () => {
 
   useEffect(() => {
     const incoming = params.get("url");
-    if (incoming && !autoRan.current) {
+    let pendingImgs: string[] = [];
+    try {
+      const raw = sessionStorage.getItem("gen_images");
+      if (raw) pendingImgs = JSON.parse(raw) || [];
+    } catch {}
+    if ((incoming || pendingImgs.length) && !autoRan.current) {
       autoRan.current = true;
-      runGenerate(incoming);
+      runGenerate(incoming || "", pendingImgs);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
