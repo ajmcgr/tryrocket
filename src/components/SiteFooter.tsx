@@ -3,7 +3,7 @@ import { tools } from "@/content/tools";
 import { articles } from "@/content/articles";
 import { Instagram } from "lucide-react";
 
-const HEADER = "text-lg font-semibold text-neutral-900";
+const HEADER = "text-base font-semibold text-neutral-900";
 
 const XIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
