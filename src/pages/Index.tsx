@@ -126,6 +126,25 @@ const Index = () => {
   const nav = useNavigate();
   const [url, setUrl] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onPickFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const next: string[] = [];
+    for (const f of Array.from(files)) {
+      if (!f.type.startsWith("image/")) continue;
+      if (f.size > 8 * 1024 * 1024) continue;
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = reject;
+        r.readAsDataURL(f);
+      });
+      next.push(dataUrl);
+    }
+    setImages((prev) => [...prev, ...next].slice(0, 6));
+  };
 
   const CATEGORIES = [
     { label: "Brand Guidelines", slug: "brand-guidelines" },
