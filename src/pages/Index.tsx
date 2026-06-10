@@ -160,27 +160,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Credit Packs */}
-          <div className="mt-10">
-            <p className="text-center text-sm font-medium text-neutral-500">Or top up with credit packs</p>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {[
-                { credits: "500", price: "$5" },
-                { credits: "1,500", price: "$10" },
-                { credits: "5,000", price: "$25" },
-              ].map((p) => (
-                <div key={p.credits} className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-4">
-                  <div>
-                    <div className="text-base font-semibold">{p.credits} Credits</div>
-                    <div className="text-xs text-neutral-500">One-time purchase</div>
-                  </div>
-                  <div className="text-lg font-semibold">{p.price}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* FAQ */}
       <section id="faq" className="border-t border-neutral-200/60 bg-neutral-50/50">
