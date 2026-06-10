@@ -1,4 +1,4 @@
-import { Rocket, Linkedin, Mail, Quote, TrendingUp, Users, Target, CheckCircle2 } from "lucide-react";
+import { Rocket, Linkedin, Mail, Quote, TrendingUp, Users, CheckCircle2, BookOpen, LayoutTemplate, Image as ImageIcon, Component, Shapes, Star, BarChart3 } from "lucide-react";
 
 type CardProps = {
   i: number;
@@ -318,18 +318,189 @@ const LogoContent = () => (
   </div>
 );
 
+const GuidelinesContent = () => (
+  <div className="flex h-full flex-col p-7">
+    <div className="flex items-center justify-between">
+      <Tag>Brand Guidelines</Tag>
+      <BookOpen className="h-4 w-4 text-neutral-400" />
+    </div>
+    <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-400">Section 03 · Logo Usage</p>
+    <h3 className="mt-2 font-serif text-2xl leading-tight tracking-tight text-neutral-900">
+      Clear space &amp; minimum size.
+    </h3>
+    <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="rounded-xl bg-neutral-50 p-4 ring-1 ring-neutral-100">
+        <div className="mx-auto h-8 w-8 rounded-md bg-neutral-900" />
+        <p className="mt-2 text-center font-mono text-[10px] text-neutral-500">1x clear</p>
+      </div>
+      <div className="rounded-xl bg-neutral-50 p-4 ring-1 ring-neutral-100">
+        <div className="mx-auto h-8 w-8 rounded-md bg-indigo-600" />
+        <p className="mt-2 text-center font-mono text-[10px] text-neutral-500">Min 24px</p>
+      </div>
+    </div>
+    <div className="mt-auto border-t border-neutral-100 pt-3">
+      <Meta>Brand System</Meta>
+    </div>
+  </div>
+);
+
+const TemplatesContent = () => (
+  <div className="flex h-full flex-col p-7">
+    <div className="flex items-center justify-between">
+      <Tag>Brand Templates</Tag>
+      <LayoutTemplate className="h-4 w-4 text-neutral-400" />
+    </div>
+    <h3 className="mt-5 font-serif text-2xl leading-tight tracking-tight text-neutral-900">
+      Ready-to-ship templates.
+    </h3>
+    <div className="mt-6 grid grid-cols-3 gap-2">
+      {[
+        "from-indigo-500 to-violet-500",
+        "from-neutral-900 to-neutral-700",
+        "from-rose-400 to-orange-400",
+        "from-emerald-500 to-teal-500",
+        "from-sky-400 to-indigo-500",
+        "from-amber-400 to-pink-500",
+      ].map((g, k) => (
+        <div key={k} className={`aspect-[3/4] rounded-lg bg-gradient-to-br ${g} ring-1 ring-white/40`} />
+      ))}
+    </div>
+    <div className="mt-auto pt-4">
+      <Meta>Social · Pitch · Email</Meta>
+    </div>
+  </div>
+);
+
+const PhotosContent = () => (
+  <div className="flex h-full flex-col p-7">
+    <div className="flex items-center justify-between">
+      <Tag>Photos</Tag>
+      <ImageIcon className="h-4 w-4 text-neutral-400" />
+    </div>
+    <div className="mt-5 grid flex-1 grid-cols-3 gap-2">
+      <div className="col-span-2 row-span-2 rounded-xl bg-gradient-to-br from-amber-200 via-rose-200 to-indigo-300" />
+      <div className="rounded-xl bg-gradient-to-br from-emerald-300 to-teal-400" />
+      <div className="rounded-xl bg-gradient-to-br from-neutral-200 to-neutral-400" />
+      <div className="col-span-3 rounded-xl bg-gradient-to-r from-indigo-300 via-violet-300 to-pink-300" />
+    </div>
+    <div className="mt-4 flex items-center justify-between">
+      <Meta>Art Direction</Meta>
+      <span className="font-mono text-[10px] text-neutral-400">24 assets</span>
+    </div>
+  </div>
+);
+
+const ComponentsContent = () => (
+  <div className="flex h-full flex-col p-7">
+    <div className="flex items-center justify-between">
+      <Tag>Components</Tag>
+      <Component className="h-4 w-4 text-neutral-400" />
+    </div>
+    <h3 className="mt-5 font-serif text-2xl leading-tight tracking-tight text-neutral-900">UI building blocks.</h3>
+    <div className="mt-6 space-y-3">
+      <button className="flex w-fit items-center gap-2 rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-semibold text-white">
+        Start free <span aria-hidden>→</span>
+      </button>
+      <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-500">
+        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+        Live · 124 builders online
+      </div>
+      <div className="rounded-xl bg-indigo-50 p-3 text-xs text-indigo-700 ring-1 ring-indigo-100">
+        <span className="font-semibold">Tip ·</span> Drop your URL to start.
+      </div>
+    </div>
+    <div className="mt-auto border-t border-neutral-100 pt-3">
+      <Meta>Design System</Meta>
+    </div>
+  </div>
+);
+
+const GraphicsContent = () => (
+  <div className="relative flex h-full flex-col justify-between overflow-hidden bg-gradient-to-br from-violet-600 via-fuchsia-500 to-rose-500 p-7 text-white">
+    <div className="flex items-center justify-between">
+      <Tag>
+        <span className="text-white/90">Graphics</span>
+      </Tag>
+      <Shapes className="h-4 w-4 text-white/70" />
+    </div>
+    <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full border border-white/30" />
+    <div aria-hidden className="pointer-events-none absolute bottom-6 right-6 h-20 w-20 rotate-12 rounded-2xl bg-white/15 backdrop-blur" />
+    <div className="relative">
+      <h3 className="font-serif text-[34px] leading-[0.95] tracking-tight">
+        Hero<br />artwork.
+      </h3>
+      <p className="mt-5 text-[11px] uppercase tracking-[0.2em] text-white/80">Editorial Illustration</p>
+    </div>
+  </div>
+);
+
+const IconsContent = () => (
+  <div className="flex h-full flex-col p-7">
+    <div className="flex items-center justify-between">
+      <Tag>Icons</Tag>
+      <Star className="h-4 w-4 text-neutral-400" />
+    </div>
+    <h3 className="mt-5 font-serif text-2xl leading-tight tracking-tight text-neutral-900">Custom icon set.</h3>
+    <div className="mt-6 grid grid-cols-4 gap-3">
+      {[Rocket, Star, Users, Mail, BarChart3, BookOpen, Shapes, CheckCircle2].map((I, k) => (
+        <div
+          key={k}
+          className="flex aspect-square items-center justify-center rounded-xl bg-neutral-50 text-neutral-700 ring-1 ring-neutral-100"
+        >
+          <I className="h-4 w-4" />
+        </div>
+      ))}
+    </div>
+    <div className="mt-auto pt-4">
+      <Meta>32 glyphs · stroke 1.5</Meta>
+    </div>
+  </div>
+);
+
+const ChartsContent = () => {
+  const bars = [38, 52, 44, 68, 60, 82, 74];
+  return (
+    <div className="flex h-full flex-col p-7">
+      <div className="flex items-center justify-between">
+        <Tag>Charts</Tag>
+        <BarChart3 className="h-4 w-4 text-neutral-400" />
+      </div>
+      <div className="mt-5 flex items-baseline gap-2">
+        <span className="font-serif text-4xl font-semibold tracking-tight text-neutral-900">+184%</span>
+        <span className="text-xs font-medium text-emerald-600">↑ WoW</span>
+      </div>
+      <p className="mt-1 text-xs text-neutral-500">Signups since launch</p>
+      <div className="mt-6 flex h-24 items-end gap-2">
+        {bars.map((h, k) => (
+          <div key={k} className="flex-1 rounded-md bg-gradient-to-t from-indigo-500 to-violet-400" style={{ height: `${h}%` }} />
+        ))}
+      </div>
+      <div className="mt-auto border-t border-neutral-100 pt-3">
+        <Meta>Launch Metrics</Meta>
+      </div>
+    </div>
+  );
+};
+
 /* Ordered card definitions */
 const CARDS: { id: string; minH: string; mobileH: string; render: () => React.ReactNode }[] = [
   { id: "positioning", minH: "min-h-[380px]", mobileH: "min-h-[360px]", render: PositioningContent },
   { id: "tagline", minH: "min-h-[280px]", mobileH: "min-h-[300px]", render: TaglineContent },
   { id: "ph", minH: "min-h-[320px]", mobileH: "min-h-[320px]", render: ProductHuntContent },
   { id: "logo", minH: "min-h-[320px]", mobileH: "min-h-[340px]", render: LogoContent },
+  { id: "guidelines", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: GuidelinesContent },
+  { id: "templates", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: TemplatesContent },
+  { id: "graphics", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: GraphicsContent },
   { id: "founder", minH: "min-h-[300px]", mobileH: "min-h-[320px]", render: FounderContent },
+  { id: "photos", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: PhotosContent },
   { id: "linkedin", minH: "min-h-[280px]", mobileH: "min-h-[300px]", render: LinkedInContent },
+  { id: "components", minH: "min-h-[320px]", mobileH: "min-h-[340px]", render: ComponentsContent },
+  { id: "charts", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: ChartsContent },
   { id: "launch", minH: "min-h-[360px]", mobileH: "min-h-[360px]", render: LaunchStrategyContent },
   { id: "narrative", minH: "min-h-[420px]", mobileH: "min-h-[380px]", render: BrandNarrativeContent },
   { id: "audience", minH: "min-h-[300px]", mobileH: "min-h-[320px]", render: AudienceContent },
   { id: "newsletter", minH: "min-h-[320px]", mobileH: "min-h-[340px]", render: NewsletterContent },
+  { id: "icons", minH: "min-h-[300px]", mobileH: "min-h-[340px]", render: IconsContent },
   { id: "messaging", minH: "min-h-[340px]", mobileH: "min-h-[400px]", render: MessagingContent },
 ];
 
