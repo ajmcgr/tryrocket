@@ -22,6 +22,7 @@ const Settings = () => {
   const loc = useLocation();
   const [newPassword, setNewPassword] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string>((user as any)?.user_metadata?.avatar_url || "");
+  const [username, setUsername] = useState<string>((user as any)?.user_metadata?.username || "");
   const [emailsEnabled, setEmailsEnabled] = useState<boolean>(() => localStorage.getItem("notif_emails") !== "0");
 
   useEffect(() => {
@@ -39,7 +40,13 @@ const Settings = () => {
   const saveProfile = async () => {
     setLoading("profile");
     try {
-      const payload: any = { data: { avatar_url: avatarUrl } };
+      const u = username.trim().replace(/^@/, "");
+      if (u && !/^[a-zA-Z0-9_]{2,30}$/.test(u)) {
+        toast({ title: "Invalid username", description: "2–30 letters, numbers, or underscores.", variant: "destructive" });
+        setLoading(null);
+        return;
+      }
+      const payload: any = { data: { avatar_url: avatarUrl, username: u } };
       if (newPassword) payload.password = newPassword;
       const { error } = await supabase.auth.updateUser(payload);
       if (error) throw error;
