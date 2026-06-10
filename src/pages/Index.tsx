@@ -19,9 +19,9 @@ const Index = () => {
             <a href="https://trylaunch.ai" target="_blank" rel="noreferrer" className="hover:text-neutral-900">TryLaunch</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/join" className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 sm:inline">Sign in</Link>
+            <Link to="/login" className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 sm:inline">Sign in</Link>
             <Link
-              to="/join"
+              to="/signup"
               className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800"
             >
               Get started
@@ -54,18 +54,20 @@ const Index = () => {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              to="/generate"
+              to="/signup"
               className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-neutral-900/10 transition hover:bg-neutral-800"
             >
               Generate Rocket
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              to="/example"
+            <a
+              href="https://trylaunch.ai"
+              target="_blank"
+              rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
             >
               View example
-            </Link>
+            </a>
           </div>
 
           {/* Mock preview */}
@@ -155,7 +157,7 @@ const Index = () => {
                 ))}
               </ul>
               <Link
-                to="/join"
+                to="/signup"
                 className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
               >
                 Get started free
@@ -187,7 +189,7 @@ const Index = () => {
                 ))}
               </ul>
               <Link
-                to="/join"
+                to="/signup"
                 className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-medium text-neutral-900 transition hover:bg-neutral-100"
               >
                 Start free trial
@@ -225,7 +227,7 @@ const Index = () => {
             Generate your first Rocket in under 60 seconds.
           </p>
           <Link
-            to="/join"
+            to="/signup"
             className="mt-8 inline-flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-neutral-800"
           >
             Get started free
