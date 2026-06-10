@@ -403,26 +403,28 @@ const Index = () => {
                   </li>
                 ))}
               </ul>
-              <div className="mt-6 grid grid-cols-2 gap-2">
-                {[
-                  "Brand Guidelines",
-                  "Brand Templates",
-                  "Logos",
-                  "Colors",
-                  "Fonts",
-                  "Brand voice",
-                  "Photos",
-                  "Components",
-                  "Graphics",
-                  "Icons",
-                  "Charts",
-                  "Launch Copy",
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/60 px-3 py-2 text-xs text-neutral-700">
-                    <Check className="h-3 w-3 shrink-0 text-brand" />
-                    <span>{item}</span>
-                  </div>
-                ))}
+              <div className="mt-8 border-t border-neutral-200/80 pt-6">
+                <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {[
+                    "Brand Guidelines",
+                    "Brand Templates",
+                    "Logos",
+                    "Colors",
+                    "Fonts",
+                    "Brand voice",
+                    "Photos",
+                    "Components",
+                    "Graphics",
+                    "Icons",
+                    "Charts",
+                    "Launch Copy",
+                  ].map((item) => (
+                    <span key={item} className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
               <Button asChild variant="outline" className="mt-8 w-full">
                 <Link to="/signup">Sign up free</Link>
