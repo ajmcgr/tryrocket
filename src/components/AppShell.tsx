@@ -59,10 +59,7 @@ const AppShell = () => {
                 </div>
                 <div className="py-2">
                   <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
-                    <Link to="/account#billing">Account &amp; billing</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
-                    <Link to="/account#profile">Team</Link>
+                    <Link to="/settings">Settings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
                     <Link to="/pricing">Plans</Link>

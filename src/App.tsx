@@ -15,7 +15,13 @@ import Generate from "./pages/Generate.tsx";
 import Editor from "./pages/Editor.tsx";
 import { Navigate } from "react-router-dom";
 import RocketDetail from "./pages/RocketDetail.tsx";
-import Account from "./pages/Account.tsx";
+import SettingsLayout, {
+  ProfileSettings,
+  IntegrationsSettings,
+  NotificationsSettings,
+  AccountSettings,
+  BillingSettings,
+} from "./pages/Settings.tsx";
 import About from "./pages/About.tsx";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
@@ -60,8 +66,15 @@ const App = () => (
               <Route path="/dashboard" element={<Navigate to="/projects" replace />} />
               <Route path="/generate" element={<Navigate to="/create" replace />} />
               <Route path="/rocket/:id" element={<RocketDetail />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/settings" element={<Navigate to="/account" replace />} />
+              <Route path="/settings" element={<SettingsLayout />}>
+                <Route index element={<Navigate to="/settings/profile" replace />} />
+                <Route path="profile" element={<ProfileSettings />} />
+                <Route path="integrations" element={<IntegrationsSettings />} />
+                <Route path="notifications" element={<NotificationsSettings />} />
+                <Route path="account" element={<AccountSettings />} />
+                <Route path="billing" element={<BillingSettings />} />
+              </Route>
+              <Route path="/account" element={<Navigate to="/settings/profile" replace />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
