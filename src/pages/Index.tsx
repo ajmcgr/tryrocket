@@ -510,7 +510,7 @@ const Index = () => {
               <p className="font-semibold text-neutral-900">Still have questions?</p>
               <p className="text-sm text-neutral-500">We're here to help you build something great.</p>
             </div>
-            <Button asChild className="rounded-full">
+            <Button asChild>
               <a href="mailto:alex@tryrocket.ai">Contact Support</a>
             </Button>
           </div>
