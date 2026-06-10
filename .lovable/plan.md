@@ -1,83 +1,63 @@
+## Goal
 
-# Rocket Polish & Expansion Plan
+Stop forcing every prompt into a branding text generation. Route prompts to one of four workflows and add real image generation for visual asset requests.
 
-Big scope — breaking into clear phases. I'll ship in this order, committing each phase.
+## UX
 
-## Phase 1 — Branding pass (global)
-- Swap header logo (Index, AppShell, footer, Login, Signup, Join) to `rocket-logo-white.png` on dark chip, or use the colored rocket asset directly.
-- Add design tokens in `index.css` + `tailwind.config.ts`:
-  - `--brand: 217 91% 60%` (the screenshot blue ~ `#3B82F6`)
-  - `--brand-foreground: 0 0% 100%`
-  - radius `0.75rem` on primary CTA
-- Update `Button` `default` variant → brand blue, `rounded-full`, subtle shadow. Replace all `bg-neutral-900` CTA buttons across landing/auth/app to use the new `<Button>` or matching classes.
-- Homepage: H1 → "Make Your Product a Brand.", sub → "Rocket helps you brand your app with AI."
-- `/join` same sub-headline change.
+### `/create` form
+Below the prompt input, add a "What do you need help with?" selector with five chips:
+- **Auto-detect** (default) — backend classifies intent
+- **Brand It**, **Design It**, **Launch It**, **Promote It** — force a workflow
 
-## Phase 2 — Homepage additions
-- FAQ accordion section below pricing (8 Qs).
-- Footer redesign (multi-column like trymedia.ai) with: Product, Free Tools, Resources, Company, Social. Include X / Instagram / Discord / TryLaunch / contact.
-- Inject Crisp widget into `index.html` head.
+Submitting passes `workflow: "auto" | "brand" | "design" | "launch" | "promote"` to `generate-rocket`.
 
-## Phase 3 — New static pages & routes
-- `/about` — story + team placeholder.
-- `/blog` — index listing 15 articles (MDX-free, plain TSX data file `src/content/articles.ts`).
-- `/blog/:slug` — article detail.
-- `/media-kit` — both logos, brand colors, usage rules, download links.
-- `/tools` — index of 15 free tools.
-- `/tools/:slug` — each tool page (calls `free-tool` edge function w/ OpenAI).
-- Footer + nav links wired up.
+### `/rocket/:id` (project detail)
+Header gains a workflow tab strip showing which workflow produced the project. Each workflow renders its own section groups (see below). The "Launch to…" dropdown stays. Export menu stays. A "Run another workflow on this project" button lets the user invoke a second workflow against the same rocket (e.g., started with Brand, now run Design).
 
-### 15 Free tools
-1. tagline-generator  
-2. value-prop-generator  
-3. brand-name-generator  
-4. positioning-statement-generator  
-5. elevator-pitch-generator  
-6. product-hunt-tagline  
-7. twitter-bio-generator  
-8. linkedin-headline-generator  
-9. mission-statement-generator  
-10. slogan-generator  
-11. about-us-generator  
-12. feature-benefit-rewriter  
-13. cold-email-generator  
-14. landing-headline-generator  
-15. domain-name-ideas
+## Backend: `generate-rocket`
 
-### 15 Articles (titles)
-Launch playbooks, positioning, PMF, distribution, indie hacker tactics, etc. Stored in `src/content/articles.ts` w/ markdown body rendered via `react-markdown`.
+1. **Classifier step** (when `workflow === "auto"`): one Gemini call returns `{ workflow: "brand"|"design"|"launch"|"promote" }` from prompt + optional URL context. Cheap, low-tokens, JSON schema.
+2. **Dispatch** to a per-workflow asset plan:
+   - `brand` → current Positioning + Audience + Founder sections (subset of today's plan)
+   - `design` → Logo Concepts, Style Direction, Color Palette, Typography Notes, Image Prompts (text), plus N generated images
+   - `launch` → Launch Submission, Product Hunt Copy, Directory Copy, Founder Story, Pre/Day/Post Checklists, Strategy
+   - `promote` → X Thread, LinkedIn Post, Reddit Post, Influencer Outreach, PR Pitch, Creator Campaign brief
+3. Single Gemini structured-output call per workflow (same pattern as today). Returns text assets keyed by `asset_type`.
+4. **Design workflow image generation**: after text generation, call AI Gateway `/v1/images/generations` for each `image_prompt_*` asset (default 3 logo concepts). Upload PNG bytes to a Supabase Storage bucket `rocket-assets/<user_id>/<rocket_id>/<asset_id>.png`. Store the public URL on the asset row.
 
-## Phase 4 — Branded Resend emails (auto-fire)
-- Rewrite `send-email/index.ts` HTML templates with shared layout: white bg, rocket logo at top (hosted on tryrocket.ai), brand-blue CTA button, footer.
-- Templates: `welcome`, `rocket_generated`, `trial_started`, `payment_succeeded`, `credits_purchased`, `rocket_shared`.
-- Wire auto-fire:
-  - `welcome` → after signup success in `Signup.tsx`
-  - `rocket_generated` → at end of `generate-rocket` edge function (server-side fetch to Resend directly, since edge→edge auth is awkward; inline the send)
-  - `trial_started` + `payment_succeeded` + `credits_purchased` → in `stripe-webhook` handlers
-- Set `EMAIL_FROM` to `Rocket <hello@tryrocket.ai>`.
+### DB changes
+- `rockets.workflow text not null default 'brand'`
+- `rocket_assets.kind text not null default 'text'` — `'text' | 'image'`
+- `rocket_assets.image_url text`, `image_prompt text`
+- Storage bucket `rocket-assets` (public read, owner write)
 
-## Phase 5 — Polish RocketDetail
-- Section "Copy" buttons per block.
-- "Export Markdown" + "Export PDF" (html2pdf.js) buttons in header.
-- Drag-to-reorder sections (dnd-kit) — persisted in `rocket.section_order` JSONB.
-- Improve typography + cards using brand tokens.
+Credit cost: text workflow = 1 credit (today). Design workflow = 1 credit text + 1 credit per image (3 images default = 4 total). Surface this clearly on the form.
 
-## Phase 6 — Multi-directory handoff
-Replace single TryLaunch button with a "Launch to" dropdown containing:
-- G2, Product Hunt, There's An AI For That, Hacker News, Peerlist, BetaList, Uneed, Alternative.me, Indie Hackers
-Each opens a new tab to the directory's submit URL with pre-filled query params where supported (PH supports `?name=&tagline=&url=`; others just deep-link to submit page). Also keep "Launch on TryLaunch" primary.
+## UI: section rendering
 
-## Technical notes
-- No Lovable Cloud — all backend via your Supabase project + edge functions.
-- New edge function `free-tool` (single endpoint, switches on `tool` param) calling OpenAI; rate-limited by IP in a `free_tool_usage` table (new migration).
-- New migration adds `section_order JSONB` to `rockets` + `free_tool_usage` table.
-- New deps: `react-markdown`, `remark-gfm`, `@dnd-kit/core`, `@dnd-kit/sortable`, `html2pdf.js`.
-- All buttons route through updated `<Button>` for consistency.
+Asset cards stay markdown/textarea for text. New `ImageAssetCard` for `kind === 'image'`:
+- Shows the generated PNG
+- "Regenerate", "Generate variation" (uses same prompt + slight tweak), "Download PNG", "Copy prompt"
+- **SVG download deferred** — image models output raster only. True SVG requires vectorization (potrace) which adds complexity; not in this scope. Document as a follow-up.
 
-## What I'll deliver in this single pass
-Phases 1–6 in one go. After I'm done you'll need to:
-1. Run the new SQL migration in Supabase.
-2. Redeploy edge functions: `send-email`, `generate-rocket`, `stripe-webhook`, `free-tool` (new).
-3. Add the `hello@tryrocket.ai` sender domain in Resend if not done.
+## Files
 
-Confirm and I'll start shipping.
+- `supabase/functions/generate-rocket/index.ts` — add classifier + workflow dispatch + per-workflow asset plans + image gen loop
+- `supabase/functions/regenerate-asset/index.ts` — branch on `kind`; for images, regenerate via images endpoint with same/varied prompt
+- `supabase/functions/_shared/workflows.ts` (new) — asset plans + prompt templates per workflow
+- `supabase/migrations/<ts>_workflows.sql` (new) — schema + storage bucket + policies
+- `src/pages/Generate.tsx` — workflow chips, pass `workflow` to function
+- `src/pages/RocketDetail.tsx` — workflow-aware GROUPS, ImageAssetCard, "Run another workflow" button
+- `src/components/ImageAssetCard.tsx` (new)
+
+## Out of scope (call-outs)
+
+- **True SVG export** — requires vectorization library; will provide PNG only for v1
+- **Hero/social/ad/thumbnail templates** — v1 Design workflow ships Logo + generic image prompts; specialized templates (16:9 hero, 1200×630 OG, YouTube thumbnail) added next iteration
+- **Per-user OAuth Drive upload of images** — existing Drive export already handles project ZIP; same path will pick up new image assets automatically
+
+## Open questions (need answers before I build)
+
+1. **Default image count for Design workflow** — 3 logo concepts (4 credits total) or 1 (2 credits)?
+2. **Auto-detect on/off** — should the chip default be "Auto-detect" or force the user to pick a workflow each time?
+3. **Existing projects** — backfill `workflow='brand'` for every existing rocket so the UI renders them, correct?
