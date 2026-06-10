@@ -33,7 +33,9 @@ const Editor = () => {
     return [];
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [bg, setBg] = useState<string>("#ffffff");
+  const [bg, setBg] = useState<string>(() => {
+    try { return localStorage.getItem("rocket.editor.bg.v1") || "#ffffff"; } catch { return "#ffffff"; }
+  });
 
   const selected = els.find((e) => e.id === selectedId) || null;
 
