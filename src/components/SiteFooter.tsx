@@ -43,6 +43,7 @@ const SiteFooter = () => (
             {articles.slice(0, 10).map((a) => (
               <li key={a.slug}><Link to={`/blog/${a.slug}`} className="hover:text-neutral-900">{a.title}</Link></li>
             ))}
+            <li><Link to="/blog" className="hover:text-neutral-900">View All Resources →</Link></li>
           </ul>
         </div>
         <div>
@@ -51,6 +52,7 @@ const SiteFooter = () => (
             {tools.slice(0, 10).map((t) => (
               <li key={t.slug}><Link to={`/tools/${t.slug}`} className="hover:text-neutral-900">{t.name}</Link></li>
             ))}
+            <li><Link to="/tools" className="hover:text-neutral-900">All tools →</Link></li>
           </ul>
         </div>
         <div>
