@@ -75,22 +75,25 @@ const Generate = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_1fr]">
-      <aside className="hidden md:flex md:flex-col rounded-2xl border border-neutral-200 bg-white p-3 min-h-[600px]">
-        <Link to="/create" className="inline-flex items-center gap-2 rounded-xl bg-brand px-3 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
-          <Plus className="h-4 w-4" /> New Brand
-        </Link>
-        <div className="mt-5 px-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-          <History className="h-3 w-3" /> History
+    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] min-h-[calc(100vh-8rem)] -mt-4">
+      <aside className="hidden md:flex md:flex-col border-r border-neutral-200 bg-white">
+        <div className="p-3">
+          <Link to="/create" className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
+            <Plus className="h-4 w-4" /> New brand
+          </Link>
         </div>
-        <div className="mt-2 flex-1 overflow-y-auto">
+        <div className="px-4 pt-2 pb-1 flex items-center justify-between">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Saved brands</span>
+          <PanelLeftClose className="h-3.5 w-3.5 text-neutral-400" />
+        </div>
+        <div className="flex-1 overflow-y-auto px-2 py-2">
           {history.length === 0 ? (
             <p className="px-2 py-3 text-xs text-neutral-400">No brands yet.</p>
           ) : (
             <ul className="space-y-0.5">
               {history.map((h) => (
                 <li key={h.id}>
-                  <Link to={`/rocket/${h.id}`} className="block truncate rounded-lg px-2 py-1.5 text-xs text-neutral-700 hover:bg-neutral-100">
+                  <Link to={`/rocket/${h.id}`} className="block truncate rounded-lg px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100">
                     {h.product_name || h.product_url}
                   </Link>
                 </li>
@@ -98,46 +101,76 @@ const Generate = () => {
             </ul>
           )}
         </div>
-        <Link to="/settings" className="mt-3 inline-flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-neutral-700 hover:bg-neutral-100">
-          <SettingsIcon className="h-4 w-4" /> Settings
-        </Link>
+        <div className="p-3 border-t border-neutral-200">
+          <Link to="/settings" className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
+            <CreditCard className="h-4 w-4" /> Buy credits
+          </Link>
+        </div>
       </aside>
 
-      <div className="py-12 text-center">
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Generate your brand</h1>
-        <form onSubmit={submit} className="mx-auto mt-10 flex w-full max-w-2xl flex-col gap-3 sm:flex-row">
-          <input type="text" placeholder="https://myproduct.com" value={url} onChange={(e) => setUrl(e.target.value)} required disabled={loading} className="h-12 flex-1 rounded-xl border border-neutral-200 bg-white px-4 text-base outline-none ring-neutral-300 transition focus:ring-2" />
-          <button type="submit" disabled={loading || !url} className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-brand px-6 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover disabled:opacity-60">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Generate Brand <ArrowRight className="h-4 w-4" /></>}
-          </button>
-        </form>
-        {loading && (
-          <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-neutral-200 bg-white p-8">
-            <Loader2 className="mx-auto h-6 w-6 animate-spin text-neutral-400" />
-            <p className="mt-4 text-sm font-medium text-neutral-700">{MESSAGES[msgIdx]}</p>
-            <p className="mt-1 text-xs text-neutral-500">This takes ~30 seconds.</p>
+      <div className="relative flex flex-col">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10">
+            <Sparkles className="h-5 w-5 text-brand" />
           </div>
-        )}
-        {!loading && (
-          <div className="mx-auto mt-12 max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-              Need inspiration? Try a sample
-            </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {SAMPLE_PROMPTS.map((p) => (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => setUrl(p.url)}
-                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-700 transition hover:border-brand/40 hover:bg-brand/5 hover:text-neutral-900"
-                >
-                  <span aria-hidden>{p.emoji}</span>
-                  {p.label}
-                </button>
-              ))}
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+            What brand do you want to build?
+          </h1>
+          <p className="mt-3 max-w-xl text-base text-neutral-500">
+            Rocket generates a complete brand kit — logos, colors, fonts, voice, and launch copy — from your product URL in seconds.
+          </p>
+
+          {!loading && (
+            <div className="mt-10 w-full max-w-xl">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Try an example</p>
+              <div className="mt-4 flex flex-col items-center gap-2.5">
+                {SAMPLE_PROMPTS.map((p) => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => setUrl(p.url)}
+                    className="rounded-full border border-neutral-200 bg-white px-5 py-2 text-sm text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {loading && (
+            <div className="mt-10 flex flex-col items-center">
+              <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+              <p className="mt-4 text-sm font-medium text-neutral-700">{MESSAGES[msgIdx]}</p>
+              <p className="mt-1 text-xs text-neutral-500">This takes ~30 seconds.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent px-6 pb-6 pt-4">
+          <form onSubmit={submit} className="mx-auto w-full max-w-2xl">
+            <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
+              <input
+                type="text"
+                placeholder="Paste your product URL — e.g. https://myproduct.com"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+                disabled={loading}
+                className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 outline-none"
+              />
+              <button
+                type="submit"
+                disabled={loading || !url}
+                aria-label="Generate brand"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="mt-2 text-center text-xs text-neutral-400">Enter to send · Shift+Enter for newline</p>
+          </form>
+        </div>
       </div>
     </div>
   );
