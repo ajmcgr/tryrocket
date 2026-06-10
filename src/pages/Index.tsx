@@ -1,5 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { ArrowRight, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,19 @@ const FAQS = [
 ];
 
 const Index = () => {
+  const { user } = useAuth();
+  const nav = useNavigate();
+  const [url, setUrl] = useState("");
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    const target = `/generate?url=${encodeURIComponent(trimmed)}`;
+    if (user) nav(target);
+    else nav("/signup", { state: { from: target } });
+  };
+
   return (
     <div className="min-h-screen bg-white text-neutral-900 antialiased">
       <SiteHeader />
@@ -42,44 +57,22 @@ const Index = () => {
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-neutral-600 sm:text-xl">
             Rocket helps you brand your app with AI.
           </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg">
-              <Link to="/signup">Generate Brand <ArrowRight className="h-4 w-4" /></Link>
+          <p className="mx-auto mt-10 max-w-2xl text-base text-neutral-600">
+            Paste your product URL. We'll handle the rest.
+          </p>
+          <form onSubmit={onSubmit} className="mx-auto mt-6 flex w-full max-w-2xl flex-col items-stretch gap-3 sm:flex-row">
+            <input
+              type="text"
+              required
+              placeholder="https://myproduct.com"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="h-14 flex-1 rounded-2xl border border-neutral-200 bg-white px-5 text-base outline-none ring-neutral-300 transition focus:ring-2"
+            />
+            <Button type="submit" size="lg" className="h-14 px-7 text-base">
+              Generate Brand <ArrowRight className="h-4 w-4" />
             </Button>
-            <Button asChild variant="outline" size="lg">
-              <a href="https://trylaunch.ai" target="_blank" rel="noreferrer">View example</a>
-            </Button>
-          </div>
-
-          {/* Mock preview */}
-          <div className="mx-auto mt-16 max-w-4xl">
-            <div className="rounded-2xl border border-neutral-200 bg-gradient-to-b from-neutral-50 to-white p-2 shadow-2xl shadow-neutral-900/5">
-              <div className="rounded-xl border border-neutral-200 bg-white p-8 text-left">
-                <div className="mb-4 flex items-center gap-2 text-xs text-neutral-500">
-                  <div className="h-2 w-2 rounded-full bg-red-400" />
-                  <div className="h-2 w-2 rounded-full bg-yellow-400" />
-                  <div className="h-2 w-2 rounded-full bg-green-400" />
-                  <span className="ml-2 font-mono">rocket.app/generate</span>
-                </div>
-                <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-                  <span className="text-sm text-neutral-400">https://</span>
-                  <span className="text-sm font-medium text-neutral-900">myproduct.com</span>
-                  <div className="ml-auto rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
-                    Generate Brand
-                  </div>
-                </div>
-                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {["Positioning", "Launch Copy", "Social Content"].map((t) => (
-                    <div key={t} className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-brand">{t}</div>
-                      <div className="mt-2 h-2 w-3/4 rounded bg-neutral-200" />
-                      <div className="mt-1.5 h-2 w-1/2 rounded bg-neutral-200" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          </form>
         </div>
       </section>
 
