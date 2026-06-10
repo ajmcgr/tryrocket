@@ -1,4 +1,4 @@
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ArrowRight, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,8 +24,6 @@ const Index = () => {
   const nav = useNavigate();
   const [url, setUrl] = useState("");
 
-  // Temporary: send logged-out visitors to the waitlist while the site is in progress.
-  if (!loading && !user) return <Navigate to="/join" replace />;
   if (loading) return <div className="grid min-h-screen place-items-center bg-white text-sm text-neutral-500">Loading…</div>;
 
   const onSubmit = (e: React.FormEvent) => {
