@@ -224,34 +224,86 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
           </p>
         ) : (
           <ul className="space-y-0.5">
-            {history.map((h) => (
-              <li key={h.id}>
-                {onSelectRocket ? (
-                  <button
-                    type="button"
-                    onClick={() => onSelectRocket(h.id)}
-                    className={`block w-full text-left truncate rounded-lg px-2 py-1.5 text-sm transition ${
-                      activeRocketId === h.id
-                        ? "bg-neutral-100 text-neutral-900"
-                        : "text-neutral-700 hover:bg-neutral-100"
+            {history.map((h) => {
+              const isActive = onSelectRocket
+                ? activeRocketId === h.id
+                : location.pathname === `/rocket/${h.id}`;
+              const label = h.product_name || h.product_url;
+              return (
+                <li key={h.id} className="group relative">
+                  <div
+                    className={`flex items-center gap-1 rounded-lg pr-1 transition ${
+                      isActive ? "bg-neutral-100" : "hover:bg-neutral-100"
                     }`}
                   >
-                    {h.product_name || h.product_url}
-                  </button>
-                ) : (
-                  <Link
-                    to={`/rocket/${h.id}`}
-                    className={`block truncate rounded-lg px-2 py-1.5 text-sm transition ${
-                      location.pathname === `/rocket/${h.id}`
-                        ? "bg-neutral-100 text-neutral-900"
-                        : "text-neutral-700 hover:bg-neutral-100"
-                    }`}
-                  >
-                    {h.product_name || h.product_url}
-                  </Link>
-                )}
-              </li>
-            ))}
+                    {onSelectRocket ? (
+                      <button
+                        type="button"
+                        onClick={() => onSelectRocket(h.id)}
+                        className={`flex-1 min-w-0 text-left truncate px-2 py-1.5 text-sm ${
+                          isActive ? "text-neutral-900" : "text-neutral-700"
+                        }`}
+                      >
+                        {h.pinned && (
+                          <Pin className="inline h-3 w-3 mr-1 -mt-0.5 text-neutral-400" />
+                        )}
+                        {label}
+                      </button>
+                    ) : (
+                      <Link
+                        to={`/rocket/${h.id}`}
+                        className={`flex-1 min-w-0 truncate px-2 py-1.5 text-sm ${
+                          isActive ? "text-neutral-900" : "text-neutral-700"
+                        }`}
+                      >
+                        {h.pinned && (
+                          <Pin className="inline h-3 w-3 mr-1 -mt-0.5 text-neutral-400" />
+                        )}
+                        {label}
+                      </Link>
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          aria-label="Actions"
+                          className="shrink-0 rounded p-1 text-neutral-400 opacity-0 transition group-hover:opacity-100 hover:bg-neutral-200 hover:text-neutral-700 data-[state=open]:opacity-100"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={() => togglePin(h)}>
+                          {h.pinned ? (
+                            <>
+                              <PinOff className="mr-2 h-4 w-4" /> Unpin
+                            </>
+                          ) : (
+                            <>
+                              <Pin className="mr-2 h-4 w-4" /> Pin
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setRenameValue(h.product_name || "");
+                            setRenaming(h);
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" /> Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600 focus:text-red-600"
+                          onClick={() => setDeleting(h)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
