@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X, Copy, Save, RefreshCw, ExternalLink, Type, Bold, Palette } from "lucide-react";
+import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X, Copy, Save, RefreshCw, ExternalLink, Type, Bold, Palette, Wand2, ImageIcon, Rocket as RocketIcon, Megaphone } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 const supabase = _sb as any;
 
@@ -22,12 +22,22 @@ const SAMPLE_PROMPTS = [
   { label: "Brand a developer productivity app", url: "https://raycast.com" },
 ];
 
+type WorkflowChoice = "auto" | "brand" | "design" | "launch" | "promote";
+const WORKFLOW_CHIPS: { id: WorkflowChoice; label: string; Icon: any; hint: string }[] = [
+  { id: "auto",    label: "Auto-detect", Icon: Sparkles,   hint: "Rocket picks the right workflow" },
+  { id: "brand",   label: "Brand It",    Icon: Wand2,      hint: "Positioning, tagline, audience" },
+  { id: "design",  label: "Design It",   Icon: ImageIcon,  hint: "Logos & visual concepts (uses extra credits)" },
+  { id: "launch",  label: "Launch It",   Icon: RocketIcon, hint: "Launch copy, PH assets, checklist" },
+  { id: "promote", label: "Promote It",  Icon: Megaphone,  hint: "X threads, LinkedIn, PR pitches" },
+];
+
 const Generate = () => {
   const [params] = useSearchParams();
   const [url, setUrl] = useState(params.get("url") ?? "");
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
   const [images, setImages] = useState<string[]>([]);
+  const [workflow, setWorkflow] = useState<WorkflowChoice>("auto");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const nav = useNavigate();
@@ -129,7 +139,7 @@ const Generate = () => {
     await runGenerate(url, images);
   };
 
-  const runGenerate = async (raw: string, imgs: string[] = []) => {
+  const runGenerate = async (raw: string, imgs: string[] = [], wfOverride?: WorkflowChoice) => {
     const trimmed = raw.trim();
     if (!trimmed && imgs.length === 0) return;
     // Detect URL vs free text. Only prepend https:// for things that look like a domain.
@@ -141,8 +151,9 @@ const Generate = () => {
       : trimmed;
     setLoading(true);
     try {
+      const wf = wfOverride ?? workflow;
       const { data, error } = await supabase.functions.invoke("generate-rocket", {
-        body: { input: normalized || null, product_url: normalized || null, images: imgs },
+        body: { input: normalized || null, product_url: normalized || null, images: imgs, workflow: wf },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -385,7 +396,7 @@ const Generate = () => {
             <div className="mt-10 flex flex-col items-center">
               <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
               <p className="mt-4 text-sm font-medium text-neutral-700">{MESSAGES[msgIdx]}</p>
-              <p className="mt-1 text-xs text-neutral-500">This takes ~30 seconds.</p>
+              <p className="mt-1 text-xs text-neutral-500">{workflow === "design" ? "Generating visuals — this can take 60-90s." : "This takes ~30 seconds."}</p>
             </div>
           )}
 
@@ -413,6 +424,28 @@ const Generate = () => {
 
         <div className="sticky bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent px-6 pb-6 pt-4">
           <form onSubmit={submit} className={`mx-auto w-full ${result ? "max-w-md" : "max-w-2xl"}`}>
+            {!result && (
+              <div className="mb-3">
+                <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-500">What do you need help with?</p>
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {WORKFLOW_CHIPS.map((c) => {
+                    const active = workflow === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setWorkflow(c.id)}
+                        title={c.hint}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${active ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"}`}
+                      >
+                        <c.Icon className="h-3.5 w-3.5" />
+                        {c.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
               {images.length > 0 && (
                 <div className="mb-2 flex flex-wrap gap-2">

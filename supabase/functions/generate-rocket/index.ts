@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { WORKFLOWS, CLASSIFIER_SYSTEM, type Workflow } from "../_shared/workflows.ts";
 
 const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
 function cors(req: Request): Record<string, string> {
@@ -47,6 +48,7 @@ async function sendBranded(resendKey: string, fromEmail: string, to: string, tem
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
+const GEMINI_IMAGE_MODEL = Deno.env.get("GEMINI_IMAGE_MODEL") || "gemini-2.5-flash-image-preview";
 function requireGeminiKey() {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
   return GEMINI_API_KEY;
@@ -100,43 +102,40 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; images?
   return { parsed, rawPreview };
 }
 
+// Generate a single image via Gemini image model. Returns raw PNG bytes.
+async function geminiImage(prompt: string): Promise<Uint8Array> {
+  const key = requireGeminiKey();
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ["IMAGE"] },
+      }),
+    },
+  );
+  if (!res.ok) throw new Error(`Gemini image ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts ?? [];
+  for (const p of parts) {
+    const inline = p?.inlineData || p?.inline_data;
+    if (inline?.data) {
+      const bin = atob(inline.data);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+  }
+  throw new Error("no image in Gemini response");
+}
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>";
-
-const ASSET_PLAN: Array<{ asset_type: string; title: string }> = [
-  { asset_type: "positioning_tagline", title: "Tagline" },
-  { asset_type: "positioning_value_prop", title: "Value Proposition" },
-  { asset_type: "positioning_elevator", title: "Elevator Pitch" },
-  { asset_type: "positioning_audience", title: "Target Audience" },
-  { asset_type: "positioning_category", title: "Product Category" },
-  { asset_type: "positioning_differentiator", title: "Key Differentiator" },
-  { asset_type: "audience_ideal_customer", title: "Ideal Customer" },
-  { asset_type: "audience_pain_points", title: "Pain Points" },
-  { asset_type: "audience_use_cases", title: "Use Cases" },
-  { asset_type: "audience_messaging", title: "Messaging Angles" },
-  { asset_type: "founder_bio", title: "Founder Bio" },
-  { asset_type: "founder_tagline", title: "Founder Tagline" },
-  { asset_type: "founder_x_bio", title: "X Bio" },
-  { asset_type: "founder_linkedin", title: "LinkedIn Headline" },
-  { asset_type: "launch_submission", title: "Launch Submission" },
-  { asset_type: "launch_product_hunt", title: "Product Hunt Copy" },
-  { asset_type: "launch_directory", title: "Directory Submission" },
-  { asset_type: "social_x_post", title: "X Post" },
-  { asset_type: "social_x_thread", title: "X Thread" },
-  { asset_type: "social_linkedin", title: "LinkedIn Post" },
-  { asset_type: "social_reddit", title: "Reddit Post" },
-  { asset_type: "social_newsletter", title: "Newsletter Announcement" },
-  { asset_type: "strategy_readiness", title: "Launch Readiness Score" },
-  { asset_type: "strategy_channels", title: "Recommended Channels" },
-  { asset_type: "strategy_communities", title: "Recommended Communities" },
-  { asset_type: "strategy_content", title: "Content Ideas" },
-  { asset_type: "checklist_pre", title: "Pre-Launch Checklist" },
-  { asset_type: "checklist_day", title: "Launch Day Checklist" },
-  { asset_type: "checklist_post", title: "Post-Launch Checklist" },
-];
 
 async function fetchSite(url: string): Promise<string> {
   try {
@@ -164,6 +163,22 @@ function isValidUrl(s: string): boolean {
 
 function jsonResponse(body: unknown, status: number, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
+
+async function classifyWorkflow(opts: { text: string; hasImages: boolean }): Promise<Workflow> {
+  try {
+    const { parsed } = await geminiJSON<{ workflow: Workflow }>({
+      system: CLASSIFIER_SYSTEM,
+      user: `User request: """${opts.text || "(no text)"}"""\nImages attached: ${opts.hasImages ? "yes" : "no"}\nReturn JSON.`,
+      temperature: 0.1,
+    });
+    const w = parsed?.workflow;
+    if (w === "brand" || w === "design" || w === "launch" || w === "promote") return w;
+    return "brand";
+  } catch (e) {
+    console.error("classifier failed, defaulting to brand", e);
+    return "brand";
+  }
 }
 
 Deno.serve(async (req) => {
@@ -217,6 +232,18 @@ Deno.serve(async (req) => {
     const productUrl = isUrl ? rawInput : "";
     const freeText = isUrl ? "" : rawInput;
 
+    // Workflow selection (explicit or auto-classified)
+    const rawWorkflow: string = typeof body?.workflow === "string" ? body.workflow : "auto";
+    let workflow: Workflow;
+    if (rawWorkflow === "brand" || rawWorkflow === "design" || rawWorkflow === "launch" || rawWorkflow === "promote") {
+      workflow = rawWorkflow;
+    } else {
+      step = "classify";
+      workflow = await classifyWorkflow({ text: rawInput, hasImages: imagesIn.length > 0 });
+    }
+    const spec = WORKFLOWS[workflow];
+    console.log("workflow selected", workflow);
+
     // Parse images
     const inlineImages: Array<{ mimeType: string; data: string }> = [];
     for (const src of imagesIn.slice(0, 6)) {
@@ -257,7 +284,8 @@ Deno.serve(async (req) => {
     // 5. Credits
     step = "credits";
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
-    if (remaining < 1) {
+    const creditsNeeded = 1 + spec.image_count; // 1 for text + 1 per image
+    if (remaining < creditsNeeded) {
       return jsonResponse({ error: "insufficient_credits", code: "no_credits" }, 402, corsHeaders);
     }
 
@@ -267,14 +295,16 @@ Deno.serve(async (req) => {
 
     // 7. AI prompt
     step = "ai_prompt";
-    const system = `You are Rocket, an AI launch co-pilot for vibe coders. Given a product URL, scraped text, a free-text product idea, and/or attached reference images (logos, screenshots, mockups), you generate a complete launch kit. Use the images and any free-text idea to inform brand voice, visual descriptors, and product understanding. You MUST respond as a single valid JSON object only — no markdown fences, no commentary, no trailing text. Every value must be a non-empty string. Keep each value tight, concrete, and ready-to-paste. Use "- " for bullet lines.`;
-    const keys = ASSET_PLAN.map((a) => a.asset_type).join(", ");
+    const system = spec.system;
     const contextBlock = isUrl
       ? `Product URL: ${productUrl}\n\nScraped page content:\n"""${siteText || "(no content fetched — infer from URL)"}"""`
       : freeText
         ? `Product idea (free text from user):\n"""${freeText}"""`
         : `(no URL or text — infer everything from the attached images)`;
-    const user_prompt = `${contextBlock}\n\n${inlineImages.length ? `The user attached ${inlineImages.length} reference image(s). Examine them carefully — they may include the product UI, logo, mockups, or brand inspiration.\n\n` : ""}Return a single JSON object with EXACTLY these keys, each a non-empty string: product_name, ${keys}. Tones: confident, founder-led, specific. For social posts, write the actual post copy. For checklists and use cases, use "- " bullets. For Launch Readiness Score, give a number 0-100 with 1-2 sentence rationale. RESPOND WITH JSON ONLY.`;
+    const imagesAttachedNote = inlineImages.length
+      ? `The user attached ${inlineImages.length} reference image(s). Examine them carefully — they may include the product UI, logo, mockups, or brand inspiration.\n\n`
+      : "";
+    const user_prompt = spec.buildUserPrompt({ contextBlock, imagesAttachedNote });
 
     // 8. AI request + parse
     step = "ai_request";
@@ -309,7 +339,7 @@ Deno.serve(async (req) => {
     step = "rocket_insert";
     const { data: rocket, error: rErr } = await admin
       .from("rockets")
-      .insert({ user_id: user.id, product_url: productUrl || freeText || "", product_name, status: "ready" })
+      .insert({ user_id: user.id, product_url: productUrl || freeText || "", product_name, status: "ready", workflow })
       .select()
       .single();
     if (rErr) {
@@ -319,21 +349,62 @@ Deno.serve(async (req) => {
 
     // 10. Assets insert
     step = "assets_insert";
-    const assets = ASSET_PLAN.map((a) => ({
+    const textRows = spec.text_assets.map((a) => ({
       rocket_id: rocket.id,
       asset_type: a.asset_type,
       title: a.title,
+      kind: "text",
       content: String(parsed[a.asset_type] ?? "").trim() || "(not generated — please regenerate)",
     }));
-    const { error: aErr } = await admin.from("rocket_assets").insert(assets);
+    const { error: aErr } = await admin.from("rocket_assets").insert(textRows);
     if (aErr) {
       console.error("assets insert error", aErr);
       return jsonResponse({ error: "database_insert_failed", step, details: aErr.message, rocket_id: rocket.id }, 500, corsHeaders);
     }
 
+    // 10b. Image generation for design workflow
+    let imagesGenerated = 0;
+    if (spec.image_count > 0) {
+      step = "image_gen";
+      const imagePromises = Array.from({ length: spec.image_count }, async (_, idx) => {
+        const i = idx + 1;
+        const prompt = String(parsed[`image_prompt_${i}`] ?? "").trim();
+        const concept = String(parsed[`image_concept_${i}`] ?? "").trim() || `Concept ${i}`;
+        if (!prompt) return { ok: false as const, idx: i, error: "no prompt" };
+        try {
+          const png = await geminiImage(prompt);
+          const path = `${user.id}/${rocket.id}/concept-${i}-${Date.now()}.png`;
+          const { error: upErr } = await admin.storage.from("rocket-images").upload(path, png, {
+            contentType: "image/png",
+            upsert: false,
+          });
+          if (upErr) throw new Error(`storage upload: ${upErr.message}`);
+          const { data: pub } = admin.storage.from("rocket-images").getPublicUrl(path);
+          return { ok: true as const, idx: i, url: pub.publicUrl, prompt, concept };
+        } catch (e) {
+          console.error(`image ${i} failed`, e);
+          return { ok: false as const, idx: i, error: (e as Error).message, prompt, concept };
+        }
+      });
+      const results = await Promise.all(imagePromises);
+      const imageRows = results.map((r) => ({
+        rocket_id: rocket.id,
+        asset_type: `design_image_${r.idx}`,
+        title: `Logo Concept ${r.idx}`,
+        kind: "image",
+        content: r.ok ? r.concept : `(image generation failed: ${(r as any).error}) — try Regenerate`,
+        image_url: r.ok ? r.url : null,
+        image_prompt: (r as any).prompt || null,
+      }));
+      const { error: imgErr } = await admin.from("rocket_assets").insert(imageRows);
+      if (imgErr) console.error("image assets insert error", imgErr);
+      imagesGenerated = results.filter((r) => r.ok).length;
+    }
+
     // 11. Decrement credits
     step = "credits_decrement";
-    const { error: decErr } = await admin.from("user_usage").update({ credits_used: usage.credits_used + 1 }).eq("user_id", user.id);
+    const totalCharged = 1 + imagesGenerated;
+    const { error: decErr } = await admin.from("user_usage").update({ credits_used: usage.credits_used + totalCharged }).eq("user_id", user.id);
     if (decErr) console.error("credits decrement failed (non-fatal)", decErr);
 
     // 12. Side-effect email
@@ -343,7 +414,7 @@ Deno.serve(async (req) => {
       }).catch((e) => console.error("email send failed", e));
     }
 
-    return jsonResponse({ rocket_id: rocket.id }, 200, corsHeaders);
+    return jsonResponse({ rocket_id: rocket.id, workflow, images_generated: imagesGenerated }, 200, corsHeaders);
   } catch (e) {
     console.error("server_error at step", step, e);
     return jsonResponse({ error: "server_error", step, details: (e as Error).message }, 500, corsHeaders);
