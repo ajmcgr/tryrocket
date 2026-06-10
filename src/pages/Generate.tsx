@@ -295,9 +295,13 @@ const Generate = () => {
             <ul className="space-y-0.5">
               {history.map((h) => (
                 <li key={h.id}>
-                  <Link to={`/rocket/${h.id}`} className="block truncate rounded-lg px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100">
+                  <button
+                    type="button"
+                    onClick={() => loadResult(h.id)}
+                    className={`block w-full text-left truncate rounded-lg px-2 py-1.5 text-sm transition ${result?.rocketId === h.id ? "bg-neutral-100 text-neutral-900" : "text-neutral-700 hover:bg-neutral-100"}`}
+                  >
                     {h.product_name || h.product_url}
-                  </Link>
+                  </button>
                 </li>
               ))}
             </ul>
