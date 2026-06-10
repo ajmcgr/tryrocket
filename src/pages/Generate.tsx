@@ -452,7 +452,7 @@ const Generate = () => {
                 </button>
                 <input
                   type="text"
-                  placeholder="Paste your product URL or attach images"
+                  placeholder="Paste your URL, describe your idea, or attach images..."
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   disabled={loading}
