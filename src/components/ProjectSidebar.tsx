@@ -11,12 +11,43 @@ import {
   Zap,
   ArrowRight,
   Loader2,
+  MoreHorizontal,
+  Pin,
+  PinOff,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 const supabase = _sb as any;
 
 type Props = {
@@ -29,6 +60,9 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
   const { toast } = useToast();
   const location = useLocation();
   const [history, setHistory] = useState<any[]>([]);
+  const [renaming, setRenaming] = useState<any | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleting, setDeleting] = useState<any | null>(null);
   const [usage, setUsage] = useState<{
     used: number;
     limit: number;
@@ -52,13 +86,7 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("rockets")
-      .select("id, product_name, product_url, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20)
-      .then(({ data }: any) => setHistory(data || []));
+    loadHistory();
     supabase
       .from("user_usage")
       .select("monthly_limit, credits_used, credits_extra")
@@ -74,6 +102,68 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
           })
       );
   }, [user]);
+
+  const loadHistory = () => {
+    if (!user) return;
+    supabase
+      .from("rockets")
+      .select("id, product_name, product_url, created_at, pinned")
+      .eq("user_id", user.id)
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then(({ data }: any) => setHistory(data || []));
+  };
+
+  const togglePin = async (h: any) => {
+    const next = !h.pinned;
+    setHistory((prev) =>
+      [...prev.map((x) => (x.id === h.id ? { ...x, pinned: next } : x))].sort(
+        (a, b) =>
+          Number(b.pinned) - Number(a.pinned) ||
+          (a.created_at < b.created_at ? 1 : -1)
+      )
+    );
+    const { error } = await supabase
+      .from("rockets")
+      .update({ pinned: next })
+      .eq("id", h.id);
+    if (error) {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
+      loadHistory();
+    }
+  };
+
+  const submitRename = async () => {
+    if (!renaming) return;
+    const name = renameValue.trim();
+    if (!name) return;
+    const id = renaming.id;
+    setHistory((prev) => prev.map((x) => (x.id === id ? { ...x, product_name: name } : x)));
+    setRenaming(null);
+    const { error } = await supabase
+      .from("rockets")
+      .update({ product_name: name })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Rename failed", description: error.message, variant: "destructive" });
+      loadHistory();
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    const id = deleting.id;
+    setHistory((prev) => prev.filter((x) => x.id !== id));
+    setDeleting(null);
+    const { error } = await supabase.from("rockets").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      loadHistory();
+    } else {
+      toast({ title: "Deleted" });
+    }
+  };
 
   const buyPack = async (product: string) => {
     setBuying(product);
@@ -134,34 +224,86 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
           </p>
         ) : (
           <ul className="space-y-0.5">
-            {history.map((h) => (
-              <li key={h.id}>
-                {onSelectRocket ? (
-                  <button
-                    type="button"
-                    onClick={() => onSelectRocket(h.id)}
-                    className={`block w-full text-left truncate rounded-lg px-2 py-1.5 text-sm transition ${
-                      activeRocketId === h.id
-                        ? "bg-neutral-100 text-neutral-900"
-                        : "text-neutral-700 hover:bg-neutral-100"
+            {history.map((h) => {
+              const isActive = onSelectRocket
+                ? activeRocketId === h.id
+                : location.pathname === `/rocket/${h.id}`;
+              const label = h.product_name || h.product_url;
+              return (
+                <li key={h.id} className="group relative">
+                  <div
+                    className={`flex items-center gap-1 rounded-lg pr-1 transition ${
+                      isActive ? "bg-neutral-100" : "hover:bg-neutral-100"
                     }`}
                   >
-                    {h.product_name || h.product_url}
-                  </button>
-                ) : (
-                  <Link
-                    to={`/rocket/${h.id}`}
-                    className={`block truncate rounded-lg px-2 py-1.5 text-sm transition ${
-                      location.pathname === `/rocket/${h.id}`
-                        ? "bg-neutral-100 text-neutral-900"
-                        : "text-neutral-700 hover:bg-neutral-100"
-                    }`}
-                  >
-                    {h.product_name || h.product_url}
-                  </Link>
-                )}
-              </li>
-            ))}
+                    {onSelectRocket ? (
+                      <button
+                        type="button"
+                        onClick={() => onSelectRocket(h.id)}
+                        className={`flex-1 min-w-0 text-left truncate px-2 py-1.5 text-sm ${
+                          isActive ? "text-neutral-900" : "text-neutral-700"
+                        }`}
+                      >
+                        {h.pinned && (
+                          <Pin className="inline h-3 w-3 mr-1 -mt-0.5 text-neutral-400" />
+                        )}
+                        {label}
+                      </button>
+                    ) : (
+                      <Link
+                        to={`/rocket/${h.id}`}
+                        className={`flex-1 min-w-0 truncate px-2 py-1.5 text-sm ${
+                          isActive ? "text-neutral-900" : "text-neutral-700"
+                        }`}
+                      >
+                        {h.pinned && (
+                          <Pin className="inline h-3 w-3 mr-1 -mt-0.5 text-neutral-400" />
+                        )}
+                        {label}
+                      </Link>
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          aria-label="Actions"
+                          className="shrink-0 rounded p-1 text-neutral-400 opacity-0 transition group-hover:opacity-100 hover:bg-neutral-200 hover:text-neutral-700 data-[state=open]:opacity-100"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={() => togglePin(h)}>
+                          {h.pinned ? (
+                            <>
+                              <PinOff className="mr-2 h-4 w-4" /> Unpin
+                            </>
+                          ) : (
+                            <>
+                              <Pin className="mr-2 h-4 w-4" /> Pin
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setRenameValue(h.product_name || "");
+                            setRenaming(h);
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" /> Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600 focus:text-red-600"
+                          onClick={() => setDeleting(h)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -237,6 +379,49 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
           </PopoverContent>
         </Popover>
       </div>
+      <Dialog open={!!renaming} onOpenChange={(o) => !o && setRenaming(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename brand asset</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitRename();
+            }}
+            autoFocus
+            placeholder="Name"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenaming(null)}>
+              Cancel
+            </Button>
+            <Button onClick={submitRename} disabled={!renameValue.trim()}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this brand asset?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. "{deleting?.product_name || deleting?.product_url}" will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </aside>
   );
 }
