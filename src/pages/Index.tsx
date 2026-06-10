@@ -89,7 +89,7 @@ const Index = () => {
               { emoji: "✅", title: "Launch Strategy", desc: "Channels, communities, content ideas, and a full launch checklist." },
               { emoji: "✨", title: "Founder Profile", desc: "X bio, LinkedIn headline, founder tagline — ready to paste." },
               { emoji: "⚡", title: "Instant Generation", desc: "One URL in. A complete launch kit out. Edit and regenerate any section." },
-              { emoji: "🚀", title: "Launch on Launch", desc: "Ship your Rocket straight to Launch when you're ready to go live." },
+              { emoji: "🚀", title: "Launch on Launch", desc: "Ship your brand straight to Launch when you're ready to go live." },
             ].map(({ emoji, title, desc }) => (
               <div key={title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:shadow-md">
                 <div className="text-3xl leading-none" aria-hidden>{emoji}</div>
