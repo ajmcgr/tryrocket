@@ -20,6 +20,106 @@ const FAQS = [
   { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You'll keep access until the end of the period." },
 ];
 
+const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
+  if (kind === "saas") {
+    return (
+      <div className="absolute inset-6 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <div className={`h-6 w-6 rounded-md bg-gradient-to-br ${accent}`} />
+          <div className="h-2 w-20 rounded-full bg-neutral-200" />
+          <div className="ml-auto flex gap-1.5">
+            {[0, 1, 2].map((k) => <div key={k} className="h-1.5 w-1.5 rounded-full bg-neutral-300" />)}
+          </div>
+        </div>
+        <div className="grid flex-1 grid-cols-3 gap-2">
+          <div className="space-y-2 rounded-xl bg-white p-3 ring-1 ring-neutral-200/70">
+            {[60, 40, 80, 50].map((w, k) => <div key={k} className="h-1.5 rounded-full bg-neutral-200" style={{ width: `${w}%` }} />)}
+          </div>
+          <div className="col-span-2 flex flex-col gap-2 rounded-xl bg-white p-3 ring-1 ring-neutral-200/70">
+            <div className="h-2 w-24 rounded-full bg-neutral-200" />
+            <div className={`h-16 rounded-lg bg-gradient-to-br ${accent} opacity-90`} />
+            <div className="flex gap-2">
+              <div className="h-8 flex-1 rounded-lg bg-neutral-100" />
+              <div className="h-8 flex-1 rounded-lg bg-neutral-100" />
+              <div className="h-8 flex-1 rounded-lg bg-neutral-100" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (kind === "ai") {
+    return (
+      <div className="absolute inset-6 flex flex-col justify-end gap-2.5">
+        <div className="self-start max-w-[70%] rounded-2xl rounded-bl-md bg-white px-4 py-2.5 text-xs text-neutral-700 ring-1 ring-neutral-200/70">
+          Summarize my Q3 launch wins ✨
+        </div>
+        <div className={`self-end max-w-[80%] rounded-2xl rounded-br-md bg-gradient-to-br ${accent} px-4 py-2.5 text-xs text-white shadow-sm`}>
+          You shipped 4 features, gained 1,284 users, and trended #2 on Product Hunt.
+        </div>
+        <div className="self-start flex items-center gap-1.5 rounded-2xl bg-white px-3 py-2 ring-1 ring-neutral-200/70">
+          {[0, 1, 2].map((k) => <span key={k} className="h-1.5 w-1.5 animate-pulse rounded-full bg-neutral-400" style={{ animationDelay: `${k * 150}ms` }} />)}
+        </div>
+      </div>
+    );
+  }
+  if (kind === "ecom") {
+    return (
+      <div className="absolute inset-6 grid grid-cols-2 gap-3">
+        {[0, 1, 2, 3].map((k) => (
+          <div key={k} className="flex flex-col rounded-xl bg-white p-2.5 ring-1 ring-neutral-200/70">
+            <div className={`h-14 rounded-lg bg-gradient-to-br ${accent} opacity-${80 - k * 10}`} />
+            <div className="mt-2 h-1.5 w-16 rounded-full bg-neutral-200" />
+            <div className="mt-1.5 h-1.5 w-10 rounded-full bg-neutral-100" />
+            <div className="mt-auto flex items-center justify-between pt-2">
+              <div className="h-2 w-8 rounded-full bg-neutral-300" />
+              <div className={`h-5 w-5 rounded-full bg-gradient-to-br ${accent}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (kind === "mobile") {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative h-[88%] w-[46%] rounded-[2rem] bg-neutral-900 p-2 shadow-xl">
+          <div className="flex h-full flex-col gap-2 rounded-[1.5rem] bg-white p-3">
+            <div className="mx-auto mt-1 h-1 w-10 rounded-full bg-neutral-900" />
+            <div className={`mt-2 h-10 w-10 rounded-xl bg-gradient-to-br ${accent}`} />
+            <div className="h-2 w-20 rounded-full bg-neutral-200" />
+            <div className="h-1.5 w-16 rounded-full bg-neutral-100" />
+            <div className={`mt-2 h-20 rounded-xl bg-gradient-to-br ${accent} opacity-90`} />
+            <div className="space-y-1.5">
+              <div className="h-1.5 w-full rounded-full bg-neutral-100" />
+              <div className="h-1.5 w-3/4 rounded-full bg-neutral-100" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // side
+  return (
+    <div className="absolute inset-6 grid grid-cols-3 gap-2.5">
+      {["Idea", "Build", "Ship"].map((c, k) => (
+        <div key={c} className="flex flex-col gap-2 rounded-xl bg-white p-2.5 ring-1 ring-neutral-200/70">
+          <div className="flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full bg-gradient-to-br ${accent}`} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">{c}</span>
+          </div>
+          {Array.from({ length: 3 - (k === 2 ? 1 : 0) }).map((_, j) => (
+            <div key={j} className="rounded-lg bg-neutral-50 p-2 ring-1 ring-neutral-100">
+              <div className="h-1.5 w-14 rounded-full bg-neutral-200" />
+              <div className="mt-1.5 h-1.5 w-10 rounded-full bg-neutral-100" />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const Index = () => {
   const { user, loading } = useAuth();
   const nav = useNavigate();
@@ -143,119 +243,110 @@ const Index = () => {
               From indie side projects to full SaaS launches — Rocket brands them all.
             </p>
           </div>
-          <div className="mt-14 grid auto-rows-[160px] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
-            {/* Feature: SaaS products */}
-            <div className="group relative col-span-2 row-span-2 cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 to-indigo-700 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-200">
-              <div className="relative flex h-full flex-col justify-between p-8 text-white">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md">
-                  <Zap className="h-6 w-6" />
+          <div className="mt-14 space-y-6">
+            {[
+              {
+                icon: Zap,
+                accent: "from-indigo-500 to-indigo-700",
+                tint: "from-indigo-50 to-white",
+                title: "SaaS products",
+                desc: "Launch your next software empire with a complete brand system — positioning, identity, and launch assets ready in minutes.",
+                bullets: [
+                  "Logo, colors & type that look investor-ready",
+                  "Landing page copy + Product Hunt kit",
+                  "Onboarding emails and lifecycle templates",
+                ],
+                visual: "saas",
+              },
+              {
+                icon: Sparkles,
+                accent: "from-violet-600 to-fuchsia-500",
+                tint: "from-fuchsia-50 to-white",
+                title: "AI tools",
+                desc: "Stand out in a sea of GPT wrappers. Rocket gives your AI product a sharp positioning and a brand that feels native to 2026.",
+                bullets: [
+                  "Differentiated one-liner & taglines",
+                  "Demo-ready hero copy and screenshots",
+                  "X / LinkedIn launch threads written for you",
+                ],
+                visual: "ai",
+              },
+              {
+                icon: ShoppingBag,
+                accent: "from-rose-500 to-pink-500",
+                tint: "from-rose-50 to-white",
+                title: "E-commerce stores",
+                desc: "Conversion-focused retail branding — from your logo and packaging palette to PDP copy that actually sells.",
+                bullets: [
+                  "Product page descriptions, FAQs, reviews",
+                  "Ad creative templates for Meta & TikTok",
+                  "Email flows: welcome, abandoned cart, win-back",
+                ],
+                visual: "ecom",
+              },
+              {
+                icon: Smartphone,
+                accent: "from-sky-400 to-blue-600",
+                tint: "from-sky-50 to-white",
+                title: "Mobile apps",
+                desc: "App Store-ready branding. We generate your icon direction, screenshots, ASO copy, and the launch posts to back it.",
+                bullets: [
+                  "App Store / Play Store metadata",
+                  "Screenshot frames + feature captions",
+                  "Press kit for indie & startup reviewers",
+                ],
+                visual: "mobile",
+              },
+              {
+                icon: Lightbulb,
+                accent: "from-blue-600 to-indigo-800",
+                tint: "from-blue-50 to-white",
+                title: "Side projects",
+                desc: "Turn weekend ideas into polished ventures. Rocket gives every side project the brand polish of a funded startup.",
+                bullets: [
+                  "Name + tagline + one-liner in seconds",
+                  "Directory submissions auto-filled",
+                  "Launch checklist you can ship over a weekend",
+                ],
+                visual: "side",
+              },
+            ].map((row, i) => {
+              const Icon = row.icon;
+              const reverse = i % 2 === 1;
+              return (
+                <div
+                  key={row.title}
+                  className="overflow-hidden rounded-3xl bg-white ring-1 ring-neutral-200/70 transition-shadow hover:shadow-[0_20px_60px_-20px_rgba(15,23,42,0.18)]"
+                >
+                  <div className={`grid items-center gap-8 p-8 sm:p-12 md:grid-cols-2 md:gap-12 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}>
+                    <div>
+                      <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${row.accent} text-white shadow-sm`}>
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <h3 className="mt-6 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">{row.title}</h3>
+                      <p className="mt-4 text-base leading-relaxed text-neutral-600">{row.desc}</p>
+                      <Link
+                        to="/create"
+                        className="mt-7 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover"
+                      >
+                        Start free <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                      <ul className="mt-7 space-y-3">
+                        {row.bullets.map((b) => (
+                          <li key={b} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                            <span className="mt-0.5 text-brand">↳</span>
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className={`relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br ${row.tint} ring-1 ring-neutral-200/70`}>
+                      <UseCaseVisual kind={row.visual} accent={row.accent} />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-3xl font-bold tracking-tight">SaaS products</h3>
-                  <p className="mt-2 max-w-xs text-indigo-100 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    Launch your next software empire with a complete brand system.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* AI tools */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-tr from-violet-600 to-fuchsia-400 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
-                <Sparkles className="mb-3 h-8 w-8 opacity-90" />
-                <span className="font-bold tracking-tight">AI tools</span>
-              </div>
-            </div>
-
-            {/* Mobile apps */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-sky-400 to-blue-600 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
-                <Smartphone className="mb-3 h-8 w-8 opacity-90" />
-                <span className="font-bold tracking-tight">Mobile apps</span>
-              </div>
-            </div>
-
-            {/* Newsletters */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-tr from-orange-400 to-amber-600 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
-                <Mail className="mb-3 h-8 w-8 opacity-90" />
-                <span className="font-bold tracking-tight">Newsletters</span>
-              </div>
-            </div>
-
-            {/* Creator brands */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-bl from-emerald-400 to-teal-600 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
-                <Palette className="mb-3 h-8 w-8 opacity-90" />
-                <span className="font-bold tracking-tight">Creator brands</span>
-              </div>
-            </div>
-
-            {/* E-commerce - wide */}
-            <div className="group relative col-span-2 cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full items-center justify-between p-7 text-white">
-                <div>
-                  <h3 className="text-xl font-bold tracking-tight sm:text-2xl">E-commerce stores</h3>
-                  <p className="text-sm text-rose-100">Conversion-focused retail branding.</p>
-                </div>
-                <div className="rounded-full bg-white/20 p-4 transition-transform group-hover:scale-110">
-                  <ShoppingBag className="h-7 w-7" />
-                </div>
-              </div>
-            </div>
-
-            {/* Agencies */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-900 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
-                <Building2 className="mb-3 h-8 w-8 opacity-90" />
-                <span className="font-bold tracking-tight">Agencies</span>
-              </div>
-            </div>
-
-            {/* Chrome extensions */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-yellow-300 to-yellow-500 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-slate-900">
-                <Puzzle className="mb-3 h-8 w-8 opacity-90" />
-                <span className="font-bold tracking-tight">Extensions</span>
-              </div>
-            </div>
-
-            {/* Podcasts */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-red-500 to-red-700 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
-                <Mic className="mb-3 h-8 w-8 opacity-90" />
-                <span className="font-bold tracking-tight">Podcasts</span>
-              </div>
-            </div>
-
-            {/* Courses */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-amber-300 to-orange-400 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-white">
-                <BookOpen className="mb-3 h-8 w-8 opacity-90" />
-                <span className="font-bold tracking-tight">Courses</span>
-              </div>
-            </div>
-
-            {/* Dev tools */}
-            <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-100 transition-all duration-500 hover:-translate-y-1 hover:bg-slate-200 hover:shadow-xl">
-              <div className="relative flex h-full flex-col items-center justify-center p-6 text-center text-slate-700">
-                <Wrench className="mb-3 h-8 w-8 opacity-70" />
-                <span className="font-bold tracking-tight">Dev tools</span>
-              </div>
-            </div>
-
-            {/* Side projects - wide */}
-            <div className="group relative col-span-2 cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-800 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-              <div className="relative flex h-full items-center justify-between p-7 text-white">
-                <div>
-                  <h3 className="text-xl font-bold tracking-tight sm:text-2xl">Side projects</h3>
-                  <p className="text-sm text-blue-100">Turn weekend ideas into polished ventures.</p>
-                </div>
-                <div className="rounded-full bg-white/20 p-4 transition-transform group-hover:rotate-12">
-                  <Lightbulb className="h-7 w-7" />
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       </section>
