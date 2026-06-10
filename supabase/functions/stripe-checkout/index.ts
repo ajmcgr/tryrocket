@@ -19,8 +19,9 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_URL = Deno.env.get("APP_URL") || "https://tryrocket.ai";
 
-const PRICES: Record<string, { price_data?: any; mode: "subscription" | "payment"; trial_days?: number; credits?: number; product_name: string; unit_amount: number }> = {
-  growth: { mode: "subscription", trial_days: 7, product_name: "Rocket Growth", unit_amount: 2000 },
+const PRICES: Record<string, { price?: string; mode: "subscription" | "payment"; trial_days?: number; credits?: number; product_name: string; unit_amount: number }> = {
+  growth: { mode: "subscription", trial_days: 7, product_name: "Rocket Pro", unit_amount: 2000, price: "price_1TgpCLL9pkHWyRRuJGdfC77g" },
+  pro: { mode: "subscription", trial_days: 7, product_name: "Rocket Pro", unit_amount: 2000, price: "price_1TgpCLL9pkHWyRRuJGdfC77g" },
   pack_500: { mode: "payment", credits: 500, product_name: "500 Rocket Credits", unit_amount: 500 },
   pack_1500: { mode: "payment", credits: 1500, product_name: "1,500 Rocket Credits", unit_amount: 1000 },
   pack_5000: { mode: "payment", credits: 5000, product_name: "5,000 Rocket Credits", unit_amount: 2500 },
@@ -55,15 +56,20 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: p.mode,
-      line_items: [{
-        price_data: {
-          currency: "usd",
-          product_data: { name: p.product_name },
-          unit_amount: p.unit_amount,
-          ...(p.mode === "subscription" ? { recurring: { interval: "month" } } : {}),
-        },
-        quantity: 1,
-      }],
+      line_items: [
+        p.price
+          ? { price: p.price, quantity: 1 }
+          : {
+              price_data: {
+                currency: "usd",
+                product_data: { name: p.product_name },
+                unit_amount: p.unit_amount,
+                ...(p.mode === "subscription" ? { recurring: { interval: "month" } } : {}),
+              },
+              quantity: 1,
+            },
+      ],
+      allow_promotion_codes: true,
       ...(p.mode === "subscription" && p.trial_days ? { subscription_data: { trial_period_days: p.trial_days } } : {}),
       success_url: `${APP_URL}/projects?checkout=success`,
       cancel_url: `${APP_URL}/projects?checkout=canceled`,
