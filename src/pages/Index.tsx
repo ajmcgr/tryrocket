@@ -198,7 +198,7 @@ const Index = () => {
         <div className="mx-auto max-w-4xl px-6 py-24 text-center">
           <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Ready to launch?</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-neutral-600">
-            Generate your first Rocket in under 60 seconds.
+            Generate your first brand in under 60 seconds.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link to="/signup">Sign up free <ArrowRight className="h-4 w-4" /></Link>
