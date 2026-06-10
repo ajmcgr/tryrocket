@@ -19,6 +19,8 @@ import BlogPost from "./pages/BlogPost.tsx";
 import MediaKit from "./pages/MediaKit.tsx";
 import Tools from "./pages/Tools.tsx";
 import ToolDetail from "./pages/ToolDetail.tsx";
+import Pricing from "./pages/Pricing.tsx";
+import FAQ from "./pages/FAQ.tsx";
 import AppShell from "./components/AppShell.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
@@ -43,6 +45,8 @@ const App = () => (
             <Route path="/media-kit" element={<MediaKit />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/tools/:slug" element={<ToolDetail />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/projects" element={<Dashboard />} />
               <Route path="/create" element={<Generate />} />

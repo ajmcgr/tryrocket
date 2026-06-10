@@ -25,8 +25,8 @@ const SiteHeader = () => {
       <div className="relative mx-auto flex h-16 max-w-6xl items-center px-6">
         <Logo />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
-          <a href="/#pricing" className="hover:text-neutral-900">Pricing</a>
-          <a href="/#faq" className="hover:text-neutral-900">FAQ</a>
+          <Link to="/pricing" className="hover:text-neutral-900">Pricing</Link>
+          <Link to="/faq" className="hover:text-neutral-900">FAQ</Link>
           <Link to="/blog" className="hover:text-neutral-900">Resources</Link>
         </nav>
         <div className="ml-auto flex items-center gap-3">

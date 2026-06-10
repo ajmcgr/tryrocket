@@ -1,0 +1,109 @@
+import { Link } from "react-router-dom";
+import { Check } from "lucide-react";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
+import { Button } from "@/components/ui/button";
+
+const OUTPUT_TYPES = [
+  "Brand Guidelines",
+  "Brand Templates",
+  "Logos",
+  "Colors",
+  "Fonts",
+  "Brand voice",
+  "Photos",
+  "Components",
+  "Graphics",
+  "Icons",
+  "Charts",
+  "Launch Copy",
+];
+
+const Pricing = () => {
+  return (
+    <div className="min-h-screen bg-white text-neutral-900 antialiased">
+      <SiteHeader />
+
+      <section className="border-b border-neutral-200/60">
+        <div className="mx-auto max-w-6xl px-6 py-24">
+          <div className="mx-auto max-w-2xl text-center">
+            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Simple, credit-based pricing</h1>
+            <p className="mt-4 text-lg text-neutral-600">Start free. Upgrade when you're ready to ship.</p>
+          </div>
+
+          <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Free */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-8">
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Free</div>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-5xl font-semibold tracking-tight">$0</span>
+                <span className="text-neutral-500">/month</span>
+              </div>
+              <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
+              <ul className="mt-6 space-y-3 text-sm">
+                {["500 Rocket Credits / month", "All output types", "Save & edit brands"].map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
+                    <span className="text-neutral-700">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button asChild variant="outline" className="mt-8 w-full">
+                <Link to="/signup">Sign up free</Link>
+              </Button>
+            </div>
+
+            {/* Growth */}
+            <div className="relative rounded-2xl border border-neutral-200 bg-neutral-100 p-8 text-neutral-900">
+              <div className="absolute -top-3 right-6 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white">
+                7-day free trial
+              </div>
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Growth</div>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-5xl font-semibold tracking-tight">$20</span>
+                <span className="text-neutral-500">/month</span>
+              </div>
+              <p className="mt-2 text-sm text-neutral-600">For founders shipping fast.</p>
+              <ul className="mt-6 space-y-3 text-sm">
+                {[
+                  "3,000 Rocket Credits / month",
+                  "Unlimited saved brands",
+                  "Export tools",
+                  "Priority generation",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button asChild className="mt-8 w-full">
+                <Link to="/signup">Start free trial</Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* Included output types */}
+          <div className="mt-10 rounded-2xl border border-neutral-200 bg-white p-8">
+            <div>
+              <h3 className="text-lg font-semibold tracking-tight">Every plan includes all output types</h3>
+              <p className="mt-1 text-sm text-neutral-600">A complete Brand Kit, generated for you in seconds.</p>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+              {OUTPUT_TYPES.map((item) => (
+                <div key={item} className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/60 px-3 py-2 text-sm text-neutral-700">
+                  <Check className="h-4 w-4 shrink-0 text-brand" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <SiteFooter />
+    </div>
+  );
+};
+
+export default Pricing;
