@@ -169,14 +169,27 @@ const Index = () => {
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Frequently asked</h2>
             <p className="mt-3 text-neutral-600">Everything you wanted to know about Rocket.</p>
           </div>
-          <Accordion type="single" collapsible className="mt-10 w-full">
+          <Accordion type="single" collapsible className="mt-10 w-full space-y-4">
             {FAQS.map((f, i) => (
-              <AccordionItem key={i} value={`item-${i}`}>
-                <AccordionTrigger className="text-left text-base font-medium">{f.q}</AccordionTrigger>
-                <AccordionContent className="text-neutral-600">{f.a}</AccordionContent>
+              <AccordionItem
+                key={i}
+                value={`item-${i}`}
+                className="rounded-2xl border border-neutral-200 bg-white transition-all duration-300 hover:border-brand/30 data-[state=open]:ring-1 data-[state=open]:ring-brand data-[state=open]:shadow-lg data-[state=open]:shadow-brand/5"
+              >
+                <AccordionTrigger className="px-6 py-5 text-left text-lg font-semibold text-neutral-900">{f.q}</AccordionTrigger>
+                <AccordionContent className="px-6 pb-5 text-neutral-600 leading-relaxed">{f.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
+          <div className="mt-10 flex flex-col items-start justify-between gap-4 rounded-2xl border border-brand/10 bg-brand/5 p-6 sm:flex-row sm:items-center">
+            <div>
+              <p className="font-semibold text-neutral-900">Still have questions?</p>
+              <p className="text-sm text-neutral-500">We're here to help you build something great.</p>
+            </div>
+            <Button asChild className="rounded-full">
+              <a href="mailto:hello@tryrocket.ai">Contact Support</a>
+            </Button>
+          </div>
         </div>
       </section>
 
