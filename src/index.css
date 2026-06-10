@@ -14,9 +14,9 @@
 @font-face {
   font-family: 'Reckless';
   src: url('/fonts/Reckless-Medium.otf') format('opentype');
-  font-weight: 500;
+  font-weight: 400 500;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -92,7 +92,7 @@
 
   h1, h2 {
     font-family: 'Reckless', serif;
-    font-weight: 400;
+    font-weight: 500;
   }
   footer h1, footer h2 {
     font-family: 'Inter', sans-serif;
