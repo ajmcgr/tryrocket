@@ -1,4 +1,4 @@
-import { Rocket, Linkedin, Mail, Quote, TrendingUp, Users, CheckCircle2, BookOpen, LayoutTemplate, Image as ImageIcon, Component, Shapes, Star, BarChart3 } from "lucide-react";
+import { Rocket, Mail, Quote, TrendingUp, Users, CheckCircle2, BookOpen, LayoutTemplate, Image as ImageIcon, Component, Shapes, Star, BarChart3 } from "lucide-react";
 
 type CardProps = {
   i: number;
@@ -121,8 +121,8 @@ const LinkedInContent = () => (
   <div className="flex h-full flex-col p-6">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#0a66c2] text-white">
-          <Linkedin className="h-4 w-4" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-indigo-600 text-white text-sm font-bold">
+          R
         </div>
         <div className="leading-tight">
           <p className="text-xs font-semibold text-neutral-900">RecruitAI</p>
