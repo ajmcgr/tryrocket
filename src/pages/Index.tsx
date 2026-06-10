@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megap
 import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import CreateShowcase from "@/components/CreateShowcase";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
