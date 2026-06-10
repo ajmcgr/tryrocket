@@ -20,6 +20,7 @@ const AppShell = () => {
   const nav = useNavigate();
   const location = useLocation();
   const isFullBleed = location.pathname.startsWith("/create");
+  const isFullBleedRoute = isFullBleed || location.pathname.startsWith("/editor");
   const [credits, setCredits] = useState<{ used: number; limit: number; extra: number; plan: string } | null>(null);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ const AppShell = () => {
         <div className="flex h-16 w-full items-center px-6">
           <Logo to="/projects" />
           <nav className="ml-8 hidden items-center gap-2 text-sm font-medium text-neutral-700 md:flex">
+            <NavLink to="/editor" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Editor</NavLink>
             <NavLink to="/projects" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
             <NavLink to="/create" className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-brand-foreground shadow-sm transition hover:bg-brand-hover">Create</NavLink>
           </nav>
@@ -79,7 +81,7 @@ const AppShell = () => {
           </div>
         </div>
       </header>
-      <main className={isFullBleed ? "w-full" : "mx-auto max-w-6xl px-6 py-10"}>
+      <main className={isFullBleedRoute ? "w-full" : "mx-auto max-w-6xl px-6 py-10"}>
         <Outlet />
       </main>
     </div>
