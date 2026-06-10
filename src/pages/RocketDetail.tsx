@@ -124,6 +124,12 @@ const RocketDetail = () => {
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel>Submit to a directory</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <a href="https://trylaunch.ai" target="_blank" rel="noreferrer">
+                  Launch <ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" />
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               {DIRECTORIES.map((d) => (
                 <DropdownMenuItem key={d.name} asChild>
                   <a href={d.href(rocket.product_name, rocket.product_url, tagline)} target="_blank" rel="noreferrer">
@@ -131,12 +137,6 @@ const RocketDetail = () => {
                   </a>
                 </DropdownMenuItem>
               ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <a href="https://trylaunch.ai" target="_blank" rel="noreferrer">
-                  Launch on Launch <ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" />
-                </a>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
