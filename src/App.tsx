@@ -15,7 +15,7 @@ import Generate from "./pages/Generate.tsx";
 import Editor from "./pages/Editor.tsx";
 import { Navigate } from "react-router-dom";
 import RocketDetail from "./pages/RocketDetail.tsx";
-import Settings from "./pages/Settings.tsx";
+import Account from "./pages/Account.tsx";
 import About from "./pages/About.tsx";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
@@ -60,7 +60,8 @@ const App = () => (
               <Route path="/dashboard" element={<Navigate to="/projects" replace />} />
               <Route path="/generate" element={<Navigate to="/create" replace />} />
               <Route path="/rocket/:id" element={<RocketDetail />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/account" element={<Account />} />
+              <Route path="/settings" element={<Navigate to="/account" replace />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

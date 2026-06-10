@@ -13,7 +13,7 @@ const PACKS = [
   { id: "pack_5000", credits: 5000, price: "$25" },
 ];
 
-const Settings = () => {
+const Account = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [sub, setSub] = useState<any>(null);
@@ -131,7 +131,7 @@ const Settings = () => {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Account</h1>
 
       <section id="profile" className="mt-8 rounded-2xl border border-neutral-200 bg-white p-6 scroll-mt-24">
         <h2 className="text-base font-semibold">Profile</h2>
@@ -213,6 +213,20 @@ const Settings = () => {
         </label>
       </section>
 
+      <section id="credit-packs" className="mt-6 rounded-2xl border border-neutral-200 bg-white p-6 scroll-mt-24">
+        <h2 className="text-base font-semibold">Credit packs</h2>
+        <p className="mt-1 text-sm text-neutral-600">One-time top ups. Credits never expire.</p>
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {PACKS.map((p) => (
+            <button key={p.id} onClick={() => checkout(p.id)} disabled={loading === p.id} className="rounded-xl border border-neutral-200 bg-white p-4 text-left transition hover:border-neutral-900">
+              <div className="text-base font-semibold">{p.credits.toLocaleString()} Credits</div>
+              <div className="mt-1 text-lg font-semibold">{p.price}</div>
+              <div className="mt-2 text-xs font-medium text-neutral-500">{loading === p.id ? "Loading…" : "Buy →"}</div>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section id="billing" className="mt-6 rounded-2xl border border-neutral-200 bg-white p-6 scroll-mt-24">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -242,20 +256,6 @@ const Settings = () => {
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-neutral-200 bg-white p-6">
-        <h2 className="text-base font-semibold">Credit packs</h2>
-        <p className="mt-1 text-sm text-neutral-600">One-time top ups. Credits never expire.</p>
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {PACKS.map((p) => (
-            <button key={p.id} onClick={() => checkout(p.id)} disabled={loading === p.id} className="rounded-xl border border-neutral-200 bg-white p-4 text-left transition hover:border-neutral-900">
-              <div className="text-base font-semibold">{p.credits.toLocaleString()} Credits</div>
-              <div className="mt-1 text-lg font-semibold">{p.price}</div>
-              <div className="mt-2 text-xs font-medium text-neutral-500">{loading === p.id ? "Loading…" : "Buy →"}</div>
-            </button>
-          ))}
-        </div>
-      </section>
-
       <section id="account" className="mt-6 rounded-2xl border border-red-200 bg-white p-6 scroll-mt-24">
         <h2 className="text-base font-semibold text-red-700">Delete account</h2>
         <p className="mt-1 text-sm text-neutral-600">Permanently delete your account and all data. This cannot be undone.</p>
@@ -267,4 +267,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default Account;
