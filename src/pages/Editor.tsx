@@ -283,7 +283,55 @@ const ElView = ({ el, onChange }: { el: El; onChange: (p: Partial<El>) => void }
   }
   if (el.kind === "rect") return <div className="h-full w-full" style={{ background: el.fill, borderRadius: el.radius }} />;
   if (el.kind === "circle") return <div className="h-full w-full rounded-full" style={{ background: el.fill }} />;
-  return <img src={el.src} alt="" draggable={false} className="pointer-events-none h-full w-full object-cover" />;
+  if (el.kind === "image") return <img src={el.src} alt="" draggable={false} className="pointer-events-none h-full w-full object-cover" />;
+  if (el.kind === "line") {
+    return (
+      <svg className="h-full w-full" preserveAspectRatio="none" viewBox={`0 0 ${Math.max(1, el.w)} ${Math.max(1, el.h)}`}>
+        <line x1="0" y1={el.h / 2} x2={el.w} y2={el.h / 2} stroke={el.color} strokeWidth={el.thickness} strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (el.kind === "sticky") {
+    return (
+      <div
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={(e) => onChange({ text: e.currentTarget.innerText } as any)}
+        className="h-full w-full cursor-text select-text overflow-hidden rounded-sm p-3 text-sm outline-none shadow-sm"
+        style={{ background: el.fill, color: el.color }}
+      >{el.text}</div>
+    );
+  }
+  if (el.kind === "triangle") {
+    return (
+      <svg className="h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+        <polygon points="50,0 100,100 0,100" fill={el.fill} />
+      </svg>
+    );
+  }
+  if (el.kind === "star") {
+    return (
+      <svg className="h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+        <polygon fill={el.fill} points="50,5 61,38 96,38 68,59 79,93 50,72 21,93 32,59 4,38 39,38" />
+      </svg>
+    );
+  }
+  if (el.kind === "table") {
+    const cells: JSX.Element[] = [];
+    for (let r = 0; r < el.rows; r++) {
+      for (let c = 0; c < el.cols; c++) {
+        cells.push(
+          <div key={`${r}-${c}`} className="border px-1 py-0.5 text-[10px]" style={{ borderColor: el.lineColor, color: el.lineColor, background: el.color }} />
+        );
+      }
+    }
+    return (
+      <div className="grid h-full w-full" style={{ gridTemplateColumns: `repeat(${el.cols}, 1fr)`, gridTemplateRows: `repeat(${el.rows}, 1fr)` }}>
+        {cells}
+      </div>
+    );
+  }
+  return null;
 };
 
 const Field = ({ label, children }: any) => (
@@ -305,12 +353,14 @@ const Inspector = ({ el, onChange }: { el: El; onChange: (p: Partial<El>) => voi
       </div>
       <Field label="Color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
       <Field label="Font">
-        <select value={el.fontFamily} onChange={(e) => onChange({ fontFamily: e.target.value } as any)} className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm">
-          <option value="Inter, sans-serif">Inter</option>
-          <option value="Georgia, serif">Georgia</option>
-          <option value="'Times New Roman', serif">Times</option>
-          <option value="'Courier New', monospace">Courier</option>
-          <option value="Impact, sans-serif">Impact</option>
+        <select
+          value={el.fontFamily}
+          onChange={(e) => onChange({ fontFamily: e.target.value } as any)}
+          className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm"
+        >
+          {FONTS.map((f) => (
+            <option key={f} value={`'${f}', sans-serif`} style={{ fontFamily: `'${f}', sans-serif` }}>{f}</option>
+          ))}
         </select>
       </Field>
     </div>
@@ -323,6 +373,32 @@ const Inspector = ({ el, onChange }: { el: El; onChange: (p: Partial<El>) => voi
   );
   if (el.kind === "circle") return (
     <Field label="Fill"><ColorInput value={el.fill} onChange={(e: any) => onChange({ fill: e.target.value } as any)} /></Field>
+  );
+  if (el.kind === "triangle" || el.kind === "star") return (
+    <Field label="Fill"><ColorInput value={el.fill} onChange={(e: any) => onChange({ fill: e.target.value } as any)} /></Field>
+  );
+  if (el.kind === "line") return (
+    <div className="space-y-3">
+      <Field label="Color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
+      <Field label="Thickness"><NumberInput value={el.thickness} min={1} max={40} onChange={(e: any) => onChange({ thickness: +e.target.value } as any)} /></Field>
+    </div>
+  );
+  if (el.kind === "sticky") return (
+    <div className="space-y-3">
+      <Field label="Text"><textarea value={el.text} onChange={(e) => onChange({ text: e.target.value } as any)} rows={3} className="w-full resize-y rounded-md border border-neutral-200 px-2 py-1.5 text-sm" /></Field>
+      <Field label="Background"><ColorInput value={el.fill} onChange={(e: any) => onChange({ fill: e.target.value } as any)} /></Field>
+      <Field label="Text color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
+    </div>
+  );
+  if (el.kind === "table") return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Rows"><NumberInput value={el.rows} min={1} max={20} onChange={(e: any) => onChange({ rows: Math.max(1, +e.target.value) } as any)} /></Field>
+        <Field label="Columns"><NumberInput value={el.cols} min={1} max={20} onChange={(e: any) => onChange({ cols: Math.max(1, +e.target.value) } as any)} /></Field>
+      </div>
+      <Field label="Cell color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
+      <Field label="Line color"><ColorInput value={el.lineColor} onChange={(e: any) => onChange({ lineColor: e.target.value } as any)} /></Field>
+    </div>
   );
   return <p className="text-xs text-neutral-500">Drag the corners to resize the image.</p>;
 };
