@@ -716,25 +716,50 @@ const Generate = () => {
               </div>
               <div
                 className="aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 shadow-sm"
-                style={{ background: bgColor }}
+                style={{ background: result.asset.imageUrl ? "#ffffff" : bgColor }}
               >
-                <div className="flex h-full w-full items-center justify-center p-10">
-                  <textarea
-                    value={result.asset.content}
-                    onChange={(e) => updateAssetContent(e.target.value)}
-                    spellCheck={false}
-                    className="h-full w-full resize-none bg-transparent text-center leading-tight tracking-tight outline-none"
-                    style={{
-                      color: textColor,
-                      fontSize: `${fontSize}px`,
-                      fontWeight,
-                      fontFamily: "Inter, sans-serif",
-                    }}
-                  />
-                </div>
+                {result.asset.imageUrl ? (
+                  <div className="flex h-full w-full items-center justify-center p-8">
+                    <img
+                      src={result.asset.imageUrl}
+                      alt={result.asset.title}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                ) : result.designFailed ? (
+                  <div className="flex h-full w-full items-center justify-center p-10 text-center">
+                    <div>
+                      <p className="text-sm font-semibold text-neutral-900">Logo generation failed.</p>
+                      <p className="mt-1 text-xs text-neutral-500">Try again in a moment — no credits were charged.</p>
+                      <button
+                        onClick={regenAsset}
+                        className="mt-4 inline-flex items-center gap-1 rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" /> Try again
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center p-10">
+                    <textarea
+                      value={result.asset.content}
+                      onChange={(e) => updateAssetContent(e.target.value)}
+                      spellCheck={false}
+                      className="h-full w-full resize-none bg-transparent text-center leading-tight tracking-tight outline-none"
+                      style={{
+                        color: textColor,
+                        fontSize: `${fontSize}px`,
+                        fontWeight,
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               <p className="mt-3 text-center text-xs text-neutral-400">
-                Click the text to edit. Use the toolbar above for quick styling, or open in the full editor.
+                {result.asset.imageUrl
+                  ? "Preview of your generated logo. Open in editor to reposition, resize, and add text."
+                  : "Click the text to edit. Use the toolbar above for quick styling, or open in the full editor."}
               </p>
             </div>
           </div>
