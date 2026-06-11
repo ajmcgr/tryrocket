@@ -290,6 +290,16 @@ function jsonResponse(body: unknown, status: number, corsHeaders: Record<string,
 }
 
 async function classifyWorkflow(opts: { text: string; hasImages: boolean }): Promise<Workflow> {
+  // Fast deterministic keyword pre-classifier — runs before any AI call so
+  // requests like "I want a new logo for trylaunch.ai" never get misrouted
+  // to the text-only "brand" workflow.
+  const t = (opts.text || "").toLowerCase();
+  const VISUAL = /\b(logos?|icons?|app[- ]?icons?|favicons?|marks?|brand ?mark|wordmarks?|symbols?|mascots?|badges?|emblems?|monograms?|visual identity|graphics?|illustrations?|images?|banners?|social graphics?|thumbnails?|posters?|stickers?|templates?)\b/;
+  const PROMOTE = /\b(x thread|tweet|twitter thread|linkedin post|reddit post|influencer|pr pitch|press release|creator campaign|newsletter announcement)\b/;
+  const LAUNCH = /\b(product hunt|ph launch|launch (copy|post|asset|checklist|story|kit|plan)|directory submission|founder story)\b/;
+  if (VISUAL.test(t)) return "design";
+  if (PROMOTE.test(t)) return "promote";
+  if (LAUNCH.test(t)) return "launch";
   try {
     const { parsed } = await geminiJSON<{ workflow: Workflow }>({
       system: CLASSIFIER_SYSTEM,
