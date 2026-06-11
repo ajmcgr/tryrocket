@@ -277,13 +277,18 @@ const Editor = () => {
       onTransformEnd: () => onTransformEnd(el.id),
     };
     if (el.kind === "rect") return <Rect {...common} x={el.x} y={el.y} width={el.w} height={el.h} fill={el.fill} cornerRadius={el.radius} rotation={el.rotation || 0} />;
-    if (el.kind === "circle") return (
-      <KCircle {...common}
-        x={el.x + el.w / 2} y={el.y + el.h / 2}
-        radius={Math.min(el.w, el.h) / 2}
-        fill={el.fill} rotation={el.rotation || 0}
-      />
-    );
+    if (el.kind === "circle") {
+      const r = Math.min(el.w, el.h) / 2;
+      return (
+        <KCircle {...common}
+          x={el.x + el.w / 2} y={el.y + el.h / 2}
+          radius={r}
+          offsetX={0} offsetY={0}
+          fill={el.fill} rotation={el.rotation || 0}
+          onDragEnd={(e: any) => update(el.id, { x: e.target.x() - el.w / 2, y: e.target.y() - el.h / 2 } as any)}
+        />
+      );
+    }
     if (el.kind === "text") return (
       <KText {...common}
         x={el.x} y={el.y} width={el.w} text={el.text}
