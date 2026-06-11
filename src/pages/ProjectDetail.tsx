@@ -4,6 +4,7 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2 } from "lucide-react";
+import { AssetGridSkeleton } from "@/components/Skeletons";
 const supabase = _sb as any;
 
 type WF = "brand" | "design" | "launch" | "promote" | "other";
@@ -29,6 +30,7 @@ const ProjectDetail = () => {
   const { toast } = useToast();
   const [project, setProject] = useState<any>(null);
   const [assets, setAssets] = useState<any[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [allAssets, setAllAssets] = useState<any[]>([]);
   const [picking, setPicking] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -41,7 +43,7 @@ const ProjectDetail = () => {
       supabase.from("projects").select("*").eq("id", id).maybeSingle(),
       supabase.from("assets").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     ]);
-    setProject(p.data); setAssets(a.data || []);
+    setProject(p.data); setAssets(a.data || []); setLoaded(true);
   };
   useEffect(() => { load(); }, [id, user]);
 
@@ -84,7 +86,12 @@ const ProjectDetail = () => {
     toast({ title: "Share link copied" });
   };
 
-  if (!project) return <div className="p-10 text-center text-sm text-neutral-500">Loading…</div>;
+  if (!project) return (
+    <div className="mx-auto max-w-7xl px-6 py-10">
+      <div className="h-8 w-1/3 animate-pulse rounded bg-neutral-100" />
+      <AssetGridSkeleton />
+    </div>
+  );
 
   const counts: Record<WF, number> = { brand: 0, design: 0, launch: 0, promote: 0, other: 0 };
   for (const a of assets) counts[wfOf(a.asset_type)]++;
@@ -94,9 +101,9 @@ const ProjectDetail = () => {
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       <Link to="/projects" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900"><ArrowLeft className="h-4 w-4" /> Projects</Link>
-      <div className="mt-3 flex items-center justify-between">
-        <h1 className="text-3xl font-semibold tracking-tight">{project.name}</h1>
-        <div className="flex gap-2">
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{project.name}</h1>
+        <div className="flex flex-wrap gap-2">
           <Link to={`/projects/${id}/brand-kit`} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Sparkles className="h-4 w-4" /> Brand Kit</Link>
           <button onClick={toggleShare} disabled={sharing} className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm ${project.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}><Share2 className="h-4 w-4" /> {project.share_token ? "Shared" : "Share"}</button>
           <button onClick={openPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add asset</button>
