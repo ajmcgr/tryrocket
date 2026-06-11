@@ -386,6 +386,28 @@ Deno.serve(async (req) => {
     const spec = WORKFLOWS[workflow];
     console.log("workflow selected", workflow);
 
+    // Parse requested number of design concepts from user prompt (e.g. "2 logos", "give me four options").
+    // Defaults to spec.image_count, capped 1..6.
+    let requestedImageCount = spec.image_count;
+    if (workflow === "design" && rawInput) {
+      const lower = rawInput.toLowerCase();
+      const words: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+      let n: number | null = null;
+      const numMatch = lower.match(/\b(\d+)\s*(?:logos?|icons?|options?|concepts?|variations?|versions?|designs?|marks?)\b/);
+      if (numMatch) n = parseInt(numMatch[1], 10);
+      if (n == null) {
+        const wordMatch = lower.match(/\b(one|two|three|four|five|six)\s+(?:logos?|icons?|options?|concepts?|variations?|versions?|designs?|marks?)\b/);
+        if (wordMatch) n = words[wordMatch[1]];
+      }
+      if (n != null && Number.isFinite(n)) {
+        requestedImageCount = Math.max(1, Math.min(6, n));
+      }
+    }
+    const activeSpec: WorkflowSpec = workflow === "design" && requestedImageCount !== spec.image_count
+      ? { ...spec, image_count: requestedImageCount }
+      : spec;
+    console.log("image_count selected", activeSpec.image_count);
+
     // Parse images
     const inlineImages: Array<{ mimeType: string; data: string }> = [];
     for (const src of imagesIn.slice(0, 6)) {
