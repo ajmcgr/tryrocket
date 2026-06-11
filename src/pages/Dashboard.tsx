@@ -41,13 +41,13 @@ const Dashboard = () => {
           <p className="mt-1 text-sm text-neutral-500">Welcome back{user?.email ? `, ${user.email}` : ""}.</p>
         </div>
         <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
-          <Plus className="h-4 w-4" /> New Brand Asset
+          <Plus className="h-4 w-4" /> New Asset
         </Link>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Brand Assets</div>
+          <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Assets</div>
           <div className="mt-2 text-3xl font-semibold">{rockets.length}</div>
         </div>
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
@@ -69,13 +69,13 @@ const Dashboard = () => {
 
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Your Brand Assets</h2>
+          <h2 className="text-lg font-semibold">Your Assets</h2>
         </div>
         <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
           {rockets.length === 0 ? (
             <div className="p-10 text-center">
-              <p className="text-sm text-neutral-500">No Brand Assets yet.</p>
-              <Link to="/create" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground hover:bg-brand-hover">Generate your first Brand Assets <ArrowRight className="h-3.5 w-3.5" /></Link>
+              <p className="text-sm text-neutral-500">No assets yet. Start by creating a logo, tagline, positioning strategy, launch plan, or social campaign.</p>
+              <Link to="/create" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground hover:bg-brand-hover">Create your first asset <ArrowRight className="h-3.5 w-3.5" /></Link>
             </div>
           ) : (
             <ul className="divide-y divide-neutral-200">

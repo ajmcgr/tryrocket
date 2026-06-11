@@ -77,7 +77,7 @@ const Pricing = () => {
               <ul className="mt-6 space-y-3 text-sm">
                 {[
                   "3,000 credits / month",
-                  "Unlimited saved Brand Assets",
+                  "Unlimited saved assets",
                   "Export tools",
                   "Priority generation",
                   "Full asset history",
