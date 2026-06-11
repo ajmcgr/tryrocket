@@ -74,7 +74,15 @@ const Generate = () => {
     if (!p || loading) return;
     setLoading(true);
     try {
-      if (workflow === "auto") {
+      let effective: WF = workflow;
+      // Auto-detect: ask classifier whether prompt is a workflow or a single asset
+      if (workflow === "auto" && !assetType) {
+        try {
+          const { data: c } = await supabase.functions.invoke("classify-workflow", { body: { prompt: p } });
+          if (c?.mode === "workflow" && c.workflow) effective = c.workflow as WF;
+        } catch {}
+      }
+      if (effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: p, asset_type: assetType || undefined, project_id: projectId || undefined },
         });
@@ -92,7 +100,7 @@ const Generate = () => {
         else nav(`/assets/${ids[0]}`);
       } else {
         // Workflow fan-out: parallel generate-asset calls
-        const plan = WORKFLOW_PLAN[workflow];
+        const plan = WORKFLOW_PLAN[effective as Exclude<WF, "auto">];
         const results = await Promise.all(plan.map(step =>
           supabase.functions.invoke("generate-asset", {
             body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined },
