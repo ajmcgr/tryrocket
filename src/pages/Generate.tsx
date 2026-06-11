@@ -401,7 +401,8 @@ const Generate = () => {
       {sidebarOpen && (
       <aside className="hidden md:flex md:flex-col border-r border-neutral-200 bg-white overflow-hidden">
         <div className="px-3 pt-3 pb-2 flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Saved Chats</span>
+          {/* Backend table is `rockets`; user-facing label is "Assets". */}
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Assets</span>
           <button
             onClick={toggleSidebar}
             aria-label="Collapse sidebar"
@@ -412,12 +413,12 @@ const Generate = () => {
         </div>
         <div className="px-3 pb-3 border-b border-neutral-200">
           <button onClick={newAsset} className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50">
-            <Plus className="h-4 w-4" /> New chat
+            <Plus className="h-4 w-4" /> New Asset
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-2 py-2">
           {history.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-neutral-400">No chats yet.</p>
+            <p className="px-2 py-3 text-xs text-neutral-400">No assets yet. Create your first asset.</p>
           ) : (
             <ul className="space-y-0.5">
               {history.map((h) => {
@@ -547,7 +548,7 @@ const Generate = () => {
           {result && !loading && (
             <div className="mt-8 w-full max-w-md text-left">
               <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Just generated</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Latest Asset</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900 truncate">{result.productName}</p>
                 {result.productUrl && (
                   <p className="mt-0.5 truncate text-xs text-neutral-500">{result.productUrl}</p>
@@ -783,7 +784,7 @@ const Generate = () => {
       <Dialog open={!!renaming} onOpenChange={(o) => !o && setRenaming(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename chat</DialogTitle>
+            <DialogTitle>Rename asset</DialogTitle>
           </DialogHeader>
           <Input
             value={renameValue}
@@ -801,7 +802,7 @@ const Generate = () => {
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this asset?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. "{deleting?.product_name || deleting?.product_url}" will be permanently removed.
             </AlertDialogDescription>
