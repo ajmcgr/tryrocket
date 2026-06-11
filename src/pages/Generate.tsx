@@ -238,10 +238,7 @@ const Generate = () => {
       const rocketId = (data as any).rocket_id as string;
       await loadResult(rocketId);
       // Refresh sidebar history
-      if (user) {
-        supabase.from("rockets").select("id, product_name, product_url, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20)
-          .then(({ data }: any) => setHistory(data || []));
-      }
+      loadHistory();
       setLoading(false);
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
