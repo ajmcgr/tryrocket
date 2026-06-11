@@ -205,7 +205,7 @@ const Generate = () => {
       const { data, error } = await supabase.functions.invoke("generate-rocket", {
         body: { input: normalized || null, product_url: normalized || null, images: imgs, workflow: wf },
       });
-      if (error) throw error;
+      if (error) throw new Error("Rocket is busy right now. Please try again in a moment.");
       const d: any = data;
       if (d?.error) {
         if (d?.code === "no_credits" || d?.error === "insufficient_credits") {
@@ -213,7 +213,13 @@ const Generate = () => {
           setLoading(false);
           return;
         }
-        throw new Error(d.error);
+        if (d?.error === "ai_provider_unavailable") {
+          throw new Error(d.message || "Rocket is busy right now. Please try again in a moment.");
+        }
+        if (d?.error === "missing_environment_variable") {
+          throw new Error(`Configuration error: ${d.variable} is not set. Please contact support.`);
+        }
+        throw new Error(d.message || d.error);
       }
       const rocketId = (data as any).rocket_id as string;
       await loadResult(rocketId);
@@ -269,14 +275,17 @@ const Generate = () => {
     setRegen(true);
     try {
       const { data, error } = await supabase.functions.invoke("regenerate-asset", { body: { asset_id: result.asset.id } });
-      if (error) throw error;
+      if (error) throw new Error("Rocket is busy right now. Please try again in a moment.");
       const d: any = data;
       if (d?.error) {
         if (d?.code === "no_credits") {
           setOutOfCredits({ needed: d?.needed, remaining: d?.remaining });
           return;
         }
-        throw new Error(d.error);
+        if (d?.error === "ai_provider_unavailable") {
+          throw new Error(d.message || "Rocket is busy right now. Please try again in a moment.");
+        }
+        throw new Error(d.message || d.error);
       }
       updateAssetContent((data as any).content || "");
       toast({ title: "Regenerated", description: `${(data as any).credits_charged ?? 1} credits used.` });
