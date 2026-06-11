@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   Stage, Layer, Rect, Circle as KCircle, Text as KText, Image as KImage,
-  Line as KLine, RegularPolygon, Star as KStar, Transformer,
+  Line as KLine, RegularPolygon, Star as KStar, Transformer, Group,
 } from "react-konva";
 import useImage from "use-image";
 import type Konva from "konva";
@@ -13,7 +13,7 @@ import {
   Type, Square, Circle as CircleIcon, Image as ImageIcon, Trash2,
   Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
   Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
-  Undo2, Redo2, Copy,
+  Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, ArrowLeft, Check, Loader2,
 } from "lucide-react";
 const supabase = _sb as any;
 
@@ -50,6 +50,58 @@ const STORAGE_KEY = "rocket.editor.v2";
 const STAGE_W = 800;
 const STAGE_H = 600;
 
+/* --------------------------------- Templates --------------------------------- */
+const TEMPLATES: { id: string; name: string; bg: string; build: () => El[] }[] = [
+  {
+    id: "social-post", name: "Social Post", bg: "#0F172A",
+    build: () => [
+      { id: uid(), kind: "rect", x: 40, y: 40, w: 720, h: 520, visible: true, locked: false, fill: "#1E293B", radius: 24 } as RectEl,
+      { id: uid(), kind: "text", x: 80, y: 110, w: 640, h: 80, visible: true, locked: false,
+        text: "Big idea here.", color: "#FFFFFF", fontSize: 72, fontWeight: 800, fontFamily: "Space Grotesk", align: "left" } as TextEl,
+      { id: uid(), kind: "text", x: 80, y: 220, w: 640, h: 120, visible: true, locked: false,
+        text: "Supporting line that tells the story in one breath.", color: "#94A3B8", fontSize: 28, fontWeight: 400, fontFamily: "Inter", align: "left" } as TextEl,
+      { id: uid(), kind: "rect", x: 80, y: 470, w: 180, h: 56, visible: true, locked: false, fill: "#3B82F6", radius: 999 } as RectEl,
+      { id: uid(), kind: "text", x: 80, y: 486, w: 180, h: 56, visible: true, locked: false,
+        text: "Learn more", color: "#FFFFFF", fontSize: 18, fontWeight: 600, fontFamily: "Inter", align: "center" } as TextEl,
+    ],
+  },
+  {
+    id: "hero-banner", name: "Hero Banner", bg: "#FAFAF7",
+    build: () => [
+      { id: uid(), kind: "text", x: 80, y: 180, w: 640, h: 120, visible: true, locked: false,
+        text: "Make your product a brand.", color: "#0A0A0A", fontSize: 64, fontWeight: 700, fontFamily: "Playfair Display", align: "left" } as TextEl,
+      { id: uid(), kind: "text", x: 80, y: 320, w: 640, h: 80, visible: true, locked: false,
+        text: "Logo, copy, voice, and visuals — generated for you.", color: "#525252", fontSize: 22, fontWeight: 400, fontFamily: "Inter", align: "left" } as TextEl,
+      { id: uid(), kind: "line", x: 80, y: 430, w: 200, h: 4, visible: true, locked: false, color: "#3B82F6", thickness: 4 } as LineEl,
+    ],
+  },
+  {
+    id: "pitch-slide", name: "Pitch Slide", bg: "#FFFFFF",
+    build: () => [
+      { id: uid(), kind: "rect", x: 0, y: 0, w: 12, h: 600, visible: true, locked: false, fill: "#3B82F6", radius: 0 } as RectEl,
+      { id: uid(), kind: "text", x: 60, y: 80, w: 680, h: 60, visible: true, locked: false,
+        text: "The Problem", color: "#94A3B8", fontSize: 18, fontWeight: 600, fontFamily: "Inter", align: "left" } as TextEl,
+      { id: uid(), kind: "text", x: 60, y: 130, w: 680, h: 140, visible: true, locked: false,
+        text: "Founders ship products, not brands.", color: "#0A0A0A", fontSize: 52, fontWeight: 700, fontFamily: "Inter", align: "left" } as TextEl,
+      { id: uid(), kind: "text", x: 60, y: 320, w: 680, h: 200, visible: true, locked: false,
+        text: "Hiring an agency is expensive. DIY is slow. The result: a great product wrapped in a generic shell.",
+        color: "#525252", fontSize: 22, fontWeight: 400, fontFamily: "Inter", align: "left" } as TextEl,
+    ],
+  },
+  {
+    id: "quote-card", name: "Quote Card", bg: "#111111",
+    build: () => [
+      { id: uid(), kind: "text", x: 80, y: 100, w: 60, h: 100, visible: true, locked: false,
+        text: "\u201C", color: "#F59E0B", fontSize: 120, fontWeight: 700, fontFamily: "Playfair Display", align: "left" } as TextEl,
+      { id: uid(), kind: "text", x: 80, y: 220, w: 640, h: 200, visible: true, locked: false,
+        text: "The brand is the product. The product is the brand.",
+        color: "#FFFFFF", fontSize: 40, fontWeight: 600, fontFamily: "Playfair Display", align: "left" } as TextEl,
+      { id: uid(), kind: "text", x: 80, y: 480, w: 640, h: 40, visible: true, locked: false,
+        text: "— Anonymous", color: "#A3A3A3", fontSize: 18, fontWeight: 400, fontFamily: "Inter", align: "left" } as TextEl,
+    ],
+  },
+];
+
 /* ------------------------- Image node with loader ------------------------- */
 const KonvaImage = ({ el, ...rest }: { el: ImgEl; [k: string]: any }) => {
   const [img] = useImage(el.src, "anonymous");
@@ -68,6 +120,11 @@ const Editor = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
   const assetId = params.get("id");
+  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null } | null>(null);
+  const [brandKit, setBrandKit] = useState<{ colors: string[]; fonts: string[]; logos: { id: string; url: string; title: string }[] }>({ colors: [], fonts: [], logos: [] });
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   /* fonts */
   useEffect(() => {
@@ -120,6 +177,7 @@ const Editor = () => {
     (async () => {
       const { data: a } = await supabase.from("assets").select("*").eq("id", assetId).maybeSingle();
       if (!a) return;
+      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null });
       if (a.editor_state && Array.isArray(a.editor_state)) {
         _setEls(a.editor_state); return;
       }
@@ -136,6 +194,30 @@ const Editor = () => {
     })();
   }, [assetId]);
 
+  /* load brand kit from sibling assets in same project */
+  useEffect(() => {
+    const projectId = assetMeta?.project_id;
+    if (!projectId) { setBrandKit({ colors: [], fonts: [], logos: [] }); return; }
+    (async () => {
+      const { data } = await supabase.from("assets").select("id, title, asset_type, image_url, content")
+        .eq("project_id", projectId).limit(200);
+      const colors = new Set<string>();
+      const fonts = new Set<string>();
+      const logos: { id: string; url: string; title: string }[] = [];
+      for (const a of (data || [])) {
+        if (a.asset_type === "logo" && a.image_url) logos.push({ id: a.id, url: a.image_url, title: a.title });
+        if (a.content) {
+          const text = String(a.content);
+          for (const m of text.matchAll(/#([0-9A-Fa-f]{6})\b/g)) colors.add("#" + m[1].toUpperCase());
+          if (a.asset_type === "font_system") {
+            for (const f of FONTS) if (text.includes(f)) fonts.add(f);
+          }
+        }
+      }
+      setBrandKit({ colors: Array.from(colors).slice(0, 24), fonts: Array.from(fonts).slice(0, 12), logos });
+    })();
+  }, [assetMeta?.project_id]);
+
   /* persist */
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(els)); } catch {}
@@ -143,6 +225,21 @@ const Editor = () => {
   useEffect(() => {
     try { localStorage.setItem("rocket.editor.bg.v1", bg); } catch {}
   }, [bg]);
+
+  /* auto-save to asset (debounced) */
+  const firstSave = useRef(true);
+  useEffect(() => {
+    if (!assetId) return;
+    if (firstSave.current) { firstSave.current = false; return; }
+    setSaveStatus("saving");
+    const t = setTimeout(async () => {
+      const { error } = await supabase.from("assets").update({ editor_state: els as any }).eq("id", assetId);
+      if (error) { setSaveStatus("idle"); return; }
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus((s) => s === "saved" ? "idle" : s), 1500);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [els, assetId]);
 
   const selected = els.find((e) => e.id === selectedId) || null;
 
@@ -208,6 +305,30 @@ const Editor = () => {
       if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
     }
     toast({ title: "Saved", description: assetId ? "Design saved to asset." : "Design saved locally." });
+  };
+
+  const applyTemplate = (id: string) => {
+    const t = TEMPLATES.find((x) => x.id === id); if (!t) return;
+    setBg(t.bg);
+    setEls(t.build());
+    setSelectedId(null);
+    setShowTemplates(false);
+  };
+
+  const addImageFromUrl = (src: string) => {
+    add({ id: uid(), kind: "image", x: 240, y: 180, w: 320, h: 240, visible: true, locked: false, src } as ImgEl);
+  };
+
+  const applyColorToSelected = (color: string) => {
+    if (!selected) return;
+    if (selected.kind === "text" || selected.kind === "sticky") update(selected.id, { color } as any);
+    else if (selected.kind === "rect" || selected.kind === "circle" || selected.kind === "triangle" || selected.kind === "star") update(selected.id, { fill: color } as any);
+    else if (selected.kind === "line") update(selected.id, { color } as any);
+    else setBg(color);
+  };
+
+  const applyFontToSelected = (fontFamily: string) => {
+    if (selected?.kind === "text") update(selected.id, { fontFamily } as any);
   };
 
   const exportImage = (type: "png" | "jpeg" = "png") => {
@@ -341,19 +462,17 @@ const Editor = () => {
       const lines: any[] = [];
       for (let r = 0; r <= el.rows; r++) {
         const y = (el.h / el.rows) * r;
-        lines.push(<KLine key={`r${r}`} points={[0, y, el.w, y]} stroke={el.lineColor} strokeWidth={1} />);
+        lines.push(<KLine key={`r${r}`} points={[0, y, el.w, y]} stroke={el.lineColor} strokeWidth={1} listening={false} />);
       }
       for (let c = 0; c <= el.cols; c++) {
         const x = (el.w / el.cols) * c;
-        lines.push(<KLine key={`c${c}`} points={[x, 0, x, el.h]} stroke={el.lineColor} strokeWidth={1} />);
+        lines.push(<KLine key={`c${c}`} points={[x, 0, x, el.h]} stroke={el.lineColor} strokeWidth={1} listening={false} />);
       }
       return (
-        <>
-          <Rect {...common} x={el.x} y={el.y} width={el.w} height={el.h} fill={el.color} rotation={el.rotation || 0} />
-          {/* lines as overlay group via offset hack — render lines absolutely via x/y */}
-          {lines.map((ln) => ({ ...ln, props: { ...ln.props, points: ln.props.points.map((v: number, i: number) => i % 2 === 0 ? v + el.x : v + el.y) } }))
-            .map((ln) => <KLine key={ln.key} points={ln.props.points} stroke={el.lineColor} strokeWidth={1} listening={false} />)}
-        </>
+        <Group {...common} x={el.x} y={el.y} rotation={el.rotation || 0}>
+          <Rect x={0} y={0} width={el.w} height={el.h} fill={el.color} />
+          {lines}
+        </Group>
       );
     }
     return null;
@@ -361,6 +480,12 @@ const Editor = () => {
 
   return (
     <div className="relative flex h-[calc(100vh-4rem)] w-full bg-neutral-100">
+      {/* Mobile warning */}
+      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white p-8 text-center md:hidden">
+        <LayoutTemplate className="mb-3 h-8 w-8 text-neutral-400" />
+        <p className="text-sm font-medium text-neutral-900">Editor is desktop-only</p>
+        <p className="mt-1 text-xs text-neutral-500">Open Rocket on a larger screen to design.</p>
+      </div>
       <div className="flex flex-1">
       {/* Left */}
       <aside className="flex w-64 flex-col border-r border-neutral-200 bg-white">
@@ -386,6 +511,53 @@ const Editor = () => {
             <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-6 w-8 cursor-pointer rounded border border-neutral-200" />
           </label>
         </div>
+
+        {/* Brand Kit */}
+        {(brandKit.colors.length + brandKit.fonts.length + brandKit.logos.length) > 0 && (
+          <div className="border-b border-neutral-200 p-3">
+            <p className="mb-2 flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <Sparkles className="h-3 w-3" /> Brand Kit
+            </p>
+            {brandKit.colors.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Colors</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {brandKit.colors.map((c) => (
+                    <button key={c} title={c} onClick={() => applyColorToSelected(c)}
+                      className="h-6 w-6 rounded border border-neutral-200 transition hover:scale-110"
+                      style={{ background: c }} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {brandKit.fonts.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Fonts</p>
+                <div className="space-y-1">
+                  {brandKit.fonts.map((f) => (
+                    <button key={f} onClick={() => applyFontToSelected(f)}
+                      className="w-full rounded border border-neutral-200 px-2 py-1 text-left text-xs hover:bg-neutral-50"
+                      style={{ fontFamily: `'${f}', sans-serif` }}>{f}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {brandKit.logos.length > 0 && (
+              <div>
+                <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Logos</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {brandKit.logos.map((l) => (
+                    <button key={l.id} onClick={() => addImageFromUrl(l.url)} title={l.title}
+                      className="aspect-square overflow-hidden rounded border border-neutral-200 bg-neutral-50 hover:border-brand">
+                      <img src={l.url} alt={l.title} className="h-full w-full object-contain" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-3">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Layers</p>
           {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
@@ -413,11 +585,42 @@ const Editor = () => {
       {/* Center */}
       <main className="flex flex-1 flex-col">
         <div className="flex items-center gap-2 border-b border-neutral-200 bg-white px-4 py-2">
-          <span className="text-sm font-medium text-neutral-700">Untitled design</span>
+          {assetMeta?.project_id ? (
+            <Link to={`/projects/${assetMeta.project_id}`} className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">
+              <ArrowLeft className="h-3 w-3" /> Project
+            </Link>
+          ) : assetId ? (
+            <Link to={`/assets/${assetId}`} className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">
+              <ArrowLeft className="h-3 w-3" /> Asset
+            </Link>
+          ) : null}
+          <span className="text-sm font-medium text-neutral-700">{assetMeta?.title || "Untitled design"}</span>
           <span className="ml-2 text-xs text-neutral-400">{STAGE_W} × {STAGE_H}</span>
+          {assetId && (
+            <span className="ml-2 inline-flex items-center gap-1 text-[11px] text-neutral-400">
+              {saveStatus === "saving" && (<><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>)}
+              {saveStatus === "saved" && (<><Check className="h-3 w-3 text-green-600" /> Saved</>)}
+            </span>
+          )}
           <div className="ml-3 flex items-center gap-1">
             <IconAction onClick={undo} label="Undo"><Undo2 className="h-3.5 w-3.5" /></IconAction>
             <IconAction onClick={redo} label="Redo"><Redo2 className="h-3.5 w-3.5" /></IconAction>
+            <div className="relative">
+              <IconAction onClick={() => setShowTemplates((v) => !v)} label="Templates"><LayoutTemplate className="h-3.5 w-3.5" /></IconAction>
+              {showTemplates && (
+                <div className="absolute left-0 top-9 z-30 w-56 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg">
+                  <p className="px-2 py-1 text-[10px] uppercase tracking-wider text-neutral-400">Replace canvas</p>
+                  {TEMPLATES.map((t) => (
+                    <button key={t.id} onClick={() => applyTemplate(t.id)}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutral-100">
+                      <span className="h-4 w-4 rounded border border-neutral-200" style={{ background: t.bg }} />
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <IconAction onClick={() => setShowShortcuts(true)} label="Shortcuts"><Keyboard className="h-3.5 w-3.5" /></IconAction>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
@@ -514,6 +717,31 @@ const Editor = () => {
         )}
       </aside>
       </div>
+      {showShortcuts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6" onClick={() => setShowShortcuts(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold">Keyboard shortcuts</h2>
+            <ul className="mt-4 space-y-2 text-sm">
+              {[
+                ["Undo", "Ctrl/⌘ + Z"],
+                ["Redo", "Ctrl/⌘ + Y or Shift + Ctrl/⌘ + Z"],
+                ["Duplicate", "Ctrl/⌘ + D"],
+                ["Delete", "Delete / Backspace"],
+                ["Nudge", "Arrow keys (Shift = 10px)"],
+                ["Edit text", "Double-click text"],
+              ].map(([k, v]) => (
+                <li key={k} className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                  <span className="text-neutral-700">{k}</span>
+                  <kbd className="rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">{v}</kbd>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex justify-end">
+              <Button size="sm" onClick={() => setShowShortcuts(false)}>Got it</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
