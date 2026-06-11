@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { supabase as _sb } from "@/integrations/supabase/client";
 import { Rnd } from "react-rnd";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import ProjectSidebar from "@/components/ProjectSidebar";
 import {
   Type, Square, Circle as CircleIcon, Image as ImageIcon, Trash2,
   Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
   Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon, MousePointer2,
 } from "lucide-react";
+const supabase = _sb as any;
 
 type Base = {
   id: string;
@@ -46,6 +48,8 @@ const Editor = () => {
   const { toast } = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [params] = useSearchParams();
+  const assetId = params.get("id");
 
   // Load Google Fonts once.
   useEffect(() => {
@@ -66,6 +70,29 @@ const Editor = () => {
   const [bg, setBg] = useState<string>(() => {
     try { return localStorage.getItem("rocket.editor.bg.v1") || "#ffffff"; } catch { return "#ffffff"; }
   });
+
+  // Load asset from /editor?id=<asset_id>
+  useEffect(() => {
+    if (!assetId) return;
+    (async () => {
+      const { data: a } = await supabase.from("assets").select("*").eq("id", assetId).maybeSingle();
+      if (!a) return;
+      if (a.editor_state && Array.isArray(a.editor_state)) {
+        setEls(a.editor_state); return;
+      }
+      if (a.image_url) {
+        setEls([{ id: uid(), kind: "image", x: 150, y: 100, w: 500, h: 400, visible: true, locked: false, src: a.image_url } as ImgEl]);
+        setBg("#ffffff");
+      } else if (a.content) {
+        setEls([{
+          id: uid(), kind: "text", x: 80, y: 200, w: 800, h: 280,
+          visible: true, locked: false,
+          text: String(a.content).slice(0, 800),
+          color: "#0A0A0A", fontSize: 32, fontWeight: 600, fontFamily: "Inter, sans-serif",
+        } as TextEl]);
+      }
+    })();
+  }, [assetId]);
 
   const selected = els.find((e) => e.id === selectedId) || null;
 
@@ -146,8 +173,6 @@ const Editor = () => {
 
   return (
     <div className="relative flex h-[calc(100vh-4rem)] w-full bg-neutral-100">
-      <ProjectSidebar />
-      {/* existing editor layout continues */}
       <div className="flex flex-1">
       {/* Left: tools + layers */}
       <aside className="flex w-64 flex-col border-r border-neutral-200 bg-white">

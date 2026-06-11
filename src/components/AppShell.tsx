@@ -13,8 +13,7 @@ const AppShell = () => {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
-  const isFullBleed = location.pathname.startsWith("/create");
-  const isFullBleedRoute = isFullBleed || location.pathname.startsWith("/editor") || location.pathname.startsWith("/projects");
+  const isFullBleedRoute = location.pathname.startsWith("/editor");
   const initial = (user?.email?.[0] || "U").toUpperCase();
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
 
@@ -25,6 +24,7 @@ const AppShell = () => {
           <Logo to="/create" className="shrink-0" />
           <nav className="ml-8 hidden items-center gap-2 text-sm font-medium text-neutral-700 md:flex">
             <NavLink to="/create" className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-brand-foreground shadow-sm transition hover:bg-brand-hover">Create</NavLink>
+            <NavLink to="/assets" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Assets</NavLink>
             <NavLink to="/editor" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Editor</NavLink>
             <NavLink to="/projects" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
           </nav>
@@ -63,7 +63,7 @@ const AppShell = () => {
           </div>
         </div>
       </header>
-      <main className={isFullBleedRoute ? "w-full" : "mx-auto max-w-6xl px-6 py-10"}>
+      <main className={isFullBleedRoute ? "w-full" : "w-full"}>
         <Outlet />
       </main>
     </div>
