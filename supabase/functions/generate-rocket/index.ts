@@ -536,7 +536,7 @@ Deno.serve(async (req) => {
 
     // 10. Assets insert
     step = "assets_insert";
-    const textRows = spec.text_assets.map((a) => ({
+    const textRows = activeSpec.text_assets.map((a) => ({
       rocket_id: rocket.id,
       asset_type: a.asset_type,
       title: a.title,
@@ -552,9 +552,9 @@ Deno.serve(async (req) => {
     // 10b. Image generation for design workflow
     let imagesGenerated = 0;
     let imageCreditsCharged = 0;
-    if (spec.image_count > 0) {
+    if (activeSpec.image_count > 0) {
       step = "image_gen";
-      const imagePromises = Array.from({ length: spec.image_count }, async (_, idx) => {
+      const imagePromises = Array.from({ length: activeSpec.image_count }, async (_, idx) => {
         const i = idx + 1;
         const prompt = String(parsed[`image_prompt_${i}`] ?? "").trim();
         const concept = String(parsed[`image_concept_${i}`] ?? "").trim() || `Concept ${i}`;
@@ -603,7 +603,7 @@ Deno.serve(async (req) => {
       txnRows.push({
         user_id: user.id, rocket_id: rocket.id, workflow,
         asset_type: `workflow_${workflow}_text`, kind: "spent", credits: textCostTotal,
-        meta: { asset_types: spec.text_assets.map((a) => a.asset_type) },
+        meta: { asset_types: activeSpec.text_assets.map((a) => a.asset_type) },
       });
     }
     if (imageCreditsCharged > 0) {
