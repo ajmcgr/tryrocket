@@ -1,8 +1,5 @@
 project_id = "lcujmvdgczkjxdstzhnr"
 
-[functions.generate-rocket]
-verify_jwt = true
-
 [functions.regenerate-asset]
 verify_jwt = true
 
@@ -38,6 +35,3 @@ verify_jwt = true
 
 [functions.scrape-url]
 verify_jwt = true
-
-[functions.classify-workflow]
-verify_jwt = false
