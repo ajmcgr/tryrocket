@@ -58,12 +58,18 @@ const SiteHeader = () => {
         <Logo />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
           {user ? (
-            <a href="/pricing" target="_blank" rel="noreferrer" className="hover:text-neutral-900">Pricing</a>
+            <>
+              <Link to="/create" className="hover:text-neutral-900">Create</Link>
+              <Link to="/editor" className="hover:text-neutral-900">Editor</Link>
+              <Link to="/projects" className="hover:text-neutral-900">Projects</Link>
+            </>
           ) : (
-            <Link to="/pricing" className="hover:text-neutral-900">Pricing</Link>
+            <>
+              <Link to="/pricing" className="hover:text-neutral-900">Pricing</Link>
+              <Link to="/faq" className="hover:text-neutral-900">FAQ</Link>
+              <Link to="/blog" className="hover:text-neutral-900">Resources</Link>
+            </>
           )}
-          <Link to="/faq" className="hover:text-neutral-900">FAQ</Link>
-          <Link to="/blog" className="hover:text-neutral-900">Resources</Link>
         </nav>
         <div className="ml-auto flex items-center gap-6">
           <DropdownMenu>
