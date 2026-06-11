@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" href="/fonts/Reckless-Regular.ttf" as="font" type="font/ttf" crossorigin />
-    <link rel="preload" href="/fonts/Reckless-Bold.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="/fonts/Reckless-Medium.otf" as="font" type="font/otf" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
     <style>
       /* Inline @font-face so Reckless is registered before main CSS parses — eliminates FOUT */
@@ -35,14 +35,14 @@
       @font-face {
         font-family: 'Reckless';
         src: url('/fonts/Reckless-Medium.otf') format('opentype');
-        font-weight: 500;
+        font-weight: 500 600;
         font-style: normal;
         font-display: block;
       }
       @font-face {
         font-family: 'Reckless';
         src: url('/fonts/Reckless-Bold.ttf') format('truetype');
-        font-weight: 600 900;
+        font-weight: 700 900;
         font-style: normal;
         font-display: block;
       }
