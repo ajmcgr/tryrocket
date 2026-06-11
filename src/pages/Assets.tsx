@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Trash2, MoreHorizontal, Edit3 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AssetGridSkeleton } from "@/components/Skeletons";
 const supabase = _sb as any;
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ const Assets = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [q, setQ] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     if (!user) return;
@@ -36,6 +38,17 @@ const Assets = () => {
     setLoading(false);
   };
   useEffect(() => { load(); }, [user]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const filtered = useMemo(() => {
     return assets.filter(a => {
@@ -67,9 +80,10 @@ const Assets = () => {
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <input
+            ref={searchRef}
             value={q} onChange={e => setQ(e.target.value)}
-            placeholder="Search assets…"
-            className="h-9 w-64 rounded-lg border border-neutral-200 bg-white pl-8 pr-3 text-sm outline-none focus:border-neutral-400"
+            placeholder="Search assets…  ( / )"
+            className="h-9 w-full min-w-0 rounded-lg border border-neutral-200 bg-white pl-8 pr-3 text-sm outline-none focus:border-neutral-400 sm:w-64"
           />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -83,7 +97,7 @@ const Assets = () => {
       </div>
 
       {loading ? (
-        <div className="mt-12 text-center text-sm text-neutral-500">Loading…</div>
+        <AssetGridSkeleton />
       ) : filtered.length === 0 ? (
         <div className="mt-12 rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
           <p className="text-sm text-neutral-500">{assets.length === 0 ? "No assets yet. Create your first one." : "No matches for current filter."}</p>
