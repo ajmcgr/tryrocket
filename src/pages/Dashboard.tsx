@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ProjectGridSkeleton } from "@/components/Skeletons";
 const supabase = _sb as any;
 
 const Projects = () => {
@@ -62,23 +63,23 @@ const Projects = () => {
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
           <p className="mt-1 text-sm text-neutral-500">Group assets into projects, like Canva.</p>
         </div>
-        <div className="flex gap-2">
-          <Link to="/projects/new" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
-            <Sparkles className="h-4 w-4" /> New Project (Guided)
+        <div className="flex flex-wrap gap-2">
+          <Link to="/projects/new" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover sm:px-5 sm:py-2.5">
+            <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">New Project (Guided)</span><span className="sm:hidden">Guided</span>
           </Link>
-          <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium hover:bg-neutral-50">
+          <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50 sm:py-2.5">
             <Plus className="h-4 w-4" /> Blank
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="mt-12 text-center text-sm text-neutral-500">Loading…</div>
+        <ProjectGridSkeleton />
       ) : projects.length === 0 ? (
         <div className="mt-12 rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
           <Folder className="mx-auto h-8 w-8 text-neutral-300" />
