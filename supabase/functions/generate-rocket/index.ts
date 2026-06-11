@@ -312,8 +312,15 @@ Deno.serve(async (req) => {
   try {
     // 1. Env validation
     step = "env_check";
+    if (!GEMINI_API_KEY) {
+      console.error("missing env GEMINI_API_KEY");
+      return jsonResponse({
+        error: "missing_environment_variable",
+        variable: "GEMINI_API_KEY",
+        step: "environment_check",
+      }, 200, corsHeaders);
+    }
     const requiredEnv: Array<[string, string | undefined]> = [
-      ["GEMINI_API_KEY", GEMINI_API_KEY],
       ["SUPABASE_URL", SUPABASE_URL],
       ["SUPABASE_ANON_KEY", SUPABASE_ANON_KEY],
       ["SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY],
@@ -321,7 +328,7 @@ Deno.serve(async (req) => {
     for (const [name, val] of requiredEnv) {
       if (!val) {
         console.error("missing env", name);
-        return jsonResponse({ error: "missing_environment_variable", variable: name }, 500, corsHeaders);
+        return jsonResponse({ error: "missing_environment_variable", variable: name, step: "environment_check" }, 200, corsHeaders);
       }
     }
 
@@ -451,7 +458,16 @@ Deno.serve(async (req) => {
       rawPreview = result.rawPreview;
     } catch (e) {
       console.error("ai_request_failed", e);
-      return jsonResponse({ error: "ai_request_failed", step, details: (e as Error).message, raw_preview: rawPreview }, 500, corsHeaders);
+      if (e instanceof GeminiUnavailableError) {
+        return jsonResponse({
+          error: "ai_provider_unavailable",
+          provider: "gemini",
+          message: "Rocket is busy right now. Please try again in a moment.",
+          details: `Gemini returned ${e.status} ${e.bodyText}`.slice(0, 500),
+          step: "ai_generation",
+        }, 200, corsHeaders);
+      }
+      return jsonResponse({ error: "ai_request_failed", step, details: (e as Error).message, raw_preview: rawPreview }, 200, corsHeaders);
     }
     if (!parsed || typeof parsed !== "object") {
       console.error("ai_response_parsing_failed", rawPreview);
@@ -576,6 +592,15 @@ Deno.serve(async (req) => {
     return jsonResponse({ rocket_id: rocket.id, workflow, images_generated: imagesGenerated, credits_charged: totalCharged }, 200, corsHeaders);
   } catch (e) {
     console.error("server_error at step", step, e);
-    return jsonResponse({ error: "server_error", step, details: (e as Error).message }, 500, corsHeaders);
+    if (e instanceof GeminiUnavailableError) {
+      return jsonResponse({
+        error: "ai_provider_unavailable",
+        provider: "gemini",
+        message: "Rocket is busy right now. Please try again in a moment.",
+        details: `Gemini returned ${e.status} ${e.bodyText}`.slice(0, 500),
+        step: "ai_generation",
+      }, 200, corsHeaders);
+    }
+    return jsonResponse({ error: "server_error", step, details: (e as Error).message }, 200, corsHeaders);
   }
 });
