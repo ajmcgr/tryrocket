@@ -170,7 +170,16 @@ Deno.serve(async (req) => {
         });
         return new Response(JSON.stringify({ image_url: pub.publicUrl, image_prompt: finalPrompt, credits_charged: cost }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } catch (e) {
-        return new Response(JSON.stringify({ error: "image_generation_failed", details: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (e instanceof GeminiUnavailableError) {
+          return new Response(JSON.stringify({
+            error: "ai_provider_unavailable",
+            provider: "gemini",
+            message: "Rocket is busy right now. Please try again in a moment.",
+            details: `Gemini returned ${e.status} ${e.bodyText}`.slice(0, 500),
+            step: "ai_generation",
+          }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        return new Response(JSON.stringify({ error: "image_generation_failed", details: (e as Error).message }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
 
