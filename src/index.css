@@ -2,13 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'Reckless';
-  src: url('/fonts/Reckless-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* Reckless @font-face declarations are inlined in index.html <head>
+   so they're parsed before this stylesheet — eliminates the flash of
+   fallback serif on initial paint. */
 
 @layer base {
   :root {
