@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, Edit3, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check } from "lucide-react";
 const supabase = _sb as any;
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
@@ -19,29 +19,75 @@ const AssetDetail = () => {
   const { toast } = useToast();
   const [asset, setAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [showVersions, setShowVersions] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      if (!id) return;
-      const { data } = await supabase.from("assets").select("*").eq("id", id).maybeSingle();
-      setAsset(data);
-      setLoading(false);
-    })();
-  }, [id]);
+  const load = async () => {
+    if (!id) return;
+    const [a, v] = await Promise.all([
+      supabase.from("assets").select("*").eq("id", id).maybeSingle(),
+      supabase.from("asset_versions").select("id, label, created_at").eq("asset_id", id).order("created_at", { ascending: false }),
+    ]);
+    setAsset(a.data); setVersions(v.data || []); setLoading(false);
+  };
+  useEffect(() => { load(); }, [id]);
 
   if (loading) return <div className="p-10 text-center text-sm text-neutral-500">Loading…</div>;
   if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">Asset not found.</div>;
 
   const isImage = !!asset.image_url;
+  const shareUrl = asset.share_token ? `${window.location.origin}/share/asset/${asset.share_token}` : null;
 
-  const copy = () => {
-    navigator.clipboard.writeText(asset.content || "");
-    toast({ title: "Copied" });
-  };
+  const copy = () => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); };
   const del = async () => {
     if (!confirm("Delete this asset?")) return;
     await supabase.from("assets").delete().eq("id", asset.id);
     nav("/assets");
+  };
+
+  const toggleShare = async () => {
+    setSharing(true);
+    if (asset.share_token) {
+      await supabase.from("assets").update({ share_token: null }).eq("id", asset.id);
+      toast({ title: "Share link disabled" });
+    } else {
+      const token = crypto.randomUUID();
+      await supabase.from("assets").update({ share_token: token }).eq("id", asset.id);
+      const url = `${window.location.origin}/share/asset/${token}`;
+      try { await navigator.clipboard.writeText(url); } catch {}
+      toast({ title: "Public link created", description: "Copied to clipboard." });
+    }
+    await load();
+    setSharing(false);
+  };
+
+  const copyShare = async () => {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    toast({ title: "Share link copied" });
+  };
+
+  const restore = async (versionId: string) => {
+    if (!confirm("Restore this version? Current state will be saved as a new version first.")) return;
+    const { data: cur } = await supabase.from("assets").select("editor_state, content, image_url, title, user_id").eq("id", asset.id).maybeSingle();
+    if (cur) {
+      await supabase.from("asset_versions").insert({
+        asset_id: asset.id, user_id: cur.user_id, label: "Auto-saved before restore",
+        snapshot: { editor_state: cur.editor_state, content: cur.content, image_url: cur.image_url, title: cur.title },
+      });
+    }
+    const { data: v } = await supabase.from("asset_versions").select("snapshot").eq("id", versionId).maybeSingle();
+    if (v?.snapshot) {
+      await supabase.from("assets").update({
+        editor_state: v.snapshot.editor_state ?? null,
+        content: v.snapshot.content ?? null,
+        image_url: v.snapshot.image_url ?? null,
+        title: v.snapshot.title ?? asset.title,
+      }).eq("id", asset.id);
+      toast({ title: "Version restored" });
+      load();
+    }
   };
 
   return (
@@ -51,17 +97,23 @@ const AssetDetail = () => {
           <ArrowLeft className="h-4 w-4" /> Assets
         </Link>
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowVersions(v => !v)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
+            <History className="h-4 w-4" /> Versions {versions.length > 0 && <span className="rounded-full bg-neutral-100 px-1.5 text-[10px]">{versions.length}</span>}
+          </button>
+          <button onClick={toggleShare} disabled={sharing} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm ${asset.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}>
+            <Share2 className="h-4 w-4" /> {asset.share_token ? "Shared" : "Share"}
+          </button>
           <Link to={`/editor?id=${asset.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
             <Edit3 className="h-4 w-4" /> Open in Editor
           </Link>
           {isImage && (
-            <a href={asset.image_url} download className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50">
-              <Download className="h-4 w-4" /> Download
+            <a href={asset.image_url} download className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
+              <Download className="h-4 w-4" />
             </a>
           )}
           {!isImage && (
-            <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50">
-              <Copy className="h-4 w-4" /> Copy
+            <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
+              <Copy className="h-4 w-4" />
             </button>
           )}
           <button onClick={del} className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-3 py-2 text-sm text-red-600 hover:bg-red-50">
@@ -70,19 +122,54 @@ const AssetDetail = () => {
         </div>
       </div>
 
+      {shareUrl && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+          <Check className="h-3.5 w-3.5 text-emerald-600" />
+          <span className="flex-1 truncate font-mono text-emerald-900">{shareUrl}</span>
+          <button onClick={copyShare} className="rounded-md border border-emerald-300 bg-white px-2 py-1 text-xs hover:bg-emerald-100">Copy</button>
+        </div>
+      )}
+
       <div className="mb-4">
         <div className="text-xs uppercase tracking-wider text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type]}</div>
         <h1 className="mt-1 text-2xl font-semibold">{asset.title}</h1>
         {asset.prompt && <p className="mt-1 text-sm text-neutral-500">Prompt: {asset.prompt}</p>}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-        {isImage ? (
-          <div className="flex items-center justify-center bg-neutral-50 p-8">
-            <img src={asset.image_url} alt={asset.title} className="max-h-[640px] w-auto" />
-          </div>
-        ) : (
-          <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+          {isImage ? (
+            <div className="flex items-center justify-center bg-neutral-50 p-8">
+              <img src={asset.image_url} alt={asset.title} className="max-h-[640px] w-auto" />
+            </div>
+          ) : (
+            <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+          )}
+        </div>
+
+        {showVersions && (
+          <aside className="rounded-2xl border border-neutral-200 bg-white p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Version history</h3>
+            </div>
+            {versions.length === 0 ? (
+              <p className="text-xs text-neutral-500">No saved versions yet. Use "Save version" in the editor to snapshot your work.</p>
+            ) : (
+              <ul className="space-y-2">
+                {versions.map(v => (
+                  <li key={v.id} className="flex items-center justify-between gap-2 rounded-lg border border-neutral-100 px-2 py-1.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-medium">{v.label || "Snapshot"}</div>
+                      <div className="text-[10px] text-neutral-500">{new Date(v.created_at).toLocaleString()}</div>
+                    </div>
+                    <button onClick={() => restore(v.id)} title="Restore" className="rounded-md border border-neutral-200 p-1 hover:bg-neutral-50">
+                      <RotateCcw className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </aside>
         )}
       </div>
     </div>
