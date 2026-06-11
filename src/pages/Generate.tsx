@@ -52,7 +52,8 @@ const Generate = () => {
   const [params] = useSearchParams();
   const [prompt, setPrompt] = useState(params.get("prompt") ?? "");
   const [assetType, setAssetType] = useState<string | null>(null);
-  const [workflow, setWorkflow] = useState<WF>("auto");
+  const [workflow, setWorkflow] = useState<WF>((params.get("workflow") as WF) || "auto");
+  const projectId = params.get("project");
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
@@ -75,7 +76,7 @@ const Generate = () => {
     try {
       if (workflow === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: p, asset_type: assetType || undefined },
+          body: { prompt: p, asset_type: assetType || undefined, project_id: projectId || undefined },
         });
         if (error) throw new Error("Rocket is busy. Please try again.");
         const d: any = data;
@@ -87,14 +88,14 @@ const Generate = () => {
         if (d?.refused) { toast({ title: "Out of scope", description: d.message }); return; }
         const ids: string[] = d.asset_ids || [];
         if (ids.length === 0) throw new Error("No asset generated");
-        if (ids.length > 1) nav(`/assets?highlight=${ids.join(",")}`);
+        if (ids.length > 1) nav(projectId ? `/projects/${projectId}` : `/assets?highlight=${ids.join(",")}`);
         else nav(`/assets/${ids[0]}`);
       } else {
         // Workflow fan-out: parallel generate-asset calls
         const plan = WORKFLOW_PLAN[workflow];
         const results = await Promise.all(plan.map(step =>
           supabase.functions.invoke("generate-asset", {
-            body: { prompt: p, asset_type: step.asset_type, count: step.count },
+            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined },
           })
         ));
         const allIds: string[] = [];
@@ -110,7 +111,7 @@ const Generate = () => {
         }
         if (allIds.length === 0) throw new Error("No assets generated");
         if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
-        nav(`/assets?highlight=${allIds.join(",")}`);
+        nav(projectId ? `/projects/${projectId}` : `/assets?highlight=${allIds.join(",")}`);
       }
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
