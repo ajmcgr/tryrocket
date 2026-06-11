@@ -12,7 +12,7 @@ interface WorkflowSpec {
   text_assets: TextAssetSpec[];
   image_count: number;
   system: string;
-  buildUserPrompt(ctx: { contextBlock: string; imagesAttachedNote: string }): string;
+  buildUserPrompt(ctx: { contextBlock: string; imagesAttachedNote: string; imageCount?: number }): string;
 }
 const BRAND: WorkflowSpec = {
   workflow: "brand", label: "Brand It", image_count: 0,
@@ -46,8 +46,11 @@ const DESIGN: WorkflowSpec = {
   ],
   system: `You are Rocket, an AI visual brand co-pilot. The user wants visual assets (logos / icons / brand visuals). Generate 3 distinct logo / visual concepts and a tight visual style brief. Every value a non-empty string. Image prompts MUST be ready to paste into a text-to-image model, describe a single image, be vivid, specify style, color, composition, and end with: ", clean white background, vector style, high quality, no text". Output a single JSON object only.`,
   // NOTE: prompts must produce real LOGO MARKS — never text-only canvases or slogan posters.
-  buildUserPrompt({ contextBlock, imagesAttachedNote }) {
-    return `${contextBlock}\n\n${imagesAttachedNote}Return a single JSON object with EXACTLY these keys, each a non-empty string:\n- product_name\n- design_style_direction (2-4 sentences, modern SaaS, Apple-inspired simplicity, vector-first, scalable)\n- design_color_palette (3-5 hex codes with one-line rationale, "- " bullets)\n- design_typography (display + body font recommendations)\n- image_concept_1, image_concept_2, image_concept_3 (one short paragraph each)\n- image_prompt_1, image_prompt_2, image_prompt_3\n\nIMAGE PROMPT RULES — these are LOGO MARKS, not posters:\n* Describe a single iconic logo MARK or symbol — simple, geometric, vector-style, scalable, works as a favicon/app icon.\n* No long text, no slogans, no headlines, no paragraphs, no fake UI screenshots, no photorealism.\n* Solid white background, flat vector style, 2-3 colors max from the palette.\n* Each prompt MUST end with: ", minimalist vector logo mark, flat design, centered on solid white background, no text, no typography, no letters, app-icon ready, high quality"\n* The three concepts must be visually distinct (e.g. abstract geometric / lettermark glyph / symbolic illustration).\n\nRESPOND WITH JSON ONLY.`;
+  buildUserPrompt({ contextBlock, imagesAttachedNote, imageCount }) {
+    const n = Math.max(1, Math.min(6, imageCount ?? 3));
+    const conceptKeys = Array.from({ length: n }, (_, i) => `image_concept_${i + 1}`).join(", ");
+    const promptKeys = Array.from({ length: n }, (_, i) => `image_prompt_${i + 1}`).join(", ");
+    return `${contextBlock}\n\n${imagesAttachedNote}Return a single JSON object with EXACTLY these keys, each a non-empty string:\n- product_name\n- design_style_direction (2-4 sentences, modern SaaS, Apple-inspired simplicity, vector-first, scalable)\n- design_color_palette (3-5 hex codes with one-line rationale, "- " bullets)\n- design_typography (display + body font recommendations)\n- ${conceptKeys} (one short paragraph each)\n- ${promptKeys}\n\nIMAGE PROMPT RULES — these are LOGO MARKS, not posters:\n* Describe a single iconic logo MARK or symbol — simple, geometric, vector-style, scalable, works as a favicon/app icon.\n* No long text, no slogans, no headlines, no paragraphs, no fake UI screenshots, no photorealism.\n* Solid white background, flat vector style, 2-3 colors max from the palette.\n* Each prompt MUST end with: ", minimalist vector logo mark, flat design, centered on solid white background, no text, no typography, no letters, app-icon ready, high quality"\n* Generate EXACTLY ${n} visually distinct concept${n === 1 ? "" : "s"} (e.g. abstract geometric / lettermark glyph / symbolic illustration).\n\nRESPOND WITH JSON ONLY.`;
   },
 };
 const LAUNCH: WorkflowSpec = {
