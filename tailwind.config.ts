@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         display: ['Reckless', 'serif'],
+        serif: ['Reckless', 'ui-serif', 'Georgia', 'serif'],
         body: ['Inter', 'sans-serif'],
       },
       colors: {
