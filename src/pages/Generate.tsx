@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon } from "lucide-react";
+import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 const supabase = _sb as any;
 
@@ -17,6 +17,21 @@ const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string }[] =
   { id: "social_post", label: "Social Post", Icon: Megaphone, example: "X thread announcing trylaunch.ai launch" },
   { id: "graphic", label: "Graphic", Icon: ImageIcon, example: "Hero banner for a Mac productivity app" },
 ];
+
+type WF = "auto" | "brand" | "design" | "launch" | "promote";
+const WORKFLOWS: { id: WF; label: string; Icon: any; hint: string }[] = [
+  { id: "auto", label: "Auto-detect", Icon: Wand, hint: "Rocket picks the specialist (1 asset)" },
+  { id: "brand", label: "Brand It", Icon: Sparkles, hint: "Logo + colors + fonts + voice" },
+  { id: "design", label: "Design It", Icon: Paintbrush, hint: "3 logo concepts + color system" },
+  { id: "launch", label: "Launch It", Icon: Send, hint: "Launch copy + PH copy + social" },
+  { id: "promote", label: "Promote It", Icon: Radio, hint: "3 social posts + founder bio" },
+];
+const WORKFLOW_PLAN: Record<Exclude<WF, "auto">, { asset_type: string; count?: number }[]> = {
+  brand: [{ asset_type: "logo", count: 1 }, { asset_type: "color_system" }, { asset_type: "font_system" }, { asset_type: "brand_voice" }],
+  design: [{ asset_type: "logo", count: 3 }, { asset_type: "color_system" }],
+  launch: [{ asset_type: "launch_copy" }, { asset_type: "product_hunt_copy" }, { asset_type: "social_post" }],
+  promote: [{ asset_type: "social_post" }, { asset_type: "social_post" }, { asset_type: "social_post" }, { asset_type: "founder_bio" }],
+};
 
 const SAMPLE_PROMPTS = [
   "A logo for trylaunch.ai",
@@ -37,6 +52,7 @@ const Generate = () => {
   const [params] = useSearchParams();
   const [prompt, setPrompt] = useState(params.get("prompt") ?? "");
   const [assetType, setAssetType] = useState<string | null>(null);
+  const [workflow, setWorkflow] = useState<WF>("auto");
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
@@ -57,27 +73,44 @@ const Generate = () => {
     if (!p || loading) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-asset", {
-        body: { prompt: p, asset_type: assetType || undefined },
-      });
-      if (error) throw new Error("Rocket is busy. Please try again.");
-      const d: any = data;
-      if (d?.error) {
-        if (d.code === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); return; }
-        if (d.error === "ai_provider_unavailable") throw new Error(d.message);
-        throw new Error(d.message || d.error);
-      }
-      if (d?.refused) {
-        toast({ title: "Out of scope", description: d.message });
-        return;
-      }
-      const ids: string[] = d.asset_ids || [];
-      if (ids.length === 0) throw new Error("No asset generated");
-      // Multiple variants → assets gallery filtered; single → open in editor
-      if (ids.length > 1) {
-        nav(`/assets?highlight=${ids.join(",")}`);
+      if (workflow === "auto") {
+        const { data, error } = await supabase.functions.invoke("generate-asset", {
+          body: { prompt: p, asset_type: assetType || undefined },
+        });
+        if (error) throw new Error("Rocket is busy. Please try again.");
+        const d: any = data;
+        if (d?.error) {
+          if (d.code === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); return; }
+          if (d.error === "ai_provider_unavailable") throw new Error(d.message);
+          throw new Error(d.message || d.error);
+        }
+        if (d?.refused) { toast({ title: "Out of scope", description: d.message }); return; }
+        const ids: string[] = d.asset_ids || [];
+        if (ids.length === 0) throw new Error("No asset generated");
+        if (ids.length > 1) nav(`/assets?highlight=${ids.join(",")}`);
+        else nav(`/assets/${ids[0]}`);
       } else {
-        nav(`/assets/${ids[0]}`);
+        // Workflow fan-out: parallel generate-asset calls
+        const plan = WORKFLOW_PLAN[workflow];
+        const results = await Promise.all(plan.map(step =>
+          supabase.functions.invoke("generate-asset", {
+            body: { prompt: p, asset_type: step.asset_type, count: step.count },
+          })
+        ));
+        const allIds: string[] = [];
+        let creditsErr: any = null;
+        for (const r of results) {
+          const d: any = r.data;
+          if (d?.error === "no_credits") { creditsErr = d; continue; }
+          if (d?.asset_ids?.length) allIds.push(...d.asset_ids);
+        }
+        if (allIds.length === 0 && creditsErr) {
+          setOutOfCredits({ needed: creditsErr.needed, remaining: creditsErr.remaining });
+          return;
+        }
+        if (allIds.length === 0) throw new Error("No assets generated");
+        if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
+        nav(`/assets?highlight=${allIds.join(",")}`);
       }
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
@@ -114,7 +147,7 @@ const Generate = () => {
           />
           <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-1 pt-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              {ASSET_CHIPS.slice(0, 6).map((c) => (
+              {workflow === "auto" && ASSET_CHIPS.slice(0, 6).map((c) => (
                 <button
                   type="button"
                   key={c.id}
@@ -135,6 +168,26 @@ const Generate = () => {
           </div>
         </div>
       </form>
+
+      <div className="mt-4 w-full">
+        <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-neutral-500">Workflow</div>
+        <div className="flex flex-wrap gap-1.5">
+          {WORKFLOWS.map((w) => (
+            <button
+              type="button"
+              key={w.id}
+              onClick={() => { setWorkflow(w.id); if (w.id !== "auto") setAssetType(null); }}
+              title={w.hint}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${workflow === w.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
+            >
+              <w.Icon className="h-3 w-3" /> {w.label}
+            </button>
+          ))}
+        </div>
+        {workflow !== "auto" && (
+          <p className="mt-1.5 text-xs text-neutral-500">{WORKFLOWS.find(w => w.id === workflow)?.hint}</p>
+        )}
+      </div>
 
       {loading ? (
         <div className="mt-6 text-sm text-neutral-500">{MESSAGES[msgIdx]}</div>
