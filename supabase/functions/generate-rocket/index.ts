@@ -1,5 +1,93 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
-import { WORKFLOWS, CLASSIFIER_SYSTEM, type Workflow } from "../_shared/workflows.ts";
+
+// ============================================================
+// Inlined from _shared/workflows.ts to keep this function
+// standalone / copy-paste deployable.
+// ============================================================
+type Workflow = "brand" | "design" | "launch" | "promote";
+interface TextAssetSpec { asset_type: string; title: string }
+interface WorkflowSpec {
+  workflow: Workflow;
+  label: string;
+  text_assets: TextAssetSpec[];
+  image_count: number;
+  system: string;
+  buildUserPrompt(ctx: { contextBlock: string; imagesAttachedNote: string }): string;
+}
+const BRAND: WorkflowSpec = {
+  workflow: "brand", label: "Brand It", image_count: 0,
+  text_assets: [
+    { asset_type: "positioning_tagline", title: "Tagline" },
+    { asset_type: "positioning_value_prop", title: "Value Proposition" },
+    { asset_type: "positioning_elevator", title: "Elevator Pitch" },
+    { asset_type: "positioning_audience", title: "Target Audience" },
+    { asset_type: "positioning_category", title: "Product Category" },
+    { asset_type: "positioning_differentiator", title: "Key Differentiator" },
+    { asset_type: "audience_ideal_customer", title: "Ideal Customer" },
+    { asset_type: "audience_pain_points", title: "Pain Points" },
+    { asset_type: "audience_use_cases", title: "Use Cases" },
+    { asset_type: "audience_messaging", title: "Messaging Angles" },
+    { asset_type: "founder_bio", title: "Founder Bio" },
+    { asset_type: "founder_tagline", title: "Founder Tagline" },
+    { asset_type: "founder_x_bio", title: "X Bio" },
+    { asset_type: "founder_linkedin", title: "LinkedIn Headline" },
+  ],
+  system: `You are Rocket, an AI brand co-pilot. Generate brand positioning, audience, and founder messaging. Output a single JSON object. Every value a tight, ready-to-paste non-empty string. Use "- " for bullet lines.`,
+  buildUserPrompt({ contextBlock, imagesAttachedNote }) {
+    return `${contextBlock}\n\n${imagesAttachedNote}Return a single JSON object with EXACTLY these keys, each a non-empty string: product_name, positioning_tagline, positioning_value_prop, positioning_elevator, positioning_audience, positioning_category, positioning_differentiator, audience_ideal_customer, audience_pain_points, audience_use_cases, audience_messaging, founder_bio, founder_tagline, founder_x_bio, founder_linkedin. Tone: confident, founder-led, specific. RESPOND WITH JSON ONLY.`;
+  },
+};
+const DESIGN: WorkflowSpec = {
+  workflow: "design", label: "Design It", image_count: 3,
+  text_assets: [
+    { asset_type: "design_style_direction", title: "Style Direction" },
+    { asset_type: "design_color_palette", title: "Color Palette" },
+    { asset_type: "design_typography", title: "Typography Notes" },
+  ],
+  system: `You are Rocket, an AI visual brand co-pilot. The user wants visual assets (logos / icons / brand visuals). Generate 3 distinct logo / visual concepts and a tight visual style brief. Every value a non-empty string. Image prompts MUST be ready to paste into a text-to-image model, describe a single image, be vivid, specify style, color, composition, and end with: ", clean white background, vector style, high quality, no text". Output a single JSON object only.`,
+  buildUserPrompt({ contextBlock, imagesAttachedNote }) {
+    return `${contextBlock}\n\n${imagesAttachedNote}Return a single JSON object with EXACTLY these keys, each a non-empty string:\n- product_name\n- design_style_direction\n- design_color_palette\n- design_typography\n- image_concept_1, image_concept_2, image_concept_3\n- image_prompt_1, image_prompt_2, image_prompt_3\n\nRESPOND WITH JSON ONLY.`;
+  },
+};
+const LAUNCH: WorkflowSpec = {
+  workflow: "launch", label: "Launch It", image_count: 0,
+  text_assets: [
+    { asset_type: "launch_submission", title: "Launch Submission" },
+    { asset_type: "launch_product_hunt", title: "Product Hunt Copy" },
+    { asset_type: "launch_directory", title: "Directory Submission" },
+    { asset_type: "founder_story", title: "Founder Story" },
+    { asset_type: "strategy_readiness", title: "Launch Readiness Score" },
+    { asset_type: "strategy_channels", title: "Recommended Channels" },
+    { asset_type: "strategy_communities", title: "Recommended Communities" },
+    { asset_type: "strategy_content", title: "Content Ideas" },
+    { asset_type: "checklist_pre", title: "Pre-Launch Checklist" },
+    { asset_type: "checklist_day", title: "Launch Day Checklist" },
+    { asset_type: "checklist_post", title: "Post-Launch Checklist" },
+  ],
+  system: `You are Rocket, an AI launch strategist. Generate ready-to-ship launch assets and a concrete launch plan. Output a single JSON object. Each value a non-empty, ready-to-paste string. Use "- " bullets for lists. For Launch Readiness Score, return a 0-100 number plus 1-2 sentence rationale.`,
+  buildUserPrompt({ contextBlock, imagesAttachedNote }) {
+    return `${contextBlock}\n\n${imagesAttachedNote}Return a single JSON object with EXACTLY these keys, each a non-empty string: product_name, launch_submission, launch_product_hunt, launch_directory, founder_story, strategy_readiness, strategy_channels, strategy_communities, strategy_content, checklist_pre, checklist_day, checklist_post. RESPOND WITH JSON ONLY.`;
+  },
+};
+const PROMOTE: WorkflowSpec = {
+  workflow: "promote", label: "Promote It", image_count: 0,
+  text_assets: [
+    { asset_type: "social_x_post", title: "X Post" },
+    { asset_type: "social_x_thread", title: "X Thread" },
+    { asset_type: "social_linkedin", title: "LinkedIn Post" },
+    { asset_type: "social_reddit", title: "Reddit Post" },
+    { asset_type: "social_newsletter", title: "Newsletter Announcement" },
+    { asset_type: "promote_influencer_outreach", title: "Influencer Outreach DM" },
+    { asset_type: "promote_pr_pitch", title: "PR Pitch Email" },
+    { asset_type: "promote_creator_campaign", title: "Creator Campaign Brief" },
+  ],
+  system: `You are Rocket, an AI growth + PR co-pilot. Generate distribution copy and outreach assets that sound like a real founder, not a marketer. Output a single JSON object. Every value a non-empty, ready-to-paste string. For threads/posts write the actual post copy.`,
+  buildUserPrompt({ contextBlock, imagesAttachedNote }) {
+    return `${contextBlock}\n\n${imagesAttachedNote}Return a single JSON object with EXACTLY these keys, each a non-empty string: product_name, social_x_post, social_x_thread, social_linkedin, social_reddit, social_newsletter, promote_influencer_outreach, promote_pr_pitch, promote_creator_campaign. RESPOND WITH JSON ONLY.`;
+  },
+};
+const WORKFLOWS: Record<Workflow, WorkflowSpec> = { brand: BRAND, design: DESIGN, launch: LAUNCH, promote: PROMOTE };
+const CLASSIFIER_SYSTEM = `You classify a user's request into exactly one of four Rocket workflows. Output strict JSON: {"workflow": "brand" | "design" | "launch" | "promote"}.\n- "design" → user wants visual assets: logo, icon, hero image, social graphic, ad creative, thumbnail, screenshot, illustration, brand visuals.\n- "launch" → user wants launch copy / launch strategy / Product Hunt assets / launch checklist / founder story / submission copy.\n- "promote" → user wants distribution: X thread, LinkedIn post, Reddit post, influencer outreach, PR pitch, creator campaign.\n- "brand" → user wants brand identity / positioning / messaging / tagline / audience / value prop / elevator pitch, OR a full brand kit, OR the request is ambiguous and could be a complete brand.\nDefault to "brand" when uncertain. Respond with JSON only.`;
 
 const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
 function cors(req: Request): Record<string, string> {
@@ -53,6 +141,44 @@ function requireGeminiKey() {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
   return GEMINI_API_KEY;
 }
+
+// ===== Gemini retry wrapper =====
+class GeminiUnavailableError extends Error {
+  status: number;
+  bodyText: string;
+  constructor(status: number, bodyText: string) {
+    super(`Gemini ${status}: ${bodyText}`);
+    this.status = status;
+    this.bodyText = bodyText;
+  }
+}
+const GEMINI_RETRYABLE = new Set([429, 500, 502, 503, 504]);
+const GEMINI_BACKOFF_MS = [1000, 3000, 7000]; // up to 3 retries
+async function geminiFetch(url: string, init: RequestInit): Promise<Response> {
+  let lastStatus = 0;
+  let lastBody = "";
+  for (let attempt = 0; attempt <= GEMINI_BACKOFF_MS.length; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, init);
+    } catch (e) {
+      lastStatus = 0;
+      lastBody = (e as Error).message;
+      if (attempt === GEMINI_BACKOFF_MS.length) throw new GeminiUnavailableError(0, lastBody);
+      console.log(`Gemini network error, retry in ${GEMINI_BACKOFF_MS[attempt]}ms (attempt ${attempt + 1}/${GEMINI_BACKOFF_MS.length}): ${lastBody}`);
+      await new Promise((r) => setTimeout(r, GEMINI_BACKOFF_MS[attempt]));
+      continue;
+    }
+    if (res.ok) return res;
+    lastStatus = res.status;
+    lastBody = await res.text();
+    if (!GEMINI_RETRYABLE.has(res.status) || attempt === GEMINI_BACKOFF_MS.length) break;
+    console.log(`Gemini ${res.status}, retry in ${GEMINI_BACKOFF_MS[attempt]}ms (attempt ${attempt + 1}/${GEMINI_BACKOFF_MS.length})`);
+    await new Promise((r) => setTimeout(r, GEMINI_BACKOFF_MS[attempt]));
+  }
+  if (GEMINI_RETRYABLE.has(lastStatus)) throw new GeminiUnavailableError(lastStatus, lastBody);
+  throw new Error(`Gemini ${lastStatus}: ${lastBody}`);
+}
 function tryParseJsonLoose(raw: string): any {
   if (!raw) throw new Error("empty AI response");
   const stripped = raw.replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
@@ -78,7 +204,7 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; images?
   for (const img of opts.images || []) {
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
-  const res = await fetch(
+  const res = await geminiFetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
     {
       method: "POST",
@@ -90,7 +216,6 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; images?
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
   const data = await res.json();
   const finish = data?.candidates?.[0]?.finishReason;
   const raw = (data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
@@ -105,7 +230,7 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; images?
 // Generate a single image via Gemini image model. Returns raw PNG bytes.
 async function geminiImage(prompt: string): Promise<Uint8Array> {
   const key = requireGeminiKey();
-  const res = await fetch(
+  const res = await geminiFetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${key}`,
     {
       method: "POST",
@@ -116,7 +241,6 @@ async function geminiImage(prompt: string): Promise<Uint8Array> {
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini image ${res.status}: ${await res.text()}`);
   const data = await res.json();
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
   for (const p of parts) {
@@ -188,8 +312,15 @@ Deno.serve(async (req) => {
   try {
     // 1. Env validation
     step = "env_check";
+    if (!GEMINI_API_KEY) {
+      console.error("missing env GEMINI_API_KEY");
+      return jsonResponse({
+        error: "missing_environment_variable",
+        variable: "GEMINI_API_KEY",
+        step: "environment_check",
+      }, 200, corsHeaders);
+    }
     const requiredEnv: Array<[string, string | undefined]> = [
-      ["GEMINI_API_KEY", GEMINI_API_KEY],
       ["SUPABASE_URL", SUPABASE_URL],
       ["SUPABASE_ANON_KEY", SUPABASE_ANON_KEY],
       ["SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY],
@@ -197,7 +328,7 @@ Deno.serve(async (req) => {
     for (const [name, val] of requiredEnv) {
       if (!val) {
         console.error("missing env", name);
-        return jsonResponse({ error: "missing_environment_variable", variable: name }, 500, corsHeaders);
+        return jsonResponse({ error: "missing_environment_variable", variable: name, step: "environment_check" }, 200, corsHeaders);
       }
     }
 
@@ -327,7 +458,16 @@ Deno.serve(async (req) => {
       rawPreview = result.rawPreview;
     } catch (e) {
       console.error("ai_request_failed", e);
-      return jsonResponse({ error: "ai_request_failed", step, details: (e as Error).message, raw_preview: rawPreview }, 500, corsHeaders);
+      if (e instanceof GeminiUnavailableError) {
+        return jsonResponse({
+          error: "ai_provider_unavailable",
+          provider: "gemini",
+          message: "Rocket is busy right now. Please try again in a moment.",
+          details: `Gemini returned ${e.status} ${e.bodyText}`.slice(0, 500),
+          step: "ai_generation",
+        }, 200, corsHeaders);
+      }
+      return jsonResponse({ error: "ai_request_failed", step, details: (e as Error).message, raw_preview: rawPreview }, 200, corsHeaders);
     }
     if (!parsed || typeof parsed !== "object") {
       console.error("ai_response_parsing_failed", rawPreview);
@@ -452,6 +592,15 @@ Deno.serve(async (req) => {
     return jsonResponse({ rocket_id: rocket.id, workflow, images_generated: imagesGenerated, credits_charged: totalCharged }, 200, corsHeaders);
   } catch (e) {
     console.error("server_error at step", step, e);
-    return jsonResponse({ error: "server_error", step, details: (e as Error).message }, 500, corsHeaders);
+    if (e instanceof GeminiUnavailableError) {
+      return jsonResponse({
+        error: "ai_provider_unavailable",
+        provider: "gemini",
+        message: "Rocket is busy right now. Please try again in a moment.",
+        details: `Gemini returned ${e.status} ${e.bodyText}`.slice(0, 500),
+        step: "ai_generation",
+      }, 200, corsHeaders);
+    }
+    return jsonResponse({ error: "server_error", step, details: (e as Error).message }, 200, corsHeaders);
   }
 });

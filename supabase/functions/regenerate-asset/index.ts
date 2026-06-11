@@ -19,9 +19,45 @@ function requireGeminiKey() {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
   return GEMINI_API_KEY;
 }
+
+class GeminiUnavailableError extends Error {
+  status: number;
+  bodyText: string;
+  constructor(status: number, bodyText: string) {
+    super(`Gemini ${status}: ${bodyText}`);
+    this.status = status;
+    this.bodyText = bodyText;
+  }
+}
+const GEMINI_RETRYABLE = new Set([429, 500, 502, 503, 504]);
+const GEMINI_BACKOFF_MS = [1000, 3000, 7000];
+async function geminiFetch(url: string, init: RequestInit): Promise<Response> {
+  let lastStatus = 0;
+  let lastBody = "";
+  for (let attempt = 0; attempt <= GEMINI_BACKOFF_MS.length; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, init);
+    } catch (e) {
+      lastStatus = 0;
+      lastBody = (e as Error).message;
+      if (attempt === GEMINI_BACKOFF_MS.length) throw new GeminiUnavailableError(0, lastBody);
+      await new Promise((r) => setTimeout(r, GEMINI_BACKOFF_MS[attempt]));
+      continue;
+    }
+    if (res.ok) return res;
+    lastStatus = res.status;
+    lastBody = await res.text();
+    if (!GEMINI_RETRYABLE.has(res.status) || attempt === GEMINI_BACKOFF_MS.length) break;
+    console.log(`Gemini ${res.status}, retry in ${GEMINI_BACKOFF_MS[attempt]}ms (attempt ${attempt + 1}/${GEMINI_BACKOFF_MS.length})`);
+    await new Promise((r) => setTimeout(r, GEMINI_BACKOFF_MS[attempt]));
+  }
+  if (GEMINI_RETRYABLE.has(lastStatus)) throw new GeminiUnavailableError(lastStatus, lastBody);
+  throw new Error(`Gemini ${lastStatus}: ${lastBody}`);
+}
 async function geminiText(opts: { system: string; user: string; temperature?: number }): Promise<string> {
   const key = requireGeminiKey();
-  const res = await fetch(
+  const res = await geminiFetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
     {
       method: "POST",
@@ -33,14 +69,13 @@ async function geminiText(opts: { system: string; user: string; temperature?: nu
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
   const data = await res.json();
   return (data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
 }
 
 async function geminiImage(prompt: string): Promise<Uint8Array> {
   const key = requireGeminiKey();
-  const res = await fetch(
+  const res = await geminiFetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${key}`,
     {
       method: "POST",
@@ -51,7 +86,6 @@ async function geminiImage(prompt: string): Promise<Uint8Array> {
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini image ${res.status}: ${await res.text()}`);
   const data = await res.json();
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
   for (const p of parts) {
@@ -74,7 +108,13 @@ Deno.serve(async (req) => {
   const corsHeaders = cors(req);
   if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
   try {
-    requireGeminiKey();
+    if (!GEMINI_API_KEY) {
+      return new Response(JSON.stringify({
+        error: "missing_environment_variable",
+        variable: "GEMINI_API_KEY",
+        step: "environment_check",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -130,7 +170,16 @@ Deno.serve(async (req) => {
         });
         return new Response(JSON.stringify({ image_url: pub.publicUrl, image_prompt: finalPrompt, credits_charged: cost }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } catch (e) {
-        return new Response(JSON.stringify({ error: "image_generation_failed", details: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (e instanceof GeminiUnavailableError) {
+          return new Response(JSON.stringify({
+            error: "ai_provider_unavailable",
+            provider: "gemini",
+            message: "Rocket is busy right now. Please try again in a moment.",
+            details: `Gemini returned ${e.status} ${e.bodyText}`.slice(0, 500),
+            step: "ai_generation",
+          }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        return new Response(JSON.stringify({ error: "image_generation_failed", details: (e as Error).message }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
 
@@ -150,6 +199,15 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ content: newContent, credits_charged: cost }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (e instanceof GeminiUnavailableError) {
+      return new Response(JSON.stringify({
+        error: "ai_provider_unavailable",
+        provider: "gemini",
+        message: "Rocket is busy right now. Please try again in a moment.",
+        details: `Gemini returned ${e.status} ${e.bodyText}`.slice(0, 500),
+        step: "ai_generation",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });// redeploy
