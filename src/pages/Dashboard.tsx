@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Folder, MoreHorizontal, Trash2, Pencil } from "lucide-react";
+import { Plus, Folder, MoreHorizontal, Trash2, Pencil, Sparkles } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -67,9 +67,14 @@ const Projects = () => {
           <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
           <p className="mt-1 text-sm text-neutral-500">Group assets into projects, like Canva.</p>
         </div>
-        <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
-          <Plus className="h-4 w-4" /> New Project
-        </button>
+        <div className="flex gap-2">
+          <Link to="/projects/new" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+            <Sparkles className="h-4 w-4" /> New Project (Guided)
+          </Link>
+          <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium hover:bg-neutral-50">
+            <Plus className="h-4 w-4" /> Blank
+          </button>
+        </div>
       </div>
 
       {loading ? (

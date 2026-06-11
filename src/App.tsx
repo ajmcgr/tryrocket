@@ -18,6 +18,7 @@ import Assets from "./pages/Assets.tsx";
 import AssetDetail from "./pages/AssetDetail.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
+import ProjectWizard from "./pages/ProjectWizard.tsx";
 import SettingsLayout, {
   ProfileSettings,
   IntegrationsSettings,
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/projects" element={<Dashboard />} />
+              <Route path="/projects/new" element={<ProjectWizard />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/assets" element={<Assets />} />
