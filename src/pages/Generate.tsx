@@ -62,7 +62,9 @@ const Generate = () => {
     rocketId: string;
     productName: string;
     productUrl: string;
-    asset: { id: string; title: string; content: string };
+    asset: { id: string; title: string; content: string; imageUrl?: string | null; kind?: string };
+    workflow?: string;
+    designFailed?: boolean;
   }>(null);
   const [regen, setRegen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -237,11 +239,16 @@ const Generate = () => {
 
   const loadResult = async (rocketId: string) => {
     const [r, a] = await Promise.all([
-      supabase.from("rockets").select("id, product_name, product_url").eq("id", rocketId).maybeSingle(),
-      supabase.from("rocket_assets").select("id, title, asset_type, content").eq("rocket_id", rocketId),
+      supabase.from("rockets").select("id, product_name, product_url, workflow").eq("id", rocketId).maybeSingle(),
+      supabase.from("rocket_assets").select("id, title, asset_type, content, kind, image_url, image_prompt").eq("rocket_id", rocketId),
     ]);
     const assets = (a.data || []) as any[];
+    const wf = (r.data as any)?.workflow;
+    const imageAssets = assets.filter((x) => x.kind === "image");
+    const firstImage = imageAssets.find((x) => x.image_url);
+    const designFailed = wf === "design" && imageAssets.length > 0 && !firstImage;
     const hero =
+      firstImage ||
       assets.find((x) => x.asset_type === "positioning_tagline") ||
       assets.find((x) => x.asset_type === "positioning_value_prop") ||
       assets[0];
@@ -253,8 +260,23 @@ const Generate = () => {
       rocketId,
       productName: r.data.product_name,
       productUrl: r.data.product_url || "",
-      asset: { id: hero.id, title: hero.title, content: hero.content || "" },
+      asset: {
+        id: hero.id,
+        title: hero.title,
+        content: hero.content || "",
+        imageUrl: hero.image_url || null,
+        kind: hero.kind || "text",
+      },
+      workflow: wf,
+      designFailed,
     });
+    if (designFailed) {
+      toast({
+        title: "Logo generation failed",
+        description: "Try again in a moment — no credits were charged for the failed images.",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateAssetContent = (next: string) => {
@@ -304,22 +326,33 @@ const Generate = () => {
 
   const openInEditor = () => {
     if (!result) return;
-    // Seed /editor with this asset as a single text element + matching canvas bg.
-    const seed = [
-      {
-        id: Math.random().toString(36).slice(2, 9),
-        kind: "text",
-        x: 120, y: 220, w: 720, h: 220,
-        visible: true, locked: false,
-        text: result.asset.content || result.productName,
-        color: textColor,
-        fontSize, fontWeight,
-        fontFamily: "Inter, sans-serif",
-      },
-    ];
+    // Seed /editor with the generated asset — image element for visual
+    // assets, text element otherwise — plus matching canvas bg.
+    const seed = result.asset.imageUrl
+      ? [
+          {
+            id: Math.random().toString(36).slice(2, 9),
+            kind: "image",
+            x: 150, y: 100, w: 500, h: 400,
+            visible: true, locked: false,
+            src: result.asset.imageUrl,
+          },
+        ]
+      : [
+          {
+            id: Math.random().toString(36).slice(2, 9),
+            kind: "text",
+            x: 120, y: 220, w: 720, h: 220,
+            visible: true, locked: false,
+            text: result.asset.content || result.productName,
+            color: textColor,
+            fontSize, fontWeight,
+            fontFamily: "Inter, sans-serif",
+          },
+        ];
     try {
       localStorage.setItem("rocket.editor.v1", JSON.stringify(seed));
-      localStorage.setItem("rocket.editor.bg.v1", bgColor);
+      localStorage.setItem("rocket.editor.bg.v1", result.asset.imageUrl ? "#ffffff" : bgColor);
     } catch {}
     nav("/editor");
   };
@@ -683,25 +716,50 @@ const Generate = () => {
               </div>
               <div
                 className="aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-200 shadow-sm"
-                style={{ background: bgColor }}
+                style={{ background: result.asset.imageUrl ? "#ffffff" : bgColor }}
               >
-                <div className="flex h-full w-full items-center justify-center p-10">
-                  <textarea
-                    value={result.asset.content}
-                    onChange={(e) => updateAssetContent(e.target.value)}
-                    spellCheck={false}
-                    className="h-full w-full resize-none bg-transparent text-center leading-tight tracking-tight outline-none"
-                    style={{
-                      color: textColor,
-                      fontSize: `${fontSize}px`,
-                      fontWeight,
-                      fontFamily: "Inter, sans-serif",
-                    }}
-                  />
-                </div>
+                {result.asset.imageUrl ? (
+                  <div className="flex h-full w-full items-center justify-center p-8">
+                    <img
+                      src={result.asset.imageUrl}
+                      alt={result.asset.title}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                ) : result.designFailed ? (
+                  <div className="flex h-full w-full items-center justify-center p-10 text-center">
+                    <div>
+                      <p className="text-sm font-semibold text-neutral-900">Logo generation failed.</p>
+                      <p className="mt-1 text-xs text-neutral-500">Try again in a moment — no credits were charged.</p>
+                      <button
+                        onClick={regenAsset}
+                        className="mt-4 inline-flex items-center gap-1 rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" /> Try again
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center p-10">
+                    <textarea
+                      value={result.asset.content}
+                      onChange={(e) => updateAssetContent(e.target.value)}
+                      spellCheck={false}
+                      className="h-full w-full resize-none bg-transparent text-center leading-tight tracking-tight outline-none"
+                      style={{
+                        color: textColor,
+                        fontSize: `${fontSize}px`,
+                        fontWeight,
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               <p className="mt-3 text-center text-xs text-neutral-400">
-                Click the text to edit. Use the toolbar above for quick styling, or open in the full editor.
+                {result.asset.imageUrl
+                  ? "Preview of your generated logo. Open in editor to reposition, resize, and add text."
+                  : "Click the text to edit. Use the toolbar above for quick styling, or open in the full editor."}
               </p>
             </div>
           </div>
