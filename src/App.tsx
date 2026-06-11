@@ -19,6 +19,8 @@ import AssetDetail from "./pages/AssetDetail.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
+import SharedAsset from "./pages/SharedAsset.tsx";
+import SharedProject from "./pages/SharedProject.tsx";
 import SettingsLayout, {
   ProfileSettings,
   IntegrationsSettings,
@@ -63,6 +65,8 @@ const App = () => (
             <Route path="/tools/:slug" element={<ToolDetail />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/faq" element={<FAQ />} />
+            <Route path="/share/asset/:token" element={<SharedAsset />} />
+            <Route path="/share/project/:token" element={<SharedProject />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/projects" element={<Dashboard />} />
               <Route path="/projects/new" element={<ProjectWizard />} />
