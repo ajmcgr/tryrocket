@@ -12,7 +12,7 @@ interface WorkflowSpec {
   text_assets: TextAssetSpec[];
   image_count: number;
   system: string;
-  buildUserPrompt(ctx: { contextBlock: string; imagesAttachedNote: string }): string;
+  buildUserPrompt(ctx: { contextBlock: string; imagesAttachedNote: string; imageCount?: number }): string;
 }
 const BRAND: WorkflowSpec = {
   workflow: "brand", label: "Brand It", image_count: 0,
@@ -46,8 +46,11 @@ const DESIGN: WorkflowSpec = {
   ],
   system: `You are Rocket, an AI visual brand co-pilot. The user wants visual assets (logos / icons / brand visuals). Generate 3 distinct logo / visual concepts and a tight visual style brief. Every value a non-empty string. Image prompts MUST be ready to paste into a text-to-image model, describe a single image, be vivid, specify style, color, composition, and end with: ", clean white background, vector style, high quality, no text". Output a single JSON object only.`,
   // NOTE: prompts must produce real LOGO MARKS — never text-only canvases or slogan posters.
-  buildUserPrompt({ contextBlock, imagesAttachedNote }) {
-    return `${contextBlock}\n\n${imagesAttachedNote}Return a single JSON object with EXACTLY these keys, each a non-empty string:\n- product_name\n- design_style_direction (2-4 sentences, modern SaaS, Apple-inspired simplicity, vector-first, scalable)\n- design_color_palette (3-5 hex codes with one-line rationale, "- " bullets)\n- design_typography (display + body font recommendations)\n- image_concept_1, image_concept_2, image_concept_3 (one short paragraph each)\n- image_prompt_1, image_prompt_2, image_prompt_3\n\nIMAGE PROMPT RULES — these are LOGO MARKS, not posters:\n* Describe a single iconic logo MARK or symbol — simple, geometric, vector-style, scalable, works as a favicon/app icon.\n* No long text, no slogans, no headlines, no paragraphs, no fake UI screenshots, no photorealism.\n* Solid white background, flat vector style, 2-3 colors max from the palette.\n* Each prompt MUST end with: ", minimalist vector logo mark, flat design, centered on solid white background, no text, no typography, no letters, app-icon ready, high quality"\n* The three concepts must be visually distinct (e.g. abstract geometric / lettermark glyph / symbolic illustration).\n\nRESPOND WITH JSON ONLY.`;
+  buildUserPrompt({ contextBlock, imagesAttachedNote, imageCount }) {
+    const n = Math.max(1, Math.min(6, imageCount ?? 3));
+    const conceptKeys = Array.from({ length: n }, (_, i) => `image_concept_${i + 1}`).join(", ");
+    const promptKeys = Array.from({ length: n }, (_, i) => `image_prompt_${i + 1}`).join(", ");
+    return `${contextBlock}\n\n${imagesAttachedNote}Return a single JSON object with EXACTLY these keys, each a non-empty string:\n- product_name\n- design_style_direction (2-4 sentences, modern SaaS, Apple-inspired simplicity, vector-first, scalable)\n- design_color_palette (3-5 hex codes with one-line rationale, "- " bullets)\n- design_typography (display + body font recommendations)\n- ${conceptKeys} (one short paragraph each)\n- ${promptKeys}\n\nIMAGE PROMPT RULES — these are LOGO MARKS, not posters:\n* Describe a single iconic logo MARK or symbol — simple, geometric, vector-style, scalable, works as a favicon/app icon.\n* No long text, no slogans, no headlines, no paragraphs, no fake UI screenshots, no photorealism.\n* Solid white background, flat vector style, 2-3 colors max from the palette.\n* Each prompt MUST end with: ", minimalist vector logo mark, flat design, centered on solid white background, no text, no typography, no letters, app-icon ready, high quality"\n* Generate EXACTLY ${n} visually distinct concept${n === 1 ? "" : "s"} (e.g. abstract geometric / lettermark glyph / symbolic illustration).\n\nRESPOND WITH JSON ONLY.`;
   },
 };
 const LAUNCH: WorkflowSpec = {
@@ -386,6 +389,28 @@ Deno.serve(async (req) => {
     const spec = WORKFLOWS[workflow];
     console.log("workflow selected", workflow);
 
+    // Parse requested number of design concepts from user prompt (e.g. "2 logos", "give me four options").
+    // Defaults to spec.image_count, capped 1..6.
+    let requestedImageCount = spec.image_count;
+    if (workflow === "design" && rawInput) {
+      const lower = rawInput.toLowerCase();
+      const words: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+      let n: number | null = null;
+      const numMatch = lower.match(/\b(\d+)\s*(?:logos?|icons?|options?|concepts?|variations?|versions?|designs?|marks?)\b/);
+      if (numMatch) n = parseInt(numMatch[1], 10);
+      if (n == null) {
+        const wordMatch = lower.match(/\b(one|two|three|four|five|six)\s+(?:logos?|icons?|options?|concepts?|variations?|versions?|designs?|marks?)\b/);
+        if (wordMatch) n = words[wordMatch[1]];
+      }
+      if (n != null && Number.isFinite(n)) {
+        requestedImageCount = Math.max(1, Math.min(6, n));
+      }
+    }
+    const activeSpec: WorkflowSpec = workflow === "design" && requestedImageCount !== spec.image_count
+      ? { ...spec, image_count: requestedImageCount }
+      : spec;
+    console.log("image_count selected", activeSpec.image_count);
+
     // Parse images
     const inlineImages: Array<{ mimeType: string; data: string }> = [];
     for (const src of imagesIn.slice(0, 6)) {
@@ -434,8 +459,8 @@ Deno.serve(async (req) => {
     for (const r of costRows || []) costMap.set(r.asset_type, r.credits);
     const textCostFor = (t: string) => costMap.get(t) ?? 1;
     const imageCostFor = (t: string) => costMap.get(t) ?? (costMap.get("logo_generation") ?? 25);
-    const textCostTotal = spec.text_assets.reduce((s, a) => s + textCostFor(a.asset_type), 0);
-    const imageCostTotal = Array.from({ length: spec.image_count }).reduce<number>((s, _, i) => s + imageCostFor(`design_image_${i + 1}`), 0);
+    const textCostTotal = activeSpec.text_assets.reduce((s, a) => s + textCostFor(a.asset_type), 0);
+    const imageCostTotal = Array.from({ length: activeSpec.image_count }).reduce<number>((s, _, i) => s + imageCostFor(`design_image_${i + 1}`), 0);
     const estimatedCost = textCostTotal + imageCostTotal;
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
     if (remaining < estimatedCost) {
@@ -448,7 +473,7 @@ Deno.serve(async (req) => {
 
     // 7. AI prompt
     step = "ai_prompt";
-    const system = spec.system;
+    const system = activeSpec.system;
     const contextBlock = isUrl
       ? `Product URL: ${productUrl}\n\nScraped page content:\n"""${siteText || "(no content fetched — infer from URL)"}"""`
       : freeText
@@ -457,7 +482,7 @@ Deno.serve(async (req) => {
     const imagesAttachedNote = inlineImages.length
       ? `The user attached ${inlineImages.length} reference image(s). Examine them carefully — they may include the product UI, logo, mockups, or brand inspiration.\n\n`
       : "";
-    const user_prompt = spec.buildUserPrompt({ contextBlock, imagesAttachedNote });
+    const user_prompt = activeSpec.buildUserPrompt({ contextBlock, imagesAttachedNote, imageCount: activeSpec.image_count });
 
     // 8. AI request + parse
     step = "ai_request";
@@ -511,7 +536,7 @@ Deno.serve(async (req) => {
 
     // 10. Assets insert
     step = "assets_insert";
-    const textRows = spec.text_assets.map((a) => ({
+    const textRows = activeSpec.text_assets.map((a) => ({
       rocket_id: rocket.id,
       asset_type: a.asset_type,
       title: a.title,
@@ -527,9 +552,9 @@ Deno.serve(async (req) => {
     // 10b. Image generation for design workflow
     let imagesGenerated = 0;
     let imageCreditsCharged = 0;
-    if (spec.image_count > 0) {
+    if (activeSpec.image_count > 0) {
       step = "image_gen";
-      const imagePromises = Array.from({ length: spec.image_count }, async (_, idx) => {
+      const imagePromises = Array.from({ length: activeSpec.image_count }, async (_, idx) => {
         const i = idx + 1;
         const prompt = String(parsed[`image_prompt_${i}`] ?? "").trim();
         const concept = String(parsed[`image_concept_${i}`] ?? "").trim() || `Concept ${i}`;
@@ -578,7 +603,7 @@ Deno.serve(async (req) => {
       txnRows.push({
         user_id: user.id, rocket_id: rocket.id, workflow,
         asset_type: `workflow_${workflow}_text`, kind: "spent", credits: textCostTotal,
-        meta: { asset_types: spec.text_assets.map((a) => a.asset_type) },
+        meta: { asset_types: activeSpec.text_assets.map((a) => a.asset_type) },
       });
     }
     if (imageCreditsCharged > 0) {

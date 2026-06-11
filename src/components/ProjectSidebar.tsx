@@ -85,7 +85,7 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     loadHistory();
     supabase
       .from("user_usage")
@@ -101,7 +101,15 @@ export default function ProjectSidebar({ onSelectRocket, activeRocketId }: Props
             extra: data.credits_extra || 0,
           })
       );
-  }, [user]);
+    const onFocus = () => loadHistory();
+    const onVisible = () => { if (document.visibilityState === "visible") loadHistory(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user?.id]);
 
   const loadHistory = () => {
     if (!user) return;
