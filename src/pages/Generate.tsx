@@ -3,8 +3,13 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X, Copy, Save, RefreshCw, ExternalLink, Type, Bold, Palette, Wand2, ImageIcon, Rocket as RocketIcon, Megaphone } from "lucide-react";
+import { ArrowUp, Loader2, Plus, Sparkles, PanelLeftClose, PanelLeftOpen, CreditCard, Zap, ArrowRight, Paperclip, X, Copy, Save, RefreshCw, ExternalLink, Type, Bold, Palette, Wand2, ImageIcon, Rocket as RocketIcon, Megaphone, MoreHorizontal, Pin, PinOff, Pencil, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 const supabase = _sb as any;
 import { useCreditCosts, workflowCost } from "@/hooks/useCreditCosts";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
@@ -46,6 +51,9 @@ const Generate = () => {
   const autoRan = useRef(false);
   const { user } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
+  const [renaming, setRenaming] = useState<any | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleting, setDeleting] = useState<any | null>(null);
   const [usage, setUsage] = useState<{ used: number; limit: number; extra: number } | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
@@ -110,9 +118,47 @@ const Generate = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("rockets").select("id, product_name, product_url, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20)
-      .then(({ data }: any) => setHistory(data || []));
+    loadHistory();
   }, [user]);
+
+  const loadHistory = () => {
+    if (!user) return;
+    supabase.from("rockets").select("id, product_name, product_url, created_at, pinned").eq("user_id", user.id)
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false }).limit(50)
+      .then(({ data }: any) => setHistory(data || []));
+  };
+
+  const togglePin = async (h: any) => {
+    const next = !h.pinned;
+    setHistory((prev) => [...prev.map((x) => (x.id === h.id ? { ...x, pinned: next } : x))]
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || (a.created_at < b.created_at ? 1 : -1)));
+    const { error } = await supabase.from("rockets").update({ pinned: next }).eq("id", h.id);
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); loadHistory(); }
+  };
+
+  const submitRename = async () => {
+    if (!renaming) return;
+    const name = renameValue.trim();
+    if (!name) return;
+    const id = renaming.id;
+    setHistory((prev) => prev.map((x) => (x.id === id ? { ...x, product_name: name } : x)));
+    if (result?.rocketId === id) setResult({ ...result, productName: name });
+    setRenaming(null);
+    const { error } = await supabase.from("rockets").update({ product_name: name }).eq("id", id);
+    if (error) { toast({ title: "Rename failed", description: error.message, variant: "destructive" }); loadHistory(); }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    const id = deleting.id;
+    setHistory((prev) => prev.filter((x) => x.id !== id));
+    if (result?.rocketId === id) setResult(null);
+    setDeleting(null);
+    const { error } = await supabase.from("rockets").delete().eq("id", id);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); loadHistory(); }
+    else toast({ title: "Deleted" });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -296,9 +342,9 @@ const Generate = () => {
         <button
           onClick={toggleSidebar}
           aria-label="Open sidebar"
-          className="absolute left-3 top-3 z-20 hidden md:inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+          className="absolute left-3 top-3 z-20 hidden md:inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 shadow-sm hover:bg-neutral-50"
         >
-          <PanelLeftOpen className="h-3.5 w-3.5" /> Show panel
+          <PanelLeftOpen className="h-4 w-4" />
         </button>
       )}
       {sidebarOpen && (
@@ -323,17 +369,45 @@ const Generate = () => {
             <p className="px-2 py-3 text-xs text-neutral-400">No chats yet.</p>
           ) : (
             <ul className="space-y-0.5">
-              {history.map((h) => (
-                <li key={h.id}>
-                  <button
-                    type="button"
-                    onClick={() => loadResult(h.id)}
-                    className={`block w-full text-left truncate rounded-lg px-2 py-1.5 text-sm transition ${result?.rocketId === h.id ? "bg-neutral-100 text-neutral-900" : "text-neutral-700 hover:bg-neutral-100"}`}
-                  >
-                    {h.product_name || h.product_url}
-                  </button>
-                </li>
-              ))}
+              {history.map((h) => {
+                const isActive = result?.rocketId === h.id;
+                return (
+                  <li key={h.id} className="group relative">
+                    <div className={`flex items-center gap-1 rounded-lg pr-1 transition ${isActive ? "bg-neutral-100" : "hover:bg-neutral-100"}`}>
+                      <button
+                        type="button"
+                        onClick={() => loadResult(h.id)}
+                        className={`flex-1 min-w-0 text-left truncate px-2 py-1.5 text-sm ${isActive ? "text-neutral-900" : "text-neutral-700"}`}
+                      >
+                        {h.pinned && <Pin className="inline h-3 w-3 mr-1 -mt-0.5 text-neutral-400" />}
+                        {h.product_name || h.product_url}
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            aria-label="Actions"
+                            className="shrink-0 rounded p-1 text-neutral-400 opacity-0 transition group-hover:opacity-100 hover:bg-neutral-200 hover:text-neutral-700 data-[state=open]:opacity-100"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem onClick={() => togglePin(h)}>
+                            {h.pinned ? (<><PinOff className="mr-2 h-4 w-4" /> Unpin</>) : (<><Pin className="mr-2 h-4 w-4" /> Pin</>)}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => { setRenameValue(h.product_name || ""); setRenaming(h); }}>
+                            <Pencil className="mr-2 h-4 w-4" /> Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setDeleting(h)}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -630,6 +704,38 @@ const Generate = () => {
         remaining={outOfCredits?.remaining}
         onClose={() => setOutOfCredits(null)}
       />
+      <Dialog open={!!renaming} onOpenChange={(o) => !o && setRenaming(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename chat</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submitRename(); }}
+            autoFocus
+            placeholder="Name"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenaming(null)}>Cancel</Button>
+            <Button onClick={submitRename} disabled={!renameValue.trim()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. "{deleting?.product_name || deleting?.product_url}" will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
