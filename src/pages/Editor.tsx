@@ -1,14 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
-import { Rnd } from "react-rnd";
-import { toPng } from "html-to-image";
+import {
+  Stage, Layer, Rect, Circle as KCircle, Text as KText, Image as KImage,
+  Line as KLine, RegularPolygon, Star as KStar, Transformer, Group,
+} from "react-konva";
+import useImage from "use-image";
+import type Konva from "konva";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
   Type, Square, Circle as CircleIcon, Image as ImageIcon, Trash2,
   Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
-  Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon, MousePointer2,
+  Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
+  Undo2, Redo2,
 } from "lucide-react";
 const supabase = _sb as any;
 
