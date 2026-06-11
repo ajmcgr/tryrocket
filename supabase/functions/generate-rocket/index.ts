@@ -459,8 +459,8 @@ Deno.serve(async (req) => {
     for (const r of costRows || []) costMap.set(r.asset_type, r.credits);
     const textCostFor = (t: string) => costMap.get(t) ?? 1;
     const imageCostFor = (t: string) => costMap.get(t) ?? (costMap.get("logo_generation") ?? 25);
-    const textCostTotal = spec.text_assets.reduce((s, a) => s + textCostFor(a.asset_type), 0);
-    const imageCostTotal = Array.from({ length: spec.image_count }).reduce<number>((s, _, i) => s + imageCostFor(`design_image_${i + 1}`), 0);
+    const textCostTotal = activeSpec.text_assets.reduce((s, a) => s + textCostFor(a.asset_type), 0);
+    const imageCostTotal = Array.from({ length: activeSpec.image_count }).reduce<number>((s, _, i) => s + imageCostFor(`design_image_${i + 1}`), 0);
     const estimatedCost = textCostTotal + imageCostTotal;
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
     if (remaining < estimatedCost) {
@@ -473,7 +473,7 @@ Deno.serve(async (req) => {
 
     // 7. AI prompt
     step = "ai_prompt";
-    const system = spec.system;
+    const system = activeSpec.system;
     const contextBlock = isUrl
       ? `Product URL: ${productUrl}\n\nScraped page content:\n"""${siteText || "(no content fetched — infer from URL)"}"""`
       : freeText
@@ -482,7 +482,7 @@ Deno.serve(async (req) => {
     const imagesAttachedNote = inlineImages.length
       ? `The user attached ${inlineImages.length} reference image(s). Examine them carefully — they may include the product UI, logo, mockups, or brand inspiration.\n\n`
       : "";
-    const user_prompt = spec.buildUserPrompt({ contextBlock, imagesAttachedNote });
+    const user_prompt = activeSpec.buildUserPrompt({ contextBlock, imagesAttachedNote, imageCount: activeSpec.image_count });
 
     // 8. AI request + parse
     step = "ai_request";
