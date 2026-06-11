@@ -14,7 +14,9 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Generate from "./pages/Generate.tsx";
 import Editor from "./pages/Editor.tsx";
 import { Navigate } from "react-router-dom";
-import RocketDetail from "./pages/RocketDetail.tsx";
+import Assets from "./pages/Assets.tsx";
+import AssetDetail from "./pages/AssetDetail.tsx";
+import ProjectDetail from "./pages/ProjectDetail.tsx";
 import SettingsLayout, {
   ProfileSettings,
   IntegrationsSettings,
@@ -61,11 +63,14 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/projects" element={<Dashboard />} />
+              <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/assets" element={<Assets />} />
+              <Route path="/assets/:id" element={<AssetDetail />} />
               <Route path="/create" element={<Generate />} />
               <Route path="/editor" element={<Editor />} />
               <Route path="/dashboard" element={<Navigate to="/projects" replace />} />
               <Route path="/generate" element={<Navigate to="/create" replace />} />
-              <Route path="/rocket/:id" element={<RocketDetail />} />
+              <Route path="/rocket/:id" element={<Navigate to="/assets" replace />} />
               <Route path="/settings" element={<SettingsLayout />}>
                 <Route index element={<Navigate to="/settings/profile" replace />} />
                 <Route path="profile" element={<ProfileSettings />} />
