@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2 } from "lucide-react";
 const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
+import ShareExportModal from "@/components/ShareExportModal";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -29,6 +30,7 @@ const AssetDetail = () => {
   const [tweak, setTweak] = useState("");
   const [varying, setVarying] = useState(false);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -61,12 +63,18 @@ const AssetDetail = () => {
     } else {
       const token = crypto.randomUUID();
       await supabase.from("assets").update({ share_token: token }).eq("id", asset.id);
-      const url = `${window.location.origin}/share/asset/${token}`;
-      try { await navigator.clipboard.writeText(url); } catch {}
-      toast({ title: "Public link created", description: "Copied to clipboard." });
     }
     await load();
     setSharing(false);
+  };
+
+  const createShareLink = async (): Promise<string | null> => {
+    if (asset.share_token) return `${window.location.origin}/share/asset/${asset.share_token}`;
+    const token = crypto.randomUUID();
+    const { error } = await supabase.from("assets").update({ share_token: token }).eq("id", asset.id);
+    if (error) return null;
+    await load();
+    return `${window.location.origin}/share/asset/${token}`;
   };
 
   const copyShare = async () => {
@@ -150,9 +158,14 @@ const AssetDetail = () => {
               </div>
             )}
           </div>
-          <button onClick={toggleShare} disabled={sharing} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm ${asset.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}>
-            <Share2 className="h-4 w-4" /> {asset.share_token ? "Shared" : "Share"}
+          <button onClick={() => setShareOpen(true)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm ${asset.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}>
+            <Share2 className="h-4 w-4" /> Share & export
           </button>
+          {asset.share_token && (
+            <button onClick={toggleShare} disabled={sharing} title="Disable public link" className="inline-flex items-center justify-center rounded-full border border-neutral-200 bg-white p-2 text-xs text-neutral-500 hover:bg-neutral-50">
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            </button>
+          )}
           <Link to={`/editor?id=${asset.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
             <Edit3 className="h-4 w-4" /> Open in Editor
           </Link>
@@ -224,6 +237,7 @@ const AssetDetail = () => {
       </div>
 
       <OutOfCreditsModal open={!!outOfCredits} onClose={() => setOutOfCredits(null)} needed={outOfCredits?.needed} remaining={outOfCredits?.remaining} />
+      <ShareExportModal open={shareOpen} onOpenChange={setShareOpen} asset={asset} onCreateShareLink={createShareLink} />
     </div>
   );
 };
