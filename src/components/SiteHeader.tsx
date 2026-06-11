@@ -104,10 +104,7 @@ const SiteHeader = () => {
                 </div>
                 <div className="py-2">
                   <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
-                    <Link to="/create">Create</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
-                    <Link to="/projects">Projects</Link>
+                    <Link to="/pricing">Plans</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
                     <Link to="/settings">Settings</Link>
