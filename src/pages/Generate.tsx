@@ -75,12 +75,13 @@ const Generate = () => {
     setLoading(true);
     try {
       let effective: WF = workflow;
-      // Auto-detect: ask classifier whether prompt is a workflow or a single asset
+      // Auto-detect (client-side keyword classifier — fast, no extra round trip)
       if (workflow === "auto" && !assetType) {
-        try {
-          const { data: c } = await supabase.functions.invoke("classify-workflow", { body: { prompt: p } });
-          if (c?.mode === "workflow" && c.workflow) effective = c.workflow as WF;
-        } catch {}
+        const t = p.toLowerCase();
+        if (/\b(brand it|full brand|brand kit|complete brand|whole brand)\b/.test(t)) effective = "brand";
+        else if (/\b(design it|logo concepts?|brand visuals?|visual identity)\b/.test(t)) effective = "design";
+        else if (/\b(launch it|launch kit|launch (copy|assets?|plan|checklist)|product hunt)\b/.test(t)) effective = "launch";
+        else if (/\b(promote it|growth kit|social (kit|bundle)|x thread|distribution)\b/.test(t)) effective = "promote";
       }
       if (effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
