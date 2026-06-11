@@ -440,7 +440,7 @@ const Index = () => {
       <section id="pricing" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Simple, credit-based pricing</h2>
+            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">Simple, credit-based pricing</h2>
             <p className="mt-4 text-lg text-neutral-600">Start free. Upgrade when you're ready to ship.</p>
           </div>
           <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -453,7 +453,7 @@ const Index = () => {
               </div>
               <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {["100 Rocket Credits / month", "All output types", "Save & edit Brand Assets"].map((f) => (
+                {["100 credits / month", "All output types", "Save & edit brands", "Limited project history"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
                     <span className="text-neutral-700">{f}</span>
@@ -501,10 +501,12 @@ const Index = () => {
               <p className="mt-2 text-sm text-neutral-600">For founders shipping fast.</p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
-                  "3,000 Rocket Credits / month",
+                  "3,000 credits / month",
                   "Unlimited saved Brand Assets",
                   "Export tools",
                   "Priority generation",
+                  "Full asset history",
+                  "Early access to new generators",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
@@ -542,26 +544,23 @@ const Index = () => {
           </div>
 
           {/* Credit packs */}
-          <div className="mt-14 rounded-2xl border border-neutral-200 bg-white p-8">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Credit Packs</div>
-                <h3 className="mt-1 text-2xl font-semibold tracking-tight">Top up anytime</h3>
-                <p className="mt-1 text-sm text-neutral-600">One-time purchase. Never expires. Stacks with your plan credits.</p>
-              </div>
+          <div className="mt-14">
+            <div className="text-center">
+              <h2 className="text-3xl font-semibold tracking-tight">Need more credits?</h2>
+              <p className="mt-2 text-neutral-600">One-time credit packs. Never expire. Stack with your plan.</p>
             </div>
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
               {[
-                { credits: "500", price: "$5", note: "Great for a couple of brand kits" },
+                { credits: "500", price: "$5", note: "Starter pack" },
                 { credits: "1,500", price: "$10", note: "Most popular", highlight: true },
-                { credits: "5,000", price: "$25", note: "Best value for power users" },
+                { credits: "5,000", price: "$25", note: "Best value" },
               ].map((p) => (
-                <div key={p.credits} className={`rounded-xl border p-5 ${p.highlight ? "border-brand bg-brand/5" : "border-neutral-200 bg-neutral-50"}`}>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-semibold tracking-tight">{p.price}</span>
+                <div key={p.credits} className={`rounded-2xl border p-6 ${p.highlight ? "border-brand bg-brand/5" : "border-neutral-200 bg-white"}`}>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">{p.note}</div>
+                  <div className="mt-2 flex items-baseline gap-1">
+                    <span className="text-4xl font-semibold tracking-tight">{p.price}</span>
                   </div>
                   <div className="mt-1 text-sm font-medium text-neutral-900">{p.credits} credits</div>
-                  <p className="mt-2 text-xs text-neutral-600">{p.note}</p>
                 </div>
               ))}
             </div>
