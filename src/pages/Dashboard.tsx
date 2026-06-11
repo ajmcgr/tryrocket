@@ -31,7 +31,7 @@ const Dashboard = () => {
   const pct = total ? Math.min(100, (used / total) * 100) : 0;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] w-full">
+    <div className="relative flex h-[calc(100vh-4rem)] w-full">
       <ProjectSidebar />
       <main className="flex-1 overflow-auto bg-neutral-50">
         <div className="mx-auto max-w-6xl px-6 py-10">
