@@ -254,12 +254,15 @@ const Editor = () => {
     const sx = node.scaleX(); const sy = node.scaleY();
     node.scaleX(1); node.scaleY(1);
     const el = els.find((e) => e.id === id); if (!el) return;
+    const isCentered = el.kind === "circle" || el.kind === "triangle" || el.kind === "star";
+    const newW = Math.max(8, el.w * sx);
+    const newH = Math.max(8, el.h * sy);
     const patch: any = {
-      x: node.x(),
-      y: node.y(),
+      x: isCentered ? node.x() - newW / 2 : node.x(),
+      y: isCentered ? node.y() - newH / 2 : node.y(),
       rotation: node.rotation(),
-      w: Math.max(8, el.w * sx),
-      h: Math.max(8, el.h * sy),
+      w: newW,
+      h: newH,
     };
     if (el.kind === "text") patch.fontSize = Math.max(6, (el as TextEl).fontSize * ((sx + sy) / 2));
     update(id, patch);
@@ -321,6 +324,7 @@ const Editor = () => {
         x={el.x + el.w / 2} y={el.y + el.h / 2}
         sides={3} radius={Math.min(el.w, el.h) / 2}
         fill={el.fill} rotation={el.rotation || 0}
+        onDragEnd={(e: any) => update(el.id, { x: e.target.x() - el.w / 2, y: e.target.y() - el.h / 2 } as any)}
       />
     );
     if (el.kind === "star") return (
@@ -330,6 +334,7 @@ const Editor = () => {
         innerRadius={Math.min(el.w, el.h) / 4}
         outerRadius={Math.min(el.w, el.h) / 2}
         fill={el.fill} rotation={el.rotation || 0}
+        onDragEnd={(e: any) => update(el.id, { x: e.target.x() - el.w / 2, y: e.target.y() - el.h / 2 } as any)}
       />
     );
     if (el.kind === "table") {
