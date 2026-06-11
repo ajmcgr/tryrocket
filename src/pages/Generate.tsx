@@ -62,7 +62,9 @@ const Generate = () => {
     rocketId: string;
     productName: string;
     productUrl: string;
-    asset: { id: string; title: string; content: string };
+    asset: { id: string; title: string; content: string; imageUrl?: string | null; kind?: string };
+    workflow?: string;
+    designFailed?: boolean;
   }>(null);
   const [regen, setRegen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -237,11 +239,16 @@ const Generate = () => {
 
   const loadResult = async (rocketId: string) => {
     const [r, a] = await Promise.all([
-      supabase.from("rockets").select("id, product_name, product_url").eq("id", rocketId).maybeSingle(),
-      supabase.from("rocket_assets").select("id, title, asset_type, content").eq("rocket_id", rocketId),
+      supabase.from("rockets").select("id, product_name, product_url, workflow").eq("id", rocketId).maybeSingle(),
+      supabase.from("rocket_assets").select("id, title, asset_type, content, kind, image_url, image_prompt").eq("rocket_id", rocketId),
     ]);
     const assets = (a.data || []) as any[];
+    const wf = (r.data as any)?.workflow;
+    const imageAssets = assets.filter((x) => x.kind === "image");
+    const firstImage = imageAssets.find((x) => x.image_url);
+    const designFailed = wf === "design" && imageAssets.length > 0 && !firstImage;
     const hero =
+      firstImage ||
       assets.find((x) => x.asset_type === "positioning_tagline") ||
       assets.find((x) => x.asset_type === "positioning_value_prop") ||
       assets[0];
@@ -253,8 +260,23 @@ const Generate = () => {
       rocketId,
       productName: r.data.product_name,
       productUrl: r.data.product_url || "",
-      asset: { id: hero.id, title: hero.title, content: hero.content || "" },
+      asset: {
+        id: hero.id,
+        title: hero.title,
+        content: hero.content || "",
+        imageUrl: hero.image_url || null,
+        kind: hero.kind || "text",
+      },
+      workflow: wf,
+      designFailed,
     });
+    if (designFailed) {
+      toast({
+        title: "Logo generation failed",
+        description: "Try again in a moment — no credits were charged for the failed images.",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateAssetContent = (next: string) => {
@@ -304,22 +326,33 @@ const Generate = () => {
 
   const openInEditor = () => {
     if (!result) return;
-    // Seed /editor with this asset as a single text element + matching canvas bg.
-    const seed = [
-      {
-        id: Math.random().toString(36).slice(2, 9),
-        kind: "text",
-        x: 120, y: 220, w: 720, h: 220,
-        visible: true, locked: false,
-        text: result.asset.content || result.productName,
-        color: textColor,
-        fontSize, fontWeight,
-        fontFamily: "Inter, sans-serif",
-      },
-    ];
+    // Seed /editor with the generated asset — image element for visual
+    // assets, text element otherwise — plus matching canvas bg.
+    const seed = result.asset.imageUrl
+      ? [
+          {
+            id: Math.random().toString(36).slice(2, 9),
+            kind: "image",
+            x: 150, y: 100, w: 500, h: 400,
+            visible: true, locked: false,
+            src: result.asset.imageUrl,
+          },
+        ]
+      : [
+          {
+            id: Math.random().toString(36).slice(2, 9),
+            kind: "text",
+            x: 120, y: 220, w: 720, h: 220,
+            visible: true, locked: false,
+            text: result.asset.content || result.productName,
+            color: textColor,
+            fontSize, fontWeight,
+            fontFamily: "Inter, sans-serif",
+          },
+        ];
     try {
       localStorage.setItem("rocket.editor.v1", JSON.stringify(seed));
-      localStorage.setItem("rocket.editor.bg.v1", bgColor);
+      localStorage.setItem("rocket.editor.bg.v1", result.asset.imageUrl ? "#ffffff" : bgColor);
     } catch {}
     nav("/editor");
   };
