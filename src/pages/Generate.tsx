@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +48,7 @@ const Generate = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const nav = useNavigate();
+  const location = useLocation();
   const autoRan = useRef(false);
   const { user } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
@@ -119,16 +120,27 @@ const Generate = () => {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     loadHistory();
-  }, [user]);
+    const onFocus = () => loadHistory();
+    const onVisible = () => { if (document.visibilityState === "visible") loadHistory(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user?.id, location.pathname]);
 
   const loadHistory = () => {
-    if (!user) return;
+    if (!user?.id) return;
     supabase.from("rockets").select("id, product_name, product_url, created_at, pinned").eq("user_id", user.id)
       .order("pinned", { ascending: false })
       .order("created_at", { ascending: false }).limit(50)
-      .then(({ data }: any) => setHistory(data || []));
+      .then(({ data, error }: any) => {
+        if (error) { console.error("loadHistory error", error); return; }
+        setHistory(data || []);
+      });
   };
 
   const togglePin = async (h: any) => {
