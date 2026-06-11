@@ -1,0 +1,579 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { supabase as _sb } from "@/integrations/supabase/client";
+import {
+  Stage, Layer, Rect, Circle as KCircle, Text as KText, Image as KImage,
+  Line as KLine, RegularPolygon, Star as KStar, Transformer,
+} from "react-konva";
+import useImage from "use-image";
+import type Konva from "konva";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Type, Square, Circle as CircleIcon, Image as ImageIcon, Trash2,
+  Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
+  Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
+  Undo2, Redo2, Copy,
+} from "lucide-react";
+const supabase = _sb as any;
+
+type Base = {
+  id: string;
+  x: number; y: number; w: number; h: number;
+  rotation?: number;
+  visible: boolean;
+  locked: boolean;
+};
+type TextEl = Base & { kind: "text"; text: string; color: string; fontSize: number; fontWeight: number; fontFamily: string; align?: "left" | "center" | "right" };
+type RectEl = Base & { kind: "rect"; fill: string; radius: number };
+type CircEl = Base & { kind: "circle"; fill: string };
+type ImgEl  = Base & { kind: "image"; src: string };
+type LineEl = Base & { kind: "line"; color: string; thickness: number };
+type StickyEl = Base & { kind: "sticky"; text: string; fill: string; color: string };
+type TriEl = Base & { kind: "triangle"; fill: string };
+type StarEl = Base & { kind: "star"; fill: string };
+type TableEl = Base & { kind: "table"; rows: number; cols: number; color: string; lineColor: string };
+type El = TextEl | RectEl | CircEl | ImgEl | LineEl | StickyEl | TriEl | StarEl | TableEl;
+
+const FONTS: string[] = [
+  "Inter", "Arimo", "Montserrat", "Open Sans", "Poppins", "DM Sans",
+  "Roboto", "Lato", "Oswald", "Raleway", "Nunito", "Work Sans",
+  "Playfair Display", "Merriweather", "Lora", "Cormorant Garamond",
+  "League Spartan", "Anton", "Archivo Black", "Bebas Neue", "Abril Fatface",
+  "Pacifico", "Caveat", "Dancing Script", "Permanent Marker", "Shadows Into Light",
+  "Space Grotesk", "JetBrains Mono", "IBM Plex Sans", "IBM Plex Serif",
+  "Quicksand", "Karla", "Manrope", "Rubik", "Mulish", "Source Sans 3",
+];
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+const STORAGE_KEY = "rocket.editor.v2";
+const STAGE_W = 800;
+const STAGE_H = 600;
+
+/* ------------------------- Image node with loader ------------------------- */
+const KonvaImage = ({ el, ...rest }: { el: ImgEl; [k: string]: any }) => {
+  const [img] = useImage(el.src, "anonymous");
+  return (
+    <KImage image={img as any} x={el.x} y={el.y} width={el.w} height={el.h} rotation={el.rotation || 0} {...rest} />
+  );
+};
+
+/* --------------------------------- Editor --------------------------------- */
+const Editor = () => {
+  const { toast } = useToast();
+  const stageRef = useRef<Konva.Stage>(null);
+  const trRef = useRef<Konva.Transformer>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const nodeRefs = useRef<Record<string, Konva.Node | null>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [params] = useSearchParams();
+  const assetId = params.get("id");
+
+  /* fonts */
+  useEffect(() => {
+    if (document.getElementById("rocket-editor-fonts")) return;
+    const families = FONTS.map((f) => `family=${encodeURIComponent(f)}:wght@400;600;700;800`).join("&");
+    const link = document.createElement("link");
+    link.id = "rocket-editor-fonts";
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
+    document.head.appendChild(link);
+  }, []);
+
+  /* state + history */
+  const [els, _setEls] = useState<El[]>(() => {
+    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch {}
+    return [];
+  });
+  const [bg, setBg] = useState<string>(() => {
+    try { return localStorage.getItem("rocket.editor.bg.v1") || "#ffffff"; } catch { return "#ffffff"; }
+  });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const history = useRef<{ past: El[][]; future: El[][] }>({ past: [], future: [] });
+
+  const setEls = useCallback((updater: El[] | ((prev: El[]) => El[]), opts?: { history?: boolean }) => {
+    _setEls((prev) => {
+      const next = typeof updater === "function" ? (updater as any)(prev) : updater;
+      if (opts?.history !== false) {
+        history.current.past.push(prev);
+        if (history.current.past.length > 50) history.current.past.shift();
+        history.current.future = [];
+      }
+      return next;
+    });
+  }, []);
+
+  const undo = useCallback(() => {
+    const past = history.current.past.pop();
+    if (!past) return;
+    _setEls((cur) => { history.current.future.push(cur); return past; });
+  }, []);
+  const redo = useCallback(() => {
+    const next = history.current.future.pop();
+    if (!next) return;
+    _setEls((cur) => { history.current.past.push(cur); return next; });
+  }, []);
+
+  /* load asset */
+  useEffect(() => {
+    if (!assetId) return;
+    (async () => {
+      const { data: a } = await supabase.from("assets").select("*").eq("id", assetId).maybeSingle();
+      if (!a) return;
+      if (a.editor_state && Array.isArray(a.editor_state)) {
+        _setEls(a.editor_state); return;
+      }
+      if (a.image_url) {
+        _setEls([{ id: uid(), kind: "image", x: 150, y: 100, w: 500, h: 400, visible: true, locked: false, src: a.image_url } as ImgEl]);
+      } else if (a.content) {
+        _setEls([{
+          id: uid(), kind: "text", x: 80, y: 200, w: 640, h: 280,
+          visible: true, locked: false,
+          text: String(a.content).slice(0, 800),
+          color: "#0A0A0A", fontSize: 32, fontWeight: 600, fontFamily: "Inter",
+        } as TextEl]);
+      }
+    })();
+  }, [assetId]);
+
+  /* persist */
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(els)); } catch {}
+  }, [els]);
+  useEffect(() => {
+    try { localStorage.setItem("rocket.editor.bg.v1", bg); } catch {}
+  }, [bg]);
+
+  const selected = els.find((e) => e.id === selectedId) || null;
+
+  /* attach transformer */
+  useEffect(() => {
+    const tr = trRef.current; if (!tr) return;
+    const node = selectedId ? nodeRefs.current[selectedId] : null;
+    if (node && selected && !selected.locked) {
+      tr.nodes([node]);
+      tr.getLayer()?.batchDraw();
+    } else {
+      tr.nodes([]);
+      tr.getLayer()?.batchDraw();
+    }
+  }, [selectedId, els, selected]);
+
+  const update = (id: string, patch: Partial<El>, opts?: { history?: boolean }) =>
+    setEls((prev) => prev.map((e) => (e.id === id ? ({ ...e, ...patch } as El) : e)), opts);
+  const remove = (id: string) => { setEls((p) => p.filter((e) => e.id !== id)); if (selectedId === id) setSelectedId(null); };
+  const duplicate = (id: string) => {
+    const e = els.find((x) => x.id === id); if (!e) return;
+    const copy = { ...e, id: uid(), x: e.x + 20, y: e.y + 20 } as El;
+    setEls((p) => [...p, copy]); setSelectedId(copy.id);
+  };
+  const reorder = (id: string, dir: 1 | -1) => setEls((prev) => {
+    const i = prev.findIndex((e) => e.id === id); if (i < 0) return prev;
+    const j = i + dir; if (j < 0 || j >= prev.length) return prev;
+    const copy = [...prev]; [copy[i], copy[j]] = [copy[j], copy[i]]; return copy;
+  });
+
+  /* add functions */
+  const add = (el: El) => { setEls((p) => [...p, el]); setSelectedId(el.id); };
+  const addText = () => add({ id: uid(), kind: "text", x: 280, y: 260, w: 280, h: 60, visible: true, locked: false,
+    text: "Double-click to edit", color: "#111111", fontSize: 32, fontWeight: 600, fontFamily: "Inter", align: "left" } as TextEl);
+  const addRect = () => add({ id: uid(), kind: "rect", x: 300, y: 240, w: 220, h: 140, visible: true, locked: false, fill: "#3b82f6", radius: 12 } as RectEl);
+  const addCircle = () => add({ id: uid(), kind: "circle", x: 320, y: 240, w: 180, h: 180, visible: true, locked: false, fill: "#f97316" } as CircEl);
+  const addLine = () => add({ id: uid(), kind: "line", x: 280, y: 300, w: 260, h: 4, visible: true, locked: false, color: "#3b82f6", thickness: 4 } as LineEl);
+  const addSticky = () => add({ id: uid(), kind: "sticky", x: 300, y: 240, w: 180, h: 180, visible: true, locked: false, text: "Note", fill: "#FDE68A", color: "#111111" } as StickyEl);
+  const addTriangle = () => add({ id: uid(), kind: "triangle", x: 320, y: 240, w: 180, h: 160, visible: true, locked: false, fill: "#10b981" } as TriEl);
+  const addStar = () => add({ id: uid(), kind: "star", x: 320, y: 240, w: 160, h: 160, visible: true, locked: false, fill: "#f59e0b" } as StarEl);
+  const addTable = () => add({ id: uid(), kind: "table", x: 260, y: 220, w: 320, h: 180, visible: true, locked: false, rows: 3, cols: 4, color: "#ffffff", lineColor: "#111827" } as TableEl);
+
+  const onUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const src = reader.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        const w = Math.min(400, img.width); const h = w / ratio;
+        add({ id: uid(), kind: "image", x: 300, y: 200, w, h, visible: true, locked: false, src } as ImgEl);
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  /* save / export */
+  const save = async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(els));
+    if (assetId) {
+      const { error } = await supabase.from("assets").update({ editor_state: els as any }).eq("id", assetId);
+      if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    }
+    toast({ title: "Saved", description: assetId ? "Design saved to asset." : "Design saved locally." });
+  };
+
+  const exportImage = (type: "png" | "jpeg" = "png") => {
+    const stage = stageRef.current; if (!stage) return;
+    const prev = selectedId; setSelectedId(null);
+    setTimeout(() => {
+      try {
+        const dataUrl = stage.toDataURL({ pixelRatio: 2, mimeType: `image/${type}`, quality: 0.95 });
+        const a = document.createElement("a"); a.href = dataUrl; a.download = `rocket-design.${type}`; a.click();
+      } catch (e: any) {
+        toast({ title: "Export failed", description: e?.message || "Unknown error", variant: "destructive" });
+      }
+      setSelectedId(prev);
+    }, 50);
+  };
+
+  /* keyboard */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return;
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
+      if (meta && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) { e.preventDefault(); redo(); return; }
+      if (!selectedId) return;
+      if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); remove(selectedId); return; }
+      if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); duplicate(selectedId); return; }
+      const step = e.shiftKey ? 10 : 1;
+      if (e.key === "ArrowLeft")  { e.preventDefault(); update(selectedId, { x: (selected!.x - step) } as any); }
+      if (e.key === "ArrowRight") { e.preventDefault(); update(selectedId, { x: (selected!.x + step) } as any); }
+      if (e.key === "ArrowUp")    { e.preventDefault(); update(selectedId, { y: (selected!.y - step) } as any); }
+      if (e.key === "ArrowDown")  { e.preventDefault(); update(selectedId, { y: (selected!.y + step) } as any); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedId, selected, undo, redo]);
+
+  /* inline text editor overlay */
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const editingEl = els.find((e) => e.id === editingTextId && (e.kind === "text" || e.kind === "sticky"));
+
+  const onTransformEnd = (id: string) => {
+    const node = nodeRefs.current[id]; if (!node) return;
+    const sx = node.scaleX(); const sy = node.scaleY();
+    node.scaleX(1); node.scaleY(1);
+    const el = els.find((e) => e.id === id); if (!el) return;
+    const patch: any = {
+      x: node.x(),
+      y: node.y(),
+      rotation: node.rotation(),
+      w: Math.max(8, el.w * sx),
+      h: Math.max(8, el.h * sy),
+    };
+    if (el.kind === "text") patch.fontSize = Math.max(6, (el as TextEl).fontSize * ((sx + sy) / 2));
+    update(id, patch);
+  };
+
+  const renderNode = (el: El) => {
+    if (!el.visible) return null;
+    const common = {
+      key: el.id,
+      ref: (n: any) => { nodeRefs.current[el.id] = n; },
+      draggable: !el.locked,
+      onClick: () => setSelectedId(el.id),
+      onTap: () => setSelectedId(el.id),
+      onDragEnd: (e: any) => update(el.id, { x: e.target.x(), y: e.target.y() } as any),
+      onTransformEnd: () => onTransformEnd(el.id),
+    };
+    if (el.kind === "rect") return <Rect {...common} x={el.x} y={el.y} width={el.w} height={el.h} fill={el.fill} cornerRadius={el.radius} rotation={el.rotation || 0} />;
+    if (el.kind === "circle") return <Rect {...common} x={el.x} y={el.y} width={el.w} height={el.h} fill={el.fill} cornerRadius={Math.min(el.w, el.h)} rotation={el.rotation || 0} />;
+    if (el.kind === "text") return (
+      <KText {...common}
+        x={el.x} y={el.y} width={el.w} text={el.text}
+        fill={el.color} fontSize={el.fontSize}
+        fontStyle={el.fontWeight >= 600 ? "bold" : "normal"}
+        fontFamily={el.fontFamily} align={el.align || "left"}
+        rotation={el.rotation || 0}
+        onDblClick={() => setEditingTextId(el.id)}
+        onDblTap={() => setEditingTextId(el.id)}
+      />
+    );
+    if (el.kind === "image") return <KonvaImage {...common} el={el} />;
+    if (el.kind === "line") return (
+      <KLine {...common}
+        x={el.x} y={el.y}
+        points={[0, el.h / 2, el.w, el.h / 2]}
+        stroke={el.color} strokeWidth={el.thickness} lineCap="round"
+        rotation={el.rotation || 0}
+        hitStrokeWidth={Math.max(12, el.thickness)}
+      />
+    );
+    if (el.kind === "sticky") return (
+      <>
+        <Rect {...common} x={el.x} y={el.y} width={el.w} height={el.h} fill={el.fill} cornerRadius={4} shadowBlur={6} shadowOpacity={0.15} rotation={el.rotation || 0} />
+        <KText x={el.x + 10} y={el.y + 10} width={el.w - 20} height={el.h - 20} text={el.text} fontSize={16} fill={el.color} listening={false} rotation={el.rotation || 0} />
+      </>
+    );
+    if (el.kind === "triangle") return (
+      <RegularPolygon {...common}
+        x={el.x + el.w / 2} y={el.y + el.h / 2}
+        sides={3} radius={Math.min(el.w, el.h) / 2}
+        fill={el.fill} rotation={el.rotation || 0}
+      />
+    );
+    if (el.kind === "star") return (
+      <KStar {...common}
+        x={el.x + el.w / 2} y={el.y + el.h / 2}
+        numPoints={5}
+        innerRadius={Math.min(el.w, el.h) / 4}
+        outerRadius={Math.min(el.w, el.h) / 2}
+        fill={el.fill} rotation={el.rotation || 0}
+      />
+    );
+    if (el.kind === "table") {
+      const lines: any[] = [];
+      for (let r = 0; r <= el.rows; r++) {
+        const y = (el.h / el.rows) * r;
+        lines.push(<KLine key={`r${r}`} points={[0, y, el.w, y]} stroke={el.lineColor} strokeWidth={1} />);
+      }
+      for (let c = 0; c <= el.cols; c++) {
+        const x = (el.w / el.cols) * c;
+        lines.push(<KLine key={`c${c}`} points={[x, 0, x, el.h]} stroke={el.lineColor} strokeWidth={1} />);
+      }
+      return (
+        <>
+          <Rect {...common} x={el.x} y={el.y} width={el.w} height={el.h} fill={el.color} rotation={el.rotation || 0} />
+          {/* lines as overlay group via offset hack — render lines absolutely via x/y */}
+          {lines.map((ln) => ({ ...ln, props: { ...ln.props, points: ln.props.points.map((v: number, i: number) => i % 2 === 0 ? v + el.x : v + el.y) } }))
+            .map((ln) => <KLine key={ln.key} points={ln.props.points} stroke={el.lineColor} strokeWidth={1} listening={false} />)}
+        </>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="relative flex h-[calc(100vh-4rem)] w-full bg-neutral-100">
+      <div className="flex flex-1">
+      {/* Left */}
+      <aside className="flex w-64 flex-col border-r border-neutral-200 bg-white">
+        <div className="border-b border-neutral-200 p-3">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Add</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            <ToolBtn onClick={addText} label="Text"><Type className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addRect} label="Rect"><Square className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addCircle} label="Circle"><CircleIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addTriangle} label="Triangle"><TriangleIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addStar} label="Star"><StarIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addLine} label="Line"><Minus className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addSticky} label="Sticky"><StickyNote className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addTable} label="Table"><TableIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={() => fileRef.current?.click()} label="Image"><ImageIcon className="h-4 w-4" /></ToolBtn>
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
+        </div>
+        <div className="border-b border-neutral-200 p-3">
+          <label className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-neutral-500">
+            Canvas background
+            <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-6 w-8 cursor-pointer rounded border border-neutral-200" />
+          </label>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Layers</p>
+          {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
+          <ul className="space-y-1">
+            {[...els].reverse().map((e) => (
+              <li key={e.id}>
+                <button
+                  onClick={() => setSelectedId(e.id)}
+                  className={`group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
+                >
+                  <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
+                  <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
+                    {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  </span>
+                  <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
+                    {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </aside>
+
+      {/* Center */}
+      <main className="flex flex-1 flex-col">
+        <div className="flex items-center gap-2 border-b border-neutral-200 bg-white px-4 py-2">
+          <span className="text-sm font-medium text-neutral-700">Untitled design</span>
+          <span className="ml-2 text-xs text-neutral-400">{STAGE_W} × {STAGE_H}</span>
+          <div className="ml-3 flex items-center gap-1">
+            <IconAction onClick={undo} label="Undo"><Undo2 className="h-3.5 w-3.5" /></IconAction>
+            <IconAction onClick={redo} label="Redo"><Redo2 className="h-3.5 w-3.5" /></IconAction>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button variant="outline" size="sm" onClick={() => exportImage("jpeg")}><Download className="h-3.5 w-3.5" /> JPG</Button>
+            <Button size="sm" onClick={() => exportImage("png")}><Download className="h-3.5 w-3.5" /> PNG</Button>
+          </div>
+        </div>
+        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto p-8">
+          <div className="relative shadow-xl" style={{ width: STAGE_W, height: STAGE_H }}>
+            <Stage
+              ref={stageRef}
+              width={STAGE_W}
+              height={STAGE_H}
+              onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
+              onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
+            >
+              <Layer listening={false}>
+                <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={bg} />
+              </Layer>
+              <Layer>
+                {els.map(renderNode)}
+                <Transformer
+                  ref={trRef}
+                  rotateEnabled
+                  anchorSize={8}
+                  borderStroke="#3b82f6"
+                  anchorStroke="#3b82f6"
+                  anchorFill="#ffffff"
+                  boundBoxFunc={(_oldBox, newBox) => newBox.width < 8 || newBox.height < 8 ? _oldBox : newBox}
+                />
+              </Layer>
+            </Stage>
+
+            {/* Inline text editor overlay */}
+            {editingEl && (
+              <textarea
+                autoFocus
+                defaultValue={(editingEl as any).text}
+                onBlur={(e) => {
+                  update(editingEl.id, { text: e.target.value } as any);
+                  setEditingTextId(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") { setEditingTextId(null); }
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) (e.target as HTMLTextAreaElement).blur();
+                }}
+                style={{
+                  position: "absolute",
+                  left: editingEl.x, top: editingEl.y,
+                  width: editingEl.w, minHeight: editingEl.h,
+                  fontFamily: (editingEl as any).fontFamily || "Inter",
+                  fontSize: (editingEl as any).fontSize || 16,
+                  fontWeight: (editingEl as any).fontWeight || 400,
+                  color: (editingEl as any).color || "#111",
+                  background: editingEl.kind === "sticky" ? (editingEl as StickyEl).fill : "transparent",
+                  border: "2px dashed #3b82f6",
+                  padding: editingEl.kind === "sticky" ? 8 : 0,
+                  resize: "none", outline: "none", lineHeight: 1.2,
+                  transform: `rotate(${editingEl.rotation || 0}deg)`,
+                  transformOrigin: "top left",
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* Right */}
+      <aside className="w-72 border-l border-neutral-200 bg-white p-4 overflow-y-auto">
+        {!selected && <p className="text-xs text-neutral-400">Select a layer to edit its properties.</p>}
+        {selected && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold capitalize text-neutral-900">{selected.kind}</p>
+              <div className="flex items-center gap-1">
+                <IconAction onClick={() => reorder(selected.id, 1)} label="Up"><ArrowUp className="h-3.5 w-3.5" /></IconAction>
+                <IconAction onClick={() => reorder(selected.id, -1)} label="Down"><ArrowDown className="h-3.5 w-3.5" /></IconAction>
+                <IconAction onClick={() => duplicate(selected.id)} label="Duplicate"><Copy className="h-3.5 w-3.5" /></IconAction>
+                <IconAction onClick={() => remove(selected.id)} label="Delete"><Trash2 className="h-3.5 w-3.5" /></IconAction>
+              </div>
+            </div>
+            <Inspector el={selected} onChange={(patch) => update(selected.id, patch as any)} />
+            <div className="border-t border-neutral-200 pt-3">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Position</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="X"><NumberInput value={Math.round(selected.x)} onChange={(e: any) => update(selected.id, { x: +e.target.value } as any)} /></Field>
+                <Field label="Y"><NumberInput value={Math.round(selected.y)} onChange={(e: any) => update(selected.id, { y: +e.target.value } as any)} /></Field>
+                <Field label="W"><NumberInput value={Math.round(selected.w)} onChange={(e: any) => update(selected.id, { w: +e.target.value } as any)} /></Field>
+                <Field label="H"><NumberInput value={Math.round(selected.h)} onChange={(e: any) => update(selected.id, { h: +e.target.value } as any)} /></Field>
+                <Field label="Rot°"><NumberInput value={Math.round(selected.rotation || 0)} onChange={(e: any) => update(selected.id, { rotation: +e.target.value } as any)} /></Field>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+      </div>
+    </div>
+  );
+};
+
+const ToolBtn = ({ onClick, label, children }: any) => (
+  <button onClick={onClick} title={label} className="grid h-9 place-items-center rounded-md border border-neutral-200 text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-900">{children}</button>
+);
+const IconAction = ({ onClick, label, children }: any) => (
+  <button onClick={onClick} title={label} className="grid h-7 w-7 place-items-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900">{children}</button>
+);
+
+const Field = ({ label, children }: any) => (
+  <label className="block">
+    <span className="mb-1 block text-xs font-medium text-neutral-600">{label}</span>
+    {children}
+  </label>
+);
+const NumberInput = (p: any) => <input type="number" {...p} className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-neutral-300" />;
+const ColorInput = (p: any) => <input type="color" {...p} className="h-9 w-full cursor-pointer rounded-md border border-neutral-200" />;
+
+const Inspector = ({ el, onChange }: { el: El; onChange: (p: Partial<El>) => void }) => {
+  if (el.kind === "text") return (
+    <div className="space-y-3">
+      <Field label="Text"><textarea value={el.text} onChange={(e) => onChange({ text: e.target.value } as any)} rows={3} className="w-full resize-y rounded-md border border-neutral-200 px-2 py-1.5 text-sm" /></Field>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Size"><NumberInput value={el.fontSize} onChange={(e: any) => onChange({ fontSize: +e.target.value } as any)} /></Field>
+        <Field label="Weight"><NumberInput value={el.fontWeight} step={100} min={100} max={900} onChange={(e: any) => onChange({ fontWeight: +e.target.value } as any)} /></Field>
+      </div>
+      <Field label="Color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
+      <Field label="Align">
+        <select value={el.align || "left"} onChange={(e) => onChange({ align: e.target.value as any } as any)}
+          className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm">
+          <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+        </select>
+      </Field>
+      <Field label="Font">
+        <select value={el.fontFamily} onChange={(e) => onChange({ fontFamily: e.target.value } as any)}
+          className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm">
+          {FONTS.map((f) => (<option key={f} value={f} style={{ fontFamily: `'${f}', sans-serif` }}>{f}</option>))}
+        </select>
+      </Field>
+    </div>
+  );
+  if (el.kind === "rect") return (
+    <div className="space-y-3">
+      <Field label="Fill"><ColorInput value={el.fill} onChange={(e: any) => onChange({ fill: e.target.value } as any)} /></Field>
+      <Field label="Corner radius"><NumberInput value={el.radius} min={0} onChange={(e: any) => onChange({ radius: +e.target.value } as any)} /></Field>
+    </div>
+  );
+  if (el.kind === "circle" || el.kind === "triangle" || el.kind === "star") return (
+    <Field label="Fill"><ColorInput value={(el as any).fill} onChange={(e: any) => onChange({ fill: e.target.value } as any)} /></Field>
+  );
+  if (el.kind === "line") return (
+    <div className="space-y-3">
+      <Field label="Color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
+      <Field label="Thickness"><NumberInput value={el.thickness} min={1} max={40} onChange={(e: any) => onChange({ thickness: +e.target.value } as any)} /></Field>
+    </div>
+  );
+  if (el.kind === "sticky") return (
+    <div className="space-y-3">
+      <Field label="Text"><textarea value={el.text} onChange={(e) => onChange({ text: e.target.value } as any)} rows={3} className="w-full resize-y rounded-md border border-neutral-200 px-2 py-1.5 text-sm" /></Field>
+      <Field label="Background"><ColorInput value={el.fill} onChange={(e: any) => onChange({ fill: e.target.value } as any)} /></Field>
+      <Field label="Text color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
+    </div>
+  );
+  if (el.kind === "table") return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Rows"><NumberInput value={el.rows} min={1} max={20} onChange={(e: any) => onChange({ rows: Math.max(1, +e.target.value) } as any)} /></Field>
+        <Field label="Columns"><NumberInput value={el.cols} min={1} max={20} onChange={(e: any) => onChange({ cols: Math.max(1, +e.target.value) } as any)} /></Field>
+      </div>
+      <Field label="Cell color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
+      <Field label="Line color"><ColorInput value={el.lineColor} onChange={(e: any) => onChange({ lineColor: e.target.value } as any)} /></Field>
+    </div>
+  );
+  return <p className="text-xs text-neutral-500">Use the transformer handles to resize and rotate.</p>;
+};
+
+export default Editor;
