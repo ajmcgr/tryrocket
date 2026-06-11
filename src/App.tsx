@@ -17,6 +17,7 @@ import { Navigate } from "react-router-dom";
 import Assets from "./pages/Assets.tsx";
 import AssetDetail from "./pages/AssetDetail.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
+import BrandKit from "./pages/BrandKit.tsx";
 import SettingsLayout, {
   ProfileSettings,
   IntegrationsSettings,
@@ -64,6 +65,7 @@ const App = () => (
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/projects" element={<Dashboard />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/assets" element={<Assets />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
               <Route path="/create" element={<Generate />} />

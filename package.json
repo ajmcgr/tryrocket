@@ -50,6 +50,7 @@
     "embla-carousel-react": "^8.6.0",
     "html-to-image": "^1.11.13",
     "input-otp": "^1.4.2",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "konva": "^10.3.0",
     "lucide-react": "^0.462.0",
