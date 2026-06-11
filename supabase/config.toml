@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.scrape-url]
 verify_jwt = true
+
+[functions.classify-workflow]
+verify_jwt = false
