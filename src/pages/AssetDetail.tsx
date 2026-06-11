@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check } from "lucide-react";
+import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2 } from "lucide-react";
 const supabase = _sb as any;
+import OutOfCreditsModal from "@/components/OutOfCreditsModal";
+
+const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
   logo: "Logo", brand_guidelines: "Brand Guidelines", color_system: "Color System",
@@ -22,6 +25,10 @@ const AssetDetail = () => {
   const [versions, setVersions] = useState<any[]>([]);
   const [showVersions, setShowVersions] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [varyOpen, setVaryOpen] = useState(false);
+  const [tweak, setTweak] = useState("");
+  const [varying, setVarying] = useState(false);
+  const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
 
   const load = async () => {
     if (!id) return;
@@ -90,6 +97,27 @@ const AssetDetail = () => {
     }
   };
 
+  const generateVariation = async (preset?: string) => {
+    const instruction = (preset || tweak).trim();
+    if (!instruction) return;
+    setVarying(true);
+    try {
+      const variationPrompt = `${asset.prompt || asset.title} — variation: ${instruction}`;
+      const { data } = await supabase.functions.invoke("generate-asset", {
+        body: { prompt: variationPrompt, asset_type: asset.asset_type, project_id: asset.project_id || undefined, count: 1 },
+      });
+      const d: any = data;
+      if (d?.error === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); return; }
+      if (d?.error) { toast({ title: "Failed", description: d.message || d.error, variant: "destructive" }); return; }
+      const newId = d?.asset_ids?.[0];
+      if (newId) { toast({ title: "Variation created" }); setVaryOpen(false); setTweak(""); nav(`/assets/${newId}`); }
+    } catch (e: any) {
+      toast({ title: "Failed", description: e.message, variant: "destructive" });
+    } finally {
+      setVarying(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -100,6 +128,28 @@ const AssetDetail = () => {
           <button onClick={() => setShowVersions(v => !v)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
             <History className="h-4 w-4" /> Versions {versions.length > 0 && <span className="rounded-full bg-neutral-100 px-1.5 text-[10px]">{versions.length}</span>}
           </button>
+          <div className="relative">
+            <button onClick={() => setVaryOpen(v => !v)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
+              <Wand2 className="h-4 w-4" /> Variation
+            </button>
+            {varyOpen && (
+              <div className="absolute right-0 z-30 mt-1 w-72 rounded-xl border border-neutral-200 bg-white p-3 shadow-lg">
+                <div className="mb-2 text-xs font-medium text-neutral-700">Generate a variation</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {VARIATION_PRESETS.map(p => (
+                    <button key={p} disabled={varying} onClick={() => generateVariation(p)} className="rounded-full border border-neutral-200 px-2 py-1 text-xs hover:bg-neutral-50 disabled:opacity-50">{p}</button>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-1.5">
+                  <input value={tweak} onChange={e => setTweak(e.target.value)} placeholder="Custom tweak…" disabled={varying} className="flex-1 rounded-md border border-neutral-200 px-2 py-1 text-xs outline-none focus:border-brand" />
+                  <button onClick={() => generateVariation()} disabled={varying || !tweak.trim()} className="rounded-md bg-brand px-2 py-1 text-xs text-brand-foreground disabled:opacity-50">
+                    {varying ? <Loader2 className="h-3 w-3 animate-spin" /> : "Go"}
+                  </button>
+                </div>
+                <p className="mt-2 text-[10px] text-neutral-500">Creates a new asset, original is preserved.</p>
+              </div>
+            )}
+          </div>
           <button onClick={toggleShare} disabled={sharing} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm ${asset.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}>
             <Share2 className="h-4 w-4" /> {asset.share_token ? "Shared" : "Share"}
           </button>
@@ -172,6 +222,8 @@ const AssetDetail = () => {
           </aside>
         )}
       </div>
+
+      <OutOfCreditsModal open={!!outOfCredits} onClose={() => setOutOfCredits(null)} needed={outOfCredits?.needed} remaining={outOfCredits?.remaining} />
     </div>
   );
 };
