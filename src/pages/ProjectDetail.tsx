@@ -30,7 +30,6 @@ const ProjectDetail = () => {
   const { toast } = useToast();
   const [project, setProject] = useState<any>(null);
   const [assets, setAssets] = useState<any[]>([]);
-  const [loaded, setLoaded] = useState(false);
   const [allAssets, setAllAssets] = useState<any[]>([]);
   const [picking, setPicking] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -43,7 +42,7 @@ const ProjectDetail = () => {
       supabase.from("projects").select("*").eq("id", id).maybeSingle(),
       supabase.from("assets").select("*").eq("project_id", id).order("created_at", { ascending: false }),
     ]);
-    setProject(p.data); setAssets(a.data || []); setLoaded(true);
+    setProject(p.data); setAssets(a.data || []);
   };
   useEffect(() => { load(); }, [id, user]);
 
