@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   Stage, Layer, Rect, Circle as KCircle, Text as KText, Image as KImage,
@@ -14,6 +14,7 @@ import {
   Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
   Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
   Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, ArrowLeft, Check, Loader2,
+  History, FilePlus,
 } from "lucide-react";
 const supabase = _sb as any;
 
@@ -113,6 +114,7 @@ const KonvaImage = ({ el, ...rest }: { el: ImgEl; [k: string]: any }) => {
 /* --------------------------------- Editor --------------------------------- */
 const Editor = () => {
   const { toast } = useToast();
+  const nav = useNavigate();
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -305,6 +307,45 @@ const Editor = () => {
       if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
     }
     toast({ title: "Saved", description: assetId ? "Design saved to asset." : "Design saved locally." });
+  };
+
+  const saveVersion = async () => {
+    if (!assetId) { toast({ title: "Open this design from an asset to save versions.", variant: "destructive" }); return; }
+    const { data: a } = await supabase.from("assets").select("user_id, title, content, image_url").eq("id", assetId).maybeSingle();
+    if (!a) return;
+    const label = prompt("Label this version (optional):") ?? "";
+    const { error } = await supabase.from("asset_versions").insert({
+      asset_id: assetId, user_id: a.user_id, label: label || null,
+      snapshot: { editor_state: els, title: a.title, content: a.content, image_url: a.image_url },
+    });
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Version saved" });
+  };
+
+  const saveAsNew = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid2 = userData?.user?.id;
+    if (!uid2) { toast({ title: "Sign in to save assets", variant: "destructive" }); return; }
+    const title = prompt("Name for the new asset:", assetMeta?.title ? `${assetMeta.title} (copy)` : "Untitled design") || "Untitled design";
+    const stage = stageRef.current;
+    let thumb: string | null = null;
+    if (stage) {
+      const prev = selectedId; setSelectedId(null);
+      await new Promise(r => setTimeout(r, 60));
+      try { thumb = stage.toDataURL({ pixelRatio: 0.5, mimeType: "image/png" }); } catch {}
+      setSelectedId(prev);
+    }
+    const { data, error } = await supabase.from("assets").insert({
+      user_id: uid2,
+      project_id: assetMeta?.project_id || null,
+      asset_type: "other",
+      title,
+      editor_state: els as any,
+      thumbnail_url: thumb,
+    }).select().single();
+    if (error || !data) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); return; }
+    toast({ title: "Saved as new asset" });
+    nav(`/editor?id=${data.id}`);
   };
 
   const applyTemplate = (id: string) => {
@@ -623,6 +664,10 @@ const Editor = () => {
             <IconAction onClick={() => setShowShortcuts(true)} label="Shortcuts"><Keyboard className="h-3.5 w-3.5" /></IconAction>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            {assetId && (
+              <Button variant="outline" size="sm" onClick={saveVersion}><History className="h-3.5 w-3.5" /> Version</Button>
+            )}
+            <Button variant="outline" size="sm" onClick={saveAsNew}><FilePlus className="h-3.5 w-3.5" /> Save as new</Button>
             <Button variant="outline" size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
             <Button variant="outline" size="sm" onClick={() => exportImage("jpeg")}><Download className="h-3.5 w-3.5" /> JPG</Button>
             <Button size="sm" onClick={() => exportImage("png")}><Download className="h-3.5 w-3.5" /> PNG</Button>
