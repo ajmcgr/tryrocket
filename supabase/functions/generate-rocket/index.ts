@@ -141,6 +141,44 @@ function requireGeminiKey() {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
   return GEMINI_API_KEY;
 }
+
+// ===== Gemini retry wrapper =====
+class GeminiUnavailableError extends Error {
+  status: number;
+  bodyText: string;
+  constructor(status: number, bodyText: string) {
+    super(`Gemini ${status}: ${bodyText}`);
+    this.status = status;
+    this.bodyText = bodyText;
+  }
+}
+const GEMINI_RETRYABLE = new Set([429, 500, 502, 503, 504]);
+const GEMINI_BACKOFF_MS = [1000, 3000, 7000]; // up to 3 retries
+async function geminiFetch(url: string, init: RequestInit): Promise<Response> {
+  let lastStatus = 0;
+  let lastBody = "";
+  for (let attempt = 0; attempt <= GEMINI_BACKOFF_MS.length; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, init);
+    } catch (e) {
+      lastStatus = 0;
+      lastBody = (e as Error).message;
+      if (attempt === GEMINI_BACKOFF_MS.length) throw new GeminiUnavailableError(0, lastBody);
+      console.log(`Gemini network error, retry in ${GEMINI_BACKOFF_MS[attempt]}ms (attempt ${attempt + 1}/${GEMINI_BACKOFF_MS.length}): ${lastBody}`);
+      await new Promise((r) => setTimeout(r, GEMINI_BACKOFF_MS[attempt]));
+      continue;
+    }
+    if (res.ok) return res;
+    lastStatus = res.status;
+    lastBody = await res.text();
+    if (!GEMINI_RETRYABLE.has(res.status) || attempt === GEMINI_BACKOFF_MS.length) break;
+    console.log(`Gemini ${res.status}, retry in ${GEMINI_BACKOFF_MS[attempt]}ms (attempt ${attempt + 1}/${GEMINI_BACKOFF_MS.length})`);
+    await new Promise((r) => setTimeout(r, GEMINI_BACKOFF_MS[attempt]));
+  }
+  if (GEMINI_RETRYABLE.has(lastStatus)) throw new GeminiUnavailableError(lastStatus, lastBody);
+  throw new Error(`Gemini ${lastStatus}: ${lastBody}`);
+}
 function tryParseJsonLoose(raw: string): any {
   if (!raw) throw new Error("empty AI response");
   const stripped = raw.replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
@@ -166,7 +204,7 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; images?
   for (const img of opts.images || []) {
     parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
   }
-  const res = await fetch(
+  const res = await geminiFetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
     {
       method: "POST",
@@ -178,7 +216,6 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; images?
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
   const data = await res.json();
   const finish = data?.candidates?.[0]?.finishReason;
   const raw = (data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
@@ -193,7 +230,7 @@ async function geminiJSON<T = any>(opts: { system: string; user: string; images?
 // Generate a single image via Gemini image model. Returns raw PNG bytes.
 async function geminiImage(prompt: string): Promise<Uint8Array> {
   const key = requireGeminiKey();
-  const res = await fetch(
+  const res = await geminiFetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${key}`,
     {
       method: "POST",
@@ -204,7 +241,6 @@ async function geminiImage(prompt: string): Promise<Uint8Array> {
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini image ${res.status}: ${await res.text()}`);
   const data = await res.json();
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
   for (const p of parts) {
