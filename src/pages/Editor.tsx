@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Rnd } from "react-rnd";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import ProjectSidebar from "@/components/ProjectSidebar";
 import {
   Type, Square, Circle as CircleIcon, Image as ImageIcon, Trash2,
   Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
+  Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon, MousePointer2,
 } from "lucide-react";
 
 type Base = {
@@ -20,7 +21,23 @@ type TextEl = Base & { kind: "text"; text: string; color: string; fontSize: numb
 type RectEl = Base & { kind: "rect"; fill: string; radius: number };
 type CircEl = Base & { kind: "circle"; fill: string };
 type ImgEl  = Base & { kind: "image"; src: string };
-type El = TextEl | RectEl | CircEl | ImgEl;
+type LineEl = Base & { kind: "line"; color: string; thickness: number };
+type StickyEl = Base & { kind: "sticky"; text: string; fill: string; color: string };
+type TriEl = Base & { kind: "triangle"; fill: string };
+type StarEl = Base & { kind: "star"; fill: string };
+type TableEl = Base & { kind: "table"; rows: number; cols: number; color: string; lineColor: string };
+type El = TextEl | RectEl | CircEl | ImgEl | LineEl | StickyEl | TriEl | StarEl | TableEl;
+
+// Curated Canva-style font list — loaded from Google Fonts at runtime.
+const FONTS: string[] = [
+  "Inter", "Arimo", "Montserrat", "Open Sans", "Poppins", "DM Sans",
+  "Roboto", "Lato", "Oswald", "Raleway", "Nunito", "Work Sans",
+  "Playfair Display", "Merriweather", "Lora", "Cormorant Garamond",
+  "League Spartan", "Anton", "Archivo Black", "Bebas Neue", "Abril Fatface",
+  "Pacifico", "Caveat", "Dancing Script", "Permanent Marker", "Shadows Into Light",
+  "Space Grotesk", "JetBrains Mono", "IBM Plex Sans", "IBM Plex Serif",
+  "Quicksand", "Karla", "Manrope", "Rubik", "Mulish", "Source Sans 3",
+];
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const STORAGE_KEY = "rocket.editor.v1";
@@ -29,6 +46,18 @@ const Editor = () => {
   const { toast } = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Load Google Fonts once.
+  useEffect(() => {
+    if (document.getElementById("rocket-editor-fonts")) return;
+    const families = FONTS.map((f) => `family=${encodeURIComponent(f)}:wght@400;600;700;800`).join("&");
+    const link = document.createElement("link");
+    link.id = "rocket-editor-fonts";
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
+    document.head.appendChild(link);
+  }, []);
+
   const [els, setEls] = useState<El[]>(() => {
     try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch {}
     return [];
@@ -60,6 +89,26 @@ const Editor = () => {
   };
   const addCircle = () => {
     const el: CircEl = { id: uid(), kind: "circle", x: 320, y: 240, w: 180, h: 180, visible: true, locked: false, fill: "#f97316" };
+    setEls((p) => [...p, el]); setSelectedId(el.id);
+  };
+  const addLine = () => {
+    const el: LineEl = { id: uid(), kind: "line", x: 280, y: 300, w: 260, h: 4, visible: true, locked: false, color: "#3b82f6", thickness: 4 };
+    setEls((p) => [...p, el]); setSelectedId(el.id);
+  };
+  const addSticky = () => {
+    const el: StickyEl = { id: uid(), kind: "sticky", x: 300, y: 240, w: 180, h: 180, visible: true, locked: false, text: "Note", fill: "#FDE68A", color: "#111111" };
+    setEls((p) => [...p, el]); setSelectedId(el.id);
+  };
+  const addTriangle = () => {
+    const el: TriEl = { id: uid(), kind: "triangle", x: 320, y: 240, w: 180, h: 160, visible: true, locked: false, fill: "#10b981" };
+    setEls((p) => [...p, el]); setSelectedId(el.id);
+  };
+  const addStar = () => {
+    const el: StarEl = { id: uid(), kind: "star", x: 320, y: 240, w: 160, h: 160, visible: true, locked: false, fill: "#f59e0b" };
+    setEls((p) => [...p, el]); setSelectedId(el.id);
+  };
+  const addTable = () => {
+    const el: TableEl = { id: uid(), kind: "table", x: 260, y: 220, w: 320, h: 180, visible: true, locked: false, rows: 3, cols: 4, color: "#ffffff", lineColor: "#111827" };
     setEls((p) => [...p, el]); setSelectedId(el.id);
   };
   const onUpload = (file: File) => {
@@ -108,6 +157,11 @@ const Editor = () => {
             <ToolBtn onClick={addText} label="Text"><Type className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addRect} label="Rect"><Square className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addCircle} label="Circle"><CircleIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addTriangle} label="Triangle"><TriangleIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addStar} label="Star"><StarIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addLine} label="Line"><Minus className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addSticky} label="Sticky"><StickyNote className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={addTable} label="Table"><TableIcon className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={() => fileRef.current?.click()} label="Image"><ImageIcon className="h-4 w-4" /></ToolBtn>
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
