@@ -74,10 +74,12 @@ Deno.serve(async (req) => {
       body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html }),
     });
     if (!res.ok) {
-      console.error("resend error", await res.text());
-      return json({ error: "Failed to send email" }, 500);
+      const errText = await res.text();
+      console.error("resend error", res.status, errText);
+      return json({ error: `Resend ${res.status}: ${errText}`, from: FROM_EMAIL }, 500);
     }
-    return json({ ok: true });
+    const ok = await res.json().catch(() => ({}));
+    return json({ ok: true, id: (ok as any)?.id, from: FROM_EMAIL });
   } catch (e) {
     console.error("send-verification", e);
     return json({ error: (e as Error).message }, 500);
