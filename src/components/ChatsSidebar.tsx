@@ -168,14 +168,14 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 bg-white">
-              <DropdownMenuItem onClick={() => togglePin(c)} className="cursor-pointer text-sm">
+            <DropdownMenuContent align="end" className="w-44 bg-white p-1.5 shadow-lg">
+              <DropdownMenuItem onClick={() => togglePin(c)} className="cursor-pointer rounded-md px-3 py-2 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
                 {c.pinned ? <><PinOff className="mr-2 h-3.5 w-3.5" /> Unpin</> : <><Pin className="mr-2 h-3.5 w-3.5" /> Pin</>}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => startRename(c)} className="cursor-pointer text-sm">
+              <DropdownMenuItem onClick={() => startRename(c)} className="cursor-pointer rounded-md px-3 py-2 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
                 <Pencil className="mr-2 h-3.5 w-3.5" /> Rename
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => remove(c)} className="cursor-pointer text-sm text-red-600 focus:text-red-600">
+              <DropdownMenuItem onClick={() => remove(c)} className="cursor-pointer rounded-md px-3 py-2 text-sm text-red-600 focus:bg-red-50 focus:text-red-600">
                 <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
