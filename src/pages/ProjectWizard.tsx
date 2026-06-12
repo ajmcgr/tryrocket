@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
@@ -31,14 +31,48 @@ const ProjectWizard = () => {
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
+  const [scraping, setScraping] = useState(false);
+  const [scraped, setScraped] = useState<any | null>(null);
 
   const setF = <K extends keyof Ctx>(k: K, v: Ctx[K]) => setCtx((c) => ({ ...c, [k]: v }));
+
+  const isUrl = (s: string) => /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(s.trim());
+  const normalizeUrl = (s: string) => /^https?:\/\//i.test(s) ? s.trim() : "https://" + s.trim();
+
+  const analyzeBrand = async () => {
+    if (!ctx.url.trim() || !isUrl(ctx.url)) return;
+    setScraping(true);
+    try {
+      const { data } = await supabase.functions.invoke("scrape-url", { body: { url: normalizeUrl(ctx.url) } });
+      if (data && !data.error) {
+        setScraped(data);
+        // Auto-fill from scrape
+        setCtx(c => ({
+          ...c,
+          name: c.name || data.productName || "",
+          description: c.description || data.tagline || data.description || "",
+        }));
+        toast({ title: "Brand analyzed", description: data.productName ? `Found: ${data.productName}` : "Scraped successfully" });
+      } else {
+        toast({ title: "Couldn't analyze", description: "We'll proceed without scraped context.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Couldn't analyze", variant: "destructive" });
+    } finally {
+      setScraping(false);
+    }
+  };
 
   const run = async () => {
     if (!user) return;
     setRunning(true);
+    const brandContext = scraped ? { ...scraped, url: normalizeUrl(ctx.url), productName: ctx.name.trim() || scraped.productName } : null;
     const { data: project, error } = await supabase.from("projects").insert({
-      user_id: user.id, name: ctx.name.trim(), description: ctx.description.trim() || null,
+      user_id: user.id,
+      name: ctx.name.trim(),
+      description: ctx.description.trim() || null,
+      source_url: ctx.url.trim() ? normalizeUrl(ctx.url) : null,
+      brand_context: brandContext,
     }).select().single();
     if (error || !project) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); setRunning(false); return; }
 
@@ -48,7 +82,7 @@ const ProjectWizard = () => {
       setStatus(prev => ({ ...prev, [s.type]: "running" }));
       try {
         const { data } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: s.prompt(ctx), asset_type: s.type, project_id: project.id },
+          body: { prompt: s.prompt(ctx), asset_type: s.type, project_id: project.id, brand_context: brandContext || undefined },
         });
         const d: any = data;
         if (d?.error === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); setStatus(prev => ({ ...prev, [s.type]: "error" })); return; }
@@ -63,7 +97,7 @@ const ProjectWizard = () => {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12 text-neutral-900">
       <button onClick={() => (step === 0 || running) ? nav("/projects") : setStep(s => s - 1)} className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900">
         <ArrowLeft className="h-4 w-4" /> {step === 0 || running ? "Projects" : "Back"}
       </button>
@@ -79,15 +113,23 @@ const ProjectWizard = () => {
 
       {step === 0 && (
         <div className="mt-8 space-y-5">
-          <h1 className="text-3xl font-semibold tracking-tight">Tell us about your brand</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Tell us about your brand</h1>
+          <p className="text-sm text-neutral-500">Paste a website URL to extract a real brand, or fill in the fields manually to create one from scratch.</p>
+
+          <div>
+            <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">Website (optional)</label>
+            <div className="mt-1.5 flex gap-2">
+              <Input value={ctx.url} onChange={e => { setF("url", e.target.value); setScraped(null); }} placeholder="https://trylaunch.ai" />
+              <Button type="button" variant="outline" onClick={analyzeBrand} disabled={!ctx.url.trim() || !isUrl(ctx.url) || scraping} className="shrink-0">
+                {scraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Globe className="mr-1 h-4 w-4" /> Analyze</>}
+              </Button>
+            </div>
+            <p className="mt-1 text-xs text-neutral-500">{scraped ? `Analyzed: ${scraped.productName || ctx.url}${scraped.colors?.length ? ` · ${scraped.colors.length} colors` : ""}` : "We'll scrape colors, fonts, logo and copy."}</p>
+          </div>
+
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">Brand / project name</label>
             <Input value={ctx.name} onChange={e => setF("name", e.target.value)} placeholder="TryLaunch" className="mt-1.5" />
-          </div>
-          <div>
-            <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">Website (optional)</label>
-            <Input value={ctx.url} onChange={e => setF("url", e.target.value)} placeholder="https://trylaunch.ai" className="mt-1.5" />
-            <p className="mt-1 text-xs text-neutral-500">We'll scrape it for context.</p>
           </div>
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">One-line description</label>
