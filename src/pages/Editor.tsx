@@ -16,6 +16,9 @@ import {
   Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, ArrowLeft, Check, Loader2,
   History, FilePlus,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 const supabase = _sb as any;
 
 type Base = {
@@ -386,6 +389,124 @@ const Editor = () => {
     }, 50);
   };
 
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const escapeXml = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+
+  const buildSvg = (): string => {
+    const parts: string[] = [];
+    parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${STAGE_W}" height="${STAGE_H}" viewBox="0 0 ${STAGE_W} ${STAGE_H}">`);
+    parts.push(`<rect width="${STAGE_W}" height="${STAGE_H}" fill="${bg}"/>`);
+    for (const el of els) {
+      if (!el.visible) continue;
+      const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+      const transform = el.rotation ? ` transform="rotate(${el.rotation} ${cx} ${cy})"` : "";
+      if (el.kind === "rect") {
+        parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" rx="${el.radius}" ry="${el.radius}" fill="${el.fill}"${transform}/>`);
+      } else if (el.kind === "circle") {
+        parts.push(`<ellipse cx="${cx}" cy="${cy}" rx="${el.w / 2}" ry="${el.h / 2}" fill="${el.fill}"${transform}/>`);
+      } else if (el.kind === "line") {
+        parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.thickness}" fill="${el.color}"${transform}/>`);
+      } else if (el.kind === "triangle") {
+        const p = `${cx},${el.y} ${el.x},${el.y + el.h} ${el.x + el.w},${el.y + el.h}`;
+        parts.push(`<polygon points="${p}" fill="${el.fill}"${transform}/>`);
+      } else if (el.kind === "star") {
+        const r = Math.min(el.w, el.h) / 2;
+        const pts: string[] = [];
+        for (let i = 0; i < 10; i++) {
+          const ang = (Math.PI / 5) * i - Math.PI / 2;
+          const rad = i % 2 === 0 ? r : r / 2;
+          pts.push(`${cx + rad * Math.cos(ang)},${cy + rad * Math.sin(ang)}`);
+        }
+        parts.push(`<polygon points="${pts.join(" ")}" fill="${el.fill}"${transform}/>`);
+      } else if (el.kind === "sticky") {
+        parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" fill="${el.fill}"${transform}/>`);
+        parts.push(`<text x="${el.x + 12}" y="${el.y + 28}" font-family="Inter" font-size="16" fill="${el.color}"${transform}>${escapeXml(el.text)}</text>`);
+      } else if (el.kind === "text") {
+        const anchor = el.align === "center" ? "middle" : el.align === "right" ? "end" : "start";
+        const tx = el.align === "center" ? cx : el.align === "right" ? el.x + el.w : el.x;
+        const lines = el.text.split("\n");
+        const lineHeight = el.fontSize * 1.2;
+        const inner = lines.map((ln, i) =>
+          `<tspan x="${tx}" dy="${i === 0 ? el.fontSize : lineHeight}">${escapeXml(ln)}</tspan>`,
+        ).join("");
+        parts.push(`<text x="${tx}" y="${el.y}" font-family="${escapeXml(el.fontFamily)}" font-size="${el.fontSize}" font-weight="${el.fontWeight}" fill="${el.color}" text-anchor="${anchor}"${transform}>${inner}</text>`);
+      } else if (el.kind === "image") {
+        parts.push(`<image x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" href="${escapeXml(el.src)}" preserveAspectRatio="none"${transform}/>`);
+      } else if (el.kind === "table") {
+        parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" fill="${el.color}" stroke="${el.lineColor}"${transform}/>`);
+        const cw = el.w / el.cols, rh = el.h / el.rows;
+        for (let i = 1; i < el.cols; i++)
+          parts.push(`<line x1="${el.x + cw * i}" y1="${el.y}" x2="${el.x + cw * i}" y2="${el.y + el.h}" stroke="${el.lineColor}"${transform}/>`);
+        for (let i = 1; i < el.rows; i++)
+          parts.push(`<line x1="${el.x}" y1="${el.y + rh * i}" x2="${el.x + el.w}" y2="${el.y + rh * i}" stroke="${el.lineColor}"${transform}/>`);
+      }
+    }
+    parts.push(`</svg>`);
+    return parts.join("");
+  };
+
+  const exportSvg = (target?: string) => {
+    try {
+      const svg = buildSvg();
+      triggerDownload(new Blob([svg], { type: "image/svg+xml" }), `rocket-design.svg`);
+      toast({ title: "SVG exported", description: target ? `Import this file into ${target}.` : "Editable vector file." });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e?.message || "Unknown error", variant: "destructive" });
+    }
+  };
+
+  const exportPsd = async () => {
+    const stage = stageRef.current; if (!stage) return;
+    const prev = selectedId; setSelectedId(null);
+    await new Promise((r) => setTimeout(r, 60));
+    try {
+      const { writePsd } = await import("ag-psd");
+      const canvas = stage.toCanvas({ pixelRatio: 2 }) as HTMLCanvasElement;
+      // Build a layered PSD: one layer per visible element + background.
+      const layers: any[] = [];
+      const bgCanvas = document.createElement("canvas");
+      bgCanvas.width = canvas.width; bgCanvas.height = canvas.height;
+      const bgCtx = bgCanvas.getContext("2d")!;
+      bgCtx.fillStyle = bg; bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+      layers.push({ name: "Background", canvas: bgCanvas });
+      for (const el of els) {
+        if (!el.visible) continue;
+        const node = nodeRefs.current[el.id]; if (!node) continue;
+        try {
+          const layerCanvas = (node as any).toCanvas({ pixelRatio: 2 }) as HTMLCanvasElement;
+          const left = Math.round(el.x * 2);
+          const top = Math.round(el.y * 2);
+          layers.push({
+            name: el.kind + ((el as any).text ? `: ${(el as any).text.slice(0, 24)}` : ""),
+            canvas: layerCanvas,
+            left, top,
+            right: left + layerCanvas.width,
+            bottom: top + layerCanvas.height,
+          });
+        } catch {}
+      }
+      const psd = {
+        width: canvas.width,
+        height: canvas.height,
+        canvas,
+        children: layers,
+      };
+      const buffer = writePsd(psd as any);
+      triggerDownload(new Blob([buffer], { type: "image/vnd.adobe.photoshop" }), `rocket-design.psd`);
+      toast({ title: "PSD exported", description: "Open in Adobe Photoshop." });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e?.message || "Unknown error", variant: "destructive" });
+    } finally {
+      setSelectedId(prev);
+    }
+  };
+
   /* keyboard */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -669,8 +790,19 @@ const Editor = () => {
             )}
             <Button variant="outline" size="sm" onClick={saveAsNew}><FilePlus className="h-3.5 w-3.5" /> Save as new</Button>
             <Button variant="outline" size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
-            <Button variant="outline" size="sm" onClick={() => exportImage("jpeg")}><Download className="h-3.5 w-3.5" /> JPG</Button>
-            <Button size="sm" onClick={() => exportImage("png")}><Download className="h-3.5 w-3.5" /> PNG</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm"><Download className="h-3.5 w-3.5" /> Export</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => exportImage("png")}>PNG image</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportImage("jpeg")}>JPG image</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportPsd}>Photoshop (.psd)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportSvg("Figma")}>Figma (SVG)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportSvg("Sketch")}>Sketch (SVG)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportSvg("Canva")}>Canva (SVG)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto p-8">
