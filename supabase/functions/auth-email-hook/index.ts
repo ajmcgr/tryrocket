@@ -1,4 +1,4 @@
-// redeploy: 2026-06-12-v8
+// redeploy: 2026-06-12-v10-branded
 import { renderEmail } from "../_shared/email-layout.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
