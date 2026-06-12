@@ -204,10 +204,7 @@ const Index = () => {
           <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Make Your Product a Brand
           </h1>
-          <p className="mx-auto mt-10 max-w-2xl text-base text-neutral-600">
-            Paste your URL or describe your idea.
-          </p>
-          <form onSubmit={onSubmit} className="mx-auto mt-6 w-full max-w-2xl">
+          <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl">
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
               {images.length > 0 && (
                 <div className="mb-2 flex flex-wrap gap-2">
