@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     const provided = sigHeader.split(" ").map((s) => s.replace(/^v1,/, ""));
     if (!provided.includes(expected)) {
       console.error("Invalid signature");
-      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401 });
+      return new Response(JSON.stringify({ ok: false, error: "Invalid signature" }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
     const data = JSON.parse(payload) as {
       user: { email: string };
