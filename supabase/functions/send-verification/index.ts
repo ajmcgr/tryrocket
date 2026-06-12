@@ -93,7 +93,9 @@ Deno.serve(async (req) => {
     const token = randomToken();
     const token_hash = await sha256Hex(token);
     const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    console.log("[send-verification] raw_token_length", token.length, "token_hash_prefix", token_hash.slice(0, 8));
+    // DEBUG (temporary): never log full token — length + first 8 chars only.
+    console.log("[send-verification] 1_raw_token", "len", token.length, "prefix", token.slice(0, 8));
+    console.log("[send-verification] 2_token_hash", "len", token_hash.length, "prefix", token_hash.slice(0, 8));
     step("token_created");
 
     // Invalidate any previously issued, still-active tokens for this user so
@@ -113,10 +115,11 @@ Deno.serve(async (req) => {
       expires_at,
     }).select("id").maybeSingle();
     if (insErr) return fail(500, "db_insert_failed", "Could not store verification token", insErr.message, "token_saved");
-    console.log("[send-verification] verification_id", insRow?.id, "user_id", user.id);
+    console.log("[send-verification] 3_stored_in_db", "verification_id", insRow?.id, "stored_hash_prefix", token_hash.slice(0, 8), "expires_at", expires_at);
     step("token_saved");
 
     const confirmUrl = `${SITE_URL}/verify-email?token=${token}`;
+    console.log("[send-verification] 4_email_link_token", "len", token.length, "prefix", token.slice(0, 8), "is_raw_token", true);
     const html = renderEmail(confirmUrl);
     step("email_rendered");
 
