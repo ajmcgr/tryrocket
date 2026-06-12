@@ -44,8 +44,13 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
           toast({ title: "Check your email", description: "Confirm your email to finish signing up." });
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        const verified = (data.user?.app_metadata as Record<string, unknown> | undefined)?.email_verified === true;
+        if (!verified) {
+          supabase.functions.invoke("send-verification").catch(() => {});
+          toast({ title: "Verify your email", description: "We just sent a verification link to your inbox." });
+        }
         nav(next, { replace: true });
       }
     } catch (err: any) {
