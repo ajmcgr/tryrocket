@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     const provided = sigHeader.split(" ").map((s) => s.replace(/^v1,/, ""));
     if (!provided.includes(expected)) {
       console.error("Invalid signature");
-      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401 });
+      return new Response(JSON.stringify({ ok: false, error: "Invalid signature" }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
     const data = JSON.parse(payload) as {
       user: { email: string };
@@ -76,11 +76,14 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       const err = await res.text();
       console.error("Resend error", err);
-      return new Response(JSON.stringify({ error: err }), { status: 500 });
+      // Don't block auth flow if email send fails — log and return 200.
+      // Supabase will treat non-2xx as hook failure and reject the signup.
+      return new Response(JSON.stringify({ ok: false, error: err }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (e) {
     console.error("auth-email-hook error", e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { "Content-Type": "application/json" } });
+    // Always 200 so a transient hook failure doesn't break signup.
+    return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 });
