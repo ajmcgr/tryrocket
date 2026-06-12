@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MessageCircle, MessageSquare, Twitter, Facebook, Send, Copy, Link as LinkIcon, FileText, Image as ImageIcon, Cloud, Lock } from "lucide-react";
+import { Download, Mail, MessageCircle, MessageSquare, Facebook, Send, Copy, Link as LinkIcon, FileText, Image as ImageIcon, Cloud, Lock } from "lucide-react";
+
+const XLogo = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 type Asset = {
   id: string;
@@ -115,7 +121,7 @@ export default function ShareExportModal({
           </div>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
             <Tile Icon={LinkIcon} label="Copy link" onClick={copyLink} />
-            <Tile Icon={Twitter} label="Twitter / X" onClick={() => openShare("twitter")} iconClass="bg-neutral-900 text-white" />
+            <Tile Icon={XLogo} label="X" onClick={() => openShare("twitter")} iconClass="bg-neutral-900 text-white" />
             <Tile Icon={Facebook} label="Facebook" onClick={() => openShare("facebook")} iconClass="bg-blue-600 text-white" />
             <Tile Icon={Send} label="Messenger" onClick={() => openShare("messenger")} iconClass="bg-gradient-to-br from-purple-500 to-pink-500 text-white" />
             <Tile Icon={MessageCircle} label="WhatsApp" onClick={() => openShare("whatsapp")} iconClass="bg-green-500 text-white" />
