@@ -1,4 +1,4 @@
-// redeploy: 2026-06-12-v8
+// redeploy: 2026-06-12-v9
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { renderEmail } from "../_shared/email-layout.ts";
 
@@ -55,13 +55,20 @@ Deno.serve(async (req) => {
     // === Verify branch (no logged-in user required) ===
     if (body.action === "verify" && body.token) {
       const token_hash = await sha256(body.token);
+      console.log("verify attempt", token_hash.slice(0, 12));
       const { data: row, error: selErr } = await admin
         .from("email_verification_tokens")
         .select("id, user_id, expires_at, used_at")
         .eq("token_hash", token_hash)
         .maybeSingle();
-      if (selErr) return json({ error: selErr.message }, 500);
-      if (!row) return json({ error: "Invalid or expired link" }, 400);
+      if (selErr) {
+        console.error("verify select error", selErr.message);
+        return json({ error: selErr.message }, 500);
+      }
+      if (!row) {
+        console.warn("verify: no matching token", token_hash.slice(0, 12));
+        return json({ error: "Invalid or expired link" }, 400);
+      }
       if (row.used_at) {
         await admin.auth.admin.updateUserById(row.user_id, { app_metadata: { email_verified: true } });
         return json({ ok: true, already_used: true });
@@ -102,7 +109,14 @@ Deno.serve(async (req) => {
     const token_hash = await sha256(token);
     const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    await admin.from("email_verification_tokens").insert({ user_id: user.id, token_hash, expires_at });
+    const { error: insErr } = await admin
+      .from("email_verification_tokens")
+      .insert({ user_id: user.id, token_hash, expires_at });
+    if (insErr) {
+      console.error("token insert failed", insErr.message);
+      return json({ error: `Could not create verification token: ${insErr.message}` }, 500);
+    }
+    console.log("token stored", token_hash.slice(0, 12), "for", user.id);
 
     const url = `${APP_URL}/verify-email?token=${token}`;
     const { subject, html } = verifyEmailHtml(url);
