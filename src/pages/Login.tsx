@@ -6,6 +6,8 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 
+const AUTH_CALLBACK_URL = `${window.location.origin}/auth/callback`;
+
 const Login = ({ mode = "login" as "login" | "signup" }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,24 +34,33 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { username: username.trim().replace(/^@/, "") } },
+          options: {
+            data: { username: username.trim().replace(/^@/, "") },
+            emailRedirectTo: AUTH_CALLBACK_URL,
+          },
         });
         if (error) throw error;
+        // With "Confirm email" ON, signUp returns a user with no session.
+        // Send them to the check-your-email screen either way.
         if (data.session) {
-          // Email confirmation disabled in Supabase — we verify via our own Resend flow.
-          supabase.functions.invoke("send-verification").catch(() => {});
-          toast({ title: "Welcome to Rocket 🚀", description: "We sent a verification link to your inbox." });
           nav(next, { replace: true });
         } else {
-          toast({ title: "Check your email", description: "Confirm your email to finish signing up." });
+          nav(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        const verified = (data.user?.app_metadata as Record<string, unknown> | undefined)?.email_verified === true;
-        if (!verified) {
-          supabase.functions.invoke("send-verification").catch(() => {});
-          toast({ title: "Verify your email", description: "We just sent a verification link to your inbox." });
+        const confirmed = !!(data.user?.email_confirmed_at || data.user?.confirmed_at);
+        const isGoogle = (data.user?.app_metadata as { provider?: string } | undefined)?.provider === "google";
+        if (!confirmed && !isGoogle) {
+          await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+          await supabase.auth.resend({
+            type: "signup",
+            email,
+            options: { emailRedirectTo: AUTH_CALLBACK_URL },
+          }).catch(() => {});
+          nav(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
+          return;
         }
         nav(next, { replace: true });
       }
@@ -61,7 +72,7 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
   const google = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${next}` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
   };

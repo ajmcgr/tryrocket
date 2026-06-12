@@ -10,7 +10,7 @@ const shell = renderEmail;
 function buildEmail(actionType: string, confirmationUrl: string, token: string, newEmail?: string) {
   switch (actionType) {
     case "signup":
-      return { subject: "Confirm your Rocket account", html: shell({ preheader: "One click to verify your email.", title: "Make your product a brand.", bodyHtml: `<p>Welcome to Rocket — Rocket helps you position, brand, and market your product. Confirm your email to get started.</p>`, ctaLabel: "Confirm email", ctaUrl: confirmationUrl }) };
+      return { subject: "Confirm your Rocket account", html: shell({ preheader: "Confirm your email to start using Rocket.", title: "Confirm your email to start using Rocket.", bodyHtml: `<p>Tap below to confirm your email and start creating brand assets with Rocket.</p>`, ctaLabel: "Confirm email", ctaUrl: confirmationUrl, footer: "You're receiving this because you created a Rocket account." }) };
     case "magiclink":
       return { subject: "Your Rocket sign-in link", html: shell({ preheader: "Tap to sign in to Rocket.", title: "Sign in to Rocket.", bodyHtml: `<p>Click below to sign in. This link expires shortly and can only be used once.</p>`, ctaLabel: "Sign in to Rocket", ctaUrl: confirmationUrl }) };
     case "recovery":
