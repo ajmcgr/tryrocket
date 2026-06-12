@@ -1,4 +1,4 @@
-// Standalone Resend-based email verification sender.
+// redeploy: 2026-06-12-v10-branded
 // No imports from ../_shared. Requires an authenticated user (JWT in Authorization header).
 
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";

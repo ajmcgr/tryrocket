@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
-import ChatsSidebar from "@/components/ChatsSidebar";
 const supabase = _sb as any;
 
 const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string }[] = [
@@ -59,8 +58,6 @@ const Generate = () => {
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [chatRefresh, setChatRefresh] = useState(0);
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
   const { toast } = useToast();
@@ -157,7 +154,7 @@ const Generate = () => {
       if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
       // Link generated assets to this chat
       await supabase.from("assets").update({ chat_id: newChatId }).in("id", allIds);
-      setChatRefresh(k => k + 1);
+      window.dispatchEvent(new Event("chats:refresh"));
       setPrompt("");
       nav(`/create?chat=${newChatId}`);
     } catch (err: any) {
@@ -174,14 +171,7 @@ const Generate = () => {
   }, [user]);
 
   return (
-    <div className="flex w-full">
-      <ChatsSidebar
-        activeChatId={chatId}
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(c => !c)}
-        refreshKey={chatRefresh}
-      />
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col items-center px-6 py-12">
+    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col items-center px-6 py-12">
       {chatId && chatData ? (
         <div className="w-full">
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">{chatData.title}</h1>
@@ -306,7 +296,6 @@ const Generate = () => {
         needed={outOfCredits?.needed}
         remaining={outOfCredits?.remaining}
       />
-      </div>
     </div>
   );
 };

@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "./Logo";
+import ChatsSidebar from "./ChatsSidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,6 +18,9 @@ const AppShell = () => {
   const isFullBleedRoute = location.pathname.startsWith("/editor");
   const initial = (user?.email?.[0] || "U").toUpperCase();
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const sidebarRoutes = ["/create", "/assets", "/editor", "/projects"];
+  const showSidebar = sidebarRoutes.some(r => location.pathname === r || location.pathname.startsWith(r + "/"));
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
@@ -63,9 +68,18 @@ const AppShell = () => {
           </div>
         </div>
       </header>
-      <main className={isFullBleedRoute ? "w-full" : "w-full"}>
-        <Outlet />
-      </main>
+      {showSidebar ? (
+        <div className="flex w-full">
+          <ChatsSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(c => !c)} />
+          <main className="min-w-0 flex-1">
+            <Outlet />
+          </main>
+        </div>
+      ) : (
+        <main className="w-full">
+          <Outlet />
+        </main>
+      )}
     </div>
   );
 };

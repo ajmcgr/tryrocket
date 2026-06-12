@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,19 +20,21 @@ export type Chat = {
 };
 
 type Props = {
-  activeChatId?: string | null;
   collapsed: boolean;
   onToggle: () => void;
-  refreshKey?: number;
 };
 
-const ChatsSidebar = ({ activeChatId, collapsed, onToggle, refreshKey }: Props) => {
+const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const location = useLocation();
+  const activeChatId = params.get("chat");
   const [chats, setChats] = useState<Chat[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [tick, setTick] = useState(0);
 
   const load = async () => {
     if (!user) return;
@@ -46,7 +48,12 @@ const ChatsSidebar = ({ activeChatId, collapsed, onToggle, refreshKey }: Props) 
     setChats(data || []);
   };
 
-  useEffect(() => { load(); }, [user, refreshKey]);
+  useEffect(() => { load(); }, [user, tick, location.pathname]);
+  useEffect(() => {
+    const h = () => setTick(t => t + 1);
+    window.addEventListener("chats:refresh", h);
+    return () => window.removeEventListener("chats:refresh", h);
+  }, []);
 
   const togglePin = async (c: Chat) => {
     await supabase.from("chats").update({ pinned: !c.pinned }).eq("id", c.id);
