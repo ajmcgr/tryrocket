@@ -160,28 +160,28 @@ const Assets = () => {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 bg-white">
-                    <DropdownMenuItem asChild><Link to={`/editor?id=${a.id}`}><Edit3 className="mr-2 h-4 w-4" /> Open in Editor</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"><Link to={`/editor?id=${a.id}`}><Edit3 className="mr-2 h-4 w-4" /> Open in Editor</Link></DropdownMenuItem>
                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger><FolderPlus className="mr-2 h-4 w-4" /> {a.project_id ? "Move to project" : "Add to project"}</DropdownMenuSubTrigger>
+                      <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900"><FolderPlus className="mr-2 h-4 w-4" /> {a.project_id ? "Move to project" : "Add to project"}</DropdownMenuSubTrigger>
                       <DropdownMenuPortal>
                         <DropdownMenuSubContent className="w-56 bg-white">
                           <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Projects</DropdownMenuLabel>
                           {projects.length === 0 ? (
                             <div className="px-2 py-2 text-xs text-neutral-500">No projects yet.</div>
                           ) : projects.map(p => (
-                            <DropdownMenuItem key={p.id} onClick={() => assignToProject(a.id, p.id)} className="cursor-pointer">
+                            <DropdownMenuItem key={p.id} onClick={() => assignToProject(a.id, p.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
                               {p.name}{a.project_id === p.id ? " ✓" : ""}
                             </DropdownMenuItem>
                           ))}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => createProjectAndAssign(a.id)} className="cursor-pointer">+ New project…</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => createProjectAndAssign(a.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">+ New project…</DropdownMenuItem>
                           {a.project_id && (
-                            <DropdownMenuItem onClick={() => assignToProject(a.id, null)} className="text-red-600 focus:text-red-600 cursor-pointer">Remove from project</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => assignToProject(a.id, null)} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Remove from project</DropdownMenuItem>
                           )}
                         </DropdownMenuSubContent>
                       </DropdownMenuPortal>
                     </DropdownMenuSub>
-                    <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => del(a.id)}>
+                    <DropdownMenuItem className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700" onClick={() => del(a.id)}>
                       <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
