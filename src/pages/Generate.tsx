@@ -119,7 +119,6 @@ const Generate = () => {
         const d: any = data;
         if (d?.error) {
           if (d.code === "no_credits") {
-            await supabase.from("chats").delete().eq("id", newChatId);
             setOutOfCredits({ needed: d.needed, remaining: d.remaining });
             return;
           }
@@ -143,12 +142,10 @@ const Generate = () => {
         }
       }
       if (allIds.length === 0 && creditsErr) {
-        await supabase.from("chats").delete().eq("id", newChatId);
         setOutOfCredits({ needed: creditsErr.needed, remaining: creditsErr.remaining });
         return;
       }
       if (allIds.length === 0) {
-        await supabase.from("chats").delete().eq("id", newChatId);
         throw new Error("No assets generated");
       }
       if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
