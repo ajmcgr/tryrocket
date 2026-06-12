@@ -790,8 +790,19 @@ const Editor = () => {
             )}
             <Button variant="outline" size="sm" onClick={saveAsNew}><FilePlus className="h-3.5 w-3.5" /> Save as new</Button>
             <Button variant="outline" size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
-            <Button variant="outline" size="sm" onClick={() => exportImage("jpeg")}><Download className="h-3.5 w-3.5" /> JPG</Button>
-            <Button size="sm" onClick={() => exportImage("png")}><Download className="h-3.5 w-3.5" /> PNG</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm"><Download className="h-3.5 w-3.5" /> Export</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => exportImage("png")}>PNG image</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportImage("jpeg")}>JPG image</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportPsd}>Photoshop (.psd)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportSvg("Figma")}>Figma (SVG)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportSvg("Sketch")}>Sketch (SVG)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportSvg("Canva")}>Canva (SVG)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto p-8">
