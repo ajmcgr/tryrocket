@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
     const prompt = (body.prompt || "").toString().trim();
     const project_id = body.project_id || null;
     const explicitType = body.asset_type as AssetType | undefined;
+    const providedCtx = body.brand_context as BrandContext | undefined;
     if (!prompt) return new Response(JSON.stringify({ error: "prompt required" }), { status: 400, headers: { ...ch, "Content-Type": "application/json" } });
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -97,7 +98,9 @@ Deno.serve(async (req) => {
     // Detect URL & scrape
     const detectedUrl = extractUrl(prompt);
     let ctx: BrandContext = { url: detectedUrl || undefined };
-    if (detectedUrl) {
+    if (providedCtx && (providedCtx.url || providedCtx.productName || providedCtx.colors?.length)) {
+      ctx = { ...providedCtx, url: providedCtx.url || detectedUrl || undefined };
+    } else if (detectedUrl) {
       ctx = await scrapeUrl(detectedUrl, SUPABASE_URL, SUPABASE_ANON_KEY, jwt);
     }
 
