@@ -178,7 +178,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = (Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>").replace(/^["']+|["']+$/g, "");
 
-async function getEmail(admin: ReturnType<typeof createClient>, userId: string): Promise<string | null> {
+// deno-lint-ignore no-explicit-any
+async function getEmail(admin: any, userId: string): Promise<string | null> {
   const { data } = await admin.auth.admin.getUserById(userId);
   return data?.user?.email ?? null;
 }
