@@ -287,18 +287,14 @@ const Index = () => {
               );
             })}
           </div>
+          <div className="mt-12">
+            <SenjaWidget />
+          </div>
         </div>
       </section>
 
       {/* What you can create */}
       <CreateShowcase />
-
-      {/* Testimonials */}
-      <section className="border-t border-neutral-200/60">
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <SenjaWidget />
-        </div>
-      </section>
 
       {/* Use Cases */}
       <section id="use-cases" className="border-t border-neutral-200/60">
