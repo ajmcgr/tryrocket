@@ -102,6 +102,18 @@ Deno.serve(async (req) => {
       ctx = { ...providedCtx, url: providedCtx.url || detectedUrl || undefined };
     } else if (detectedUrl) {
       ctx = await scrapeUrl(detectedUrl, SUPABASE_URL, SUPABASE_ANON_KEY, jwt);
+    } else if (project_id) {
+      // No URL in this prompt — reuse stored brand context from project (Brand Analysis Mode persistence)
+      const { data: proj } = await admin.from("projects").select("brand_context,source_url").eq("id", project_id).maybeSingle();
+      if (proj?.brand_context) ctx = { ...(proj.brand_context as BrandContext), url: (proj.brand_context as any).url || proj.source_url || undefined };
+    }
+
+    // Persist brand context to project if we scraped a real brand and the project has none yet
+    if (project_id && (ctx.productName || ctx.colors?.length)) {
+      const { data: proj } = await admin.from("projects").select("brand_context").eq("id", project_id).maybeSingle();
+      if (!proj?.brand_context) {
+        await admin.from("projects").update({ brand_context: ctx, source_url: ctx.url || null }).eq("id", project_id);
+      }
     }
 
     // Credits check (simple: text=1, image=cls.count*10)
