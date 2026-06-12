@@ -25,8 +25,11 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
 async function sha256Hex(input: string): Promise<string> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 Deno.serve(async (req) => {
@@ -53,10 +56,12 @@ Deno.serve(async (req) => {
     }
     token = token.replace(/[).,>\s]+$/g, "");
     if (!token) return fail(400, "missing_token", "Verification token is missing", "no token provided", "token_received");
+    console.log("[verify-email] received_token_length", token.length);
     step("token_received");
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const token_hash = await sha256Hex(token);
+    console.log("[verify-email] computed_hash_prefix", token_hash.slice(0, 8));
 
     const { data: rows, error: selErr } = await admin
       .from("email_verifications")
@@ -66,10 +71,13 @@ Deno.serve(async (req) => {
       .limit(1);
     if (selErr) return fail(500, "db_select_failed", "Lookup failed", selErr.message, "token_looked_up");
     const row = rows?.[0];
+    console.log("[verify-email] verification_record_found", !!row);
     if (!row) return fail(400, "invalid_token", "This verification link is invalid.", token_hash.slice(0, 12), "token_looked_up");
     step("token_looked_up");
 
-    if (new Date(row.expires_at).getTime() < Date.now()) {
+    const expired = new Date(row.expires_at).getTime() < Date.now();
+    console.log("[verify-email] expired", expired, "used", !!row.used_at);
+    if (expired) {
       return fail(400, "expired_token", "This verification link has expired. Please request a new one.", row.expires_at, "token_validated");
     }
 
@@ -84,6 +92,7 @@ Deno.serve(async (req) => {
       .update({ email_verified: true, email_verified_at: new Date().toISOString() })
       .eq("user_id", row.user_id);
     if (profErr) return fail(500, "profile_update_failed", "Could not update profile", profErr.message, "profile_updated");
+    console.log("[verify-email] profile_updated true user_id", row.user_id);
     step("profile_updated");
 
     // Ensure usage row exists (idempotent insert).
@@ -98,7 +107,7 @@ Deno.serve(async (req) => {
     } catch (e) { console.warn("[verify-email] app_metadata warn", (e as Error).message); }
 
     step("response_sent");
-    return new Response(JSON.stringify({ ok: true, user_id: row.user_id, log }), { status: 200, headers });
+    return new Response(JSON.stringify({ success: true, verified: true, redirectTo: "/create", user_id: row.user_id, log }), { status: 200, headers });
   } catch (e) {
     return fail(500, "unhandled_exception", "Unexpected server error", (e as Error).message, "response_sent");
   }
