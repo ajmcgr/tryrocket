@@ -8,7 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 
 const VerifyEmail = () => {
   const [params] = useSearchParams();
-  const token = params.get("token") || "";
+  const rawToken = params.get("token") || "";
+  // Strip whitespace / accidental trailing punctuation some clients append.
+  const token = rawToken.trim().replace(/[).,>\s]+$/g, "");
   const [state, setState] = useState<"verifying" | "success" | "error">(token ? "verifying" : "error");
   const [message, setMessage] = useState("");
   const [resending, setResending] = useState(false);
@@ -36,6 +38,8 @@ const VerifyEmail = () => {
     let cancelled = false;
     (async () => {
       try {
+        console.log("[verify-email] href:", window.location.href);
+        console.log("[verify-email] token length:", token.length, "prefix:", token.slice(0, 8));
         const { data, error } = await supabase.functions.invoke("send-verification", { body: { action: "verify", token } });
         if (cancelled) return;
         if (error || data?.error) {
