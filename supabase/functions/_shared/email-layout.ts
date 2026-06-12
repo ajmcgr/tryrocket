@@ -2,7 +2,7 @@
 // Centered logo, soft outer bg, white card, divider, headline, body, blue CTA, muted footer.
 
 export const BRAND = {
-  blue: "#1E88FF",
+  blue: "#008BC2",
   ink: "#0A0A0A",
   text: "#1F2937",
   muted: "#9CA3AF",
