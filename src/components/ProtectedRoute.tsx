@@ -9,11 +9,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   const provider = (user?.app_metadata as { provider?: string } | undefined)?.provider || "email";
   const isOAuth = provider !== "email";
+  // Supabase Auth is the source of truth: a populated email_confirmed_at means verified.
+  const authConfirmed = isOAuth || !!user?.email_confirmed_at;
 
-  const [verified, setVerified] = useState<boolean | null>(isOAuth ? true : null);
+  const [verified, setVerified] = useState<boolean | null>(authConfirmed ? true : null);
 
   useEffect(() => {
-    if (!user || isOAuth) return;
+    if (!user) return;
+    if (authConfirmed) { setVerified(true); return; }
     let cancelled = false;
     (async () => {
       const { data } = await (supabase as unknown as {
@@ -28,7 +31,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       if (!cancelled) setVerified(!!data?.email_verified);
     })();
     return () => { cancelled = true; };
-  }, [user, isOAuth]);
+  }, [user, authConfirmed]);
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-white text-sm text-neutral-500">Loading…</div>;
   if (!user) return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;

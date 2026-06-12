@@ -48,6 +48,48 @@ Deno.serve(async (req) => {
     if (!SUPABASE_URL || !SERVICE_ROLE) return fail(500, "missing_env", "Supabase env not configured", "url/key missing", "env_checked");
     step("env_checked");
 
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    // Marks the user verified everywhere (profile, usage row, auth metadata) and returns success.
+    const finalize = async (user_id: string, confirmedAt?: string | null) => {
+      const verifiedAt = confirmedAt || new Date().toISOString();
+      const { error: profErr } = await admin.from("profiles")
+        .update({ email_verified: true, email_verified_at: verifiedAt })
+        .eq("user_id", user_id);
+      if (profErr) console.warn("[verify-email] profile update warn", profErr.message);
+      step("profile_updated");
+
+      const { error: usageErr } = await admin.from("user_usage")
+        .upsert({ user_id, plan: "free", monthly_limit: 500 }, { onConflict: "user_id" });
+      if (usageErr) console.warn("[verify-email] usage upsert warn", usageErr.message);
+      step("usage_ensured");
+
+      try {
+        await admin.auth.admin.updateUserById(user_id, { email_confirm: true, app_metadata: { email_verified: true } });
+      } catch (e) { console.warn("[verify-email] auth confirm warn", (e as Error).message); }
+
+      step("response_sent");
+      return new Response(JSON.stringify({ success: true, verified: true, redirectTo: "/create", user_id, log }), { status: 200, headers });
+    };
+
+    // Returns email_confirmed_at for a user id, or null.
+    const authConfirmedAt = async (user_id: string): Promise<string | null> => {
+      try {
+        const { data } = await admin.auth.admin.getUserById(user_id);
+        return data?.user?.email_confirmed_at ?? null;
+      } catch { return null; }
+    };
+
+    // Optional: identify the caller from the Authorization header (sent automatically by supabase.functions.invoke).
+    let caller: { id: string; email_confirmed_at?: string | null } | null = null;
+    const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+    if (jwt) {
+      try {
+        const { data } = await admin.auth.getUser(jwt);
+        if (data?.user) caller = { id: data.user.id, email_confirmed_at: data.user.email_confirmed_at };
+      } catch { /* anon key or invalid jwt — ignore */ }
+    }
+
     let token = "";
     if (req.method === "POST") {
       try { const body = await req.json(); token = String(body?.token || "").trim(); } catch { /* ignore */ }
@@ -55,12 +97,18 @@ Deno.serve(async (req) => {
       token = (new URL(req.url).searchParams.get("token") || "").trim();
     }
     token = token.replace(/[).,>\s]+$/g, "");
-    if (!token) return fail(400, "missing_token", "Verification token is missing", "no token provided", "token_received");
+    if (!token) {
+      // No token but the signed-in caller is already confirmed in Supabase Auth → sync + success.
+      if (caller?.email_confirmed_at) {
+        step("auth_already_confirmed_no_token");
+        return await finalize(caller.id, caller.email_confirmed_at);
+      }
+      return fail(400, "missing_token", "Verification token is missing", "no token provided", "token_received");
+    }
     // DEBUG (temporary): never log full token — length + first 8 chars only.
     console.log("[verify-email] 5_received_token", "len", token.length, "prefix", token.slice(0, 8));
     step("token_received");
 
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const token_hash = await sha256Hex(token);
     console.log("[verify-email] 6_computed_hash", "len", token_hash.length, "prefix", token_hash.slice(0, 8));
 
@@ -73,21 +121,42 @@ Deno.serve(async (req) => {
     if (selErr) return fail(500, "db_select_failed", "Lookup failed", selErr.message, "token_looked_up");
     const row = rows?.[0];
     console.log("[verify-email] 7_db_lookup", "found", !!row, "lookup_hash_prefix", token_hash.slice(0, 8));
-    if (!row) return fail(400, "invalid_token", "This verification link is invalid.", token_hash.slice(0, 12), "token_looked_up");
+    if (!row) {
+      // FALLBACK: token unknown, but Supabase Auth already confirmed this user → verified. Period.
+      if (caller) {
+        const confirmedAt = caller.email_confirmed_at || await authConfirmedAt(caller.id);
+        if (confirmedAt) {
+          step("auth_confirmed_fallback_no_row");
+          return await finalize(caller.id, confirmedAt);
+        }
+      }
+      return fail(400, "invalid_token", "This verification link is invalid.", token_hash.slice(0, 12), "token_looked_up");
+    }
     step("token_looked_up");
 
     const expired = new Date(row.expires_at).getTime() < Date.now();
     console.log("[verify-email] expired", expired, "used", !!row.used_at, "expires_at", row.expires_at);
     if (expired) {
+      // FALLBACK: link expired but auth says the user is already confirmed → verified.
+      const confirmedAt = await authConfirmedAt(row.user_id);
+      if (confirmedAt) {
+        step("auth_confirmed_fallback_expired");
+        return await finalize(row.user_id, confirmedAt);
+      }
       return fail(400, "expired_token", "This verification link has expired. Please request a new one.", row.expires_at, "token_validated");
     }
 
     if (row.used_at) {
-      // Idempotent: if the profile is already verified (double-click / re-open), report success.
+      // Idempotent: if auth or the profile already says verified (double-click / re-open), report success.
+      const confirmedAt = await authConfirmedAt(row.user_id);
+      if (confirmedAt) {
+        step("auth_confirmed_fallback_used");
+        return await finalize(row.user_id, confirmedAt);
+      }
       const { data: prof } = await admin.from("profiles").select("email_verified").eq("user_id", row.user_id).maybeSingle();
       if (prof?.email_verified) {
         step("already_verified");
-        return new Response(JSON.stringify({ success: true, verified: true, redirectTo: "/create", user_id: row.user_id, log }), { status: 200, headers });
+        return await finalize(row.user_id, null);
       }
       return fail(400, "used_token", "This link has already been used or replaced by a newer email. Please request a new one.", row.used_at, "token_validated");
     }
@@ -95,27 +164,8 @@ Deno.serve(async (req) => {
     if (updTokErr) return fail(500, "db_update_failed", "Could not mark token used", updTokErr.message, "token_consumed");
     step("token_consumed");
 
-    // Mark profile verified.
-    const { error: profErr } = await admin.from("profiles")
-      .update({ email_verified: true, email_verified_at: new Date().toISOString() })
-      .eq("user_id", row.user_id);
-    if (profErr) return fail(500, "profile_update_failed", "Could not update profile", profErr.message, "profile_updated");
-    console.log("[verify-email] profile_updated true user_id", row.user_id);
-    step("profile_updated");
-
-    // Ensure usage row exists (idempotent insert).
-    const { error: usageErr } = await admin.from("user_usage")
-      .upsert({ user_id: row.user_id, plan: "free", monthly_limit: 500 }, { onConflict: "user_id" });
-    if (usageErr) console.warn("[verify-email] usage upsert warn", usageErr.message);
-    step("usage_ensured");
-
-    // Also flip auth metadata so any UI checking app_metadata.email_verified agrees.
-    try {
-      await admin.auth.admin.updateUserById(row.user_id, { app_metadata: { email_verified: true } });
-    } catch (e) { console.warn("[verify-email] app_metadata warn", (e as Error).message); }
-
-    step("response_sent");
-    return new Response(JSON.stringify({ success: true, verified: true, redirectTo: "/create", user_id: row.user_id, log }), { status: 200, headers });
+    // Mark profile verified, ensure usage row, confirm in Supabase Auth, respond.
+    return await finalize(row.user_id, null);
   } catch (e) {
     return fail(500, "unhandled_exception", "Unexpected server error", (e as Error).message, "response_sent");
   }

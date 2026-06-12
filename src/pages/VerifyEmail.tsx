@@ -66,6 +66,17 @@ const VerifyEmail = () => {
         if (cancelled) return;
         const payload = data as { ok?: boolean; error?: string; message?: string } | null;
         if (error || payload?.error) {
+          // FALLBACK: if Supabase Auth already confirmed this user, treat as verified.
+          try {
+            const { data: fresh } = await supabase.auth.getUser();
+            if (fresh.user?.email_confirmed_at) {
+              if (cancelled) return;
+              setState("success");
+              setTimeout(() => nav("/create", { replace: true }), 600);
+              return;
+            }
+          } catch { /* ignore */ }
+          if (cancelled) return;
           let detail = payload?.message || payload?.error || "";
           if (!detail && error && (error as { context?: { json: () => Promise<unknown> } }).context) {
             try {
