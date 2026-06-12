@@ -19,7 +19,13 @@ const VerifyEmail = () => {
     try {
       const { data, error } = await supabase.functions.invoke("send-verification");
       if (error || data?.error) throw new Error(data?.error || error?.message || "Failed");
-      toast({ title: "Sent", description: "Check your inbox for the verification link." });
+      if (data?.already_verified) {
+        toast({ title: "Already verified", description: "Your email is already confirmed — you're good to go." });
+      } else if (data?.throttled) {
+        toast({ title: "Too many requests", description: "You've requested several links recently. Please wait up to an hour and try again.", variant: "destructive" });
+      } else {
+        toast({ title: "Sent", description: "Check your inbox for the verification link." });
+      }
     } catch (e: any) {
       toast({ title: "Couldn't send", description: e.message || "Make sure you're logged in.", variant: "destructive" });
     } finally { setResending(false); }

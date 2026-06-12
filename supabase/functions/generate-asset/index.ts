@@ -1,3 +1,4 @@
+// redeploy: 2026-06-12
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
 import { GENERATORS, IMAGE_ASSET_TYPES, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
