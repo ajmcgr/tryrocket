@@ -206,7 +206,7 @@ function CreditsPopover({ compact = false }: { compact?: boolean }) {
   ];
   const trigger = compact ? (
     <button title="Credits" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
-      <Zap className="h-4 w-4" />
+      <Sparkles className="h-4 w-4" />
     </button>
   ) : (
     <button className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50">
@@ -224,7 +224,7 @@ function CreditsPopover({ compact = false }: { compact?: boolean }) {
         <div className="py-1">
           {packs.map(p => (
             <button key={p.label} className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-neutral-800 transition hover:bg-neutral-50">
-              <span className="flex items-center gap-2"><Zap className="h-4 w-4" /> {p.label}</span>
+              <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> {p.label}</span>
               <span className="text-neutral-500">{p.price}</span>
             </button>
           ))}
