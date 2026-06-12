@@ -36,6 +36,9 @@ verify_jwt = true
 [functions.verify-email]
 verify_jwt = false
 
+[functions.confirm-email]
+verify_jwt = false
+
 [functions.generate-asset]
 verify_jwt = true
 

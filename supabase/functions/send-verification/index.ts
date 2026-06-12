@@ -42,11 +42,44 @@ Deno.serve(async (req) => {
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   try {
+    // Parse body once. Support two actions on this endpoint because the
+    // separate verify-email/confirm-email function won't deploy on this
+    // project — we route both through here.
+    let body: { action?: string; token?: string } = {};
+    if (req.method === "POST") {
+      try { body = await req.json(); } catch { body = {}; }
+    }
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    // === Verify branch (no logged-in user required) ===
+    if (body.action === "verify" && body.token) {
+      const token_hash = await sha256(body.token);
+      const { data: row, error: selErr } = await admin
+        .from("email_verification_tokens")
+        .select("id, user_id, expires_at, used_at")
+        .eq("token_hash", token_hash)
+        .maybeSingle();
+      if (selErr) return json({ error: selErr.message }, 500);
+      if (!row) return json({ error: "Invalid or expired link" }, 400);
+      if (row.used_at) {
+        await admin.auth.admin.updateUserById(row.user_id, { app_metadata: { email_verified: true } });
+        return json({ ok: true, already_used: true });
+      }
+      if (new Date(row.expires_at).getTime() < Date.now()) return json({ error: "This link has expired" }, 400);
+      const { error: updErr } = await admin.auth.admin.updateUserById(row.user_id, {
+        app_metadata: { email_verified: true },
+      });
+      if (updErr) return json({ error: updErr.message }, 500);
+      await admin.from("email_verification_tokens").update({ used_at: new Date().toISOString() }).eq("id", row.id);
+      return json({ ok: true });
+    }
+
+    // === Send branch (requires logged-in user) ===
     const authHeader = req.headers.get("Authorization") || "";
     const jwt = authHeader.replace(/^Bearer\s+/i, "");
     if (!jwt) return json({ error: "Unauthorized" }, 401);
 
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: userData, error: userErr } = await admin.auth.getUser(jwt);
     const user = userData?.user;
     if (userErr || !user?.email) return json({ error: "Unauthorized" }, 401);
