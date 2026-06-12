@@ -1,5 +1,6 @@
-// redeploy: 2026-06-12-v9
+// redeploy: 2026-06-12-v10 (direct DB access — PostgREST schema cache doesn't include email_verification_tokens)
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import postgres from "npm:postgres@3.4.5";
 import { renderEmail } from "../_shared/email-layout.ts";
 
 const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
@@ -19,6 +20,8 @@ const FROM_EMAIL = (Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>")
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_URL = Deno.env.get("APP_URL") || "https://tryrocket.ai";
+const DB_URL = Deno.env.get("SUPABASE_DB_URL")!;
+const sql = postgres(DB_URL, { prepare: false, max: 2 });
 
 function verifyEmailHtml(confirmationUrl: string): { subject: string; html: string } {
   const html = renderEmail({
@@ -56,15 +59,12 @@ Deno.serve(async (req) => {
     if (body.action === "verify" && body.token) {
       const token_hash = await sha256(body.token);
       console.log("verify attempt", token_hash.slice(0, 12));
-      const { data: row, error: selErr } = await admin
-        .from("email_verification_tokens")
-        .select("id, user_id, expires_at, used_at")
-        .eq("token_hash", token_hash)
-        .maybeSingle();
-      if (selErr) {
-        console.error("verify select error", selErr.message);
-        return json({ error: selErr.message }, 500);
-      }
+      const rows = await sql`
+        select id, user_id, expires_at, used_at
+        from public.email_verification_tokens
+        where token_hash = ${token_hash}
+        limit 1`;
+      const row = rows[0] as { id: string; user_id: string; expires_at: string; used_at: string | null } | undefined;
       if (!row) {
         console.warn("verify: no matching token", token_hash.slice(0, 12));
         return json({ error: "Invalid or expired link" }, 400);
@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
         app_metadata: { email_verified: true },
       });
       if (updErr) return json({ error: updErr.message }, 500);
-      await admin.from("email_verification_tokens").update({ used_at: new Date().toISOString() }).eq("id", row.id);
+      await sql`update public.email_verification_tokens set used_at = now() where id = ${row.id}`;
       return json({ ok: true });
     }
 
@@ -96,25 +96,24 @@ Deno.serve(async (req) => {
     }
 
     // Throttle: max 3 outstanding tokens in the last hour
-    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count } = await admin
-      .from("email_verification_tokens")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", hourAgo);
-    if ((count ?? 0) >= 3) return json({ ok: true, throttled: true });
+    const [{ n }] = await sql`
+      select count(*)::int as n
+      from public.email_verification_tokens
+      where user_id = ${user.id} and created_at >= now() - interval '1 hour'`;
+    if ((n ?? 0) >= 3) return json({ ok: true, throttled: true });
 
     const raw = crypto.getRandomValues(new Uint8Array(32));
     const token = Array.from(raw).map((b) => b.toString(16).padStart(2, "0")).join("");
     const token_hash = await sha256(token);
     const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    const { error: insErr } = await admin
-      .from("email_verification_tokens")
-      .insert({ user_id: user.id, token_hash, expires_at });
-    if (insErr) {
-      console.error("token insert failed", insErr.message);
-      return json({ error: `Could not create verification token: ${insErr.message}` }, 500);
+    try {
+      await sql`
+        insert into public.email_verification_tokens (user_id, token_hash, expires_at)
+        values (${user.id}, ${token_hash}, ${expires_at})`;
+    } catch (insErr) {
+      console.error("token insert failed", (insErr as Error).message);
+      return json({ error: `Could not create verification token: ${(insErr as Error).message}` }, 500);
     }
     console.log("token stored", token_hash.slice(0, 12), "for", user.id);
 
