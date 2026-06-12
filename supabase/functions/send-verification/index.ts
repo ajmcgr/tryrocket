@@ -1,4 +1,4 @@
-// redeploy: 2026-06-12-v7
+// redeploy: 2026-06-12-v8
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { renderEmail } from "../_shared/email-layout.ts";
 
@@ -23,9 +23,9 @@ const APP_URL = Deno.env.get("APP_URL") || "https://tryrocket.ai";
 function verifyEmailHtml(confirmationUrl: string): { subject: string; html: string } {
   const html = renderEmail({
     preheader: "One click to verify your email.",
-    title: "Welcome to Rocket! 🚀",
-    bodyHtml: `<p>Thanks for signing up. Please confirm your email address to get started discovering and launching amazing products.</p>`,
-    ctaLabel: "Confirm Email",
+    title: "Make your product a brand.",
+    bodyHtml: `<p>Welcome to Rocket — Rocket helps you position, brand, and market your product. Confirm your email to get started.</p>`,
+    ctaLabel: "Confirm email",
     ctaUrl: confirmationUrl,
   });
   return { subject: "Confirm your Rocket account", html };

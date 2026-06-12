@@ -1,4 +1,4 @@
-// redeploy: 2026-06-12-v7
+// redeploy: 2026-06-12-v8
 import { renderEmail } from "../_shared/email-layout.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -10,7 +10,7 @@ const shell = renderEmail;
 function buildEmail(actionType: string, confirmationUrl: string, token: string, newEmail?: string) {
   switch (actionType) {
     case "signup":
-      return { subject: "Confirm your Rocket account", html: shell({ preheader: "One click to verify your email.", title: "Confirm your email to launch Rocket.", bodyHtml: `<p>Welcome to Rocket — make your product a brand. Tap below to confirm your email and start generating brands.</p>`, ctaLabel: "Confirm email", ctaUrl: confirmationUrl }) };
+      return { subject: "Confirm your Rocket account", html: shell({ preheader: "One click to verify your email.", title: "Make your product a brand.", bodyHtml: `<p>Welcome to Rocket — Rocket helps you position, brand, and market your product. Confirm your email to get started.</p>`, ctaLabel: "Confirm email", ctaUrl: confirmationUrl }) };
     case "magiclink":
       return { subject: "Your Rocket sign-in link", html: shell({ preheader: "Tap to sign in to Rocket.", title: "Sign in to Rocket.", bodyHtml: `<p>Click below to sign in. This link expires shortly and can only be used once.</p>`, ctaLabel: "Sign in to Rocket", ctaUrl: confirmationUrl }) };
     case "recovery":

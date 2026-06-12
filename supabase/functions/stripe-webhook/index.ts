@@ -34,7 +34,7 @@ function buildEmail(template: Template, data: any): { subject: string; html: str
         html: renderEmail({
           preheader: "Make your product a brand.",
           title: `Welcome to Rocket${data?.name ? `, ${data.name}` : ""}.`,
-          bodyHtml: `<p>You're in. Rocket helps you brand your app with AI — drop in a product URL and we'll generate your full launch kit in under 60 seconds.</p><p>You start with <strong>500 free credits</strong>. No card required.</p>`,
+          bodyHtml: `<p>You're in. Rocket helps you position, brand, and market your product — drop in a product URL and we'll generate your full brand kit in under 60 seconds.</p><p>You start with <strong>500 free credits</strong>. No card required.</p>`,
           ctaLabel: "Generate your first Brand",
           ctaUrl: "https://tryrocket.ai/create",
         }),
@@ -88,7 +88,7 @@ function buildEmail(template: Template, data: any): { subject: string; html: str
         subject: "Confirm your Rocket account",
         html: renderEmail({
           preheader: "One click to verify your email.",
-          title: "Confirm your email to launch Rocket.",
+          title: "Make your product a brand.",
           bodyHtml: `<p>Welcome to Rocket — make your product a brand. Tap the button below to confirm your email and start generating brands.</p>`,
           ctaLabel: "Confirm email",
           ctaUrl: data?.confirmation_url,
