@@ -131,11 +131,44 @@ Deno.serve(async (req) => {
     const title = ASSET_TITLES[cls.asset_type];
     const ids: string[] = [];
 
+    // For logo generation, fetch the brand's existing logo and pass as a visual reference to Gemini.
+    let logoRefs: { mimeType: string; data: string }[] | undefined;
+    if (spec.kind === "image" && cls.asset_type === "logo" && ctx.logo) {
+      try {
+        const r = await fetch(ctx.logo);
+        if (r.ok) {
+          const ct = r.headers.get("content-type") || "image/png";
+          // Skip SVGs (Gemini wants raster). Try favicon fallback.
+          if (!ct.includes("svg")) {
+            const buf = new Uint8Array(await r.arrayBuffer());
+            // Base64 encode
+            let bin = "";
+            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+            logoRefs = [{ mimeType: ct.split(";")[0], data: btoa(bin) }];
+          }
+        }
+      } catch { /* noop */ }
+      if (!logoRefs && ctx.favicon) {
+        try {
+          const r = await fetch(ctx.favicon);
+          if (r.ok) {
+            const ct = r.headers.get("content-type") || "image/png";
+            if (!ct.includes("svg")) {
+              const buf = new Uint8Array(await r.arrayBuffer());
+              let bin = "";
+              for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+              logoRefs = [{ mimeType: ct.split(";")[0], data: btoa(bin) }];
+            }
+          }
+        } catch { /* noop */ }
+      }
+    }
+
     if (spec.kind === "image") {
       // Generate N image variants in parallel
       const tasks = Array.from({ length: count }, async (_, i) => {
         const imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
-        const png = await geminiImage(imgPrompt);
+        const png = await geminiImage(imgPrompt, logoRefs);
         const path = `${user.id}/${Date.now()}-${i}.png`;
         const { error: upErr } = await admin.storage.from("rocket-images").upload(path, png, { contentType: "image/png", upsert: false });
         if (upErr) throw new Error(`storage: ${upErr.message}`);
@@ -148,7 +181,7 @@ Deno.serve(async (req) => {
           thumbnail_url: pub.publicUrl,
           prompt,
           source_url: detectedUrl,
-          meta: { brand_context: ctx, image_prompt: imgPrompt, variant: i + 1, of: count },
+          meta: { brand_context: ctx, image_prompt: imgPrompt, variant: i + 1, of: count, used_logo_ref: !!logoRefs },
         }).select().single();
         return asset?.id;
       });
