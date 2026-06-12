@@ -165,8 +165,9 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
             className="flex-1 rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-sm outline-none focus:border-brand"
           />
         ) : (
-          <Link to={`/create?chat=${c.id}`} className="flex-1 truncate">
-            {c.title}
+          <Link to={`/create?chat=${c.id}`} className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
+            {c.pinned && <Pin className="h-3 w-3 shrink-0 text-brand" aria-label="Pinned" />}
+            <span className="truncate">{c.title}</span>
           </Link>
         )}
         {!isRenaming && (
