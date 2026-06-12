@@ -1,3 +1,4 @@
+// redeploy: 2026-06-12-v8
 import Stripe from "npm:stripe@16.12.0";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { renderEmail } from "../_shared/email-layout.ts";
