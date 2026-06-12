@@ -50,6 +50,14 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
         const isOAuth = ((data.user?.app_metadata as { provider?: string } | undefined)?.provider || "email") !== "email";
         if (isOAuth) { nav(next, { replace: true }); return; }
 
+        // Supabase Auth is the source of truth: confirmed there means verified.
+        if (data.user?.email_confirmed_at) {
+          // Best-effort server-side sync of profiles.email_verified (+usage row).
+          supabase.functions.invoke("verify-email", { body: {} }).catch(() => {});
+          nav(next, { replace: true });
+          return;
+        }
+
         // Check our profile flag (types file doesn't include profiles yet).
         const { data: prof } = await (supabase as any)
           .from("profiles")
