@@ -32,7 +32,7 @@ function buildEmail(template: Template, data: any): { subject: string; html: str
       return {
         subject: "Welcome to Rocket 🚀",
         html: renderEmail({
-          preheader: "Your AI launch co-pilot is ready.",
+          preheader: "Make your product a brand.",
           title: `Welcome to Rocket${data?.name ? `, ${data.name}` : ""}.`,
           bodyHtml: `<p>You're in. Rocket helps you brand your app with AI — drop in a product URL and we'll generate your full launch kit in under 60 seconds.</p><p>You start with <strong>500 free credits</strong>. No card required.</p>`,
           ctaLabel: "Generate your first Brand",
@@ -89,7 +89,7 @@ function buildEmail(template: Template, data: any): { subject: string; html: str
         html: renderEmail({
           preheader: "One click to verify your email.",
           title: "Confirm your email to launch Rocket.",
-          bodyHtml: `<p>Welcome to Rocket — your AI launch co-pilot. Tap the button below to confirm your email and start generating brands.</p>`,
+          bodyHtml: `<p>Welcome to Rocket — make your product a brand. Tap the button below to confirm your email and start generating brands.</p>`,
           ctaLabel: "Confirm email",
           ctaUrl: data?.confirmation_url,
         }),
