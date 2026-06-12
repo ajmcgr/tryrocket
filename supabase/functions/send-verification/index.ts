@@ -1,10 +1,17 @@
-// redeploy: 2026-06-12-v10 (direct DB access — PostgREST schema cache doesn't include email_verification_tokens)
-import { createClient } from "npm:@supabase/supabase-js@2.45.0";
-import postgres from "npm:postgres@3.4.5";
-import { renderEmail } from "../_shared/email-layout.ts";
+// Standalone Resend-based email verification sender.
+// No imports from ../_shared. Requires an authenticated user (JWT in Authorization header).
 
-const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
-function cors(req: Request): Record<string, string> {
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+
+// ---------- CORS ----------
+const ALLOWED_ORIGINS = [
+  "https://tryrocket.ai",
+  "https://www.tryrocket.ai",
+  "https://tryrocket.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+function corsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get("Origin") || "";
   const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
@@ -15,124 +22,102 @@ function cors(req: Request): Record<string, string> {
   };
 }
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const FROM_EMAIL = (Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>").replace(/^["']+|["']+$/g, "");
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const APP_URL = Deno.env.get("APP_URL") || "https://tryrocket.ai";
-const DB_URL = Deno.env.get("SUPABASE_DB_URL")!;
-const sql = postgres(DB_URL, { prepare: false, max: 2 });
+// ---------- Env ----------
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
+const EMAIL_FROM = (Deno.env.get("EMAIL_FROM") || "Rocket <hello@tryrocket.ai>").replace(/^["']+|["']+$/g, "");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const SITE_URL = (Deno.env.get("SITE_URL") || "https://tryrocket.ai").replace(/\/+$/, "");
 
-function verifyEmailHtml(confirmationUrl: string): { subject: string; html: string } {
-  const html = renderEmail({
-    preheader: "One click to verify your email.",
-    title: "Make your product a brand.",
-    bodyHtml: `<p>Welcome to Rocket — Rocket helps you position, brand, and market your product. Confirm your email to get started.</p>`,
-    ctaLabel: "Confirm email",
-    ctaUrl: confirmationUrl,
-  });
-  return { subject: "Confirm your Rocket account", html };
-}
-
-async function sha256(input: string) {
+// ---------- Helpers ----------
+async function sha256Hex(input: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function randomToken(): string {
+  const raw = crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(raw).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function renderEmail(confirmUrl: string): string {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Confirm your Rocket account</title></head><body style="margin:0;padding:0;background:#F4F6FA;font-family:Inter,-apple-system,Segoe UI,Arial,sans-serif;color:#1F2937;"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Confirm your email to start using Rocket.</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F4F6FA;padding:48px 16px;"><tr><td align="center"><table role="presentation" width="560" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;width:100%;background:#ffffff;border:1px solid #E5E7EB;border-radius:14px;overflow:hidden;"><tr><td align="center" style="padding:36px 32px 28px;"><img src="https://tryrocket.ai/rocket-email-logo.png" alt="Rocket" height="40" style="display:block;border:0;outline:none;text-decoration:none;height:40px;width:auto;"/></td></tr><tr><td style="padding:0 32px;"><div style="border-top:1px solid #E5E7EB;"></div></td></tr><tr><td style="padding:32px;"><h1 style="margin:0 0 14px;font-size:22px;line-height:1.3;font-weight:700;letter-spacing:-0.01em;color:#0A0A0A;">Confirm your email to start using Rocket.</h1><div style="font-size:15px;line-height:1.65;color:#4B5563;">Tap below to confirm your email and start creating brand assets with Rocket.</div><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 8px;"><tr><td><a href="${confirmUrl}" style="display:inline-block;background:#008BC2;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 26px;border-radius:8px;">Confirm email</a></td></tr></table></td></tr><tr><td style="padding:0 32px;"><div style="border-top:1px solid #E5E7EB;"></div></td></tr><tr><td align="center" style="padding:22px 32px 30px;"><div style="font-size:13px;color:#9CA3AF;">You&rsquo;re receiving this because you created a Rocket account.</div></td></tr></table><div style="margin-top:18px;font-size:11px;color:#9CA3AF;">&copy; Rocket &middot; <a href="https://tryrocket.ai" style="color:#9CA3AF;text-decoration:none;">tryrocket.ai</a></div></td></tr></table></body></html>`;
+}
+
 Deno.serve(async (req) => {
-  const corsHeaders = cors(req);
-  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
-  const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  const headers = { ...corsHeaders(req), "Content-Type": "application/json" };
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders(req) });
+
+  const log: string[] = [];
+  const step = (s: string) => { log.push(s); console.log("[send-verification]", s); };
+  const fail = (status: number, error: string, message: string, details: unknown, failingStep: string) => {
+    console.error("[send-verification] FAIL", failingStep, error, details);
+    return new Response(JSON.stringify({ error, message, details: String(details ?? ""), step: failingStep, log }), { status, headers });
+  };
+
   try {
-    // Parse body once. Support two actions on this endpoint because the
-    // separate verify-email/confirm-email function won't deploy on this
-    // project — we route both through here.
-    let body: { action?: string; token?: string } = {};
-    if (req.method === "POST") {
-      try { body = await req.json(); } catch { body = {}; }
-    }
+    step("request_received");
 
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+    if (!SUPABASE_URL || !SERVICE_ROLE) return fail(500, "missing_env", "Supabase env not configured", "SUPABASE_URL/SERVICE_ROLE_KEY missing", "env_checked");
+    if (!RESEND_API_KEY) return fail(500, "missing_env", "Resend API key not configured", "RESEND_API_KEY missing", "env_checked");
+    step("env_checked");
 
-    // === Verify branch (no logged-in user required) ===
-    if (body.action === "verify" && body.token) {
-      const token_hash = await sha256(body.token);
-      console.log("verify attempt", token_hash.slice(0, 12));
-      const rows = await sql`
-        select id, user_id, expires_at, used_at
-        from public.email_verification_tokens
-        where token_hash = ${token_hash}
-        limit 1`;
-      const row = rows[0] as { id: string; user_id: string; expires_at: string; used_at: string | null } | undefined;
-      if (!row) {
-        console.warn("verify: no matching token", token_hash.slice(0, 12));
-        return json({ error: "Invalid or expired link" }, 400);
-      }
-      if (row.used_at) {
-        await admin.auth.admin.updateUserById(row.user_id, { app_metadata: { email_verified: true } });
-        return json({ ok: true, already_used: true });
-      }
-      if (new Date(row.expires_at).getTime() < Date.now()) return json({ error: "This link has expired" }, 400);
-      const { error: updErr } = await admin.auth.admin.updateUserById(row.user_id, {
-        app_metadata: { email_verified: true },
-      });
-      if (updErr) return json({ error: updErr.message }, 500);
-      await sql`update public.email_verification_tokens set used_at = now() where id = ${row.id}`;
-      return json({ ok: true });
-    }
-
-    // === Send branch (requires logged-in user) ===
     const authHeader = req.headers.get("Authorization") || "";
     const jwt = authHeader.replace(/^Bearer\s+/i, "");
-    if (!jwt) return json({ error: "Unauthorized" }, 401);
+    if (!jwt) return fail(401, "unauthorized", "Not signed in", "Missing Authorization header", "auth_checked");
 
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: userData, error: userErr } = await admin.auth.getUser(jwt);
     const user = userData?.user;
-    if (userErr || !user?.email) return json({ error: "Unauthorized" }, 401);
+    if (userErr || !user || !user.email) return fail(401, "unauthorized", "Invalid session", userErr?.message || "no user", "auth_checked");
+    step("auth_checked");
 
-    if ((user.app_metadata as Record<string, unknown>)?.email_verified === true) {
-      return json({ ok: true, already_verified: true });
+    // OAuth users don't need this flow.
+    const provider = (user.app_metadata as Record<string, unknown> | undefined)?.provider as string | undefined;
+    if (provider && provider !== "email") {
+      return new Response(JSON.stringify({ ok: true, already_verified: true, provider }), { status: 200, headers });
     }
 
-    // Throttle: max 3 outstanding tokens in the last hour
-    const [{ n }] = await sql`
-      select count(*)::int as n
-      from public.email_verification_tokens
-      where user_id = ${user.id} and created_at >= now() - interval '1 hour'`;
-    if ((n ?? 0) >= 3) return json({ ok: true, throttled: true });
+    // Throttle: at most 3 sends per hour per user.
+    const { count } = await admin.from("email_verifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+    if ((count ?? 0) >= 3) {
+      return new Response(JSON.stringify({ ok: true, throttled: true, message: "Too many requests. Try again in an hour." }), { status: 200, headers });
+    }
 
-    const raw = crypto.getRandomValues(new Uint8Array(32));
-    const token = Array.from(raw).map((b) => b.toString(16).padStart(2, "0")).join("");
-    const token_hash = await sha256(token);
+    const token = randomToken();
+    const token_hash = await sha256Hex(token);
     const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    step("token_created");
 
-    try {
-      await sql`
-        insert into public.email_verification_tokens (user_id, token_hash, expires_at)
-        values (${user.id}, ${token_hash}, ${expires_at})`;
-    } catch (insErr) {
-      console.error("token insert failed", (insErr as Error).message);
-      return json({ error: `Could not create verification token: ${(insErr as Error).message}` }, 500);
-    }
-    console.log("token stored", token_hash.slice(0, 12), "for", user.id);
+    const { error: insErr } = await admin.from("email_verifications").insert({
+      user_id: user.id,
+      email: user.email,
+      token_hash,
+      expires_at,
+    });
+    if (insErr) return fail(500, "db_insert_failed", "Could not store verification token", insErr.message, "token_saved");
+    step("token_saved");
 
-    const url = `${APP_URL}/verify-email?token=${token}`;
-    const { subject, html } = verifyEmailHtml(url);
-    const res = await fetch("https://api.resend.com/emails", {
+    const confirmUrl = `${SITE_URL}/verify-email?token=${token}`;
+    const html = renderEmail(confirmUrl);
+    step("email_rendered");
+
+    step("resend_started");
+    const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM_EMAIL, to: [user.email], subject, html }),
+      body: JSON.stringify({ from: EMAIL_FROM, to: [user.email], subject: "Confirm your Rocket account", html }),
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("resend error", res.status, errText);
-      return json({ error: `Resend ${res.status}: ${errText}`, from: FROM_EMAIL }, 500);
-    }
-    const ok = await res.json().catch(() => ({}));
-    return json({ ok: true, id: (ok as any)?.id, from: FROM_EMAIL });
+    const body = await resp.text();
+    if (!resp.ok) return fail(502, "resend_send_failed", "Resend rejected the email", `${resp.status}: ${body}`, "resend_completed");
+    step("resend_completed");
+
+    step("response_sent");
+    return new Response(JSON.stringify({ ok: true, log }), { status: 200, headers });
   } catch (e) {
-    console.error("send-verification", e);
-    return json({ error: (e as Error).message }, 500);
+    return fail(500, "unhandled_exception", "Unexpected server error", (e as Error).message, "response_sent");
   }
 });
