@@ -4,12 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const VerifyEmail = () => {
   const [params] = useSearchParams();
   const token = params.get("token") || "";
   const [state, setState] = useState<"verifying" | "success" | "error">(token ? "verifying" : "error");
   const [message, setMessage] = useState("");
+  const [resending, setResending] = useState(false);
+  const { toast } = useToast();
+
+  const resend = async () => {
+    setResending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-verification");
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Failed");
+      toast({ title: "Sent", description: "Check your inbox for the verification link." });
+    } catch (e: any) {
+      toast({ title: "Couldn't send", description: e.message || "Make sure you're logged in.", variant: "destructive" });
+    } finally { setResending(false); }
+  };
 
   useEffect(() => {
     if (!token) { setMessage("This link is missing its verification token."); return; }
@@ -53,7 +67,8 @@ const VerifyEmail = () => {
             <>
               <h1 className="text-2xl font-semibold tracking-tight">Verification failed</h1>
               <p className="mt-2 text-sm text-neutral-500">{message}</p>
-              <Button asChild variant="outline" size="lg" className="mt-6 w-full"><Link to="/login">Back to login</Link></Button>
+              <Button onClick={resend} disabled={resending} size="lg" className="mt-6 w-full">{resending ? "Sending…" : "Resend verification email"}</Button>
+              <Button asChild variant="outline" size="lg" className="mt-3 w-full"><Link to="/login">Back to login</Link></Button>
             </>
           )}
         </div>
