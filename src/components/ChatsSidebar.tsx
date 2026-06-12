@@ -198,11 +198,19 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
 export default ChatsSidebar;
 
 function CreditsPopover({ compact = false }: { compact?: boolean }) {
-  const [credits] = useState(198922);
+  const { user } = useAuth();
+  const [credits, setCredits] = useState<number | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("user_usage").select("*").eq("user_id", user.id).maybeSingle().then(({ data }: any) => {
+      if (!data) return;
+      setCredits((data.monthly_limit || 0) + (data.credits_extra || 0) - (data.credits_used || 0));
+    });
+  }, [user]);
   const packs = [
-    { label: "100k credits", price: "$10" },
-    { label: "500k credits", price: "$40" },
-    { label: "2M credits", price: "$120" },
+    { label: "500 credits", price: "$5" },
+    { label: "1,500 credits", price: "$10" },
+    { label: "5,000 credits", price: "$25" },
   ];
   const trigger = compact ? (
     <button title="Credits" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
@@ -218,7 +226,7 @@ function CreditsPopover({ compact = false }: { compact?: boolean }) {
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent side="top" align="start" className="w-72 rounded-xl border border-neutral-200 bg-white p-0 shadow-lg">
         <div className="border-b border-neutral-100 px-4 py-3">
-          <p className="text-sm font-semibold text-neutral-900">{credits.toLocaleString()} credits left</p>
+          <p className="text-sm font-semibold text-neutral-900">{(credits ?? 0).toLocaleString()} credits left</p>
           <p className="text-xs text-neutral-500">One-time top-up, never expires</p>
         </div>
         <div className="py-1">
