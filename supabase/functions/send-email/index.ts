@@ -1,6 +1,6 @@
 // redeploy: 2026-06-12-v10-branded
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
-import { renderEmail } from "../_shared/email-layout.ts";
+import { renderEmail } from "./email-layout.ts";
 
 const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
 function cors(req: Request): Record<string, string> {

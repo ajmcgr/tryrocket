@@ -1,5 +1,5 @@
 // redeploy: 2026-06-12-v10-branded
-import { renderEmail } from "../_shared/email-layout.ts";
+import { renderEmail } from "./email-layout.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
