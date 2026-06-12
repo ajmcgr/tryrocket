@@ -3,7 +3,10 @@ import { Link, useNavigate, useLocation, useSearchParams } from "react-router-do
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Pin, PinOff, Pencil, Trash2, Plus, PanelLeftClose, PanelLeft, MoreHorizontal } from "lucide-react";
+import { Pin, PinOff, Pencil, Trash2, Plus, PanelLeftClose, PanelLeft, MoreHorizontal, Zap, Sparkles } from "lucide-react";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,6 +91,9 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
         <Link to="/create" title="New chat" className="mt-2 rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
           <Plus className="h-4 w-4" />
         </Link>
+        <div className="mt-auto">
+          <CreditsPopover compact />
+        </div>
       </aside>
     );
   }
@@ -125,6 +131,9 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
         {chats.length === 0 && (
           <p className="px-2 py-6 text-center text-xs text-neutral-400">No chats yet</p>
         )}
+      </div>
+      <div className="border-t border-neutral-200 p-3">
+        <CreditsPopover />
       </div>
     </aside>
   );
