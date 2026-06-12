@@ -66,7 +66,7 @@ const Projects = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
-          <p className="mt-1 text-sm text-neutral-500">Group assets into projects, like Canva.</p>
+          <p className="mt-1 text-sm text-neutral-500">Group assets into projects</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/projects/new" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover sm:px-5 sm:py-2.5">
