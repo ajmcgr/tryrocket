@@ -196,3 +196,43 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
 };
 
 export default ChatsSidebar;
+
+function CreditsPopover({ compact = false }: { compact?: boolean }) {
+  const [credits] = useState(198922);
+  const packs = [
+    { label: "100k credits", price: "$10" },
+    { label: "500k credits", price: "$40" },
+    { label: "2M credits", price: "$120" },
+  ];
+  const trigger = compact ? (
+    <button title="Credits" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
+      <Zap className="h-4 w-4" />
+    </button>
+  ) : (
+    <button className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50">
+      <Sparkles className="h-4 w-4" /> Buy credits
+    </button>
+  );
+  return (
+    <Popover>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent side="top" align="start" className="w-72 rounded-xl border border-neutral-200 bg-white p-0 shadow-lg">
+        <div className="border-b border-neutral-100 px-4 py-3">
+          <p className="text-sm font-semibold text-neutral-900">{credits.toLocaleString()} credits left</p>
+          <p className="text-xs text-neutral-500">One-time top-up, never expires</p>
+        </div>
+        <div className="py-1">
+          {packs.map(p => (
+            <button key={p.label} className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-neutral-800 transition hover:bg-neutral-50">
+              <span className="flex items-center gap-2"><Zap className="h-4 w-4" /> {p.label}</span>
+              <span className="text-neutral-500">{p.price}</span>
+            </button>
+          ))}
+        </div>
+        <Link to="/pricing" className="block border-t border-neutral-100 px-4 py-2.5 text-sm text-neutral-600 transition hover:bg-neutral-50">
+          Or upgrade your plan →
+        </Link>
+      </PopoverContent>
+    </Popover>
+  );
+}
