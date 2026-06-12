@@ -66,7 +66,7 @@ export const tools: FreeTool[] = [
     tagline: "60-char taglines built for Product Hunt.",
     description: "Optimized for the PH feed: short, specific, scroll-stopping.",
     inputLabel: "Describe your product",
-    inputPlaceholder: "e.g. AI launch co-pilot for indie hackers",
+    inputPlaceholder: "e.g. AI branding co-pilot for indie hackers",
     outputLabel: "5 PH Taglines",
     prompt: (i) => `Write 5 Product Hunt taglines (max 60 chars each) for: "${i}". Scroll-stopping, specific, verb-led. Number them 1-5 and show the character count next to each.`,
   },
