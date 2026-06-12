@@ -1,10 +1,18 @@
 import { useState } from "react";
-import { ArrowRight, Check, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase as _sb } from "@/integrations/supabase/client";
 const supabase = _sb as any;
 
-type Status = "idle" | "checking" | "available" | "taken" | "reserving" | "reserved" | "invalid";
+type Status = "idle" | "checking" | "available" | "taken" | "collecting" | "reserving" | "reserved" | "invalid";
+
+// Handles that belong to existing users or are protected brand/system terms.
+const RESERVED_HANDLES = new Set([
+  "alex",
+  "admin", "administrator", "root", "support", "help", "team", "staff", "official",
+  "rocket", "tryrocket", "api", "www", "mail", "info", "contact", "about",
+  "login", "signup", "settings", "billing", "account", "security", "legal",
+]);
 
 const HandleReserveForm = () => {
   const { toast } = useToast();
@@ -19,6 +27,7 @@ const HandleReserveForm = () => {
     e.preventDefault();
     if (!isValid) { setStatus("invalid"); return; }
     setStatus("checking");
+    if (RESERVED_HANDLES.has(normalized.toLowerCase())) { setStatus("taken"); return; }
     const { data, error } = await supabase
       .from("handle_reservations")
       .select("handle")
@@ -40,7 +49,7 @@ const HandleReserveForm = () => {
         setStatus("taken");
         toast({ title: "Just got reserved", description: "Try a different handle.", variant: "destructive" });
       } else {
-        setStatus("available");
+        setStatus("collecting");
         toast({ title: "Couldn't reserve", description: error.message, variant: "destructive" });
       }
       return;
@@ -61,15 +70,15 @@ const HandleReserveForm = () => {
     );
   }
 
-  // Reserve step (handle is available, collect optional email + confirm)
-  if (status === "available" || status === "reserving") {
+  // Reserve step (handle is available, collect email + confirm)
+  if (status === "collecting" || status === "reserving") {
     return (
       <form onSubmit={reserve} className="mx-auto w-full max-w-xl space-y-3">
         <div className="rounded-2xl border border-cream/15 bg-background/40 p-1 pl-5 backdrop-blur-md">
           <div className="flex items-center">
             <span className="text-base text-cream/50">@</span>
             <span className="ml-1 flex-1 truncate py-3 text-base text-cream">{normalized}</span>
-            <span className="mr-3 inline-flex items-center gap-1 rounded-full bg-cream/15 px-2.5 py-1 text-[11px] font-medium text-cream">
+            <span className="mr-3 inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
               <Check className="h-3 w-3" /> Available
             </span>
           </div>
@@ -97,35 +106,64 @@ const HandleReserveForm = () => {
   }
 
   return (
-    <form onSubmit={check} className="mx-auto w-full max-w-xl">
-      <div className="rounded-2xl border border-cream/15 bg-background/40 p-1.5 pl-5 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <span className="text-base text-cream/50">@</span>
-          <input
-            type="text"
-            autoFocus
-            value={handle}
-            onChange={(e) => { setHandle(e.target.value); if (status !== "idle") setStatus("idle"); }}
-            placeholder="your-handle"
-            maxLength={30}
-            className="flex-1 bg-transparent py-3 text-base text-cream placeholder:text-cream/40 outline-none"
-          />
+    <div className="mx-auto w-full max-w-xl rounded-3xl border border-cream/10 bg-background/30 p-4 backdrop-blur-md sm:p-6">
+      <form onSubmit={check}>
+        <div className="rounded-2xl border border-cream/15 bg-background/50 p-1.5 pl-5">
+          <div className="flex items-center gap-2">
+            <span className="text-base text-cream/50">@</span>
+            <input
+              type="text"
+              autoFocus
+              value={handle}
+              onChange={(e) => { setHandle(e.target.value); if (status !== "idle") setStatus("idle"); }}
+              placeholder="your-handle"
+              maxLength={30}
+              className="flex-1 bg-transparent py-3 text-base text-cream placeholder:text-cream/40 outline-none"
+            />
+            <button
+              type="submit"
+              disabled={status === "checking" || !handle.trim()}
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-cream px-5 text-sm font-semibold text-background transition hover:bg-white disabled:opacity-60"
+            >
+              {status === "checking" ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Check <ArrowRight className="h-4 w-4" /></>}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      {status === "available" && (
+        <div className="mt-5 space-y-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3.5 py-1.5 text-sm font-medium text-emerald-300">
+            <Check className="h-4 w-4" /> Available
+          </span>
+          <p className="text-sm text-cream/50">
+            <span className="font-semibold text-cream">@{normalized}</span> is available.
+          </p>
           <button
-            type="submit"
-            disabled={status === "checking" || !handle.trim()}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-cream px-5 text-sm font-semibold text-background transition hover:bg-white disabled:opacity-60"
+            type="button"
+            onClick={() => setStatus("collecting")}
+            className="inline-flex h-12 items-center gap-2 rounded-2xl bg-cream px-5 text-sm font-semibold text-background transition hover:bg-white"
           >
-            {status === "checking" ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Check <ArrowRight className="h-4 w-4" /></>}
+            <Sparkles className="h-4 w-4" /> Reserve @{normalized}
           </button>
         </div>
-      </div>
+      )}
+
       {status === "taken" && (
-        <p className="mt-3 text-center text-sm text-cream/70">@{normalized} is taken. Try another.</p>
+        <div className="mt-5 space-y-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/30 bg-red-400/10 px-3.5 py-1.5 text-sm font-medium text-red-300">
+            <X className="h-4 w-4" /> Taken
+          </span>
+          <p className="text-sm text-cream/50">
+            <span className="font-semibold text-cream">@{normalized}</span> is already taken. Try another.
+          </p>
+        </div>
       )}
+
       {status === "invalid" && handle && (
-        <p className="mt-3 text-center text-sm text-cream/70">Handles are 2–30 chars, letters/numbers/underscore only.</p>
+        <p className="mt-4 text-sm text-cream/60">Handles are 2–30 chars, letters/numbers/underscore only.</p>
       )}
-    </form>
+    </div>
   );
 };
 
