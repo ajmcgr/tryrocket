@@ -3,6 +3,8 @@ import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-do
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "./Logo";
 import ChatsSidebar from "./ChatsSidebar";
+import ShareExportModal from "./ShareExportModal";
+import { Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,6 +21,7 @@ const AppShell = () => {
   const initial = (user?.email?.[0] || "U").toUpperCase();
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const sidebarRoutes = ["/create", "/assets", "/editor", "/projects"];
   const showSidebar = sidebarRoutes.some(r => location.pathname === r || location.pathname.startsWith(r + "/"));
 
@@ -35,6 +38,15 @@ const AppShell = () => {
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <a href="mailto:alex@tryrocket.ai" className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex">Support</a>
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="hidden items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex"
+              aria-label="Share Rocket"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </button>
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none focus:ring-2 focus:ring-neutral-300" aria-label="Account menu">
                 <Avatar className="h-8 w-8 border border-neutral-200">
@@ -68,6 +80,12 @@ const AppShell = () => {
           </div>
         </div>
       </header>
+      <ShareExportModal
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        asset={{ id: "site", title: "Rocket — AI brand & content studio" } as any}
+        onCreateShareLink={async () => (typeof window !== "undefined" ? window.location.origin : "https://tryrocket.ai")}
+      />
       {showSidebar ? (
         <div className="flex w-full">
           <ChatsSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(c => !c)} />
