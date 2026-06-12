@@ -167,7 +167,14 @@ Deno.serve(async (req) => {
     if (spec.kind === "image") {
       // Generate N image variants in parallel
       const tasks = Array.from({ length: count }, async (_, i) => {
-        const imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
+        let imgPrompt: string;
+        if (cls.asset_type === "logo" && logoRefs) {
+          // Skip the text-prompt rewrite step entirely. Feed a stable variation instruction + reference image directly.
+          const variantHint = ["alternate angle", "monochrome (single brand color on white)", "simplified minimal version", "refined geometry, more polished", "badge / circle enclosure"][i % 5];
+          imgPrompt = `Create a logo VARIATION of the brand shown in the attached reference image${ctx.productName ? ` ("${ctx.productName}")` : ""}.\n\nHARD RULES:\n- KEEP the same core motif/symbol from the reference (do not invent a new unrelated concept).\n- KEEP the same silhouette family, proportions, and overall style.\n- KEEP the exact brand colors${ctx.colors?.length ? `: ${ctx.colors.slice(0,3).join(", ")}` : " from the reference"}. No new colors.\n- This variant: ${variantHint}.\n- Solid white background, flat vector, app-icon ready, no text, no typography, no letters.\n- The result must look like it belongs to the SAME brand as the reference.`;
+        } else {
+          imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
+        }
         const png = await geminiImage(imgPrompt, logoRefs);
         const path = `${user.id}/${Date.now()}-${i}.png`;
         const { error: upErr } = await admin.storage.from("rocket-images").upload(path, png, { contentType: "image/png", upsert: false });
