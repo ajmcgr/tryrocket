@@ -1,3 +1,4 @@
+// redeploy: 2026-06-12
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
