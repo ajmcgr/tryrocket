@@ -24,7 +24,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user: session?.user ?? null,
         session,
         loading,
-        signOut: async () => { await supabase.auth.signOut(); },
+        signOut: async () => {
+          try { await supabase.auth.signOut({ scope: "local" }); } catch (e) { console.warn("signOut error", e); }
+          setSession(null);
+          try {
+            Object.keys(localStorage)
+              .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
+              .forEach((k) => localStorage.removeItem(k));
+          } catch {}
+        },
       }}
     >
       {children}
