@@ -50,13 +50,13 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
         const isOAuth = ((data.user?.app_metadata as { provider?: string } | undefined)?.provider || "email") !== "email";
         if (isOAuth) { nav(next, { replace: true }); return; }
 
-        // Check our profile flag.
-        const { data: prof } = await supabase
+        // Check our profile flag (types file doesn't include profiles yet).
+        const { data: prof } = await (supabase as any)
           .from("profiles")
           .select("email_verified")
           .eq("user_id", data.user!.id)
           .maybeSingle();
-        if (!prof?.email_verified) {
+        if (!(prof && prof.email_verified)) {
           await supabase.functions.invoke("send-verification").catch(() => {});
           nav(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
           return;
