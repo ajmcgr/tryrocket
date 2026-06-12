@@ -3,8 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Trash2, MoreHorizontal, Edit3 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Trash2, MoreHorizontal, Edit3, FolderPlus } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 const supabase = _sb as any;
 
@@ -23,6 +23,7 @@ const Assets = () => {
   const [params] = useSearchParams();
   const highlight = (params.get("highlight") || "").split(",").filter(Boolean);
   const [assets, setAssets] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [q, setQ] = useState("");
@@ -31,10 +32,14 @@ const Assets = () => {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase.from("assets")
-      .select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200);
+    const [a, p] = await Promise.all([
+      supabase.from("assets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
+      supabase.from("projects").select("id,name").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+    ]);
+    const { data, error } = a;
     if (error) toast({ title: "Failed to load assets", description: error.message, variant: "destructive" });
     setAssets(data || []);
+    setProjects(p.data || []);
     setLoading(false);
   };
   useEffect(() => { load(); }, [user]);
@@ -62,6 +67,22 @@ const Assets = () => {
     if (!confirm("Delete this asset?")) return;
     setAssets(prev => prev.filter(a => a.id !== id));
     await supabase.from("assets").delete().eq("id", id);
+  };
+
+  const assignToProject = async (assetId: string, projectId: string | null) => {
+    const { error } = await supabase.from("assets").update({ project_id: projectId }).eq("id", assetId);
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    setAssets(prev => prev.map(a => a.id === assetId ? { ...a, project_id: projectId } : a));
+    toast({ title: projectId ? "Added to project" : "Removed from project" });
+  };
+
+  const createProjectAndAssign = async (assetId: string) => {
+    const name = window.prompt("New project name");
+    if (!name?.trim() || !user) return;
+    const { data, error } = await supabase.from("projects").insert({ user_id: user.id, name: name.trim() }).select().single();
+    if (error || !data) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); return; }
+    setProjects(prev => [data, ...prev]);
+    await assignToProject(assetId, data.id);
   };
 
   return (
@@ -138,8 +159,28 @@ const Assets = () => {
                       <MoreHorizontal className="h-4 w-4 text-neutral-700" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuContent align="end" className="w-48 bg-white">
                     <DropdownMenuItem asChild><Link to={`/editor?id=${a.id}`}><Edit3 className="mr-2 h-4 w-4" /> Open in Editor</Link></DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger><FolderPlus className="mr-2 h-4 w-4" /> {a.project_id ? "Move to project" : "Add to project"}</DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="w-56 bg-white">
+                          <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Projects</DropdownMenuLabel>
+                          {projects.length === 0 ? (
+                            <div className="px-2 py-2 text-xs text-neutral-500">No projects yet.</div>
+                          ) : projects.map(p => (
+                            <DropdownMenuItem key={p.id} onClick={() => assignToProject(a.id, p.id)} className="cursor-pointer">
+                              {p.name}{a.project_id === p.id ? " ✓" : ""}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => createProjectAndAssign(a.id)} className="cursor-pointer">+ New project…</DropdownMenuItem>
+                          {a.project_id && (
+                            <DropdownMenuItem onClick={() => assignToProject(a.id, null)} className="text-red-600 focus:text-red-600 cursor-pointer">Remove from project</DropdownMenuItem>
+                          )}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
                     <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => del(a.id)}>
                       <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </DropdownMenuItem>
