@@ -1,4 +1,3 @@
-// redeploy: 2026-06-12-v2
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
@@ -33,14 +32,19 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const token_hash = await sha256(token);
 
-    const { data: row } = await admin
+    const { data: row, error: selErr } = await admin
       .from("email_verification_tokens")
       .select("id, user_id, expires_at, used_at")
       .eq("token_hash", token_hash)
       .maybeSingle();
 
+    if (selErr) return json({ error: selErr.message }, 500);
     if (!row) return json({ error: "Invalid or expired link" }, 400);
-    if (row.used_at) return json({ ok: true, already_used: true });
+    if (row.used_at) {
+      // Still mark the user verified in case it wasn't, to be safe.
+      await admin.auth.admin.updateUserById(row.user_id, { app_metadata: { email_verified: true } });
+      return json({ ok: true, already_used: true });
+    }
     if (new Date(row.expires_at).getTime() < Date.now()) return json({ error: "This link has expired" }, 400);
 
     const { error: updErr } = await admin.auth.admin.updateUserById(row.user_id, {

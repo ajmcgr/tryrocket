@@ -36,7 +36,7 @@ const VerifyEmail = () => {
     let cancelled = false;
     (async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("verify-email", { body: { token } });
+        const { data, error } = await supabase.functions.invoke("send-verification", { body: { action: "verify", token } });
         if (cancelled) return;
         if (error || data?.error) {
           setState("error");
