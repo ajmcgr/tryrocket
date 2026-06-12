@@ -208,7 +208,6 @@ const Index = () => {
           <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Make Your Product a Brand
           </h1>
-          <SenjaWidget />
           <p className="mx-auto mt-10 max-w-2xl text-base text-neutral-600">
             Paste your URL or describe your idea.
           </p>
@@ -293,6 +292,13 @@ const Index = () => {
 
       {/* What you can create */}
       <CreateShowcase />
+
+      {/* Testimonials */}
+      <section className="border-t border-neutral-200/60">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <SenjaWidget />
+        </div>
+      </section>
 
       {/* Use Cases */}
       <section id="use-cases" className="border-t border-neutral-200/60">
