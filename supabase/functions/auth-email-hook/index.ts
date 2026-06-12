@@ -1,4 +1,4 @@
-// redeploy: 2026-06-12-v3 (deploy batch unblocked)
+// redeploy: 2026-06-12-v4 (force fresh deploy batch)
 import { renderEmail } from "../_shared/email-layout.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
