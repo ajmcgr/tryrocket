@@ -148,18 +148,18 @@ Deno.serve(async (req) => {
           }
         }
       } catch { /* noop */ }
-      if (!logoRefs && ctx.favicon) {
+      const fallbacks = [ctx.favicon, ctx.ogImage].filter(Boolean) as string[];
+      for (const u of fallbacks) {
+        if (logoRefs) break;
         try {
-          const r = await fetch(ctx.favicon);
-          if (r.ok) {
-            const ct = r.headers.get("content-type") || "image/png";
-            if (!ct.includes("svg")) {
-              const buf = new Uint8Array(await r.arrayBuffer());
-              let bin = "";
-              for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-              logoRefs = [{ mimeType: ct.split(";")[0], data: btoa(bin) }];
-            }
-          }
+          const r = await fetch(u);
+          if (!r.ok) continue;
+          const ct = r.headers.get("content-type") || "image/png";
+          if (ct.includes("svg")) continue;
+          const buf = new Uint8Array(await r.arrayBuffer());
+          let bin = "";
+          for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+          logoRefs = [{ mimeType: ct.split(";")[0], data: btoa(bin) }];
         } catch { /* noop */ }
       }
     }
