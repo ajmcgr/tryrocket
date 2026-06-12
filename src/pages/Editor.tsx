@@ -16,6 +16,9 @@ import {
   Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, ArrowLeft, Check, Loader2,
   History, FilePlus,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 const supabase = _sb as any;
 
 type Base = {
