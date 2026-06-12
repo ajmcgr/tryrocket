@@ -1,5 +1,6 @@
 // redeploy: 2026-06-12
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { renderEmail } from "../_shared/email-layout.ts";
 
 const ALLOWED_ORIGINS = ["https://tryrocket.ai", "http://localhost:5173", "http://localhost:3000"];
 function cors(req: Request): Record<string, string> {
@@ -19,11 +20,14 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_URL = Deno.env.get("APP_URL") || "https://tryrocket.ai";
 
-const BRAND = { blue: "#3B82F6", ink: "#0A0A0A", text: "#1F2937", muted: "#6B7280", border: "#E5E7EB", bg: "#F9FAFB" };
-
 function verifyEmailHtml(confirmationUrl: string): { subject: string; html: string } {
-  const cta = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0;"><tr><td><a href="${confirmationUrl}" style="display:inline-block;background:${BRAND.blue};color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:9999px;font-family:Inter,Arial,sans-serif;">Confirm email</a></td></tr></table>`;
-  const html = `<!doctype html><html><head><meta charset="utf-8"/><title>Confirm your Rocket account</title></head><body style="margin:0;padding:0;background:${BRAND.bg};font-family:Inter,Arial,sans-serif;color:${BRAND.text};"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">One click to verify your email.</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:32px 12px;"><tr><td align="center"><table role="presentation" width="560" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;width:100%;background:#fff;border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;"><tr><td style="background:${BRAND.blue};padding:24px 32px;color:#fff;font-size:18px;font-weight:700;">Rocket</td></tr><tr><td style="padding:36px 32px 32px;"><h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;font-weight:700;color:${BRAND.ink};">Confirm your email to launch Rocket.</h1><div style="font-size:15px;line-height:1.65;"><p>Welcome to Rocket — your AI launch co-pilot. Tap below to confirm your email and start generating brands.</p></div>${cta}</td></tr><tr><td style="padding:20px 32px 28px;border-top:1px solid ${BRAND.border};background:#FAFAFA;font-size:12px;color:${BRAND.muted};">Sent by <a href="https://tryrocket.ai" style="color:${BRAND.blue};text-decoration:none;">Rocket</a> — AI launch co-pilot.</td></tr></table></td></tr></table></body></html>`;
+  const html = renderEmail({
+    preheader: "One click to verify your email.",
+    title: "Welcome to Rocket! 🚀",
+    bodyHtml: `<p>Thanks for signing up. Please confirm your email address to get started discovering and launching amazing products.</p>`,
+    ctaLabel: "Confirm Email",
+    ctaUrl: confirmationUrl,
+  });
   return { subject: "Confirm your Rocket account", html };
 }
 
