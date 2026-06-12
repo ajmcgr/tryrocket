@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
+import ChatsSidebar from "@/components/ChatsSidebar";
 const supabase = _sb as any;
 
 const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string }[] = [
@@ -54,9 +55,14 @@ const Generate = () => {
   const [assetType, setAssetType] = useState<string | null>(null);
   const [workflow, setWorkflow] = useState<WF>((params.get("workflow") as WF) || "auto");
   const projectId = params.get("project");
+  const chatId = params.get("chat");
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [chatRefresh, setChatRefresh] = useState(0);
+  const [chatData, setChatData] = useState<any>(null);
+  const [chatAssets, setChatAssets] = useState<any[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -68,12 +74,35 @@ const Generate = () => {
     return () => clearInterval(t);
   }, [loading]);
 
+  // Load chat + its assets when viewing an existing chat
+  useEffect(() => {
+    if (!chatId || !user) { setChatData(null); setChatAssets([]); return; }
+    (async () => {
+      const [{ data: c }, { data: a }] = await Promise.all([
+        supabase.from("chats").select("*").eq("id", chatId).maybeSingle(),
+        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content").eq("chat_id", chatId).order("created_at", { ascending: true }),
+      ]);
+      setChatData(c);
+      setChatAssets(a || []);
+    })();
+  }, [chatId, user]);
+
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const p = prompt.trim();
     if (!p || loading) return;
     setLoading(true);
     try {
+      // Create a chat row for this submission
+      const title = p.length > 60 ? p.slice(0, 57) + "…" : p;
+      const { data: newChat, error: chatErr } = await supabase
+        .from("chats")
+        .insert({ user_id: user!.id, title, prompt: p })
+        .select("id")
+        .single();
+      if (chatErr) throw new Error(chatErr.message);
+      const newChatId: string = newChat.id;
+
       let effective: WF = workflow;
       // Auto-detect (client-side keyword classifier — fast, no extra round trip)
       if (workflow === "auto" && !assetType) {
@@ -83,6 +112,8 @@ const Generate = () => {
         else if (/\b(launch it|launch kit|launch (copy|assets?|plan|checklist)|product hunt)\b/.test(t)) effective = "launch";
         else if (/\b(promote it|growth kit|social (kit|bundle)|x thread|distribution)\b/.test(t)) effective = "promote";
       }
+      let allIds: string[] = [];
+      let creditsErr: any = null;
       if (effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: p, asset_type: assetType || undefined, project_id: projectId || undefined },
@@ -90,15 +121,16 @@ const Generate = () => {
         if (error) throw new Error("Rocket is busy. Please try again.");
         const d: any = data;
         if (d?.error) {
-          if (d.code === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); return; }
+          if (d.code === "no_credits") {
+            await supabase.from("chats").delete().eq("id", newChatId);
+            setOutOfCredits({ needed: d.needed, remaining: d.remaining });
+            return;
+          }
           if (d.error === "ai_provider_unavailable") throw new Error(d.message);
           throw new Error(d.message || d.error);
         }
         if (d?.refused) { toast({ title: "Out of scope", description: d.message }); return; }
-        const ids: string[] = d.asset_ids || [];
-        if (ids.length === 0) throw new Error("No asset generated");
-        if (ids.length > 1) nav(projectId ? `/projects/${projectId}` : `/assets?highlight=${ids.join(",")}`);
-        else nav(`/assets/${ids[0]}`);
+        allIds = d.asset_ids || [];
       } else {
         // Workflow fan-out: parallel generate-asset calls
         const plan = WORKFLOW_PLAN[effective as Exclude<WF, "auto">];
@@ -107,21 +139,27 @@ const Generate = () => {
             body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined },
           })
         ));
-        const allIds: string[] = [];
-        let creditsErr: any = null;
         for (const r of results) {
           const d: any = r.data;
           if (d?.error === "no_credits") { creditsErr = d; continue; }
           if (d?.asset_ids?.length) allIds.push(...d.asset_ids);
         }
-        if (allIds.length === 0 && creditsErr) {
-          setOutOfCredits({ needed: creditsErr.needed, remaining: creditsErr.remaining });
-          return;
-        }
-        if (allIds.length === 0) throw new Error("No assets generated");
-        if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
-        nav(projectId ? `/projects/${projectId}` : `/assets?highlight=${allIds.join(",")}`);
       }
+      if (allIds.length === 0 && creditsErr) {
+        await supabase.from("chats").delete().eq("id", newChatId);
+        setOutOfCredits({ needed: creditsErr.needed, remaining: creditsErr.remaining });
+        return;
+      }
+      if (allIds.length === 0) {
+        await supabase.from("chats").delete().eq("id", newChatId);
+        throw new Error("No assets generated");
+      }
+      if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
+      // Link generated assets to this chat
+      await supabase.from("assets").update({ chat_id: newChatId }).in("id", allIds);
+      setChatRefresh(k => k + 1);
+      setPrompt("");
+      nav(`/create?chat=${newChatId}`);
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
     } finally {
@@ -136,7 +174,52 @@ const Generate = () => {
   }, [user]);
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col items-center justify-center px-6 py-12">
+    <div className="flex w-full">
+      <ChatsSidebar
+        activeChatId={chatId}
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(c => !c)}
+        refreshKey={chatRefresh}
+      />
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col items-center px-6 py-12">
+      {chatId && chatData ? (
+        <div className="w-full">
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">{chatData.title}</h1>
+          {chatData.prompt && (
+            <div className="mt-4 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">{chatData.prompt}</div>
+          )}
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {chatAssets.map((a) => (
+              <Link
+                key={a.id}
+                to={`/assets/${a.id}`}
+                className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm"
+              >
+                {a.image_url ? (
+                  <div className="aspect-square w-full bg-neutral-50">
+                    <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="line-clamp-6 whitespace-pre-wrap p-4 text-xs text-neutral-700">{a.content || ""}</div>
+                )}
+                <div className="border-t border-neutral-100 px-3 py-2">
+                  <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-neutral-400">{a.asset_type}</p>
+                </div>
+              </Link>
+            ))}
+            {chatAssets.length === 0 && (
+              <p className="col-span-full text-sm text-neutral-500">No assets in this chat.</p>
+            )}
+          </div>
+          <div className="mt-10 text-center">
+            <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
+              + New chat
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="flex w-full flex-1 flex-col items-center justify-center">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-semibold tracking-tight text-neutral-900">Create an asset</h1>
         <p className="mt-2 text-sm text-neutral-500">
@@ -214,6 +297,8 @@ const Generate = () => {
           ))}
         </div>
       )}
+        </div>
+      )}
 
       <OutOfCreditsModal
         open={!!outOfCredits}
@@ -221,6 +306,7 @@ const Generate = () => {
         needed={outOfCredits?.needed}
         remaining={outOfCredits?.remaining}
       />
+      </div>
     </div>
   );
 };

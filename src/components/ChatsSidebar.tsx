@@ -1,0 +1,182 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase as _sb } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Pin, PinOff, Pencil, Trash2, Plus, PanelLeftClose, PanelLeft, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+const supabase = _sb as any;
+
+export type Chat = {
+  id: string;
+  title: string;
+  pinned: boolean;
+  updated_at: string;
+};
+
+type Props = {
+  activeChatId?: string | null;
+  collapsed: boolean;
+  onToggle: () => void;
+  refreshKey?: number;
+};
+
+const ChatsSidebar = ({ activeChatId, collapsed, onToggle, refreshKey }: Props) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const nav = useNavigate();
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  const load = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("chats")
+      .select("id,title,pinned,updated_at")
+      .eq("user_id", user.id)
+      .order("pinned", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(200);
+    setChats(data || []);
+  };
+
+  useEffect(() => { load(); }, [user, refreshKey]);
+
+  const togglePin = async (c: Chat) => {
+    await supabase.from("chats").update({ pinned: !c.pinned }).eq("id", c.id);
+    load();
+  };
+
+  const remove = async (c: Chat) => {
+    if (!confirm(`Delete chat "${c.title}"? Assets in it will be kept.`)) return;
+    await supabase.from("chats").delete().eq("id", c.id);
+    if (activeChatId === c.id) nav("/create");
+    load();
+  };
+
+  const startRename = (c: Chat) => { setRenamingId(c.id); setRenameValue(c.title); };
+  const commitRename = async () => {
+    if (!renamingId) return;
+    const v = renameValue.trim();
+    if (v) {
+      const { error } = await supabase.from("chats").update({ title: v }).eq("id", renamingId);
+      if (error) toast({ title: "Rename failed", variant: "destructive" });
+    }
+    setRenamingId(null);
+    load();
+  };
+
+  if (collapsed) {
+    return (
+      <aside className="flex h-[calc(100vh-4rem)] w-12 flex-col items-center border-r border-neutral-200 bg-white py-3">
+        <button onClick={onToggle} title="Expand chats" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
+          <PanelLeft className="h-4 w-4" />
+        </button>
+        <Link to="/create" title="New chat" className="mt-2 rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
+          <Plus className="h-4 w-4" />
+        </Link>
+      </aside>
+    );
+  }
+
+  const pinned = chats.filter(c => c.pinned);
+  const recent = chats.filter(c => !c.pinned);
+
+  return (
+    <aside className="flex h-[calc(100vh-4rem)] w-64 flex-col border-r border-neutral-200 bg-white">
+      <div className="flex items-center justify-between px-3 py-3">
+        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Chats</span>
+        <button onClick={onToggle} title="Collapse" className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-100">
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="px-3">
+        <Link
+          to="/create"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+        >
+          <Plus className="h-4 w-4" /> New chat
+        </Link>
+      </div>
+      <div className="mt-3 flex-1 overflow-y-auto px-2 pb-4">
+        {pinned.length > 0 && (
+          <Section label="Pinned">
+            {pinned.map(c => renderItem(c))}
+          </Section>
+        )}
+        {recent.length > 0 && (
+          <Section label="Recent">
+            {recent.map(c => renderItem(c))}
+          </Section>
+        )}
+        {chats.length === 0 && (
+          <p className="px-2 py-6 text-center text-xs text-neutral-400">No chats yet</p>
+        )}
+      </div>
+    </aside>
+  );
+
+  function Section({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+      <div className="mb-3">
+        <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">{label}</div>
+        <div className="flex flex-col">{children}</div>
+      </div>
+    );
+  }
+
+  function renderItem(c: Chat) {
+    const active = c.id === activeChatId;
+    const isRenaming = renamingId === c.id;
+    return (
+      <div
+        key={c.id}
+        className={`group relative flex items-center gap-1 rounded-md px-2 py-1.5 text-sm ${active ? "bg-neutral-100 text-neutral-900" : "text-neutral-700 hover:bg-neutral-50"}`}
+      >
+        {isRenaming ? (
+          <input
+            autoFocus
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenamingId(null); }}
+            className="flex-1 rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-sm outline-none focus:border-brand"
+          />
+        ) : (
+          <Link to={`/create?chat=${c.id}`} className="flex-1 truncate">
+            {c.title}
+          </Link>
+        )}
+        {!isRenaming && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="rounded p-1 text-neutral-400 opacity-0 transition group-hover:opacity-100 hover:bg-neutral-200 hover:text-neutral-700 data-[state=open]:opacity-100"
+              aria-label="Chat actions"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 bg-white">
+              <DropdownMenuItem onClick={() => togglePin(c)} className="cursor-pointer text-sm">
+                {c.pinned ? <><PinOff className="mr-2 h-3.5 w-3.5" /> Unpin</> : <><Pin className="mr-2 h-3.5 w-3.5" /> Pin</>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => startRename(c)} className="cursor-pointer text-sm">
+                <Pencil className="mr-2 h-3.5 w-3.5" /> Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => remove(c)} className="cursor-pointer text-sm text-red-600 focus:text-red-600">
+                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    );
+  }
+};
+
+export default ChatsSidebar;
