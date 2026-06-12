@@ -31,8 +31,11 @@ const SITE_URL = (Deno.env.get("SITE_URL") || "https://tryrocket.ai").replace(/\
 
 // ---------- Helpers ----------
 async function sha256Hex(input: string): Promise<string> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const data = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function randomToken(): string {
@@ -90,15 +93,27 @@ Deno.serve(async (req) => {
     const token = randomToken();
     const token_hash = await sha256Hex(token);
     const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    console.log("[send-verification] raw_token_length", token.length, "token_hash_prefix", token_hash.slice(0, 8));
     step("token_created");
 
-    const { error: insErr } = await admin.from("email_verifications").insert({
+    // Invalidate any previously issued, still-active tokens for this user so
+    // only the newest link works. Prevents stale-link confusion.
+    const { error: invErr } = await admin
+      .from("email_verifications")
+      .update({ used_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .is("used_at", null);
+    if (invErr) console.warn("[send-verification] invalidate_old_warn", invErr.message);
+    step("old_tokens_invalidated");
+
+    const { data: insRow, error: insErr } = await admin.from("email_verifications").insert({
       user_id: user.id,
       email: user.email,
       token_hash,
       expires_at,
-    });
+    }).select("id").maybeSingle();
     if (insErr) return fail(500, "db_insert_failed", "Could not store verification token", insErr.message, "token_saved");
+    console.log("[send-verification] verification_id", insRow?.id, "user_id", user.id);
     step("token_saved");
 
     const confirmUrl = `${SITE_URL}/verify-email?token=${token}`;
@@ -113,6 +128,7 @@ Deno.serve(async (req) => {
     });
     const body = await resp.text();
     if (!resp.ok) return fail(502, "resend_send_failed", "Resend rejected the email", `${resp.status}: ${body}`, "resend_completed");
+    console.log("[send-verification] email_sent to", user.email);
     step("resend_completed");
 
     step("response_sent");
