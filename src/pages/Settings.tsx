@@ -57,6 +57,12 @@ export const ProfileSettings = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [username, setUsername] = useState<string>((user as any)?.user_metadata?.username || "");
 
+  useEffect(() => {
+    const meta = (user as any)?.user_metadata || {};
+    if (meta.username) setUsername(meta.username);
+    if (meta.avatar_url) setAvatarUrl(meta.avatar_url);
+  }, [user]);
+
   const saveProfile = async () => {
     setLoading("profile");
     try {
