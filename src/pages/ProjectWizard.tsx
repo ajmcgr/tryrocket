@@ -143,7 +143,7 @@ const ProjectWizard = () => {
 
       {step === 1 && (
         <div className="mt-8 space-y-6">
-          <h1 className="text-3xl font-semibold tracking-tight">Who & how it feels</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Who & how it feels</h1>
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">Primary audience</label>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -168,7 +168,7 @@ const ProjectWizard = () => {
 
       {step === 2 && (
         <div className="mt-8 space-y-6">
-          <h1 className="text-3xl font-semibold tracking-tight">Generate your starter pack</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Generate your starter pack</h1>
           <p className="text-sm text-neutral-500">We'll create 5 brand assets in a new project: logo, colors, fonts, brand voice, and launch copy.</p>
           <div className="rounded-2xl border border-neutral-200 bg-white p-4">
             {STARTERS.map(s => {
