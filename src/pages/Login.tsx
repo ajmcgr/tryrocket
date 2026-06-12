@@ -28,13 +28,26 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
     }
     setLoading(true);
     try {
-      const fn = isSignup
-        ? supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/create`, data: { username: username.trim().replace(/^@/, "") } } })
-        : supabase.auth.signInWithPassword({ email, password });
-      const { error } = await fn;
-      if (error) throw error;
-      if (isSignup) toast({ title: "Check your email", description: "Confirm your email to finish signing up." });
-      else nav(next, { replace: true });
+      if (isSignup) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { username: username.trim().replace(/^@/, "") } },
+        });
+        if (error) throw error;
+        if (data.session) {
+          // Email confirmation disabled in Supabase — we verify via our own Resend flow.
+          supabase.functions.invoke("send-verification").catch(() => {});
+          toast({ title: "Welcome to Rocket 🚀", description: "We sent a verification link to your inbox." });
+          nav(next, { replace: true });
+        } else {
+          toast({ title: "Check your email", description: "Confirm your email to finish signing up." });
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        nav(next, { replace: true });
+      }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally { setLoading(false); }
