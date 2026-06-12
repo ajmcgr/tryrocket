@@ -104,9 +104,11 @@ const Generate = () => {
       // Auto-detect (client-side keyword classifier — fast, no extra round trip)
       if (workflow === "auto" && !assetType) {
         const t = p.toLowerCase();
-        // URL-only or URL + minimal text => full brand kit (like Canva from-URL flow)
+        // URL-only (bare URL pasted) => full brand kit (Brand Analysis Mode, Canva-style)
         const urlOnly = /^\s*(https?:\/\/)?[\w-]+(\.[\w-]+)+\/?\s*$/i.test(p);
         if (urlOnly) effective = "brand";
+        // URL + intent => hybrid: keep single-asset auto so the classifier picks (logo/graphic/etc)
+        // but we'll still pre-scrape for context below.
         else if (/\b(brand it|full brand|brand kit|complete brand|whole brand)\b/.test(t)) effective = "brand";
         else if (/\b(design it|logo concepts?|brand visuals?|visual identity)\b/.test(t)) effective = "design";
         else if (/\b(launch it|launch kit|launch (copy|assets?|plan|checklist)|product hunt)\b/.test(t)) effective = "launch";
@@ -114,22 +116,27 @@ const Generate = () => {
       }
       let allIds: string[] = [];
       let creditsErr: any = null;
-      // For workflows (multi-asset), pre-scrape once so all assets share the same real brand context.
+      // Brand Analysis Mode: any URL in the prompt triggers a pre-scrape so EVERY downstream
+      // asset (workflow fan-out or single auto) shares the same real brand context.
       let sharedCtx: any = null;
-      if (effective !== "auto") {
-        const urlMatch = p.match(/(https?:\/\/[^\s]+|[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
-        if (urlMatch) {
-          const u = /^https?:\/\//i.test(urlMatch[1]) ? urlMatch[1] : "https://" + urlMatch[1];
-          try {
-            const { data: scraped } = await supabase.functions.invoke("scrape-url", { body: { url: u } });
-            if (scraped && !scraped.error) sharedCtx = { ...scraped, url: u };
-            else sharedCtx = { url: u };
-          } catch { sharedCtx = { url: u }; }
-        }
+      const urlMatch = p.match(/(https?:\/\/[^\s]+|[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
+      if (urlMatch) {
+        const u = /^https?:\/\//i.test(urlMatch[1]) ? urlMatch[1] : "https://" + urlMatch[1];
+        try {
+          const { data: scraped } = await supabase.functions.invoke("scrape-url", { body: { url: u } });
+          if (scraped && !scraped.error) sharedCtx = { ...scraped, url: u };
+          else sharedCtx = { url: u };
+        } catch { sharedCtx = { url: u }; }
+      } else if (projectId) {
+        // Reuse stored project brand context if no new URL was given
+        try {
+          const { data: proj } = await supabase.from("projects").select("brand_context,source_url").eq("id", projectId).maybeSingle();
+          if (proj?.brand_context) sharedCtx = proj.brand_context;
+        } catch { /* noop */ }
       }
       if (effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: p, asset_type: assetType || undefined, project_id: projectId || undefined },
+          body: { prompt: p, asset_type: assetType || undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
         });
         if (error) throw new Error("Rocket is busy. Please try again.");
         const d: any = data;
@@ -156,6 +163,15 @@ const Generate = () => {
           if (d?.error === "no_credits") { creditsErr = d; continue; }
           if (d?.asset_ids?.length) allIds.push(...d.asset_ids);
         }
+      }
+      // If we scraped a real brand and have a project, persist context to project for reuse
+      if (sharedCtx && projectId && (sharedCtx.productName || sharedCtx.colors?.length)) {
+        try {
+          const { data: proj } = await supabase.from("projects").select("brand_context").eq("id", projectId).maybeSingle();
+          if (!proj?.brand_context) {
+            await supabase.from("projects").update({ brand_context: sharedCtx, source_url: sharedCtx.url || null }).eq("id", projectId);
+          }
+        } catch { /* noop */ }
       }
       if (allIds.length === 0 && creditsErr) {
         setOutOfCredits({ needed: creditsErr.needed, remaining: creditsErr.remaining });
