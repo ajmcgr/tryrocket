@@ -49,15 +49,21 @@ export async function geminiText(opts: { system: string; user: string; temperatu
   return (data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
 }
 
-export async function geminiImage(prompt: string): Promise<Uint8Array> {
+export async function geminiImage(prompt: string, referenceImages?: { mimeType: string; data: string }[]): Promise<Uint8Array> {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
+  const parts: any[] = [{ text: prompt }];
+  if (referenceImages?.length) {
+    for (const img of referenceImages) {
+      parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+    }
+  }
   const res = await gFetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        contents: [{ role: "user", parts }],
         generationConfig: { responseModalities: ["IMAGE"] },
       }),
     }

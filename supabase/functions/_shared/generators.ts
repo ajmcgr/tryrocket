@@ -61,7 +61,10 @@ export const GENERATORS: Record<AssetType, GenSpec> = {
   logo: {
     kind: "image", defaultCount: 3,
     system: ROCKET_PERSONA + " You specialize in iconic, scalable startup LOGO MARKS — never poster designs, never text canvases.",
-    build: (c, p) => `${ctxBlock(c, p)}\n\nGenerate ONE distinct logo concept for this brand. Output ONLY a text-to-image prompt (no JSON, no preamble) following these rules:\n- An iconic logo MARK or symbol — simple, geometric, vector-style, scalable as a favicon\n- No long text, no slogans, no UI screenshots, no photorealism\n- Solid white background, flat vector, 2-3 colors${c.colors?.length ? ` — you MUST use ONLY these exact brand colors: ${c.colors.slice(0,3).join(", ")}. Do not invent new colors.` : ""}${c.productName ? ` — the mark should clearly belong to "${c.productName}" and reflect its category/positioning above.` : ""}\n- End with: ", minimalist vector logo mark, flat design, centered on solid white background, no text, no typography, no letters, app-icon ready, high quality"`,
+    build: (c, p) => {
+      const hasRef = !!c.logo;
+      return `${ctxBlock(c, p)}\n\nGenerate ONE distinct logo concept for this brand. Output ONLY a text-to-image prompt (no JSON, no preamble) following these rules:\n${hasRef ? `- A REFERENCE LOGO image of this brand IS PROVIDED. Your output prompt must instruct the image model to produce a CLOSE VARIATION of that reference: keep the same core motif/symbol, the same silhouette family, the same color palette, and the same overall style. Do NOT invent a new unrelated concept. Acceptable variations: alternate angle, monochrome version, simplified version, badge version, refined geometry.\n` : `- An iconic logo MARK or symbol — simple, geometric, vector-style, scalable as a favicon\n`}- No long text, no slogans, no UI screenshots, no photorealism\n- Solid white background, flat vector, 2-3 colors${c.colors?.length ? ` — use ONLY these exact brand colors: ${c.colors.slice(0,3).join(", ")}. Do not invent new colors.` : ""}${c.productName ? ` — the mark must clearly belong to "${c.productName}" and reflect its category/positioning above.` : ""}\n- End with: ", minimalist vector logo mark, flat design, centered on solid white background, no text, no typography, no letters, app-icon ready, high quality"`;
+    },
   },
   graphic: {
     kind: "image", defaultCount: 2,
