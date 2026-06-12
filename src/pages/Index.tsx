@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import CreateShowcase from "@/components/CreateShowcase";
+import SenjaWidget from "@/components/SenjaWidget";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -207,6 +208,7 @@ const Index = () => {
           <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Make Your Product a Brand
           </h1>
+          <SenjaWidget />
           <p className="mx-auto mt-10 max-w-2xl text-base text-neutral-600">
             Paste your URL or describe your idea.
           </p>
