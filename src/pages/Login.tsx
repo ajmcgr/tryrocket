@@ -34,31 +34,30 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: { username: username.trim().replace(/^@/, "") },
-            emailRedirectTo: AUTH_CALLBACK_URL,
-          },
+          options: { data: { username: username.trim().replace(/^@/, "") } },
         });
         if (error) throw error;
-        // With "Confirm email" ON, signUp returns a user with no session.
-        // Send them to the check-your-email screen either way.
+        // With Supabase "Confirm email" OFF (we verify ourselves via Resend), signUp returns a session.
         if (data.session) {
-          nav(next, { replace: true });
-        } else {
-          nav(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
+          await supabase.functions.invoke("send-verification").catch((e) => {
+            console.warn("send-verification failed", e);
+          });
         }
+        nav(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        const confirmed = !!(data.user?.email_confirmed_at || data.user?.confirmed_at);
-        const isGoogle = (data.user?.app_metadata as { provider?: string } | undefined)?.provider === "google";
-        if (!confirmed && !isGoogle) {
-          await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-          await supabase.auth.resend({
-            type: "signup",
-            email,
-            options: { emailRedirectTo: AUTH_CALLBACK_URL },
-          }).catch(() => {});
+        const isOAuth = ((data.user?.app_metadata as { provider?: string } | undefined)?.provider || "email") !== "email";
+        if (isOAuth) { nav(next, { replace: true }); return; }
+
+        // Check our profile flag (types file doesn't include profiles yet).
+        const { data: prof } = await (supabase as any)
+          .from("profiles")
+          .select("email_verified")
+          .eq("user_id", data.user!.id)
+          .maybeSingle();
+        if (!(prof && prof.email_verified)) {
+          await supabase.functions.invoke("send-verification").catch(() => {});
           nav(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true });
           return;
         }
