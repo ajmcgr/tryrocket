@@ -23,7 +23,8 @@ export const ROCKET_PERSONA =
 export interface BrandContext {
   productName?: string; url?: string; tagline?: string; industry?: string;
   audience?: string; tone?: string; colors?: string[]; fonts?: string[];
-  description?: string; competitors?: string[];
+  description?: string; competitors?: string[]; logo?: string; favicon?: string;
+  ogImage?: string; colorScheme?: string;
 }
 
 function ctxBlock(c: BrandContext, userPrompt: string): string {
@@ -37,9 +38,15 @@ function ctxBlock(c: BrandContext, userPrompt: string): string {
   if (c.description) lines.push(`Description: ${c.description}`);
   if (c.colors?.length) lines.push(`Brand colors: ${c.colors.join(", ")}`);
   if (c.fonts?.length) lines.push(`Brand fonts: ${c.fonts.join(", ")}`);
+  if (c.colorScheme) lines.push(`Color scheme: ${c.colorScheme}`);
+  if (c.logo) lines.push(`Existing logo URL (reference only): ${c.logo}`);
   if (c.competitors?.length) lines.push(`Competitors: ${c.competitors.join(", ")}`);
   lines.push("");
   lines.push(`User request: ${userPrompt}`);
+  if (c.colors?.length || c.productName) {
+    lines.push("");
+    lines.push("IMPORTANT: This is a REAL existing brand. Stay faithful to its scraped identity above — do not invent unrelated colors, names, or vibes.");
+  }
   return lines.join("\n");
 }
 
