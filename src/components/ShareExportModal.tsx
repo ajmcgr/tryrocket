@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MessageCircle, Share2, Copy, Link as LinkIcon, FileText, Image as ImageIcon, Cloud, Lock } from "lucide-react";
+import { Download, Mail, MessageCircle, MessageSquare, Twitter, Facebook, Send, Copy, Link as LinkIcon, FileText, Image as ImageIcon, Cloud, Lock } from "lucide-react";
 
 type Asset = {
   id: string;
@@ -86,9 +86,9 @@ export default function ShareExportModal({
     <button
       onClick={onClick}
       disabled={disabled || busy}
-      className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-200 bg-white p-3 text-center transition hover:border-brand hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-200 bg-white p-3 text-center text-neutral-800 transition hover:border-brand hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${iconClass || "bg-neutral-100"}`}>
+      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${iconClass || "bg-neutral-100 text-neutral-700"}`}>
         <Icon className="h-5 w-5" />
       </div>
       <div className="text-[11px] font-medium text-neutral-800">{label}</div>
@@ -97,7 +97,7 @@ export default function ShareExportModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-white text-neutral-900 border-neutral-200">
         <DialogHeader><DialogTitle>Share & export</DialogTitle></DialogHeader>
 
         {existingUrl && (
@@ -114,13 +114,13 @@ export default function ShareExportModal({
             <button onClick={nativeShare} className="text-xs text-brand hover:underline">System share…</button>
           </div>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-            <Tile Icon={Copy} label="Copy link" onClick={copyLink} />
-            <Tile Icon={Share2} label="Twitter / X" onClick={() => openShare("twitter")} iconClass="bg-neutral-900 text-white" />
-            <Tile Icon={Share2} label="Facebook" onClick={() => openShare("facebook")} iconClass="bg-blue-600 text-white" />
-            <Tile Icon={Share2} label="Messenger" onClick={() => openShare("messenger")} iconClass="bg-gradient-to-br from-purple-500 to-pink-500 text-white" />
+            <Tile Icon={LinkIcon} label="Copy link" onClick={copyLink} />
+            <Tile Icon={Twitter} label="Twitter / X" onClick={() => openShare("twitter")} iconClass="bg-neutral-900 text-white" />
+            <Tile Icon={Facebook} label="Facebook" onClick={() => openShare("facebook")} iconClass="bg-blue-600 text-white" />
+            <Tile Icon={Send} label="Messenger" onClick={() => openShare("messenger")} iconClass="bg-gradient-to-br from-purple-500 to-pink-500 text-white" />
             <Tile Icon={MessageCircle} label="WhatsApp" onClick={() => openShare("whatsapp")} iconClass="bg-green-500 text-white" />
-            <Tile Icon={MessageCircle} label="iMessage" onClick={() => openShare("imessage")} iconClass="bg-green-400 text-white" />
-            <Tile Icon={Mail} label="Email" onClick={() => openShare("email")} />
+            <Tile Icon={MessageSquare} label="iMessage" onClick={() => openShare("imessage")} iconClass="bg-green-400 text-white" />
+            <Tile Icon={Mail} label="Email" onClick={() => openShare("email")} iconClass="bg-neutral-100 text-neutral-700" />
           </div>
           <p className="mt-2 text-[11px] text-neutral-500">Instagram / TikTok / YouTube don't allow direct web-share — use the system share sheet on mobile.</p>
         </div>
@@ -129,14 +129,14 @@ export default function ShareExportModal({
           <h3 className="mb-2 text-sm font-semibold">Save</h3>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
             {isImage ? (
-              <a href={asset.image_url!} download={`${asset.title}.png`} className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-200 bg-white p-3 text-center hover:border-brand hover:bg-neutral-50">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100"><ImageIcon className="h-5 w-5" /></div>
+              <a href={asset.image_url!} download={`${asset.title}.png`} className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-200 bg-white p-3 text-center text-neutral-800 hover:border-brand hover:bg-neutral-50">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-700"><ImageIcon className="h-5 w-5" /></div>
                 <div className="text-[11px] font-medium text-neutral-800">Download PNG</div>
               </a>
             ) : (
-              <Tile Icon={FileText} label="Download .md" onClick={downloadText} />
+              <Tile Icon={FileText} label="Download .md" onClick={downloadText} iconClass="bg-neutral-100 text-neutral-700" />
             )}
-            <Tile Icon={Download} label="Copy text" onClick={() => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); }} disabled={isImage} />
+            <Tile Icon={Copy} label="Copy text" onClick={() => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); }} disabled={isImage} iconClass="bg-neutral-100 text-neutral-700" />
             <Tile Icon={Cloud} label="Google Drive" onClick={cloudPlaceholder("Google Drive")} iconClass="bg-amber-50 text-amber-600" />
             <Tile Icon={Cloud} label="OneDrive" onClick={cloudPlaceholder("OneDrive")} iconClass="bg-blue-50 text-blue-600" />
             <Tile Icon={Cloud} label="Dropbox" onClick={cloudPlaceholder("Dropbox")} iconClass="bg-sky-50 text-sky-600" />
