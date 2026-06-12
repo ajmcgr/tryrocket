@@ -338,6 +338,20 @@ export const BillingSettings = () => {
           ))}
         </div>
       </section>
+
+      <section className="rounded-2xl border border-neutral-200 bg-white p-6">
+        <h2 className="text-base font-semibold">Payment History</h2>
+        <p className="mt-1 text-sm text-neutral-600">Manage your payment methods and view billing history</p>
+        <p className="mt-4 text-sm text-neutral-700">View and manage your billing information through Stripe</p>
+        <a
+          href="https://billing.stripe.com/p/login/14A7sM4NF0GRd7l9UX7Zu00"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"
+        >
+          Manage Billing
+        </a>
+      </section>
     </div>
   );
 };
