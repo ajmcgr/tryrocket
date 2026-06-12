@@ -6,6 +6,7 @@ import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, C
 const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import ShareExportModal from "@/components/ShareExportModal";
+import AddToProjectMenu from "@/components/AddToProjectMenu";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -161,6 +162,7 @@ const AssetDetail = () => {
           <button onClick={() => setShareOpen(true)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm ${asset.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}>
             <Share2 className="h-4 w-4" /> Share & export
           </button>
+          <AddToProjectMenu assetId={asset.id} currentProjectId={asset.project_id} onChanged={(pid) => setAsset((a: any) => ({ ...a, project_id: pid }))} />
           {asset.share_token && (
             <button onClick={toggleShare} disabled={sharing} title="Disable public link" className="inline-flex items-center justify-center rounded-full border border-neutral-200 bg-white p-2 text-xs text-neutral-500 hover:bg-neutral-50">
               <Check className="h-3.5 w-3.5 text-emerald-600" />

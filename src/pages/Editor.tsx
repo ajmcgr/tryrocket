@@ -19,6 +19,7 @@ import {
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import AddToProjectMenu from "@/components/AddToProjectMenu";
 const supabase = _sb as any;
 
 type Base = {
@@ -785,6 +786,14 @@ const Editor = () => {
             <IconAction onClick={() => setShowShortcuts(true)} label="Shortcuts"><Keyboard className="h-3.5 w-3.5" /></IconAction>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            {assetId && (
+              <AddToProjectMenu
+                assetId={assetId}
+                currentProjectId={assetMeta?.project_id || null}
+                onChanged={(pid) => setAssetMeta((m) => m ? { ...m, project_id: pid } : m)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50"
+              />
+            )}
             {assetId && (
               <Button variant="outline" size="sm" onClick={saveVersion}><History className="h-3.5 w-3.5" /> Version</Button>
             )}
