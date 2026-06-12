@@ -293,6 +293,13 @@ const Index = () => {
       {/* What you can create */}
       <CreateShowcase />
 
+      {/* Testimonials */}
+      <section className="border-t border-neutral-200/60">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <SenjaWidget />
+        </div>
+      </section>
+
       {/* Use Cases */}
       <section id="use-cases" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
