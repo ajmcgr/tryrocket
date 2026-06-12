@@ -114,6 +114,19 @@ const Generate = () => {
       }
       let allIds: string[] = [];
       let creditsErr: any = null;
+      // For workflows (multi-asset), pre-scrape once so all assets share the same real brand context.
+      let sharedCtx: any = null;
+      if (effective !== "auto") {
+        const urlMatch = p.match(/(https?:\/\/[^\s]+|[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
+        if (urlMatch) {
+          const u = /^https?:\/\//i.test(urlMatch[1]) ? urlMatch[1] : "https://" + urlMatch[1];
+          try {
+            const { data: scraped } = await supabase.functions.invoke("scrape-url", { body: { url: u } });
+            if (scraped && !scraped.error) sharedCtx = { ...scraped, url: u };
+            else sharedCtx = { url: u };
+          } catch { sharedCtx = { url: u }; }
+        }
+      }
       if (effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: p, asset_type: assetType || undefined, project_id: projectId || undefined },
@@ -135,7 +148,7 @@ const Generate = () => {
         const plan = WORKFLOW_PLAN[effective as Exclude<WF, "auto">];
         const results = await Promise.all(plan.map(step =>
           supabase.functions.invoke("generate-asset", {
-            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined },
+            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
           })
         ));
         for (const r of results) {
