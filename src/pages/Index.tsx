@@ -287,6 +287,9 @@ const Index = () => {
               );
             })}
           </div>
+          <div className="mt-12">
+            <SenjaWidget />
+          </div>
         </div>
       </section>
 
