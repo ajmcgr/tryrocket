@@ -39,8 +39,12 @@ const VerifyEmail = () => {
         const { data, error } = await supabase.functions.invoke("send-verification", { body: { action: "verify", token } });
         if (cancelled) return;
         if (error || data?.error) {
+          let detail = data?.error || "";
+          if (!detail && error && (error as any).context) {
+            try { const body = await (error as any).context.json(); detail = body?.error || ""; } catch { /* ignore */ }
+          }
           setState("error");
-          setMessage(data?.error || "This link is invalid or has expired.");
+          setMessage(detail || "This link is invalid or has expired.");
         } else {
           setState("success");
         }
