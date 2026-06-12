@@ -104,7 +104,10 @@ const Generate = () => {
       // Auto-detect (client-side keyword classifier — fast, no extra round trip)
       if (workflow === "auto" && !assetType) {
         const t = p.toLowerCase();
-        if (/\b(brand it|full brand|brand kit|complete brand|whole brand)\b/.test(t)) effective = "brand";
+        // URL-only or URL + minimal text => full brand kit (like Canva from-URL flow)
+        const urlOnly = /^\s*(https?:\/\/)?[\w-]+(\.[\w-]+)+\/?\s*$/i.test(p);
+        if (urlOnly) effective = "brand";
+        else if (/\b(brand it|full brand|brand kit|complete brand|whole brand)\b/.test(t)) effective = "brand";
         else if (/\b(design it|logo concepts?|brand visuals?|visual identity)\b/.test(t)) effective = "design";
         else if (/\b(launch it|launch kit|launch (copy|assets?|plan|checklist)|product hunt)\b/.test(t)) effective = "launch";
         else if (/\b(promote it|growth kit|social (kit|bundle)|x thread|distribution)\b/.test(t)) effective = "promote";

@@ -124,7 +124,7 @@ Valid asset_type values:
 - color_system, font_system, brand_voice, brand_guidelines (brand systems)
 - launch_copy, product_hunt_copy, social_post, founder_bio (copy)
 - template, presentation (compositions)
-- other (ONLY for non-branding requests)
+- other (ONLY for clearly non-branding requests like "write me a poem", "what's the weather". A bare URL or product name is NOT "other" — default to brand_guidelines.)
 
 Routing hints:
 - "logo", "mark" -> logo
@@ -140,6 +140,7 @@ Routing hints:
 - "X post", "tweet", "thread", "LinkedIn post", "Reddit" -> social_post
 - "founder bio", "about me" -> founder_bio
 - "pitch deck", "slides" -> presentation
+- bare URL only (e.g. "https://trylaunch.ai") or just a product name -> brand_guidelines
 
 Count: how many variants. Defaults: logo=3, icon=4, graphic=2, else 1. Parse explicit numbers ("5 logos" -> 5). Cap at 6.
 
