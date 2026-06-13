@@ -204,6 +204,9 @@ const Index = () => {
           <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Make Your Product a Brand
           </h1>
+          <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-neutral-500 sm:text-xl">
+            Create or evolve your brand, plus logos, brand guidelines, graphics, templates, and launch-ready assets.
+          </p>
           <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl">
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
               {images.length > 0 && (
