@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         url,
-        formats: ["markdown", "branding", "summary"],
+        formats: ["markdown", "branding", "summary", "screenshot"],
         onlyMainContent: true,
       }),
     });
@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
       favicon: branding?.images?.favicon || null,
       ogImage: branding?.images?.ogImage || null,
       colorScheme: branding?.colorScheme || null,
+      screenshot: doc?.screenshot || null,
     };
     return new Response(JSON.stringify(out), { headers: { ...ch, "Content-Type": "application/json" } });
   } catch (e) {
