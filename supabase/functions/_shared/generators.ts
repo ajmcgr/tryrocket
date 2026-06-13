@@ -24,7 +24,7 @@ export interface BrandContext {
   productName?: string; url?: string; tagline?: string; industry?: string;
   audience?: string; tone?: string; colors?: string[]; fonts?: string[];
   description?: string; competitors?: string[]; logo?: string; favicon?: string;
-  ogImage?: string; colorScheme?: string;
+  ogImage?: string; colorScheme?: string; screenshot?: string;
 }
 
 function ctxBlock(c: BrandContext, userPrompt: string): string {
@@ -40,12 +40,15 @@ function ctxBlock(c: BrandContext, userPrompt: string): string {
   if (c.fonts?.length) lines.push(`Brand fonts: ${c.fonts.join(", ")}`);
   if (c.colorScheme) lines.push(`Color scheme: ${c.colorScheme}`);
   if (c.logo) lines.push(`Existing logo URL (reference only): ${c.logo}`);
+  if (c.favicon) lines.push(`Existing favicon URL (reference only): ${c.favicon}`);
+  if (c.ogImage) lines.push(`OG image URL (reference only): ${c.ogImage}`);
+  if (c.screenshot) lines.push(`Homepage screenshot URL (reference only): ${c.screenshot}`);
   if (c.competitors?.length) lines.push(`Competitors: ${c.competitors.join(", ")}`);
   lines.push("");
   lines.push(`User request: ${userPrompt}`);
-  if (c.colors?.length || c.productName) {
+  if (c.colors?.length || c.productName || c.logo || c.screenshot) {
     lines.push("");
-    lines.push("IMPORTANT: This is a REAL existing brand. Stay faithful to its scraped identity above — do not invent unrelated colors, names, or vibes.");
+    lines.push("CRITICAL: This is a REAL existing brand. Your job is to EVOLVE its existing identity, not invent a new one. Stay faithful to the scraped colors, fonts, logo motif, and visual language above. Do not invent unrelated colors, names, motifs, or vibes. Reference images may also be attached — match their style.");
   }
   return lines.join("\n");
 }
