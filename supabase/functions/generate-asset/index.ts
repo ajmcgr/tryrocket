@@ -46,6 +46,11 @@ async function scrapeUrl(url: string, supabaseUrl: string, anonKey: string, jwt:
       description: d.description,
       colors: d.colors,
       fonts: d.fonts,
+      logo: d.logo,
+      favicon: d.favicon,
+      ogImage: d.ogImage,
+      colorScheme: d.colorScheme,
+      screenshot: d.screenshot,
     };
   } catch {
     return { url };
@@ -131,37 +136,38 @@ Deno.serve(async (req) => {
     const title = ASSET_TITLES[cls.asset_type];
     const ids: string[] = [];
 
-    // For logo generation, fetch the brand's existing logo and pass as a visual reference to Gemini.
-    let logoRefs: { mimeType: string; data: string }[] | undefined;
-    if (spec.kind === "image" && cls.asset_type === "logo" && ctx.logo) {
+    // Fetch visual references from the scraped brand (raster only — Gemini ignores SVG).
+    async function fetchAsRef(u?: string | null): Promise<{ mimeType: string; data: string } | null> {
+      if (!u) return null;
       try {
-        const r = await fetch(ctx.logo);
-        if (r.ok) {
-          const ct = r.headers.get("content-type") || "image/png";
-          // Skip SVGs (Gemini wants raster). Try favicon fallback.
-          if (!ct.includes("svg")) {
-            const buf = new Uint8Array(await r.arrayBuffer());
-            // Base64 encode
-            let bin = "";
-            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-            logoRefs = [{ mimeType: ct.split(";")[0], data: btoa(bin) }];
-          }
-        }
-      } catch { /* noop */ }
-      const fallbacks = [ctx.favicon, ctx.ogImage].filter(Boolean) as string[];
-      for (const u of fallbacks) {
-        if (logoRefs) break;
-        try {
-          const r = await fetch(u);
-          if (!r.ok) continue;
-          const ct = r.headers.get("content-type") || "image/png";
-          if (ct.includes("svg")) continue;
-          const buf = new Uint8Array(await r.arrayBuffer());
-          let bin = "";
-          for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-          logoRefs = [{ mimeType: ct.split(";")[0], data: btoa(bin) }];
-        } catch { /* noop */ }
+        const r = await fetch(u);
+        if (!r.ok) return null;
+        const ct = (r.headers.get("content-type") || "image/png").split(";")[0];
+        if (ct.includes("svg")) return null;
+        const buf = new Uint8Array(await r.arrayBuffer());
+        let bin = "";
+        for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+        return { mimeType: ct, data: btoa(bin) };
+      } catch { return null; }
+    }
+
+    // Visual refs used for ALL image generation so the output evolves the existing brand.
+    let logoRefs: { mimeType: string; data: string }[] | undefined;
+    if (spec.kind === "image") {
+      const candidates: (string | undefined)[] = [];
+      if (cls.asset_type === "logo") {
+        candidates.push(ctx.logo, ctx.favicon, ctx.ogImage, ctx.screenshot);
+      } else {
+        // Graphics/icons/photos: anchor to homepage screenshot + logo for visual language.
+        candidates.push(ctx.screenshot, ctx.ogImage, ctx.logo);
       }
+      const refs: { mimeType: string; data: string }[] = [];
+      for (const u of candidates) {
+        if (refs.length >= 2) break;
+        const ref = await fetchAsRef(u);
+        if (ref) refs.push(ref);
+      }
+      if (refs.length) logoRefs = refs;
     }
 
     if (spec.kind === "image") {
@@ -172,6 +178,10 @@ Deno.serve(async (req) => {
           // Skip the text-prompt rewrite step entirely. Feed a stable variation instruction + reference image directly.
           const variantHint = ["alternate angle", "monochrome (single brand color on white)", "simplified minimal version", "refined geometry, more polished", "badge / circle enclosure"][i % 5];
           imgPrompt = `Create a logo VARIATION of the brand shown in the attached reference image${ctx.productName ? ` ("${ctx.productName}")` : ""}.\n\nHARD RULES:\n- KEEP the same core motif/symbol from the reference (do not invent a new unrelated concept).\n- KEEP the same silhouette family, proportions, and overall style.\n- KEEP the exact brand colors${ctx.colors?.length ? `: ${ctx.colors.slice(0,3).join(", ")}` : " from the reference"}. No new colors.\n- This variant: ${variantHint}.\n- Solid white background, flat vector, app-icon ready, no text, no typography, no letters.\n- The result must look like it belongs to the SAME brand as the reference.`;
+        } else if (logoRefs) {
+          // Non-logo image with brand visual references attached — instruct Gemini to evolve, not invent.
+          const base = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
+          imgPrompt = `${base}\n\nVISUAL BRAND CONSTRAINTS (reference images are attached):\n- Match the visual language, color palette, and typographic feel of the attached reference(s).\n- This is for the EXISTING brand${ctx.productName ? ` "${ctx.productName}"` : ""}${ctx.colors?.length ? ` — use ONLY these brand colors: ${ctx.colors.slice(0,4).join(", ")}` : ""}.\n- Do not invent a new visual identity. Evolve the one shown.`;
         } else {
           imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
         }
