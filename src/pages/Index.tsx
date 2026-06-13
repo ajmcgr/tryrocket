@@ -201,7 +201,7 @@ const Index = () => {
           }}
         />
         <div className="mx-auto max-w-6xl px-6 pt-20 pb-24 text-center sm:pt-28 sm:pb-32">
-          <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
+          <h1 className="mx-auto max-w-4xl text-5xl font-normal tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Make Your Product a Brand
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
@@ -296,7 +296,7 @@ const Index = () => {
       <section id="use-cases" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">What can you brand with Rocket?</h2>
+            <h2 className="text-4xl font-normal tracking-tight sm:text-5xl">What can you brand with Rocket?</h2>
             <p className="mt-4 text-lg text-neutral-600">
               From indie side projects to full SaaS launches — Rocket brands them all.
             </p>
@@ -381,7 +381,7 @@ const Index = () => {
                       <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${row.accent} text-white shadow-sm`}>
                         <Icon className="h-6 w-6" />
                       </div>
-                      <h3 className="mt-6 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">{row.title}</h3>
+                      <h3 className="mt-6 text-3xl font-normal tracking-tight text-neutral-900 sm:text-4xl">{row.title}</h3>
                       <p className="mt-4 text-base leading-relaxed text-neutral-600">{row.desc}</p>
                       <Button asChild className="mt-7">
                         <Link to="/create">
@@ -412,7 +412,7 @@ const Index = () => {
       <section id="features" className="border-t border-neutral-200/60 bg-neutral-50/50">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Everything you need to launch</h2>
+            <h2 className="text-3xl font-normal tracking-tight sm:text-4xl">Everything you need to launch</h2>
             <p className="mt-4 text-lg text-neutral-600">
               Drop in your product URL. Rocket generates the positioning, copy, and launch plan in seconds.
             </p>
@@ -428,7 +428,7 @@ const Index = () => {
             ].map(({ emoji, title, desc }) => (
               <div key={title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:shadow-md">
                 <div className="text-3xl leading-none" aria-hidden>{emoji}</div>
-                <h3 className="mt-5 text-lg font-semibold tracking-tight">{title}</h3>
+                <h3 className="mt-5 text-lg font-normal tracking-tight">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-neutral-600">{desc}</p>
               </div>
             ))}
@@ -440,7 +440,7 @@ const Index = () => {
       <section id="pricing" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">Simple, credit-based pricing</h2>
+            <h2 className="text-4xl font-normal tracking-tight sm:text-5xl">Simple, credit-based pricing</h2>
             <p className="mt-4 text-lg text-neutral-600">Start free. Upgrade when you're ready to ship.</p>
           </div>
           <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -448,7 +448,7 @@ const Index = () => {
             <div className="rounded-2xl border border-neutral-200 bg-white p-8">
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Free</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-semibold tracking-tight">$0</span>
+                <span className="text-5xl font-normal tracking-tight">$0</span>
                 <span className="text-neutral-500">/month</span>
               </div>
               <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
@@ -495,7 +495,7 @@ const Index = () => {
               </div>
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-semibold tracking-tight">$20</span>
+                <span className="text-5xl font-normal tracking-tight">$20</span>
                 <span className="text-neutral-500">/month</span>
               </div>
               <p className="mt-2 text-sm text-neutral-600">For founders shipping fast.</p>
@@ -546,7 +546,7 @@ const Index = () => {
           {/* Credit packs */}
           <div className="mt-14">
             <div className="text-center">
-              <h2 className="text-3xl font-semibold tracking-tight">Need more credits?</h2>
+              <h2 className="text-3xl font-normal tracking-tight">Need more credits?</h2>
               <p className="mt-2 text-neutral-600">One-time credit packs. Never expire. Stack with your plan.</p>
             </div>
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -558,7 +558,7 @@ const Index = () => {
                 <div key={p.credits} className={`rounded-2xl border p-6 ${p.highlight ? "border-brand bg-brand/5" : "border-neutral-200 bg-white"}`}>
                   <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">{p.note}</div>
                   <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-4xl font-semibold tracking-tight">{p.price}</span>
+                    <span className="text-4xl font-normal tracking-tight">{p.price}</span>
                   </div>
                   <div className="mt-1 text-sm font-medium text-neutral-900">{p.credits} credits</div>
                 </div>
@@ -572,7 +572,7 @@ const Index = () => {
       <section id="faq" className="border-t border-neutral-200/60 bg-neutral-50/50">
         <div className="mx-auto max-w-3xl px-6 py-24">
           <div className="text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Frequently asked</h2>
+            <h2 className="text-3xl font-normal tracking-tight sm:text-4xl">Frequently asked</h2>
             <p className="mt-3 text-neutral-600">Everything you wanted to know about Rocket.</p>
           </div>
           <Accordion type="single" collapsible className="mt-10 w-full space-y-4">
@@ -602,7 +602,7 @@ const Index = () => {
       {/* CTA */}
       <section className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-4xl px-6 py-24 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Ready to launch?</h2>
+          <h2 className="text-3xl font-normal tracking-tight sm:text-5xl">Ready to launch?</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-neutral-600">
             Create your first asset in under 60 seconds.
           </p>
