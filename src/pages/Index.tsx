@@ -201,7 +201,7 @@ const Index = () => {
           }}
         />
         <div className="mx-auto max-w-6xl px-6 pt-20 pb-24 text-center sm:pt-28 sm:pb-32">
-          <h1 className="mx-auto max-w-4xl text-5xl font-medium tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
+          <h1 className="mx-auto max-w-4xl text-4xl font-medium tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Make Your Product a Brand
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
@@ -369,7 +369,6 @@ const Index = () => {
                 visual: "side",
               },
             ].map((row, i) => {
-              const Icon = row.icon;
               const reverse = i % 2 === 1;
               return (
                 <div
@@ -378,10 +377,7 @@ const Index = () => {
                 >
                   <div className={`grid items-center gap-8 p-8 sm:p-12 md:grid-cols-2 md:gap-12 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}>
                     <div>
-                      <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${row.accent} text-white shadow-sm`}>
-                        <Icon className="h-6 w-6" />
-                      </div>
-                      <h3 className="mt-6 text-3xl font-medium tracking-tight text-neutral-900 sm:text-4xl">{row.title}</h3>
+                      <h3 className="text-3xl font-medium tracking-tight text-neutral-900 sm:text-4xl">{row.title}</h3>
                       <p className="mt-4 text-base leading-relaxed text-neutral-600">{row.desc}</p>
                       <Button asChild className="mt-7">
                         <Link to="/create">
@@ -419,16 +415,15 @@ const Index = () => {
           </div>
           <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
-              { emoji: "🎯", title: "Positioning", desc: "Taglines, value props, elevator pitch, target audience — locked in." },
-              { emoji: "📣", title: "Launch Copy", desc: "Product Hunt, directories, X threads, LinkedIn, newsletters." },
-              { emoji: "✅", title: "Launch Strategy", desc: "Channels, communities, content ideas, and a full launch checklist." },
-              { emoji: "✨", title: "Founder Profile", desc: "X bio, LinkedIn headline, founder tagline — ready to paste." },
-              { emoji: "⚡", title: "Instant Generation", desc: "One URL in. A complete launch kit out. Edit and regenerate any section." },
-              { emoji: "🚀", title: "Launch on Launch", desc: "Ship your brand straight to Launch when you're ready to go live." },
-            ].map(({ emoji, title, desc }) => (
+              { title: "Positioning", desc: "Taglines, value props, elevator pitch, target audience — locked in." },
+              { title: "Launch Copy", desc: "Product Hunt, directories, X threads, LinkedIn, newsletters." },
+              { title: "Launch Strategy", desc: "Channels, communities, content ideas, and a full launch checklist." },
+              { title: "Founder Profile", desc: "X bio, LinkedIn headline, founder tagline — ready to paste." },
+              { title: "Instant Generation", desc: "One URL in. A complete launch kit out. Edit and regenerate any section." },
+              { title: "Launch on Launch", desc: "Ship your brand straight to Launch when you're ready to go live." },
+            ].map(({ title, desc }) => (
               <div key={title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:shadow-md">
-                <div className="text-3xl leading-none" aria-hidden>{emoji}</div>
-                <h3 className="mt-5 text-lg font-medium tracking-tight">{title}</h3>
+                <h3 className="text-lg font-medium tracking-tight">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-neutral-600">{desc}</p>
               </div>
             ))}
