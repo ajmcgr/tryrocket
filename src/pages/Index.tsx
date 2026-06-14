@@ -404,33 +404,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="border-t border-neutral-200/60 bg-neutral-50/50">
-        <div className="mx-auto max-w-6xl px-6 py-24">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-medium tracking-tight sm:text-4xl">Everything you need to launch</h2>
-            <p className="mt-4 text-lg text-neutral-600">
-              Drop in your product URL. Rocket generates the positioning, copy, and launch plan in seconds.
-            </p>
-          </div>
-          <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
-            {[
-              { title: "Positioning", desc: "Taglines, value props, elevator pitch, target audience — locked in." },
-              { title: "Launch Copy", desc: "Product Hunt, directories, X threads, LinkedIn, newsletters." },
-              { title: "Launch Strategy", desc: "Channels, communities, content ideas, and a full launch checklist." },
-              { title: "Founder Profile", desc: "X bio, LinkedIn headline, founder tagline — ready to paste." },
-              { title: "Instant Generation", desc: "One URL in. A complete launch kit out. Edit and regenerate any section." },
-              { title: "Launch on Launch", desc: "Ship your brand straight to Launch when you're ready to go live." },
-            ].map(({ title, desc }) => (
-              <div key={title} className="rounded-2xl border border-neutral-200 bg-white p-6 transition hover:shadow-md">
-                <h3 className="text-lg font-medium tracking-tight">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-neutral-600">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Pricing */}
       <section id="pricing" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
