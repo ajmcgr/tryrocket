@@ -20,7 +20,7 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const SiteFooter = () => (
   <footer className="bg-neutral-50">
     <div className="mx-auto max-w-6xl px-6 py-16">
-      <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
+      <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-5">
         <div>
           <div className={HEADER}>Company</div>
             <ul className="mt-4 space-y-2.5 text-sm font-normal text-neutral-600">
