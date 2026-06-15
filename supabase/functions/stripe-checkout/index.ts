@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { product } = await req.json();
+    const { product, promo_code } = await req.json();
     const p = PRICES[product];
     if (!p) return new Response(JSON.stringify({ error: "invalid_product" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -51,6 +51,20 @@ Deno.serve(async (req) => {
       const c = await stripe.customers.create({ email: user.email!, metadata: { user_id: user.id } });
       customerId = c.id;
       await admin.from("subscriptions").upsert({ user_id: user.id, stripe_customer_id: customerId }, { onConflict: "user_id" });
+    }
+
+    let discounts: { promotion_code: string }[] | undefined;
+    let promoError: string | undefined;
+    if (promo_code && typeof promo_code === "string") {
+      const list = await stripe.promotionCodes.list({ code: promo_code.trim(), active: true, limit: 1 });
+      if (list.data.length > 0) {
+        discounts = [{ promotion_code: list.data[0].id }];
+      } else {
+        promoError = "Invalid or expired promo code";
+      }
+    }
+    if (promoError) {
+      return new Response(JSON.stringify({ error: promoError }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -69,7 +83,7 @@ Deno.serve(async (req) => {
               quantity: 1,
             },
       ],
-      allow_promotion_codes: true,
+      ...(discounts ? { discounts } : { allow_promotion_codes: true }),
       ...(p.mode === "subscription" && p.trial_days ? { subscription_data: { trial_period_days: p.trial_days } } : {}),
       success_url: `${APP_URL}/projects?checkout=success`,
       cancel_url: `${APP_URL}/projects?checkout=canceled`,
