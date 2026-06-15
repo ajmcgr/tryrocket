@@ -201,6 +201,7 @@ export default ChatsSidebar;
 function CreditsPopover({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   const [credits, setCredits] = useState<number | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
   useEffect(() => {
     if (!user) return;
     supabase.from("user_usage").select("*").eq("user_id", user.id).maybeSingle().then(({ data }: any) => {
@@ -209,10 +210,21 @@ function CreditsPopover({ compact = false }: { compact?: boolean }) {
     });
   }, [user]);
   const packs = [
-    { label: "500 credits", price: "$5" },
-    { label: "1,500 credits", price: "$10" },
-    { label: "5,000 credits", price: "$25" },
+    { id: "pack_500", label: "500 credits", price: "$5" },
+    { id: "pack_1500", label: "1,500 credits", price: "$10" },
+    { id: "pack_5000", label: "5,000 credits", price: "$25" },
   ];
+  const checkout = async (product: string) => {
+    setLoading(product);
+    try {
+      const { data, error } = await (supabase as any).functions.invoke("stripe-checkout", { body: { product } });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+    } catch (e) {
+      console.error(e);
+      setLoading(null);
+    }
+  };
   const trigger = compact ? (
     <button title="Credits" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
       <Sparkles className="h-4 w-4" />
@@ -232,7 +244,12 @@ function CreditsPopover({ compact = false }: { compact?: boolean }) {
         </div>
         <div className="py-1">
           {packs.map(p => (
-            <button key={p.label} className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-neutral-800 transition hover:bg-neutral-50">
+            <button
+              key={p.id}
+              onClick={() => checkout(p.id)}
+              disabled={!!loading}
+              className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-neutral-800 transition hover:bg-neutral-50 disabled:opacity-60"
+            >
               <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> {p.label}</span>
               <span className="text-neutral-500">{p.price}</span>
             </button>
