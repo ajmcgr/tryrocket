@@ -51,7 +51,7 @@ const MESSAGES = [
 const Generate = () => {
   const [params] = useSearchParams();
   const [prompt, setPrompt] = useState(params.get("prompt") ?? "");
-  const [assetType, setAssetType] = useState<string | null>(null);
+  const [assetType, setAssetType] = useState<string | null>(params.get("asset_type"));
   const [workflow, setWorkflow] = useState<WF>((params.get("workflow") as WF) || "auto");
   const projectId = params.get("project");
   const chatId = params.get("chat");

@@ -20,6 +20,7 @@ import Assets from "./pages/Assets.tsx";
 import AssetDetail from "./pages/AssetDetail.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
+import BrandKitHub from "./pages/BrandKitHub.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
 import SharedAsset from "./pages/SharedAsset.tsx";
 import SharedProject from "./pages/SharedProject.tsx";
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="/projects/new" element={<ProjectWizard />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
+              <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/assets" element={<Assets />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
               <Route path="/create" element={<Generate />} />
