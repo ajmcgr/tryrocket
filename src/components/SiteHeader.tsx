@@ -54,7 +54,7 @@ const SiteHeader = () => {
   const initial = (user?.email?.[0] || "U").toUpperCase();
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl">
-      <div className="relative mx-auto flex h-16 max-w-5xl items-center px-6">
+      <div className="relative mx-auto flex h-16 max-w-4xl items-center px-6">
         <Logo />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
           {user ? (
