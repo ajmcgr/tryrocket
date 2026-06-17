@@ -76,9 +76,52 @@ const ProjectWizard = () => {
     }).select().single();
     if (error || !project) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); setRunning(false); return; }
 
-    const init: any = {}; STARTERS.forEach(s => init[s.type] = "pending"); setStatus(init);
+    // Ingest scraped brand artifacts directly as assets (no AI regeneration) when present.
+    const ingested = new Set<string>();
+    if (scraped) {
+      const inserts: any[] = [];
+      if (scraped.logo) {
+        inserts.push({
+          user_id: user.id, project_id: project.id, asset_type: "logo",
+          title: `${ctx.name.trim()} logo (imported)`,
+          image_url: scraped.logo, thumbnail_url: scraped.logo,
+          prompt: `Imported from ${normalizeUrl(ctx.url)}`,
+        });
+        ingested.add("logo");
+      }
+      if (Array.isArray(scraped.colors) && scraped.colors.length) {
+        const colors = scraped.colors.slice(0, 8);
+        const content = `Color system imported from ${normalizeUrl(ctx.url)}\n\n` +
+          colors.map((c: string, i: number) => `${i === 0 ? "Primary" : i === 1 ? "Secondary" : "Accent " + (i - 1)}: ${c}`).join("\n");
+        inserts.push({
+          user_id: user.id, project_id: project.id, asset_type: "color_system",
+          title: `${ctx.name.trim()} colors (imported)`, content,
+          prompt: `Imported from ${normalizeUrl(ctx.url)}`,
+        });
+        ingested.add("color_system");
+      }
+      if (Array.isArray(scraped.fonts) && scraped.fonts.length) {
+        const fonts = scraped.fonts.slice(0, 4);
+        const content = `Font system imported from ${normalizeUrl(ctx.url)}\n\n` +
+          fonts.map((f: string, i: number) => `${i === 0 ? "Headings" : i === 1 ? "Body" : "Accent " + (i - 1)}: ${f}`).join("\n");
+        inserts.push({
+          user_id: user.id, project_id: project.id, asset_type: "font_system",
+          title: `${ctx.name.trim()} fonts (imported)`, content,
+          prompt: `Imported from ${normalizeUrl(ctx.url)}`,
+        });
+        ingested.add("font_system");
+      }
+      if (inserts.length) {
+        await supabase.from("assets").insert(inserts);
+      }
+    }
 
-    await Promise.all(STARTERS.map(async (s) => {
+    const init: any = {};
+    STARTERS.forEach(s => init[s.type] = ingested.has(s.type) ? "done" : "pending");
+    setStatus(init);
+
+    const toGenerate = STARTERS.filter(s => !ingested.has(s.type));
+    await Promise.all(toGenerate.map(async (s) => {
       setStatus(prev => ({ ...prev, [s.type]: "running" }));
       try {
         const { data } = await supabase.functions.invoke("generate-asset", {
