@@ -212,7 +212,14 @@ const ProjectWizard = () => {
       {step === 2 && (
         <div className="mt-8 space-y-6">
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Generate your starter pack</h1>
-          <p className="text-sm text-neutral-500">We'll create 5 brand assets in a new project: logo, colors, fonts, brand voice, and launch copy.</p>
+          <p className="text-sm text-neutral-500">
+            We'll create 5 brand assets in a new project: logo, colors, fonts, brand voice, and launch copy.
+            {scraped && (
+              <> Items we found on your site (
+              {[scraped.logo && "logo", scraped.colors?.length && "colors", scraped.fonts?.length && "fonts"].filter(Boolean).join(", ") || "none"}
+              ) will be imported as-is — the rest are AI-generated from your brand context.</>
+            )}
+          </p>
           <div className="rounded-2xl border border-neutral-200 bg-white p-4">
             {STARTERS.map(s => {
               const st = status[s.type] || (running ? "pending" : "pending");
