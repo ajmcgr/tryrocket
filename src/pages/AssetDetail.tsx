@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2 } from "lucide-react";
+import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save } from "lucide-react";
 const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import ShareExportModal from "@/components/ShareExportModal";
@@ -32,6 +32,10 @@ const AssetDetail = () => {
   const [varying, setVarying] = useState(false);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftContent, setDraftContent] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -47,6 +51,31 @@ const AssetDetail = () => {
   if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">Asset not found.</div>;
 
   const isImage = !!asset.image_url;
+
+  const startEdit = () => {
+    setDraftTitle(asset.title || "");
+    setDraftContent(asset.content || "");
+    setEditing(true);
+  };
+  const cancelEdit = () => setEditing(false);
+  const saveEdit = async () => {
+    setSavingEdit(true);
+    // snapshot current as a version before overwriting
+    await supabase.from("asset_versions").insert({
+      asset_id: asset.id, user_id: asset.user_id, label: "Auto-saved before edit",
+      snapshot: { editor_state: asset.editor_state, content: asset.content, image_url: asset.image_url, title: asset.title },
+    });
+    const { error } = await supabase.from("assets").update({
+      title: draftTitle.trim() || asset.title,
+      content: draftContent,
+    }).eq("id", asset.id);
+    setSavingEdit(false);
+    if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Saved" });
+    setEditing(false);
+    load();
+  };
+
   const shareUrl = asset.share_token ? `${window.location.origin}/share/asset/${asset.share_token}` : null;
 
   const copy = () => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); };
@@ -197,7 +226,15 @@ const AssetDetail = () => {
 
       <div className="mb-4">
         <div className="text-xs uppercase tracking-wider text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type]}</div>
-        <h1 className="mt-1 text-2xl font-semibold">{asset.title}</h1>
+        {editing ? (
+          <input
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-2 py-1 text-2xl font-semibold outline-none focus:border-brand"
+          />
+        ) : (
+          <h1 className="mt-1 text-2xl font-semibold">{asset.title}</h1>
+        )}
         {asset.prompt && <p className="mt-1 text-sm text-neutral-500">Prompt: {asset.prompt}</p>}
       </div>
 
@@ -207,8 +244,33 @@ const AssetDetail = () => {
             <div className="flex items-center justify-center bg-neutral-50 p-8">
               <img src={asset.image_url} alt={asset.title} className="max-h-[640px] w-auto" />
             </div>
+          ) : editing ? (
+            <div className="p-4">
+              <textarea
+                value={draftContent}
+                onChange={(e) => setDraftContent(e.target.value)}
+                className="min-h-[480px] w-full resize-y rounded-lg border border-neutral-200 bg-white p-4 font-sans text-sm leading-relaxed text-neutral-800 outline-none focus:border-brand"
+              />
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <button onClick={cancelEdit} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50">
+                  <X className="h-4 w-4" /> Cancel
+                </button>
+                <button onClick={saveEdit} disabled={savingEdit} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover disabled:opacity-50">
+                  {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+                </button>
+              </div>
+            </div>
           ) : (
-            <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+            <div className="relative">
+              <button
+                onClick={startEdit}
+                className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1 text-xs text-neutral-600 backdrop-blur hover:bg-neutral-50"
+                title="Edit copy"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+            </div>
           )}
         </div>
 
