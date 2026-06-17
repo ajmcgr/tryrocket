@@ -226,7 +226,15 @@ const AssetDetail = () => {
 
       <div className="mb-4">
         <div className="text-xs uppercase tracking-wider text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type]}</div>
-        <h1 className="mt-1 text-2xl font-semibold">{asset.title}</h1>
+        {editing ? (
+          <input
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-2 py-1 text-2xl font-semibold outline-none focus:border-brand"
+          />
+        ) : (
+          <h1 className="mt-1 text-2xl font-semibold">{asset.title}</h1>
+        )}
         {asset.prompt && <p className="mt-1 text-sm text-neutral-500">Prompt: {asset.prompt}</p>}
       </div>
 
@@ -236,8 +244,33 @@ const AssetDetail = () => {
             <div className="flex items-center justify-center bg-neutral-50 p-8">
               <img src={asset.image_url} alt={asset.title} className="max-h-[640px] w-auto" />
             </div>
+          ) : editing ? (
+            <div className="p-4">
+              <textarea
+                value={draftContent}
+                onChange={(e) => setDraftContent(e.target.value)}
+                className="min-h-[480px] w-full resize-y rounded-lg border border-neutral-200 bg-white p-4 font-sans text-sm leading-relaxed text-neutral-800 outline-none focus:border-brand"
+              />
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <button onClick={cancelEdit} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50">
+                  <X className="h-4 w-4" /> Cancel
+                </button>
+                <button onClick={saveEdit} disabled={savingEdit} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover disabled:opacity-50">
+                  {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+                </button>
+              </div>
+            </div>
           ) : (
-            <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+            <div className="relative">
+              <button
+                onClick={startEdit}
+                className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1 text-xs text-neutral-600 backdrop-blur hover:bg-neutral-50"
+                title="Edit copy"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+            </div>
           )}
         </div>
 
