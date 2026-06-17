@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2 } from "lucide-react";
+import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save } from "lucide-react";
 const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import ShareExportModal from "@/components/ShareExportModal";
@@ -32,6 +32,10 @@ const AssetDetail = () => {
   const [varying, setVarying] = useState(false);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftContent, setDraftContent] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -47,6 +51,31 @@ const AssetDetail = () => {
   if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">Asset not found.</div>;
 
   const isImage = !!asset.image_url;
+
+  const startEdit = () => {
+    setDraftTitle(asset.title || "");
+    setDraftContent(asset.content || "");
+    setEditing(true);
+  };
+  const cancelEdit = () => setEditing(false);
+  const saveEdit = async () => {
+    setSavingEdit(true);
+    // snapshot current as a version before overwriting
+    await supabase.from("asset_versions").insert({
+      asset_id: asset.id, user_id: asset.user_id, label: "Auto-saved before edit",
+      snapshot: { editor_state: asset.editor_state, content: asset.content, image_url: asset.image_url, title: asset.title },
+    });
+    const { error } = await supabase.from("assets").update({
+      title: draftTitle.trim() || asset.title,
+      content: draftContent,
+    }).eq("id", asset.id);
+    setSavingEdit(false);
+    if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Saved" });
+    setEditing(false);
+    load();
+  };
+
   const shareUrl = asset.share_token ? `${window.location.origin}/share/asset/${asset.share_token}` : null;
 
   const copy = () => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); };
