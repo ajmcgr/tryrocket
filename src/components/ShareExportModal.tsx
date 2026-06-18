@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Mail, MessageCircle, MessageSquare, Facebook, Send, Copy, Link as LinkIcon, FileText, Image as ImageIcon, Cloud, Lock } from "lucide-react";
+import { exportAsset, FORMATS_FOR_IMAGE, FORMATS_FOR_TEXT, FORMAT_LABEL, type ExportFormat } from "@/lib/exporters";
 
 const XLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
@@ -84,6 +85,20 @@ export default function ShareExportModal({
     URL.revokeObjectURL(a.href);
   };
 
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
+  const doExport = async (format: ExportFormat) => {
+    setExporting(format);
+    try {
+      await exportAsset(asset, format);
+      toast({ title: `Exported .${format}` });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setExporting(null);
+    }
+  };
+  const formats = isImage ? FORMATS_FOR_IMAGE : FORMATS_FOR_TEXT;
+
   const cloudPlaceholder = (name: string) => () => {
     toast({ title: `${name} export coming soon`, description: "Needs per-user OAuth connection." });
   };
@@ -134,21 +149,22 @@ export default function ShareExportModal({
         <div className="mt-2">
           <h3 className="mb-2 text-sm font-semibold">Save</h3>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-            {isImage ? (
-              <a href={asset.image_url!} download={`${asset.title}.png`} className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-200 bg-white p-3 text-center text-neutral-800 hover:border-brand hover:bg-neutral-50">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-700"><ImageIcon className="h-5 w-5" /></div>
-                <div className="text-[11px] font-medium text-neutral-800">Download PNG</div>
-              </a>
-            ) : (
-              <Tile Icon={FileText} label="Download .md" onClick={downloadText} iconClass="bg-neutral-100 text-neutral-700" />
-            )}
-            <Tile Icon={Copy} label="Copy text" onClick={() => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); }} disabled={isImage} iconClass="bg-neutral-100 text-neutral-700" />
+            {formats.map((f) => (
+              <Tile
+                key={f}
+                Icon={f === "png" || f === "jpg" || f === "svg" ? ImageIcon : FileText}
+                label={exporting === f ? "Exporting…" : FORMAT_LABEL[f].replace(/\s*\(.*\)$/, "") + ` .${f}`}
+                onClick={() => doExport(f)}
+                iconClass="bg-neutral-100 text-neutral-700"
+              />
+            ))}
+            <Tile Icon={Copy} label={isImage ? "Copy image URL" : "Copy text"} onClick={async () => { await navigator.clipboard.writeText(isImage ? (asset.image_url || "") : (asset.content || "")); toast({ title: "Copied" }); }} iconClass="bg-neutral-100 text-neutral-700" />
             <Tile Icon={Cloud} label="Google Drive" onClick={cloudPlaceholder("Google Drive")} iconClass="bg-amber-50 text-amber-600" />
             <Tile Icon={Cloud} label="OneDrive" onClick={cloudPlaceholder("OneDrive")} iconClass="bg-blue-50 text-blue-600" />
             <Tile Icon={Cloud} label="Dropbox" onClick={cloudPlaceholder("Dropbox")} iconClass="bg-sky-50 text-sky-600" />
             <Tile Icon={Cloud} label="Box" onClick={cloudPlaceholder("Box")} iconClass="bg-blue-50 text-blue-700" />
           </div>
-          <p className="mt-2 flex items-center gap-1 text-[11px] text-neutral-500"><Lock className="h-3 w-3" /> Cloud destinations need per-user OAuth — coming soon.</p>
+          <p className="mt-2 flex items-center gap-1 text-[11px] text-neutral-500"><Lock className="h-3 w-3" /> Cloud destinations need per-user OAuth — coming soon. SVG exports embed the raster image; true vectorization is a separate pipeline.</p>
         </div>
       </DialogContent>
     </Dialog>
