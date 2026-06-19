@@ -7,6 +7,7 @@ const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import ShareExportModal from "@/components/ShareExportModal";
 import AddToProjectMenu from "@/components/AddToProjectMenu";
+import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
