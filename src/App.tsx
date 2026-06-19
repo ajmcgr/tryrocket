@@ -22,6 +22,7 @@ import ProjectDetail from "./pages/ProjectDetail.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
+import Templates from "./pages/Templates.tsx";
 import SharedAsset from "./pages/SharedAsset.tsx";
 import SharedProject from "./pages/SharedProject.tsx";
 import SettingsLayout, {
@@ -75,6 +76,7 @@ const App = () => (
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/projects" element={<Dashboard />} />
               <Route path="/projects/new" element={<ProjectWizard />} />
+              <Route path="/templates" element={<Templates />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
