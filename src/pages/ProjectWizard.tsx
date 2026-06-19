@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Globe } from "lucide-r
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
+import { getTemplate } from "@/data/templates";
 const supabase = _sb as any;
 
 const TONES = ["Friendly & playful", "Bold & confident", "Minimal & technical", "Warm & human", "Luxe & editorial"];
@@ -26,6 +27,9 @@ const ProjectWizard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const templateId = searchParams.get("template");
+  const template = templateId ? getTemplate(templateId) : null;
   const [step, setStep] = useState(0);
   const [ctx, setCtx] = useState<Ctx>({ name: "", url: "", description: "", audience: AUDIENCES[1], tone: TONES[0] });
   const [running, setRunning] = useState(false);
@@ -33,6 +37,29 @@ const ProjectWizard = () => {
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
   const [scraping, setScraping] = useState(false);
   const [scraped, setScraped] = useState<any | null>(null);
+
+  // Apply template defaults once on mount
+  useEffect(() => {
+    if (!template) return;
+    setCtx(c => ({
+      ...c,
+      name: c.name || template.sampleName,
+      description: c.description || template.description,
+      audience: template.audience,
+      tone: template.tone,
+    }));
+    setScraped({
+      productName: template.sampleName,
+      tagline: template.tagline,
+      description: template.description,
+      colors: template.colors,
+      fonts: template.fonts,
+      logo: null,
+      voiceNotes: template.voiceNotes,
+      fromTemplate: template.id,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateId]);
 
   const setF = <K extends keyof Ctx>(k: K, v: Ctx[K]) => setCtx((c) => ({ ...c, [k]: v }));
 
