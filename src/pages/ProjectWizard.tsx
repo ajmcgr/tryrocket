@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Globe } from "lucide-r
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
+import { getTemplate } from "@/data/templates";
 const supabase = _sb as any;
 
 const TONES = ["Friendly & playful", "Bold & confident", "Minimal & technical", "Warm & human", "Luxe & editorial"];
@@ -26,6 +27,9 @@ const ProjectWizard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const templateId = searchParams.get("template");
+  const template = templateId ? getTemplate(templateId) : null;
   const [step, setStep] = useState(0);
   const [ctx, setCtx] = useState<Ctx>({ name: "", url: "", description: "", audience: AUDIENCES[1], tone: TONES[0] });
   const [running, setRunning] = useState(false);
@@ -33,6 +37,29 @@ const ProjectWizard = () => {
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
   const [scraping, setScraping] = useState(false);
   const [scraped, setScraped] = useState<any | null>(null);
+
+  // Apply template defaults once on mount
+  useEffect(() => {
+    if (!template) return;
+    setCtx(c => ({
+      ...c,
+      name: c.name || template.sampleName,
+      description: c.description || template.description,
+      audience: template.audience,
+      tone: template.tone,
+    }));
+    setScraped({
+      productName: template.sampleName,
+      tagline: template.tagline,
+      description: template.description,
+      colors: template.colors,
+      fonts: template.fonts,
+      logo: null,
+      voiceNotes: template.voiceNotes,
+      fromTemplate: template.id,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateId]);
 
   const setF = <K extends keyof Ctx>(k: K, v: Ctx[K]) => setCtx((c) => ({ ...c, [k]: v }));
 
@@ -156,8 +183,20 @@ const ProjectWizard = () => {
 
       {step === 0 && (
         <div className="mt-8 space-y-5">
-          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Tell us about your brand</h1>
-          <p className="text-sm text-neutral-500">Paste a website URL to extract a real brand, or fill in the fields manually to create one from scratch.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">{template ? `Starting from "${template.name}"` : "Tell us about your brand"}</h1>
+          <p className="text-sm text-neutral-500">{template ? "Audience, tone, palette, and fonts are pre-filled. Adjust the name and description, then continue." : "Paste a website URL to extract a real brand, or fill in the fields manually to create one from scratch."}</p>
+          {template && (
+            <div className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+              <div className="flex gap-1">
+                {template.colors.slice(0, 5).map(c => <span key={c} className="h-6 w-6 rounded-md border border-white" style={{ background: c }} />)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{template.name}</div>
+                <div className="truncate text-xs text-neutral-500">{template.fonts[0]} · {template.fonts[1]} · {template.tone}</div>
+              </div>
+              <button type="button" onClick={() => nav("/projects/new")} className="text-xs text-neutral-500 hover:text-neutral-900">Clear</button>
+            </div>
+          )}
 
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">Website (optional)</label>

@@ -69,6 +69,9 @@ const Projects = () => {
           <p className="mt-1 text-sm text-neutral-500">Group assets into projects.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link to="/templates" className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50 sm:py-2.5">
+            Templates
+          </Link>
           <Link to="/projects/new" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover sm:px-5 sm:py-2.5">
             <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">New Project (Guided)</span><span className="sm:hidden">Guided</span>
           </Link>
