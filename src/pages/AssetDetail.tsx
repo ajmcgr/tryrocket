@@ -164,7 +164,7 @@ const AssetDetail = () => {
           <ArrowLeft className="h-4 w-4" /> Assets
         </Link>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowVersions(v => !v)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
+          <button onClick={() => setHistoryOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
             <History className="h-4 w-4" /> Versions {versions.length > 0 && <span className="rounded-full bg-neutral-100 px-1.5 text-[10px]">{versions.length}</span>}
           </button>
           <div className="relative">
