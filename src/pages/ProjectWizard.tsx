@@ -183,8 +183,20 @@ const ProjectWizard = () => {
 
       {step === 0 && (
         <div className="mt-8 space-y-5">
-          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Tell us about your brand</h1>
-          <p className="text-sm text-neutral-500">Paste a website URL to extract a real brand, or fill in the fields manually to create one from scratch.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">{template ? `Starting from "${template.name}"` : "Tell us about your brand"}</h1>
+          <p className="text-sm text-neutral-500">{template ? "Audience, tone, palette, and fonts are pre-filled. Adjust the name and description, then continue." : "Paste a website URL to extract a real brand, or fill in the fields manually to create one from scratch."}</p>
+          {template && (
+            <div className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+              <div className="flex gap-1">
+                {template.colors.slice(0, 5).map(c => <span key={c} className="h-6 w-6 rounded-md border border-white" style={{ background: c }} />)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{template.name}</div>
+                <div className="truncate text-xs text-neutral-500">{template.fonts[0]} · {template.fonts[1]} · {template.tone}</div>
+              </div>
+              <button type="button" onClick={() => nav("/projects/new")} className="text-xs text-neutral-500 hover:text-neutral-900">Clear</button>
+            </div>
+          )}
 
           <div>
             <label className="text-xs font-medium uppercase tracking-wider text-neutral-500">Website (optional)</label>
