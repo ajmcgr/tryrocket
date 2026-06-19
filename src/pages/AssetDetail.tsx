@@ -26,7 +26,7 @@ const AssetDetail = () => {
   const [asset, setAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [versions, setVersions] = useState<any[]>([]);
-  const [showVersions, setShowVersions] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [varyOpen, setVaryOpen] = useState(false);
   const [tweak, setTweak] = useState("");
