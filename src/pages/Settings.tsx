@@ -247,6 +247,7 @@ export const AccountSettings = () => {
   };
 
   return (
+    <div className="space-y-6">
     <section className="rounded-2xl border border-red-200 bg-white p-6">
       <h2 className="text-base font-semibold text-red-700">Delete account</h2>
       <p className="mt-1 text-sm text-neutral-600">Permanently delete your account and all data. This cannot be undone.</p>
@@ -254,6 +255,17 @@ export const AccountSettings = () => {
         {loading === "delete" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete account"}
       </button>
     </section>
+    <section className="rounded-2xl border border-neutral-200 bg-white p-6">
+      <h2 className="text-base font-semibold">Product tour</h2>
+      <p className="mt-1 text-sm text-neutral-600">Replay the guided walkthrough of Create, Projects, Assets, and Insights.</p>
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent("rocket:start-tour"))}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50"
+      >
+        Replay tour
+      </button>
+    </section>
+    </div>
   );
 };
 

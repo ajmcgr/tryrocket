@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Logo from "./Logo";
 import ChatsSidebar from "./ChatsSidebar";
 import ShareExportModal from "./ShareExportModal";
+import OnboardingTour from "./OnboardingTour";
 import { Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -31,14 +32,14 @@ const AppShell = () => {
         <div className="flex h-16 w-full items-center px-6">
           <Logo to="/create" className="shrink-0" />
           <nav className="ml-8 hidden items-center gap-2 text-sm font-medium text-neutral-700 md:flex">
-            <NavLink to="/create" className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-brand-foreground shadow-sm transition hover:bg-brand-hover">Create</NavLink>
-            <NavLink to="/assets" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Assets</NavLink>
-            <NavLink to="/editor" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Editor</NavLink>
-            <NavLink to="/projects" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
-            <NavLink to="/insights" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Insights</NavLink>
+            <NavLink data-tour="nav-create" to="/create" className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-brand-foreground shadow-sm transition hover:bg-brand-hover">Create</NavLink>
+            <NavLink data-tour="nav-assets" to="/assets" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Assets</NavLink>
+            <NavLink data-tour="nav-editor" to="/editor" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Editor</NavLink>
+            <NavLink data-tour="nav-projects" to="/projects" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
+            <NavLink data-tour="nav-insights" to="/insights" className={({ isActive }) => `rounded-lg px-3 py-1.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Insights</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <a href="mailto:alex@tryrocket.ai" className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex">Support</a>
+            <a data-tour="nav-avatar" href="mailto:alex@tryrocket.ai" className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex">Support</a>
             <button
               type="button"
               onClick={() => setShareOpen(true)}
@@ -81,6 +82,7 @@ const AppShell = () => {
           </div>
         </div>
       </header>
+      <OnboardingTour />
       <ShareExportModal
         open={shareOpen}
         onOpenChange={setShareOpen}
