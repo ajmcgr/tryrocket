@@ -21,7 +21,7 @@ async function classify(prompt: string): Promise<{ asset_type: AssetType; count:
     const out = await geminiText({ system: CLASSIFIER_SYSTEM, user: prompt, temperature: 0.1, json: true });
     const parsed = JSON.parse(out);
     const at = (parsed.asset_type || "other") as AssetType;
-    const c = Math.max(1, Math.min(6, parseInt(parsed.count) || 1));
+    const c = Math.max(1, Math.min(24, parseInt(parsed.count) || 1));
     if (!(at in GENERATORS)) return { asset_type: "other", count: 1 };
     return { asset_type: at, count: c };
   } catch {
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     // Classify
     const cls = explicitType
-      ? { asset_type: explicitType, count: Math.max(1, Math.min(6, body.count || GENERATORS[explicitType].defaultCount || 1)) }
+      ? { asset_type: explicitType, count: Math.max(1, Math.min(24, body.count || GENERATORS[explicitType].defaultCount || 1)) }
       : await classify(prompt);
 
     // Refuse non-branding
