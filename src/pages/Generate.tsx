@@ -241,7 +241,7 @@ const Generate = () => {
   const isChatView = !!(chatId && chatData) || (loading && !!pendingPrompt);
   const viewPrompt = chatData?.prompt ?? pendingPrompt;
   return (
-    <div className={`mx-auto flex min-h-[calc(100vh-4rem)] w-full flex-col px-6 py-12 ${isChatView ? "max-w-7xl" : "max-w-3xl items-center"}`}>
+    <div className={`flex min-h-[calc(100vh-4rem)] w-full flex-col ${isChatView ? "px-6 py-6" : "mx-auto max-w-3xl items-center px-6 py-12"}`}>
       {isChatView ? (
         <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
           {/* Left: chat panel */}
