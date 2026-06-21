@@ -122,7 +122,7 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
 };
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const nav = useNavigate();
   const [url, setUrl] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -167,7 +167,6 @@ const Index = () => {
     );
   };
 
-  if (loading) return <div className="grid min-h-screen place-items-center bg-white text-sm text-neutral-500">Loading…</div>;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
