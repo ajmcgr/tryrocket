@@ -339,16 +339,25 @@ const Generate = () => {
 
       <form onSubmit={submit} className="w-full">
         <div className="rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. A logo for trylaunch.ai"
-            rows={3}
-            disabled={loading}
-            className="w-full resize-none rounded-xl px-3 py-2 text-base outline-none placeholder:text-neutral-400 disabled:opacity-60"
-            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit(); }}
-          />
-          <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-1 pt-1">
+          <div className="flex items-start gap-2">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="e.g. A logo for trylaunch.ai"
+              rows={3}
+              disabled={loading}
+              className="flex-1 resize-none rounded-xl px-3 py-2 text-base outline-none placeholder:text-neutral-400 disabled:opacity-60"
+              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit(); }}
+            />
+            <button
+              type="submit"
+              disabled={!prompt.trim() || loading}
+              className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 px-2 pb-1 pt-2">
             <div className="flex flex-wrap items-center gap-1.5">
               {workflow === "auto" && ASSET_CHIPS.map((c) => (
                 <button
@@ -361,13 +370,6 @@ const Generate = () => {
                 </button>
               ))}
             </div>
-            <button
-              type="submit"
-              disabled={!prompt.trim() || loading}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-            </button>
           </div>
         </div>
       </form>
