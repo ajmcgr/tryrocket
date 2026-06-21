@@ -29,7 +29,7 @@ const AppShell = () => {
   const showSidebar = sidebarRoutes.some(r => location.pathname === r || location.pathname.startsWith(r + "/"));
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900">
+    <div className="app-shell min-h-screen bg-neutral-50 text-neutral-900">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="flex h-14 w-full items-center px-4">
           <Logo to="/create" className="shrink-0" />

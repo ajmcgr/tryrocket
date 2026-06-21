@@ -75,6 +75,9 @@
   footer h1, footer h2 {
     font-family: 'Inter', sans-serif;
   }
+  .app-shell h1, .app-shell h2, .app-shell h3, .app-shell h4 {
+    font-family: 'Inter', sans-serif;
+  }
 }
 
 @layer utilities {
