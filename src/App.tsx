@@ -24,6 +24,7 @@ import BrandKitHub from "./pages/BrandKitHub.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
 import Templates from "./pages/Templates.tsx";
 import Insights from "./pages/Insights.tsx";
+import Notifications from "./pages/Notifications.tsx";
 import SharedAsset from "./pages/SharedAsset.tsx";
 import SharedProject from "./pages/SharedProject.tsx";
 import SettingsLayout, {
@@ -44,6 +45,7 @@ import FAQ from "./pages/FAQ.tsx";
 import AppShell from "./components/AppShell.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
+import { NotificationsProvider } from "./contexts/NotificationsContext.tsx";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +56,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <NotificationsProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/reserve" element={<Reserve />} />
@@ -79,6 +82,7 @@ const App = () => (
               <Route path="/projects/new" element={<ProjectWizard />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/insights" element={<Insights />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
@@ -102,6 +106,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </NotificationsProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
