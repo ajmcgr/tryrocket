@@ -141,6 +141,8 @@ Valid asset_type values:
 
 Routing hints:
 - "logo", "mark" -> logo
+- "brand template", "templates" -> template
+- "components", "UI kit", "buttons", "cards", "inputs" -> graphic
 - "icon set", "icon for X" -> icon
 - "hero image", "banner", "social graphic", "ad" -> graphic
 - "photo of", "lifestyle shot" -> photo
@@ -155,7 +157,7 @@ Routing hints:
 - "pitch deck", "slides" -> presentation
 - bare URL only (e.g. "https://trylaunch.ai") or just a product name -> brand_guidelines
 
-Count: how many variants. For visual assets, generate MANY options (Looka-style gallery). Defaults: logo=12, icon=12, graphic=6, photo=4, else 1. Parse explicit numbers ("5 logos" -> 5, "20 logos" -> 20). Cap at 24.
+Count: how many variants. Generate a Looka-style gallery by default for every supported asset category. Defaults: logo=24, icon=24, graphic=24, photo=24, brand_guidelines=24, template=24, color_system=24, font_system=24, brand_voice=24, else 1. Parse explicit numbers ("5 logos" -> 5, "20 logos" -> 20). Cap at 24.
 
 RESPOND WITH JSON ONLY.`;
 
