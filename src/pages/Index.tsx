@@ -122,7 +122,7 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
 };
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const nav = useNavigate();
   const [url, setUrl] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
