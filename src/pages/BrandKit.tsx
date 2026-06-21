@@ -42,7 +42,8 @@ const BrandKit = () => {
   );
   if (!project) return <div className="p-10 text-center text-sm text-neutral-500">Project not found.</div>;
 
-  const logos = assets.filter(a => a.asset_type === "logo" && a.image_url);
+  const logos = assets.filter(a => a.asset_type === "logo" && a.image_url && a?.editor_state?.kind !== "logotype");
+  const logotypes = assets.filter(a => a?.editor_state?.kind === "logotype");
   const graphics = assets.filter(a => ["graphic", "icon", "photo"].includes(a.asset_type) && a.image_url);
   const colorTexts = assets.filter(a => ["color_system", "brand_guidelines", "design_color_palette"].includes(a.asset_type)).map(a => a.content || "").join("\n");
   const colors = uniq((colorTexts.match(HEX_RE) || []).map(c => c.toLowerCase())).slice(0, 12);
@@ -119,6 +120,19 @@ const BrandKit = () => {
               {logos.map(l => (
                 <div key={l.id} className="flex aspect-square items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
                   <img src={l.image_url} alt={l.title} className="max-h-full max-w-full object-contain" />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {logotypes.length > 0 && (
+          <section>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-500">Logotypes</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {logotypes.map(l => (
+                <div key={l.id} className="flex aspect-[16/7] items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
+                  <Logotype state={l.editor_state} fit="contain" />
                 </div>
               ))}
             </div>
