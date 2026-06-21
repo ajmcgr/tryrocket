@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProjectGridSkeleton } from "@/components/Skeletons";
+import { Logotype } from "@/components/Logotype";
 const supabase = _sb as any;
 
 const Projects = () => {
@@ -17,6 +18,7 @@ const Projects = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [latestImages, setLatestImages] = useState<Record<string, string>>({});
+  const [latestLogotypes, setLatestLogotypes] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -36,20 +38,25 @@ const Projects = () => {
     if (list.length) {
       const { data: cs } = await supabase
         .from("assets")
-        .select("project_id,image_url,thumbnail_url,created_at")
+        .select("project_id,image_url,thumbnail_url,editor_state,created_at")
         .eq("user_id", user.id)
         .not("project_id", "is", null)
         .order("created_at", { ascending: false });
       const c: Record<string, number> = {};
       const latest: Record<string, string> = {};
+      const latestLt: Record<string, any> = {};
       (cs || []).forEach((a: any) => {
         if (!a.project_id) return;
         c[a.project_id] = (c[a.project_id] || 0) + 1;
         const img = a.thumbnail_url || a.image_url;
         if (img && !latest[a.project_id]) latest[a.project_id] = img;
+        if (!img && a.editor_state?.kind === "logotype" && !latestLt[a.project_id]) {
+          latestLt[a.project_id] = a.editor_state;
+        }
       });
       setCounts(c);
       setLatestImages(latest);
+      setLatestLogotypes(latestLt);
     }
     setLoading(false);
   };
@@ -164,9 +171,14 @@ const Projects = () => {
               <Link to={`/projects/${p.id}`} className="block">
                 {(() => {
                   const cover = p.cover_url || latestImages[p.id];
+                  const lt = !cover ? latestLogotypes[p.id] : null;
                   return cover ? (
                     <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100">
                       <img src={cover} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.02]" loading="lazy" />
+                    </div>
+                  ) : lt ? (
+                    <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-50">
+                      <Logotype state={lt} fit="contain" />
                     </div>
                   ) : (
                     <div className="grid aspect-[16/9] w-full place-items-center bg-neutral-50">
