@@ -338,6 +338,27 @@ const Generate = () => {
         </div>
       </form>
 
+      {workflow === "auto" && (assetType === "logo" || assetType === "graphic") && (
+        <div className="mt-3 w-full">
+          <div className="mb-1.5 flex items-center justify-between">
+            <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Variations</div>
+            <div className="text-xs text-neutral-500">{count} option{count === 1 ? "" : "s"} · {count * 10} credits</div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {[4, 8, 12, 16, 24].map((n) => (
+              <button
+                type="button"
+                key={n}
+                onClick={() => setCount(n)}
+                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs transition ${count === n ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-4 w-full">
         <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-neutral-500">Workflow</div>
         <div className="flex flex-wrap gap-1.5">
