@@ -98,22 +98,20 @@ const SiteHeader = () => {
                   <AvatarFallback className="bg-neutral-100 text-xs font-medium text-neutral-700">{initial}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <div className="px-2 pb-2">
-                  <p className="text-xs text-muted-foreground">Signed in as</p>
-                  <p className="mt-0.5 truncate text-sm font-medium">{user?.email}</p>
+              <DropdownMenuContent align="end" sideOffset={8} className="w-64 rounded-xl border border-neutral-200 bg-white p-2 shadow-lg">
+                <div className="px-2 py-1.5">
+                  <p className="text-xs text-neutral-500">Signed in as</p>
+                  <p className="mt-0.5 truncate text-sm font-medium text-neutral-900">{user?.email}</p>
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="cursor-pointer">
+                <DropdownMenuItem asChild className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
                   <Link to="/pricing">Plans</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="cursor-pointer">
+                <DropdownMenuItem asChild className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
                   <Link to="/settings">Settings</Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={async () => { await signOut(); nav("/"); }}
-                  className="cursor-pointer"
+                  className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900"
                 >
                   Sign out
                 </DropdownMenuItem>
