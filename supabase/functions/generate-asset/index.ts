@@ -34,12 +34,26 @@ async function classify(prompt: string): Promise<{ asset_type: AssetType; count:
     const parsed = JSON.parse(out);
     const at = (parsed.asset_type || "other") as AssetType;
     if (!(at in GENERATORS)) return { asset_type: "other", count: 1 };
-    const explicitCount = prompt.match(/\b(\d{1,2})\b\s*(?:options?|variations?|variants?|concepts?|logos?|icons?|photos?|graphics?|templates?|guidelines?|colors?|fonts?|voices?|components?)/i)?.[1];
-    // Ignore the classifier's count — it under-counts. Always use defaultCount unless the user explicitly named a number.
+    // Parse any explicit count from the prompt — number-before-noun, number-after-noun,
+    // or spelled-out words like "dozen", "a few", "couple". The classifier's own count
+    // under-counts, so we ignore it.
+    const lower = prompt.toLowerCase();
+    const wordCounts: Record<string, number> = {
+      "a couple": 2, "couple": 2,
+      "a few": 3, "few": 3, "several": 4, "handful": 5,
+      "half a dozen": 6, "half dozen": 6,
+      "a dozen": 12, "dozen": 12, "twelve": 12,
+      "two dozen": 24, "lots": 12, "many": 12, "bunch": 12,
+    };
+    let explicitCount: number | null = null;
+    for (const [word, n] of Object.entries(wordCounts)) {
+      if (lower.includes(word)) { explicitCount = n; break; }
+    }
+    // Any bare 1-2 digit number anywhere in the prompt.
+    const digitMatch = prompt.match(/\b(\d{1,2})\b/);
+    if (digitMatch) explicitCount = parseInt(digitMatch[1]);
     const fallback = GENERATORS[at].defaultCount || 1;
-    const c = explicitCount
-      ? Math.max(1, Math.min(24, parseInt(explicitCount)))
-      : fallback;
+    const c = explicitCount ? Math.max(1, Math.min(24, explicitCount)) : fallback;
     return { asset_type: at, count: c };
   } catch {
     return { asset_type: "other", count: 1 };
@@ -220,17 +234,21 @@ Deno.serve(async (req) => {
         return asset?.id;
       };
       // Per-variant failures must NOT abort the whole batch — users asked for many
-      // variants and one Gemini hiccup shouldn't throw away the rest.
-      let variantErrors = 0;
+      // variants and one Gemini hiccup shouldn't throw away the rest. We also retry
+      // each failed slot up to 2 extra times so a flaky provider doesn't silently
+      // halve the user's results.
       let lastUnavailable: GeminiUnavailableError | null = null;
       const safeVariant = async (i: number) => {
-        try { return await createImageVariant(i); }
-        catch (e) {
-          variantErrors++;
-          if (e instanceof GeminiUnavailableError) lastUnavailable = e;
-          console.error(`variant ${i} failed`, (e as Error).message);
-          return undefined;
+        const MAX_ATTEMPTS = 3;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          try { return await createImageVariant(i); }
+          catch (e) {
+            if (e instanceof GeminiUnavailableError) lastUnavailable = e;
+            console.error(`variant ${i} attempt ${attempt} failed: ${(e as Error).message}`);
+            if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 600 * attempt));
+          }
         }
+        return undefined;
       };
       const results = await mapLimit(count, 4, safeVariant);
       for (const id of results) if (id) ids.push(id);
