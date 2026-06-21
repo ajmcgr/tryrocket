@@ -34,8 +34,11 @@ async function classify(prompt: string): Promise<{ asset_type: AssetType; count:
     const at = (parsed.asset_type || "other") as AssetType;
     if (!(at in GENERATORS)) return { asset_type: "other", count: 1 };
     const explicitCount = prompt.match(/\b(\d{1,2})\b\s*(?:options?|variations?|variants?|concepts?|logos?|icons?|photos?|graphics?|templates?|guidelines?|colors?|fonts?|voices?|components?)/i)?.[1];
+    // Ignore the classifier's count — it under-counts. Always use defaultCount unless the user explicitly named a number.
     const fallback = GENERATORS[at].defaultCount || 1;
-    const c = Math.max(1, Math.min(24, parseInt(explicitCount || "") || fallback));
+    const c = explicitCount
+      ? Math.max(1, Math.min(24, parseInt(explicitCount)))
+      : fallback;
     return { asset_type: at, count: c };
   } catch {
     return { asset_type: "other", count: 1 };
