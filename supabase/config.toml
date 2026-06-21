@@ -44,3 +44,12 @@ verify_jwt = true
 
 [functions.scrape-url]
 verify_jwt = true
+
+[functions.drive-oauth-start]
+verify_jwt = true
+
+[functions.drive-oauth-callback]
+verify_jwt = false
+
+[functions.drive-upload]
+verify_jwt = true
