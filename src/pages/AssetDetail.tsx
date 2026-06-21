@@ -281,6 +281,14 @@ const AssetDetail = () => {
       </div>
 
       <div className="grid gap-6">
+        {isLogo ? (
+          <LogotypeEditor
+            initial={asset.editor_state as LogotypeState}
+            defaultText={asset.editor_state?.text || asset.title || "Brand"}
+            saving={savingEdit}
+            onSave={saveLogotype}
+          />
+        ) : (
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
           {isImage ? (
             <div className="flex items-center justify-center bg-neutral-50 p-8">
@@ -315,6 +323,7 @@ const AssetDetail = () => {
             </div>
           )}
         </div>
+        )}
       </div>
 
       <OutOfCreditsModal open={!!outOfCredits} onClose={() => setOutOfCredits(null)} needed={outOfCredits?.needed} remaining={outOfCredits?.remaining} />
