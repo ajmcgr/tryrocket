@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Folder, MoreHorizontal, Trash2, Pencil, Sparkles, ImageIcon, X } from "lucide-react";
+import { Plus, Folder, MoreHorizontal, Trash2, Pencil, Sparkles, ImageIcon, X, Share2, Link2, Copy, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,8 @@ const Projects = () => {
   const [renameVal, setRenameVal] = useState("");
   const [coverPicker, setCoverPicker] = useState<any | null>(null);
   const [coverChoices, setCoverChoices] = useState<any[]>([]);
+  const [sharing, setSharing] = useState<any | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -97,6 +99,34 @@ const Projects = () => {
     await supabase.from("projects").update({ cover_url: url }).eq("id", id);
   };
 
+  const shareUrl = (token?: string | null) =>
+    token ? `${window.location.origin}/share/project/${token}` : "";
+
+  const enableShare = async (project: any) => {
+    let token = project.share_token;
+    if (!token) {
+      token = (crypto as any).randomUUID();
+      const { error } = await supabase.from("projects").update({ share_token: token }).eq("id", project.id);
+      if (error) { toast({ title: "Failed to enable sharing", description: error.message, variant: "destructive" }); return; }
+      setProjects(ps => ps.map(x => x.id === project.id ? { ...x, share_token: token } : x));
+    }
+    setSharing({ ...project, share_token: token });
+  };
+
+  const disableShare = async (project: any) => {
+    setProjects(ps => ps.map(x => x.id === project.id ? { ...x, share_token: null } : x));
+    setSharing(null);
+    await supabase.from("projects").update({ share_token: null }).eq("id", project.id);
+    toast({ title: "Public link disabled" });
+  };
+
+  const copyShare = async () => {
+    if (!sharing?.share_token) return;
+    await navigator.clipboard.writeText(shareUrl(sharing.share_token));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -161,9 +191,15 @@ const Projects = () => {
                   {p.cover_url && (
                     <DropdownMenuItem onClick={async () => { setProjects(ps => ps.map(x => x.id === p.id ? { ...x, cover_url: null } : x)); await supabase.from("projects").update({ cover_url: null }).eq("id", p.id); }}><X className="mr-2 h-4 w-4" /> Reset cover</DropdownMenuItem>
                   )}
+                  <DropdownMenuItem onClick={() => enableShare(p)}><Share2 className="mr-2 h-4 w-4" /> {p.share_token ? "Manage public link" : "Share publicly"}</DropdownMenuItem>
                   <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => del(p.id)}><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              {p.share_token && (
+                <div className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+                  <Link2 className="h-3 w-3" /> Public
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -209,6 +245,24 @@ const Projects = () => {
               })}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!sharing} onOpenChange={(o) => !o && setSharing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Share “{sharing?.name}” publicly</DialogTitle></DialogHeader>
+          <p className="text-sm text-neutral-600">Anyone with this link can view the project and its assets. No login required.</p>
+          <div className="mt-2 flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
+            <Link2 className="h-4 w-4 shrink-0 text-neutral-500" />
+            <span className="flex-1 truncate font-mono text-xs text-neutral-800">{shareUrl(sharing?.share_token)}</span>
+            <button onClick={copyShare} className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs font-medium hover:bg-neutral-100">
+              {copied ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+            </button>
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button variant="outline" className="text-red-600 hover:text-red-700" onClick={() => sharing && disableShare(sharing)}>Disable link</Button>
+            <Button onClick={() => setSharing(null)}>Done</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
