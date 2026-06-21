@@ -92,6 +92,7 @@ const Generate = () => {
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -236,7 +237,8 @@ const Generate = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const isChatView = !!(chatId && chatData);
+  const isChatView = !!(chatId && chatData) || (loading && !!pendingPrompt);
+  const viewPrompt = chatData?.prompt ?? pendingPrompt;
   return (
     <div className={`mx-auto flex min-h-[calc(100vh-4rem)] w-full flex-col px-6 py-12 ${isChatView ? "max-w-7xl" : "max-w-3xl items-center"}`}>
       {isChatView ? (
@@ -245,15 +247,20 @@ const Generate = () => {
           <div className="flex h-[calc(100vh-8rem)] flex-col lg:sticky lg:top-20">
             {/* Messages */}
             <div className="flex-1 space-y-3 overflow-y-auto">
-              {chatData.prompt && (
+              {viewPrompt && (
                 <div className="w-full rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
-                  {chatData.prompt}
+                  {viewPrompt}
                 </div>
               )}
-              <div className="w-full rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
-                {chatAssets.length > 0
-                  ? `Found ${chatAssets.length} result${chatAssets.length === 1 ? "" : "s"}. See the results panel.`
-                  : "No assets in this chat."}
+              <div className="flex w-full items-center gap-2 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
+                {loading && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-neutral-500" />}
+                <span>
+                  {loading
+                    ? `${MESSAGES[msgIdx]}`
+                    : chatAssets.length > 0
+                      ? `Found ${chatAssets.length} result${chatAssets.length === 1 ? "" : "s"}. See the results panel.`
+                      : "No assets in this chat."}
+                </span>
               </div>
             </div>
             {/* Composer pinned to bottom */}
