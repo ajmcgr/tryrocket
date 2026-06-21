@@ -3,19 +3,24 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio } from "lucide-react";
+import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 const supabase = _sb as any;
 
-const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string }[] = [
-  { id: "logo", label: "Logo", Icon: Sparkles, example: "A logo for TryLaunch — clean SaaS, blue accent" },
+const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string; assetType?: string; promptPrefix?: string }[] = [
+  { id: "brand_guidelines", label: "Brand Guidelines", Icon: FileText, example: "Brand guidelines for TryLaunch" },
+  { id: "template", label: "Brand Templates", Icon: LayoutTemplate, example: "Brand templates for a developer-tools startup" },
+  { id: "logo", label: "Logos", Icon: Sparkles, example: "A logo for TryLaunch — clean SaaS, blue accent" },
   { id: "color_system", label: "Colors", Icon: Palette, example: "Color system for a developer-tools brand" },
   { id: "font_system", label: "Fonts", Icon: Type, example: "Font pairing for a modern fintech brand" },
   { id: "brand_voice", label: "Brand Voice", Icon: Wand2, example: "Brand voice for a friendly indie dev tool" },
+  { id: "photo", label: "Photos", Icon: Camera, example: "Product photos for a Mac productivity app" },
+  { id: "components", label: "Components", Icon: Layers, assetType: "graphic", promptPrefix: "UI component set with buttons, cards, inputs, navigation, and states. ", example: "UI component set for a fintech dashboard" },
+  { id: "graphic", label: "Graphics", Icon: ImageIcon, example: "Hero banner for a Mac productivity app" },
+  { id: "icon", label: "Icons", Icon: Shapes, example: "Icon set for a developer-tools startup" },
   { id: "launch_copy", label: "Launch Copy", Icon: RocketIcon, example: "Landing page launch copy for trylaunch.ai" },
   { id: "product_hunt_copy", label: "PH Copy", Icon: RocketIcon, example: "Product Hunt copy for trylaunch.ai" },
   { id: "social_post", label: "Social Post", Icon: Megaphone, example: "X thread announcing trylaunch.ai launch" },
-  { id: "graphic", label: "Graphic", Icon: ImageIcon, example: "Hero banner for a Mac productivity app" },
 ];
 
 type WF = "auto" | "brand" | "design" | "launch" | "promote";
