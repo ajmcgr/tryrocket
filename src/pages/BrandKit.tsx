@@ -6,6 +6,7 @@ import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
+import { Logotype } from "@/components/Logotype";
 
 const HEX_RE = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi;
 const FONT_RE = /(?:font[-\s]?family|typeface|heading|body)\s*[:\-—]?\s*["']?([A-Z][A-Za-z0-9 ]{2,30})["']?/g;
