@@ -50,7 +50,9 @@ const AppShell = () => {
               <Share2 className="h-4 w-4" />
               Share
             </button>
-            <NotificationsBell />
+            <div data-tour="nav-notifications" className="inline-flex">
+              <NotificationsBell />
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none focus:ring-2 focus:ring-neutral-300" aria-label="Account menu">
                 <Avatar className="h-8 w-8 border border-neutral-200">

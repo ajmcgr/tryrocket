@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save } from "lucide-react";
+import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save, FileCode } from "lucide-react";
+import { imageUrlToSvg, downloadSvg } from "@/lib/vectorize";
 const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import ShareExportModal from "@/components/ShareExportModal";
@@ -205,6 +206,23 @@ const AssetDetail = () => {
             <a href={asset.image_url} download className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
               <Download className="h-4 w-4" />
             </a>
+          )}
+          {isImage && (
+            <button
+              onClick={async () => {
+                try {
+                  const svg = await imageUrlToSvg(asset.image_url);
+                  downloadSvg(svg, (asset.title || "asset").replace(/[^\w-]+/g, "_"));
+                  toast({ title: "SVG downloaded" });
+                } catch (e: any) {
+                  toast({ title: "Vectorize failed", description: e?.message || "Could not convert image to SVG.", variant: "destructive" });
+                }
+              }}
+              title="Download as SVG (vectorized)"
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+            >
+              <FileCode className="h-4 w-4" /> SVG
+            </button>
           )}
           {!isImage && (
             <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">

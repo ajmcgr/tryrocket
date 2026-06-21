@@ -40,6 +40,36 @@ const SAMPLE_PROMPTS = [
   "Brand voice for an indie newsletter app",
 ];
 
+// Specialized Design templates: pre-canned visual prompt scaffolds.
+// Each chip prepends a vivid format-specific style header to the user's prompt
+// and forces asset_type=graphic so the generator goes through image generation.
+type DesignTemplate = {
+  id: string;
+  label: string;
+  ratio: string;
+  scaffold: (p: string) => string;
+};
+const DESIGN_TEMPLATES: DesignTemplate[] = [
+  {
+    id: "hero",
+    label: "Hero (16:9)",
+    ratio: "1920x1080",
+    scaffold: (p) => `Hero banner image, 16:9 widescreen (1920x1080), bold, modern, high-contrast, marketing-grade composition with clear focal point and editorial negative space. Subject: ${p}. Clean background, no text overlay.`,
+  },
+  {
+    id: "og",
+    label: "OG image (1200×630)",
+    ratio: "1200x630",
+    scaffold: (p) => `Open Graph social share image, 1200x630, eye-catching, brand-forward, centered composition optimized for link previews. Subject: ${p}. Crisp, no text overlay (text added separately).`,
+  },
+  {
+    id: "yt",
+    label: "YouTube thumbnail",
+    ratio: "1280x720",
+    scaffold: (p) => `YouTube thumbnail, 1280x720, ultra eye-catching, vibrant saturated colors, dramatic lighting, bold subject in left or center third, leaving space for thumbnail text. Subject: ${p}. No text overlay.`,
+  },
+];
+
 const MESSAGES = [
   "Understanding your brand…",
   "Scraping context…",
@@ -53,6 +83,7 @@ const Generate = () => {
   const [prompt, setPrompt] = useState(params.get("prompt") ?? "");
   const [assetType, setAssetType] = useState<string | null>(params.get("asset_type"));
   const [workflow, setWorkflow] = useState<WF>((params.get("workflow") as WF) || "auto");
+  const [template, setTemplate] = useState<string | null>(null);
   const projectId = params.get("project");
   const chatId = params.get("chat");
   const [loading, setLoading] = useState(false);
@@ -116,6 +147,10 @@ const Generate = () => {
       }
       let allIds: string[] = [];
       let creditsErr: any = null;
+      // Apply Design template scaffold if one was picked.
+      const tpl = template ? DESIGN_TEMPLATES.find(t => t.id === template) : null;
+      const effectivePrompt = tpl ? tpl.scaffold(p) : p;
+      const effectiveAssetType = tpl ? "graphic" : (assetType || undefined);
       // Brand Analysis Mode: any URL in the prompt triggers a pre-scrape so EVERY downstream
       // asset (workflow fan-out or single auto) shares the same real brand context.
       let sharedCtx: any = null;
@@ -134,9 +169,9 @@ const Generate = () => {
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
-      if (effective === "auto") {
+      if (tpl || effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: p, asset_type: assetType || undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
+          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
         });
         if (error) throw new Error("Rocket is busy. Please try again.");
         const d: any = data;
@@ -288,7 +323,7 @@ const Generate = () => {
             <button
               type="button"
               key={w.id}
-              onClick={() => { setWorkflow(w.id); if (w.id !== "auto") setAssetType(null); }}
+              onClick={() => { setWorkflow(w.id); if (w.id !== "auto") setAssetType(null); if (w.id !== "design") setTemplate(null); }}
               title={w.hint}
               className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${workflow === w.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
             >
@@ -298,6 +333,27 @@ const Generate = () => {
         </div>
         {workflow !== "auto" && (
           <p className="mt-1.5 text-xs text-neutral-500">{WORKFLOWS.find(w => w.id === workflow)?.hint}</p>
+        )}
+        {workflow === "design" && (
+          <div className="mt-3">
+            <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-neutral-500">Template (optional)</div>
+            <div className="flex flex-wrap gap-1.5">
+              {DESIGN_TEMPLATES.map((t) => (
+                <button
+                  type="button"
+                  key={t.id}
+                  onClick={() => setTemplate(template === t.id ? null : t.id)}
+                  title={`${t.label} — ${t.ratio}`}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${template === t.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
+                >
+                  <ImageIcon className="h-3 w-3" /> {t.label}
+                </button>
+              ))}
+            </div>
+            {template && (
+              <p className="mt-1.5 text-xs text-neutral-500">Generates a single image with the {DESIGN_TEMPLATES.find(t => t.id === template)?.ratio} template scaffold instead of the 3-concept logo fan-out.</p>
+            )}
+          </div>
         )}
       </div>
 
