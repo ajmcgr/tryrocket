@@ -3,32 +3,37 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio } from "lucide-react";
+import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 const supabase = _sb as any;
 
-const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string }[] = [
-  { id: "logo", label: "Logo", Icon: Sparkles, example: "A logo for TryLaunch — clean SaaS, blue accent" },
+const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string; assetType?: string; promptPrefix?: string }[] = [
+  { id: "brand_guidelines", label: "Brand Guidelines", Icon: FileText, example: "Brand guidelines for TryLaunch" },
+  { id: "template", label: "Brand Templates", Icon: LayoutTemplate, example: "Brand templates for a developer-tools startup" },
+  { id: "logo", label: "Logos", Icon: Sparkles, example: "A logo for TryLaunch — clean SaaS, blue accent" },
   { id: "color_system", label: "Colors", Icon: Palette, example: "Color system for a developer-tools brand" },
   { id: "font_system", label: "Fonts", Icon: Type, example: "Font pairing for a modern fintech brand" },
   { id: "brand_voice", label: "Brand Voice", Icon: Wand2, example: "Brand voice for a friendly indie dev tool" },
+  { id: "photo", label: "Photos", Icon: Camera, example: "Product photos for a Mac productivity app" },
+  { id: "components", label: "Components", Icon: Layers, assetType: "graphic", promptPrefix: "UI component set with buttons, cards, inputs, navigation, and states. ", example: "UI component set for a fintech dashboard" },
+  { id: "graphic", label: "Graphics", Icon: ImageIcon, example: "Hero banner for a Mac productivity app" },
+  { id: "icon", label: "Icons", Icon: Shapes, example: "Icon set for a developer-tools startup" },
   { id: "launch_copy", label: "Launch Copy", Icon: RocketIcon, example: "Landing page launch copy for trylaunch.ai" },
   { id: "product_hunt_copy", label: "PH Copy", Icon: RocketIcon, example: "Product Hunt copy for trylaunch.ai" },
   { id: "social_post", label: "Social Post", Icon: Megaphone, example: "X thread announcing trylaunch.ai launch" },
-  { id: "graphic", label: "Graphic", Icon: ImageIcon, example: "Hero banner for a Mac productivity app" },
 ];
 
 type WF = "auto" | "brand" | "design" | "launch" | "promote";
 const WORKFLOWS: { id: WF; label: string; Icon: any; hint: string }[] = [
-  { id: "auto", label: "Auto-detect", Icon: Wand, hint: "Rocket picks the specialist (1 asset)" },
-  { id: "brand", label: "Brand It", Icon: Sparkles, hint: "Logo + colors + fonts + voice" },
-  { id: "design", label: "Design It", Icon: Paintbrush, hint: "3 logo concepts + color system" },
+  { id: "auto", label: "Auto-detect", Icon: Wand, hint: "Rocket picks the specialist and generates a full option gallery" },
+  { id: "brand", label: "Brand It", Icon: Sparkles, hint: "Full galleries for logos, colors, fonts, and voice" },
+  { id: "design", label: "Design It", Icon: Paintbrush, hint: "Full logo gallery + color system gallery" },
   { id: "launch", label: "Launch It", Icon: Send, hint: "Launch copy + PH copy + social" },
   { id: "promote", label: "Promote It", Icon: Radio, hint: "3 social posts + founder bio" },
 ];
 const WORKFLOW_PLAN: Record<Exclude<WF, "auto">, { asset_type: string; count?: number }[]> = {
-  brand: [{ asset_type: "logo", count: 1 }, { asset_type: "color_system" }, { asset_type: "font_system" }, { asset_type: "brand_voice" }],
-  design: [{ asset_type: "logo", count: 3 }, { asset_type: "color_system" }],
+  brand: [{ asset_type: "logo" }, { asset_type: "color_system" }, { asset_type: "font_system" }, { asset_type: "brand_voice" }],
+  design: [{ asset_type: "logo" }, { asset_type: "color_system" }],
   launch: [{ asset_type: "launch_copy" }, { asset_type: "product_hunt_copy" }, { asset_type: "social_post" }],
   promote: [{ asset_type: "social_post" }, { asset_type: "social_post" }, { asset_type: "social_post" }, { asset_type: "founder_bio" }],
 };
@@ -84,7 +89,7 @@ const Generate = () => {
   const [assetType, setAssetType] = useState<string | null>(params.get("asset_type"));
   const [workflow, setWorkflow] = useState<WF>((params.get("workflow") as WF) || "auto");
   const [template, setTemplate] = useState<string | null>(null);
-  const [count, setCount] = useState<number>(4);
+  const [count, setCount] = useState<number>(24);
   const projectId = params.get("project");
   const chatId = params.get("chat");
   const [loading, setLoading] = useState(false);
@@ -152,8 +157,10 @@ const Generate = () => {
       let creditsErr: any = null;
       // Apply Design template scaffold if one was picked.
       const tpl = template ? DESIGN_TEMPLATES.find(t => t.id === template) : null;
-      const effectivePrompt = tpl ? tpl.scaffold(p) : p;
-      const effectiveAssetType = tpl ? "graphic" : (assetType || undefined);
+      const selectedChip = assetType ? ASSET_CHIPS.find(c => c.id === assetType) : null;
+      const chipPrompt = selectedChip?.promptPrefix ? `${selectedChip.promptPrefix}${p}` : p;
+      const effectivePrompt = tpl ? tpl.scaffold(p) : chipPrompt;
+      const effectiveAssetType = tpl ? "graphic" : (selectedChip?.assetType || assetType || undefined);
       // Brand Analysis Mode: any URL in the prompt triggers a pre-scrape so EVERY downstream
       // asset (workflow fan-out or single auto) shares the same real brand context.
       let sharedCtx: any = null;
@@ -172,10 +179,9 @@ const Generate = () => {
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
-      const isImageType = effectiveAssetType === "logo" || effectiveAssetType === "graphic";
       if (tpl || effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: isImageType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
+          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: effectiveAssetType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
         });
         if (error) throw new Error("Rocket is busy. Please try again.");
         const d: any = data;
@@ -344,7 +350,7 @@ const Generate = () => {
           />
           <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-1 pt-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              {workflow === "auto" && ASSET_CHIPS.slice(0, 6).map((c) => (
+              {workflow === "auto" && ASSET_CHIPS.map((c) => (
                 <button
                   type="button"
                   key={c.id}
@@ -366,11 +372,11 @@ const Generate = () => {
         </div>
       </form>
 
-      {workflow === "auto" && (assetType === "logo" || assetType === "graphic") && (
+      {workflow === "auto" && assetType && (
         <div className="mt-3 w-full">
           <div className="mb-1.5 flex items-center justify-between">
             <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Variations</div>
-            <div className="text-xs text-neutral-500">{count} option{count === 1 ? "" : "s"} · {count * 10} credits</div>
+            <div className="text-xs text-neutral-500">{count} option{count === 1 ? "" : "s"}</div>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {[4, 8, 12, 16, 24].map((n) => (

@@ -62,7 +62,7 @@ export interface GenSpec {
 
 export const GENERATORS: Record<AssetType, GenSpec> = {
   logo: {
-    kind: "image", defaultCount: 12,
+    kind: "image", defaultCount: 24,
     system: ROCKET_PERSONA + " You specialize in iconic, scalable startup LOGO MARKS — never poster designs, never text canvases.",
     build: (c, p) => {
       const hasRef = !!c.logo;
@@ -70,34 +70,34 @@ export const GENERATORS: Record<AssetType, GenSpec> = {
     },
   },
   graphic: {
-    kind: "image", defaultCount: 6,
+    kind: "image", defaultCount: 24,
     system: ROCKET_PERSONA + " You design social graphics, hero banners, and marketing visuals.",
     build: (c, p) => `${ctxBlock(c, p)}\n\nOutput ONLY a text-to-image prompt for a marketing graphic. Vivid; specify composition, mood, colors${c.colors?.length ? ` (use: ${c.colors.slice(0,4).join(", ")})` : ""}, style. End with ", modern startup marketing graphic, high quality, clean composition".`,
   },
   icon: {
-    kind: "image", defaultCount: 12,
+    kind: "image", defaultCount: 24,
     system: ROCKET_PERSONA + " You design clean vector icons.",
     build: (c, p) => `${ctxBlock(c, p)}\n\nOutput ONLY a text-to-image prompt for a single icon. Flat vector, geometric, 1-2 colors, centered on solid white background, app-icon ready, no text. End with ", vector icon, flat design, no text, high quality".`,
   },
   photo: {
-    kind: "image", defaultCount: 4,
+    kind: "image", defaultCount: 24,
     system: ROCKET_PERSONA + " You produce on-brand product / lifestyle imagery.",
     build: (c, p) => `${ctxBlock(c, p)}\n\nOutput ONLY a text-to-image prompt for one photograph. Photorealistic, cinematic lighting, on-brand. End with ", photorealistic, professional photography, high resolution".`,
   },
   color_system: {
-    kind: "text", system: ROCKET_PERSONA + " You design startup color systems.",
+    kind: "text", defaultCount: 24, system: ROCKET_PERSONA + " You design startup color systems.",
     build: (c, p) => `${ctxBlock(c, p)}\n\nReturn strict JSON (no markdown, no preamble):\n{\n  "name": "<palette name>",\n  "primary": "#RRGGBB",\n  "secondary": "#RRGGBB",\n  "accent": "#RRGGBB",\n  "neutral_dark": "#RRGGBB",\n  "neutral_light": "#RRGGBB",\n  "rationale": "<2-3 sentences>"\n}`,
   },
   font_system: {
-    kind: "text", system: ROCKET_PERSONA + " You design startup typography systems.",
+    kind: "text", defaultCount: 24, system: ROCKET_PERSONA + " You design startup typography systems.",
     build: (c, p) => `${ctxBlock(c, p)}\n\nReturn strict JSON (no markdown, no preamble):\n{\n  "display_font": "<Google Font name>",\n  "body_font": "<Google Font name>",\n  "display_weight": <number>,\n  "body_weight": <number>,\n  "rationale": "<2-3 sentences>"\n}\nPrefer Google Fonts. Avoid Inter, Poppins.`,
   },
   brand_voice: {
-    kind: "text", system: ROCKET_PERSONA + " You define startup brand voices.",
+    kind: "text", defaultCount: 24, system: ROCKET_PERSONA + " You define startup brand voices.",
     build: (c, p) => `${ctxBlock(c, p)}\n\nWrite a tight Brand Voice doc as markdown:\n## Voice Pillars\n- 4-5 traits (1 line each)\n## Tone\n- 3-4 contexts (landing, product, social, support)\n## Do / Don't\n- 5 do, 5 don't (one line each)\n## Sample lines\n- 5 ready-to-paste headline examples`,
   },
   brand_guidelines: {
-    kind: "text", system: ROCKET_PERSONA + " You write startup brand guideline docs.",
+    kind: "text", defaultCount: 24, system: ROCKET_PERSONA + " You write startup brand guideline docs.",
     build: (c, p) => `${ctxBlock(c, p)}\n\nWrite complete Brand Guidelines as markdown: Mission, Positioning, Audience, Voice, Color System (with hex), Typography (font names + usage), Logo Usage, Imagery Direction, Examples.`,
   },
   launch_copy: {
@@ -117,7 +117,7 @@ export const GENERATORS: Record<AssetType, GenSpec> = {
     build: (c, p) => `${ctxBlock(c, p)}\n\nReturn JSON (no markdown):\n{\n  "long": "<4-6 sentences>",\n  "short": "<2 sentences>",\n  "x_bio": "<160 char X bio>",\n  "linkedin_headline": "<220 chars max>"\n}`,
   },
   template: {
-    kind: "text", system: ROCKET_PERSONA,
+    kind: "text", defaultCount: 24, system: ROCKET_PERSONA,
     build: (c, p) => `${ctxBlock(c, p)}\n\nWrite a startup branding template as markdown. Tight, ready-to-paste.`,
   },
   presentation: {
@@ -141,6 +141,8 @@ Valid asset_type values:
 
 Routing hints:
 - "logo", "mark" -> logo
+- "brand template", "templates" -> template
+- "components", "UI kit", "buttons", "cards", "inputs" -> graphic
 - "icon set", "icon for X" -> icon
 - "hero image", "banner", "social graphic", "ad" -> graphic
 - "photo of", "lifestyle shot" -> photo
@@ -155,7 +157,7 @@ Routing hints:
 - "pitch deck", "slides" -> presentation
 - bare URL only (e.g. "https://trylaunch.ai") or just a product name -> brand_guidelines
 
-Count: how many variants. For visual assets, generate MANY options (Looka-style gallery). Defaults: logo=12, icon=12, graphic=6, photo=4, else 1. Parse explicit numbers ("5 logos" -> 5, "20 logos" -> 20). Cap at 24.
+Count: how many variants. Generate a Looka-style gallery by default for every supported asset category. Defaults: logo=24, icon=24, graphic=24, photo=24, brand_guidelines=24, template=24, color_system=24, font_system=24, brand_voice=24, else 1. Parse explicit numbers ("5 logos" -> 5, "20 logos" -> 20). Cap at 24.
 
 RESPOND WITH JSON ONLY.`;
 

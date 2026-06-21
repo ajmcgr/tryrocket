@@ -1,13 +1,11 @@
 // redeploy: 2026-06-12
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
-import { GENERATORS, IMAGE_ASSET_TYPES, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
+import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const URL_RE = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/\S*)?$/i;
 
 function extractUrl(text: string): string | null {
   const m = text.match(/(https?:\/\/[^\s]+|[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
@@ -16,13 +14,28 @@ function extractUrl(text: string): string | null {
   return /^https?:\/\//i.test(u) ? u : "https://" + u;
 }
 
+async function mapLimit<T>(count: number, limit: number, task: (index: number) => Promise<T>): Promise<T[]> {
+  const results = new Array<T>(count);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, count) }, async () => {
+    while (true) {
+      const index = next++;
+      if (index >= count) break;
+      results[index] = await task(index);
+    }
+  }));
+  return results;
+}
+
 async function classify(prompt: string): Promise<{ asset_type: AssetType; count: number }> {
   try {
     const out = await geminiText({ system: CLASSIFIER_SYSTEM, user: prompt, temperature: 0.1, json: true });
     const parsed = JSON.parse(out);
     const at = (parsed.asset_type || "other") as AssetType;
-    const c = Math.max(1, Math.min(24, parseInt(parsed.count) || 1));
     if (!(at in GENERATORS)) return { asset_type: "other", count: 1 };
+    const explicitCount = prompt.match(/\b(\d{1,2})\b\s*(?:options?|variations?|variants?|concepts?|logos?|icons?|photos?|graphics?|templates?|guidelines?|colors?|fonts?|voices?|components?)/i)?.[1];
+    const fallback = GENERATORS[at].defaultCount || 1;
+    const c = Math.max(1, Math.min(24, parseInt(explicitCount || "") || fallback));
     return { asset_type: at, count: c };
   } catch {
     return { asset_type: "other", count: 1 };
@@ -121,9 +134,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Credits check (simple: text=1, image=cls.count*10)
+    // Credits check (text=1 each, image=10 each)
     const spec = GENERATORS[cls.asset_type];
-    const count = spec.kind === "image" ? cls.count : 1;
+    const count = cls.count;
     const costPer = spec.kind === "image" ? 10 : 1;
     const totalCost = costPer * count;
     const { data: usage } = await admin.from("user_usage").select("*").eq("user_id", user.id).maybeSingle();
@@ -133,7 +146,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "no_credits", code: "no_credits", needed: totalCost, remaining }), { status: 402, headers: { ...ch, "Content-Type": "application/json" } });
     }
 
-    const title = ASSET_TITLES[cls.asset_type];
+    const title = cls.asset_type === "graphic" && /component|ui kit|buttons|cards|inputs/i.test(prompt) ? "Component" : ASSET_TITLES[cls.asset_type];
     const ids: string[] = [];
 
     // Fetch visual references from the scraped brand (raster only — Gemini ignores SVG).
@@ -172,7 +185,7 @@ Deno.serve(async (req) => {
 
     if (spec.kind === "image") {
       // Generate N image variants in parallel
-      const tasks = Array.from({ length: count }, async (_, i) => {
+      const createImageVariant = async (i: number) => {
         let imgPrompt: string;
         if (cls.asset_type === "logo" && logoRefs) {
           // Skip the text-prompt rewrite step entirely. Feed a stable variation instruction + reference image directly.
@@ -201,9 +214,9 @@ Deno.serve(async (req) => {
           meta: { brand_context: ctx, image_prompt: imgPrompt, variant: i + 1, of: count, used_logo_ref: !!logoRefs },
         }).select().single();
         return asset?.id;
-      });
+      };
       try {
-        const results = await Promise.all(tasks);
+        const results = await mapLimit(count, 4, createImageVariant);
         for (const id of results) if (id) ids.push(id);
       } catch (e) {
         if (e instanceof GeminiUnavailableError) {
@@ -212,17 +225,21 @@ Deno.serve(async (req) => {
         throw e;
       }
     } else {
-      const content = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.7 });
-      const { data: asset } = await admin.from("assets").insert({
-        user_id: user.id, project_id,
-        asset_type: cls.asset_type,
-        title,
-        content,
-        prompt,
-        source_url: detectedUrl,
-        meta: { brand_context: ctx },
-      }).select().single();
-      if (asset?.id) ids.push(asset.id);
+      const results = await mapLimit(count, 6, async (i) => {
+        const variantPrompt = count > 1 ? `${prompt}\n\nCreate variation ${i + 1} of ${count}. Make it meaningfully distinct in structure, angle, naming, and recommendations while staying on-brand.` : prompt;
+        const content = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.7 });
+        const { data: asset } = await admin.from("assets").insert({
+          user_id: user.id, project_id,
+          asset_type: cls.asset_type,
+          title: count > 1 ? `${title} ${i + 1}` : title,
+          content,
+          prompt,
+          source_url: detectedUrl,
+          meta: { brand_context: ctx, variant: i + 1, of: count },
+        }).select().single();
+        return asset?.id;
+      });
+      for (const id of results) if (id) ids.push(id);
     }
 
     // Charge credits
