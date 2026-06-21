@@ -2,7 +2,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
 import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
-import { buildLogotypeVariants } from "../_shared/logotype.ts";
+import { buildLogotypeVariants, extractNameFromUrl } from "../_shared/logotype.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
