@@ -280,14 +280,21 @@ Deno.serve(async (req) => {
       for (const id of results) if (id) ids.push(id);
     }
 
-    // Charge credits
-    await admin.from("user_usage").update({ credits_used: usage.credits_used + totalCost }).eq("user_id", user.id);
-    await admin.from("credit_transactions").insert({
-      user_id: user.id, asset_type: cls.asset_type,
-      kind: "spent", credits: totalCost, meta: { count, asset_ids: ids },
-    });
+    // Charge credits — only for what actually generated (excludes free logotypes
+    // and any variants that failed mid-batch).
+    const billableCount = spec.kind === "image"
+      ? ids.filter((_id, idx) => idx < count).length // only the image variants, not logotypes appended after
+      : ids.length;
+    const actualCost = costPer * billableCount;
+    if (actualCost > 0) {
+      await admin.from("user_usage").update({ credits_used: usage.credits_used + actualCost }).eq("user_id", user.id);
+      await admin.from("credit_transactions").insert({
+        user_id: user.id, asset_type: cls.asset_type,
+        kind: "spent", credits: actualCost, meta: { count: billableCount, requested: count, asset_ids: ids },
+      });
+    }
 
-    return new Response(JSON.stringify({ asset_ids: ids, asset_type: cls.asset_type, count: ids.length, credits_charged: totalCost }), { headers: { ...ch, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ asset_ids: ids, asset_type: cls.asset_type, count: ids.length, credits_charged: actualCost }), { headers: { ...ch, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
     if (e instanceof GeminiUnavailableError) {
