@@ -21,8 +21,10 @@ async function classify(prompt: string): Promise<{ asset_type: AssetType; count:
     const out = await geminiText({ system: CLASSIFIER_SYSTEM, user: prompt, temperature: 0.1, json: true });
     const parsed = JSON.parse(out);
     const at = (parsed.asset_type || "other") as AssetType;
-    const c = Math.max(1, Math.min(24, parseInt(parsed.count) || 1));
     if (!(at in GENERATORS)) return { asset_type: "other", count: 1 };
+    const explicitCount = prompt.match(/\b(\d{1,2})\b\s*(?:options?|variations?|variants?|concepts?|logos?|icons?|photos?|graphics?|templates?|guidelines?|colors?|fonts?|voices?|components?)/i)?.[1];
+    const fallback = GENERATORS[at].defaultCount || 1;
+    const c = Math.max(1, Math.min(24, parseInt(explicitCount || "") || fallback));
     return { asset_type: at, count: c };
   } catch {
     return { asset_type: "other", count: 1 };
@@ -121,9 +123,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Credits check (simple: text=1, image=cls.count*10)
+    // Credits check (text=1 each, image=10 each)
     const spec = GENERATORS[cls.asset_type];
-    const count = spec.kind === "image" ? cls.count : 1;
+    const count = cls.count;
     const costPer = spec.kind === "image" ? 10 : 1;
     const totalCost = costPer * count;
     const { data: usage } = await admin.from("user_usage").select("*").eq("user_id", user.id).maybeSingle();
@@ -212,17 +214,22 @@ Deno.serve(async (req) => {
         throw e;
       }
     } else {
-      const content = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.7 });
-      const { data: asset } = await admin.from("assets").insert({
-        user_id: user.id, project_id,
-        asset_type: cls.asset_type,
-        title,
-        content,
-        prompt,
-        source_url: detectedUrl,
-        meta: { brand_context: ctx },
-      }).select().single();
-      if (asset?.id) ids.push(asset.id);
+      const tasks = Array.from({ length: count }, async (_, i) => {
+        const variantPrompt = count > 1 ? `${prompt}\n\nCreate variation ${i + 1} of ${count}. Make it meaningfully distinct in structure, angle, naming, and recommendations while staying on-brand.` : prompt;
+        const content = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.7 });
+        const { data: asset } = await admin.from("assets").insert({
+          user_id: user.id, project_id,
+          asset_type: cls.asset_type,
+          title: count > 1 ? `${title} ${i + 1}` : title,
+          content,
+          prompt,
+          source_url: detectedUrl,
+          meta: { brand_context: ctx, variant: i + 1, of: count },
+        }).select().single();
+        return asset?.id;
+      });
+      const results = await Promise.all(tasks);
+      for (const id of results) if (id) ids.push(id);
     }
 
     // Charge credits
