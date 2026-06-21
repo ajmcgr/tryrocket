@@ -1,13 +1,11 @@
 // redeploy: 2026-06-12
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
-import { GENERATORS, IMAGE_ASSET_TYPES, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
+import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const URL_RE = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/\S*)?$/i;
 
 function extractUrl(text: string): string | null {
   const m = text.match(/(https?:\/\/[^\s]+|[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
@@ -148,7 +146,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "no_credits", code: "no_credits", needed: totalCost, remaining }), { status: 402, headers: { ...ch, "Content-Type": "application/json" } });
     }
 
-    const title = ASSET_TITLES[cls.asset_type];
+    const title = cls.asset_type === "graphic" && /component|ui kit|buttons|cards|inputs/i.test(prompt) ? "Component" : ASSET_TITLES[cls.asset_type];
     const ids: string[] = [];
 
     // Fetch visual references from the scraped brand (raster only — Gemini ignores SVG).
