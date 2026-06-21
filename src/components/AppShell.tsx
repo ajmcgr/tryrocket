@@ -5,6 +5,7 @@ import Logo from "./Logo";
 import ChatsSidebar from "./ChatsSidebar";
 import ShareExportModal from "./ShareExportModal";
 import OnboardingTour from "./OnboardingTour";
+import NotificationsBell from "./NotificationsBell";
 import { Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -49,6 +50,7 @@ const AppShell = () => {
               <Share2 className="h-4 w-4" />
               Share
             </button>
+            <NotificationsBell />
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none focus:ring-2 focus:ring-neutral-300" aria-label="Account menu">
                 <Avatar className="h-8 w-8 border border-neutral-200">
