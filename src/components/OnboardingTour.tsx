@@ -51,6 +51,18 @@ const STEPS: Step[] = [
     placement: "bottom",
   },
   {
+    selector: '[data-tour="nav-notifications"]',
+    title: "Stay in the loop",
+    body: "Exports, generated assets, collaborator invites, and billing all surface here. Click the bell anytime.",
+    placement: "bottom",
+  },
+  {
+    selector: '[data-tour="nav-projects"]',
+    title: "Invite collaborators",
+    body: "Open any project and click the avatar stack in the header to invite teammates as viewers or editors.",
+    placement: "bottom",
+  },
+  {
     title: "You're set",
     body: "Jump into Create and ship your first asset. You can replay this tour anytime from Settings.",
     placement: "center",
@@ -67,14 +79,22 @@ const OnboardingTour = () => {
   const [idx, setIdx] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
 
-  // Auto-open once per user on first sign-in
+  // Auto-open once per user — but only for genuinely NEW accounts.
+  // Existing users (signed up > 7 days ago) get the flag set silently so
+  // they never see the tour unless they replay it from Settings.
   useEffect(() => {
     if (!user) return;
     const key = `${STORAGE_KEY}.${user.id}`;
-    if (!localStorage.getItem(key)) {
-      const t = setTimeout(() => setOpen(true), 600);
-      return () => clearTimeout(t);
+    if (localStorage.getItem(key)) return;
+    const createdAt = new Date((user as any).created_at || 0).getTime();
+    const isNew = createdAt > 0 && Date.now() - createdAt < 7 * 24 * 60 * 60 * 1000;
+    if (!isNew) {
+      // Mark older accounts as seen so the tour doesn't pop up retroactively.
+      localStorage.setItem(key, "1");
+      return;
     }
+    const t = setTimeout(() => setOpen(true), 600);
+    return () => clearTimeout(t);
   }, [user]);
 
   // Allow programmatic re-launch
