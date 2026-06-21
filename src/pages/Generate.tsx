@@ -246,18 +246,14 @@ const Generate = () => {
             {/* Messages */}
             <div className="flex-1 space-y-3 overflow-y-auto pr-1">
               {chatData.prompt && (
-                <div className="flex justify-end">
-                  <div className="max-w-[85%] rounded-2xl bg-brand px-4 py-2.5 text-sm text-brand-foreground">
-                    {chatData.prompt}
-                  </div>
+                <div className="w-full rounded-2xl bg-brand px-4 py-2.5 text-sm text-brand-foreground">
+                  {chatData.prompt}
                 </div>
               )}
-              <div className="flex justify-start">
-                <div className="max-w-[85%] rounded-2xl bg-neutral-100 px-4 py-2.5 text-sm text-neutral-800">
-                  {chatAssets.length > 0
-                    ? `Found ${chatAssets.length} result${chatAssets.length === 1 ? "" : "s"}. See the results panel.`
-                    : "No assets in this chat."}
-                </div>
+              <div className="w-full rounded-2xl bg-neutral-100 px-4 py-2.5 text-sm text-neutral-800">
+                {chatAssets.length > 0
+                  ? `Found ${chatAssets.length} result${chatAssets.length === 1 ? "" : "s"}. See the results panel.`
+                  : "No assets in this chat."}
               </div>
             </div>
             {/* Composer pinned to bottom */}
@@ -289,7 +285,7 @@ const Generate = () => {
           {/* Right: results panel */}
           <div className="rounded-2xl border border-neutral-200 bg-white p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-neutral-900">Results</h2>
+              <h2 className="font-sans text-sm font-semibold text-neutral-900">Results</h2>
               <span className="text-xs text-neutral-500">{chatAssets.length} asset{chatAssets.length === 1 ? "" : "s"}</span>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
