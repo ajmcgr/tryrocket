@@ -27,7 +27,22 @@ export async function imageUrlToSvg(url: string, opts: VectorizeOptions = {}): P
   const res = await fetch(url, { mode: "cors" });
   if (!res.ok) throw new Error(`Failed to fetch image (${res.status})`);
   const blob = await res.blob();
-  const bitmap = await createImageBitmap(blob);
+  const source = await createImageBitmap(blob);
+  // Downscale large images and snap dimensions to even numbers — potrace-wasm
+  // throws "offset is out of bounds" on very large or odd-sized inputs.
+  const MAX = 1024;
+  const scale = Math.min(1, MAX / Math.max(source.width, source.height));
+  const w = Math.max(2, Math.floor((source.width * scale) / 2) * 2);
+  const h = Math.max(2, Math.floor((source.height * scale) / 2) * 2);
+  const canvas = typeof OffscreenCanvas !== "undefined"
+    ? new OffscreenCanvas(w, h)
+    : Object.assign(document.createElement("canvas"), { width: w, height: h });
+  const ctx = (canvas as any).getContext("2d");
+  // Flatten transparency onto white so potrace has a defined background.
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(source, 0, 0, w, h);
+  const bitmap = await createImageBitmap(canvas as any);
   const svg = await potrace(bitmap, {
     turdsize: opts.turdsize ?? 2,
     turnpolicy: 4,
