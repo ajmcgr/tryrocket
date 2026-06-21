@@ -122,6 +122,7 @@ const Generate = () => {
     const p = prompt.trim();
     if (!p || loading) return;
     setLoading(true);
+    setPendingPrompt(p);
     try {
       // Create a chat row for this submission
       const title = p.length > 60 ? p.slice(0, 57) + "…" : p;
