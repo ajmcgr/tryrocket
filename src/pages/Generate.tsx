@@ -240,26 +240,50 @@ const Generate = () => {
   return (
     <div className={`mx-auto flex min-h-[calc(100vh-4rem)] w-full flex-col px-6 py-12 ${isChatView ? "max-w-7xl" : "max-w-3xl items-center"}`}>
       {isChatView ? (
-        <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+        <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
           {/* Left: chat panel */}
-          <div className="flex flex-col gap-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight text-neutral-900">{chatData.title}</h1>
-              <p className="mt-1 text-[10px] uppercase tracking-wider text-neutral-400">Chat</p>
-            </div>
-            {chatData.prompt && (
-              <div className="ml-auto max-w-[90%] rounded-2xl bg-brand px-4 py-2.5 text-sm text-brand-foreground">
-                {chatData.prompt}
+          <div className="flex h-[calc(100vh-8rem)] flex-col lg:sticky lg:top-20">
+            {/* Messages */}
+            <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+              {chatData.prompt && (
+                <div className="flex justify-end">
+                  <div className="max-w-[85%] rounded-2xl bg-brand px-4 py-2.5 text-sm text-brand-foreground">
+                    {chatData.prompt}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-start">
+                <div className="max-w-[85%] rounded-2xl bg-neutral-100 px-4 py-2.5 text-sm text-neutral-800">
+                  {chatAssets.length > 0
+                    ? `Found ${chatAssets.length} result${chatAssets.length === 1 ? "" : "s"}. See the results panel.`
+                    : "No assets in this chat."}
+                </div>
               </div>
-            )}
-            <div className="mr-auto max-w-[90%] rounded-2xl bg-neutral-100 px-4 py-2.5 text-sm text-neutral-800">
-              {chatAssets.length > 0
-                ? `Generated ${chatAssets.length} asset${chatAssets.length > 1 ? "s" : ""}. See the results panel →`
-                : "No assets in this chat."}
             </div>
-            <Link to="/create" className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
-              + New chat
-            </Link>
+            {/* Composer pinned to bottom */}
+            <form onSubmit={submit} className="mt-3">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Ask Rocket to create another asset..."
+                  rows={2}
+                  disabled={loading}
+                  className="w-full resize-none rounded-xl px-3 py-2 text-sm outline-none placeholder:text-neutral-400 disabled:opacity-60"
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
+                />
+                <div className="flex items-center justify-end px-2 pb-1">
+                  <button
+                    type="submit"
+                    disabled={!prompt.trim() || loading}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <p className="mt-1.5 text-center text-[11px] text-neutral-400">Enter to send · Shift+Enter for newline</p>
+            </form>
           </div>
 
           {/* Right: results panel */}
