@@ -84,6 +84,7 @@ const Generate = () => {
   const [assetType, setAssetType] = useState<string | null>(params.get("asset_type"));
   const [workflow, setWorkflow] = useState<WF>((params.get("workflow") as WF) || "auto");
   const [template, setTemplate] = useState<string | null>(null);
+  const [count, setCount] = useState<number>(4);
   const projectId = params.get("project");
   const chatId = params.get("chat");
   const [loading, setLoading] = useState(false);
@@ -169,9 +170,10 @@ const Generate = () => {
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
+      const isImageType = effectiveAssetType === "logo" || effectiveAssetType === "graphic";
       if (tpl || effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
+          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: isImageType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
         });
         if (error) throw new Error("Rocket is busy. Please try again.");
         const d: any = data;
