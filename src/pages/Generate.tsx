@@ -244,13 +244,13 @@ const Generate = () => {
           {/* Left: chat panel */}
           <div className="flex h-[calc(100vh-8rem)] flex-col lg:sticky lg:top-20">
             {/* Messages */}
-            <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+            <div className="flex-1 space-y-3 overflow-y-auto">
               {chatData.prompt && (
-                <div className="w-full rounded-2xl bg-brand px-4 py-2.5 text-sm text-brand-foreground">
+                <div className="ml-auto w-fit max-w-[85%] rounded-2xl bg-brand px-4 py-2.5 text-sm text-brand-foreground">
                   {chatData.prompt}
                 </div>
               )}
-              <div className="w-full rounded-2xl bg-neutral-100 px-4 py-2.5 text-sm text-neutral-800">
+              <div className="mr-auto w-fit max-w-[85%] rounded-2xl bg-neutral-100 px-4 py-2.5 text-sm text-neutral-800">
                 {chatAssets.length > 0
                   ? `Found ${chatAssets.length} result${chatAssets.length === 1 ? "" : "s"}. See the results panel.`
                   : "No assets in this chat."}
