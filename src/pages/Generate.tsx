@@ -346,7 +346,7 @@ const Generate = () => {
               placeholder="e.g. A logo for trylaunch.ai"
               rows={3}
               disabled={loading}
-              className="flex-1 resize-none rounded-xl px-3 py-2 text-base outline-none placeholder:text-neutral-400 disabled:opacity-60"
+              className="flex-1 resize-none rounded-xl px-3 py-2 text-sm outline-none placeholder:text-neutral-400 disabled:opacity-60"
               onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit(); }}
             />
             <button
