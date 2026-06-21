@@ -246,11 +246,11 @@ const Generate = () => {
             {/* Messages */}
             <div className="flex-1 space-y-3 overflow-y-auto">
               {chatData.prompt && (
-                <div className="ml-auto w-fit max-w-[85%] rounded-2xl bg-brand px-4 py-2.5 text-sm text-brand-foreground">
+                <div className="w-full rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
                   {chatData.prompt}
                 </div>
               )}
-              <div className="mr-auto w-fit max-w-[85%] rounded-2xl bg-neutral-100 px-4 py-2.5 text-sm text-neutral-800">
+              <div className="w-full rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
                 {chatAssets.length > 0
                   ? `Found ${chatAssets.length} result${chatAssets.length === 1 ? "" : "s"}. See the results panel.`
                   : "No assets in this chat."}
