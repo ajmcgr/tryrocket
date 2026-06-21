@@ -30,7 +30,7 @@ const AppShell = () => {
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
-        <div className="flex h-14 w-full items-center px-6">
+        <div className="flex h-14 w-full items-center px-4">
           <Logo to="/create" className="shrink-0" />
           <nav className="ml-8 hidden items-center gap-2 text-sm font-medium text-neutral-700 md:flex">
             <NavLink data-tour="nav-create" to="/create" className="inline-flex items-center rounded-lg bg-brand px-3 py-1.5 text-brand-foreground shadow-sm transition hover:bg-brand-hover">Create</NavLink>
