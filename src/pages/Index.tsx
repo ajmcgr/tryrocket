@@ -167,7 +167,6 @@ const Index = () => {
     );
   };
 
-  if (loading) return <div className="grid min-h-screen place-items-center bg-white text-sm text-neutral-500">Loading…</div>;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
