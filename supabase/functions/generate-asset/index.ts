@@ -239,18 +239,20 @@ Deno.serve(async (req) => {
       // halve the user's results.
       let lastUnavailable: GeminiUnavailableError | null = null;
       const safeVariant = async (i: number) => {
-        const MAX_ATTEMPTS = 3;
+        const MAX_ATTEMPTS = 5;
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
           try { return await createImageVariant(i); }
           catch (e) {
             if (e instanceof GeminiUnavailableError) lastUnavailable = e;
             console.error(`variant ${i} attempt ${attempt} failed: ${(e as Error).message}`);
-            if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 600 * attempt));
+            if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 800 * attempt));
           }
         }
         return undefined;
       };
-      const results = await mapLimit(count, 4, safeVariant);
+      // Lower concurrency (2) — Gemini image rate-limits aggressively above this,
+      // which is why users were getting ~6/10 instead of the full count.
+      const results = await mapLimit(count, 2, safeVariant);
       for (const id of results) if (id) ids.push(id);
       // If literally every variant failed AND it was a provider outage, surface that.
       if (ids.length === 0 && lastUnavailable) {
