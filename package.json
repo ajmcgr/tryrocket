@@ -49,6 +49,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "esm-potrace-wasm": "^0.4.4",
     "html-to-image": "^1.11.13",
     "input-otp": "^1.4.2",
     "jspdf": "^4.2.1",
