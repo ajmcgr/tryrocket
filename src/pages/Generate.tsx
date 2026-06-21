@@ -157,8 +157,10 @@ const Generate = () => {
       let creditsErr: any = null;
       // Apply Design template scaffold if one was picked.
       const tpl = template ? DESIGN_TEMPLATES.find(t => t.id === template) : null;
-      const effectivePrompt = tpl ? tpl.scaffold(p) : p;
-      const effectiveAssetType = tpl ? "graphic" : (assetType || undefined);
+      const selectedChip = assetType ? ASSET_CHIPS.find(c => c.id === assetType) : null;
+      const chipPrompt = selectedChip?.promptPrefix ? `${selectedChip.promptPrefix}${p}` : p;
+      const effectivePrompt = tpl ? tpl.scaffold(p) : chipPrompt;
+      const effectiveAssetType = tpl ? "graphic" : (selectedChip?.assetType || assetType || undefined);
       // Brand Analysis Mode: any URL in the prompt triggers a pre-scrape so EVERY downstream
       // asset (workflow fan-out or single auto) shares the same real brand context.
       let sharedCtx: any = null;
@@ -348,7 +350,7 @@ const Generate = () => {
           />
           <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-1 pt-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              {workflow === "auto" && ASSET_CHIPS.slice(0, 6).map((c) => (
+              {workflow === "auto" && ASSET_CHIPS.map((c) => (
                 <button
                   type="button"
                   key={c.id}
@@ -374,7 +376,7 @@ const Generate = () => {
         <div className="mt-3 w-full">
           <div className="mb-1.5 flex items-center justify-between">
             <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Variations</div>
-            <div className="text-xs text-neutral-500">{count} option{count === 1 ? "" : "s"} · {count * 10} credits</div>
+            <div className="text-xs text-neutral-500">{count} option{count === 1 ? "" : "s"}</div>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {[4, 8, 12, 16, 24].map((n) => (
