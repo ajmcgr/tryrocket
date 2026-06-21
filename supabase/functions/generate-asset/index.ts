@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
 
     if (spec.kind === "image") {
       // Generate N image variants in parallel
-      const tasks = Array.from({ length: count }, async (_, i) => {
+      const createImageVariant = async (i: number) => {
         let imgPrompt: string;
         if (cls.asset_type === "logo" && logoRefs) {
           // Skip the text-prompt rewrite step entirely. Feed a stable variation instruction + reference image directly.
@@ -216,9 +216,9 @@ Deno.serve(async (req) => {
           meta: { brand_context: ctx, image_prompt: imgPrompt, variant: i + 1, of: count, used_logo_ref: !!logoRefs },
         }).select().single();
         return asset?.id;
-      });
+      };
       try {
-        const results = await Promise.all(tasks);
+        const results = await mapLimit(count, 4, createImageVariant);
         for (const id of results) if (id) ids.push(id);
       } catch (e) {
         if (e instanceof GeminiUnavailableError) {
@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
         throw e;
       }
     } else {
-      const tasks = Array.from({ length: count }, async (_, i) => {
+      const results = await mapLimit(count, 6, async (i) => {
         const variantPrompt = count > 1 ? `${prompt}\n\nCreate variation ${i + 1} of ${count}. Make it meaningfully distinct in structure, angle, naming, and recommendations while staying on-brand.` : prompt;
         const content = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.7 });
         const { data: asset } = await admin.from("assets").insert({
@@ -241,7 +241,6 @@ Deno.serve(async (req) => {
         }).select().single();
         return asset?.id;
       });
-      const results = await Promise.all(tasks);
       for (const id of results) if (id) ids.push(id);
     }
 
