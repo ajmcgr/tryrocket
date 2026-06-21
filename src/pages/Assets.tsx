@@ -131,7 +131,8 @@ const Assets = () => {
       ) : (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map(a => {
-            const isImage = a.image_url;
+            const isLogotype = a?.editor_state?.kind === "logotype";
+            const isImage = a.image_url && !isLogotype;
             const isHighlighted = highlight.includes(a.id);
             return (
               <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${isHighlighted ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
@@ -139,6 +140,8 @@ const Assets = () => {
                   <div className="aspect-square w-full overflow-hidden bg-neutral-50">
                     {isImage ? (
                       <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
+                    ) : isLogotype ? (
+                      <Logotype state={a.editor_state} fit="contain" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
                         <div className="line-clamp-6 whitespace-pre-wrap">{(a.content || a.prompt || "").slice(0, 200)}</div>
