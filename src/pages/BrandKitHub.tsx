@@ -6,6 +6,7 @@ import {
   Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check,
 } from "lucide-react";
 const supabase = _sb as any;
+import { Skeleton } from "@/components/ui/skeleton";
 
 // A hub "item" maps a Looka-style asset slot to a generator entry-point.
 // asset_type values reuse existing Rocket types where possible; new visual
