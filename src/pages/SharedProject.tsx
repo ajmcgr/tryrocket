@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
+import { Logotype } from "@/components/Logotype";
 
 const SharedProject = () => {
   const { token } = useParams();
@@ -45,7 +46,8 @@ const SharedProject = () => {
             {assets.map((a: any) => (
               <div key={a.id} className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
                 <div className="aspect-square w-full bg-neutral-50">
-                  {a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
+                  {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
+                    a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
                     <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500"><div className="line-clamp-6 whitespace-pre-wrap">{(a.content || "").slice(0, 200)}</div></div>}
                 </div>
                 <div className="border-t border-neutral-100 p-3">

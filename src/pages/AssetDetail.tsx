@@ -10,6 +10,8 @@ import ShareExportModal from "@/components/ShareExportModal";
 import AddToProjectMenu from "@/components/AddToProjectMenu";
 import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LogotypeEditor } from "@/components/LogotypeEditor";
+import { isLogotype, type LogotypeState } from "@/lib/logotype";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -59,7 +61,8 @@ const AssetDetail = () => {
   );
   if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">Asset not found.</div>;
 
-  const isImage = !!asset.image_url;
+  const isLogo = isLogotype(asset);
+  const isImage = !!asset.image_url && !isLogo;
 
   const startEdit = () => {
     setDraftTitle(asset.title || "");
@@ -86,6 +89,19 @@ const AssetDetail = () => {
   };
 
   const shareUrl = asset.share_token ? `${window.location.origin}/share/asset/${asset.share_token}` : null;
+
+  const saveLogotype = async (state: LogotypeState) => {
+    setSavingEdit(true);
+    await supabase.from("asset_versions").insert({
+      asset_id: asset.id, user_id: asset.user_id, label: "Auto-saved before edit",
+      snapshot: { editor_state: asset.editor_state, content: asset.content, image_url: asset.image_url, title: asset.title },
+    });
+    const { error } = await supabase.from("assets").update({ editor_state: state }).eq("id", asset.id);
+    setSavingEdit(false);
+    if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Saved" });
+    load();
+  };
 
   const copy = () => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); };
   const del = async () => {
@@ -231,7 +247,7 @@ const AssetDetail = () => {
               <FileCode className="h-4 w-4" /> SVG
             </button>
           )}
-          {!isImage && (
+          {!isImage && !isLogo && (
             <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
               <Copy className="h-4 w-4" />
             </button>
@@ -265,6 +281,14 @@ const AssetDetail = () => {
       </div>
 
       <div className="grid gap-6">
+        {isLogo ? (
+          <LogotypeEditor
+            initial={asset.editor_state as LogotypeState}
+            defaultText={asset.editor_state?.text || asset.title || "Brand"}
+            saving={savingEdit}
+            onSave={saveLogotype}
+          />
+        ) : (
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
           {isImage ? (
             <div className="flex items-center justify-center bg-neutral-50 p-8">
@@ -299,6 +323,7 @@ const AssetDetail = () => {
             </div>
           )}
         </div>
+        )}
       </div>
 
       <OutOfCreditsModal open={!!outOfCredits} onClose={() => setOutOfCredits(null)} needed={outOfCredits?.needed} remaining={outOfCredits?.remaining} />

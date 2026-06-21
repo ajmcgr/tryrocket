@@ -2,6 +2,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
 import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
+import { buildLogotypeVariants, extractNameFromUrl } from "../_shared/logotype.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -226,6 +227,30 @@ Deno.serve(async (req) => {
           return new Response(JSON.stringify({ error: "ai_provider_unavailable", message: "Rocket is busy right now. Please try again in a moment." }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
         }
         throw e;
+      }
+
+      // When generating logos, also generate matching logotype (text wordmark) variants.
+      // These are free (no Gemini call) and editable in the client.
+      if (cls.asset_type === "logo") {
+        try {
+          const brandText = (ctx.productName || extractNameFromUrl(ctx.url) || "Brand").trim();
+          const brandColor = ctx.colors?.[0];
+          const variants = buildLogotypeVariants(brandText, count, brandColor);
+          const logotypeRows = variants.map((state, i) => ({
+            user_id: user.id,
+            project_id,
+            asset_type: "logo" as const,
+            title: count > 1 ? `Logotype ${i + 1}` : "Logotype",
+            prompt,
+            source_url: detectedUrl,
+            editor_state: state,
+            meta: { brand_context: ctx, kind: "logotype", variant: i + 1, of: count },
+          }));
+          const { data: inserted } = await admin.from("assets").insert(logotypeRows).select("id");
+          if (inserted) for (const row of inserted) ids.push(row.id);
+        } catch (e) {
+          console.error("logotype gen failed", e);
+        }
       }
     } else {
       const results = await mapLimit(count, 6, async (i) => {
