@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Folder, MoreHorizontal, Trash2, Pencil, Sparkles } from "lucide-react";
+import { Plus, Folder, MoreHorizontal, Trash2, Pencil, Sparkles, ImageIcon, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,11 +16,14 @@ const Projects = () => {
   const { toast } = useToast();
   const [projects, setProjects] = useState<any[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [latestImages, setLatestImages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [renaming, setRenaming] = useState<any | null>(null);
   const [renameVal, setRenameVal] = useState("");
+  const [coverPicker, setCoverPicker] = useState<any | null>(null);
+  const [coverChoices, setCoverChoices] = useState<any[]>([]);
 
   const load = async () => {
     if (!user) return;
@@ -29,10 +32,22 @@ const Projects = () => {
     const list = ps || [];
     setProjects(list);
     if (list.length) {
-      const { data: cs } = await supabase.from("assets").select("project_id").eq("user_id", user.id).not("project_id", "is", null);
+      const { data: cs } = await supabase
+        .from("assets")
+        .select("project_id,image_url,thumbnail_url,created_at")
+        .eq("user_id", user.id)
+        .not("project_id", "is", null)
+        .order("created_at", { ascending: false });
       const c: Record<string, number> = {};
-      (cs || []).forEach((a: any) => { if (a.project_id) c[a.project_id] = (c[a.project_id] || 0) + 1; });
+      const latest: Record<string, string> = {};
+      (cs || []).forEach((a: any) => {
+        if (!a.project_id) return;
+        c[a.project_id] = (c[a.project_id] || 0) + 1;
+        const img = a.thumbnail_url || a.image_url;
+        if (img && !latest[a.project_id]) latest[a.project_id] = img;
+      });
       setCounts(c);
+      setLatestImages(latest);
     }
     setLoading(false);
   };
@@ -59,6 +74,27 @@ const Projects = () => {
     if (!confirm("Delete this project? Assets inside will be uncategorized but not deleted.")) return;
     setProjects(p => p.filter(x => x.id !== id));
     await supabase.from("projects").delete().eq("id", id);
+  };
+
+  const openCoverPicker = async (project: any) => {
+    setCoverPicker(project);
+    setCoverChoices([]);
+    const { data } = await supabase
+      .from("assets")
+      .select("id,title,image_url,thumbnail_url,created_at")
+      .eq("project_id", project.id)
+      .not("image_url", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(60);
+    setCoverChoices(data || []);
+  };
+
+  const setCover = async (url: string | null) => {
+    if (!coverPicker) return;
+    const id = coverPicker.id;
+    setProjects(p => p.map(x => x.id === id ? { ...x, cover_url: url } : x));
+    setCoverPicker(null);
+    await supabase.from("projects").update({ cover_url: url }).eq("id", id);
   };
 
   return (
@@ -94,10 +130,21 @@ const Projects = () => {
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map(p => (
-            <div key={p.id} className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 transition hover:shadow-md">
+            <div key={p.id} className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md">
               <Link to={`/projects/${p.id}`} className="block">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand"><Folder className="h-5 w-5" /></div>
+                {(() => {
+                  const cover = p.cover_url || latestImages[p.id];
+                  return cover ? (
+                    <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100">
+                      <img src={cover} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.02]" loading="lazy" />
+                    </div>
+                  ) : (
+                    <div className="grid aspect-[16/9] w-full place-items-center bg-neutral-50">
+                      <Folder className="h-8 w-8 text-neutral-300" />
+                    </div>
+                  );
+                })()}
+                <div className="flex items-start gap-3 p-4">
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium text-neutral-900">{p.name}</div>
                     <div className="mt-0.5 text-xs text-neutral-500">{counts[p.id] || 0} assets · {new Date(p.created_at).toLocaleDateString()}</div>
@@ -108,8 +155,12 @@ const Projects = () => {
                 <DropdownMenuTrigger asChild>
                   <button className="absolute right-2 top-2 rounded-md p-1 opacity-0 transition group-hover:opacity-100 hover:bg-neutral-100"><MoreHorizontal className="h-4 w-4 text-neutral-600" /></button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem onClick={() => { setRenameVal(p.name); setRenaming(p); }}><Pencil className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openCoverPicker(p)}><ImageIcon className="mr-2 h-4 w-4" /> Change cover</DropdownMenuItem>
+                  {p.cover_url && (
+                    <DropdownMenuItem onClick={async () => { setProjects(ps => ps.map(x => x.id === p.id ? { ...x, cover_url: null } : x)); await supabase.from("projects").update({ cover_url: null }).eq("id", p.id); }}><X className="mr-2 h-4 w-4" /> Reset cover</DropdownMenuItem>
+                  )}
                   <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => del(p.id)}><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -137,6 +188,27 @@ const Projects = () => {
             <Button variant="outline" onClick={() => setRenaming(null)}>Cancel</Button>
             <Button onClick={rename}>Save</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!coverPicker} onOpenChange={(o) => !o && setCoverPicker(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Choose cover image</DialogTitle></DialogHeader>
+          {coverChoices.length === 0 ? (
+            <p className="py-8 text-center text-sm text-neutral-500">No image assets in this project yet.</p>
+          ) : (
+            <div className="grid max-h-[60vh] grid-cols-3 gap-3 overflow-y-auto py-2 sm:grid-cols-4">
+              {coverChoices.map(a => {
+                const url = a.image_url || a.thumbnail_url;
+                const isActive = coverPicker?.cover_url === url;
+                return (
+                  <button key={a.id} onClick={() => setCover(url)} className={`group relative aspect-square overflow-hidden rounded-lg border-2 transition ${isActive ? "border-brand" : "border-transparent hover:border-neutral-300"}`}>
+                    <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
