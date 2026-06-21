@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Trash2, MoreHorizontal, Edit3, FolderPlus } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
 import { AssetGridSkeleton } from "@/components/Skeletons";
+import { Logotype } from "@/components/Logotype";
 const supabase = _sb as any;
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
