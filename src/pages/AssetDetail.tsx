@@ -10,6 +10,8 @@ import ShareExportModal from "@/components/ShareExportModal";
 import AddToProjectMenu from "@/components/AddToProjectMenu";
 import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LogotypeEditor } from "@/components/LogotypeEditor";
+import { isLogotype, type LogotypeState } from "@/lib/logotype";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -59,7 +61,8 @@ const AssetDetail = () => {
   );
   if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">Asset not found.</div>;
 
-  const isImage = !!asset.image_url;
+  const isLogo = isLogotype(asset);
+  const isImage = !!asset.image_url && !isLogo;
 
   const startEdit = () => {
     setDraftTitle(asset.title || "");
@@ -86,6 +89,19 @@ const AssetDetail = () => {
   };
 
   const shareUrl = asset.share_token ? `${window.location.origin}/share/asset/${asset.share_token}` : null;
+
+  const saveLogotype = async (state: LogotypeState) => {
+    setSavingEdit(true);
+    await supabase.from("asset_versions").insert({
+      asset_id: asset.id, user_id: asset.user_id, label: "Auto-saved before edit",
+      snapshot: { editor_state: asset.editor_state, content: asset.content, image_url: asset.image_url, title: asset.title },
+    });
+    const { error } = await supabase.from("assets").update({ editor_state: state }).eq("id", asset.id);
+    setSavingEdit(false);
+    if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Saved" });
+    load();
+  };
 
   const copy = () => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); };
   const del = async () => {
