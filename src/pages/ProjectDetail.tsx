@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
+import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 const supabase = _sb as any;
 
 type WF = "brand" | "design" | "launch" | "promote" | "other";
@@ -35,6 +36,10 @@ const ProjectDetail = () => {
   const [sharing, setSharing] = useState(false);
   const [tab, setTab] = useState<"all" | WF>("all");
   const [showRun, setShowRun] = useState(false);
+  const [collabOpen, setCollabOpen] = useState(false);
+  const [collabs, setCollabs] = useState<Collaborator[]>([]);
+
+  useEffect(() => { if (id) setCollabs(loadCollaborators(id)); }, [id]);
 
   const load = async () => {
     if (!id || !user) return;
@@ -106,6 +111,17 @@ const ProjectDetail = () => {
           <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><LayoutGrid className="h-4 w-4" /> Brand Kit Hub</Link>
           <Link to={`/projects/${id}/brand-kit`} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Sparkles className="h-4 w-4" /> Brand Kit</Link>
           <button onClick={toggleShare} disabled={sharing} className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm ${project.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}><Share2 className="h-4 w-4" /> {project.share_token ? "Shared" : "Share"}</button>
+          <button onClick={() => setCollabOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
+            <div className="flex -space-x-1.5">
+              {(collabs.length ? collabs : [{ email: user?.email || "you" } as any]).slice(0, 3).map((c: any, i) => {
+                const palette = ["bg-rose-200 text-rose-800","bg-amber-200 text-amber-800","bg-emerald-200 text-emerald-800","bg-sky-200 text-sky-800","bg-violet-200 text-violet-800"];
+                const ch = (c.email || "?").charCodeAt(0) % palette.length;
+                const letter = (c.email?.[0] || "?").toUpperCase();
+                return <span key={i} className={`flex h-5 w-5 items-center justify-center rounded-full border border-white text-[10px] font-semibold ${palette[ch]}`}>{letter}</span>;
+              })}
+            </div>
+            <span>{collabs.length ? `${collabs.length} collaborator${collabs.length === 1 ? "" : "s"}` : "Invite"}</span>
+          </button>
           <button onClick={openPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add asset</button>
           <div className="relative">
             <button onClick={() => setShowRun(v => !v)} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Plus className="h-4 w-4" /> Run workflow</button>
@@ -194,6 +210,18 @@ const ProjectDetail = () => {
             )}
           </div>
         </div>
+      )}
+
+      {id && (
+        <CollaboratorsModal
+          open={collabOpen}
+          onOpenChange={setCollabOpen}
+          projectId={id}
+          projectName={project.name}
+          ownerEmail={user?.email || undefined}
+          shareUrl={project.share_token ? `${window.location.origin}/share/project/${project.share_token}` : null}
+          onChange={setCollabs}
+        />
       )}
     </div>
   );
