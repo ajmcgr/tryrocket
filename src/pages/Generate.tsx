@@ -78,7 +78,7 @@ const DESIGN_TEMPLATES: DesignTemplate[] = [
 const MESSAGES = [
   "Understanding your brand…",
   "Scraping context…",
-  "Routing to specialist…",
+  "Creating your assets…",
   "Generating…",
   "Saving asset…",
 ];
