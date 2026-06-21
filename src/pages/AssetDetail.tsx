@@ -247,7 +247,7 @@ const AssetDetail = () => {
               <FileCode className="h-4 w-4" /> SVG
             </button>
           )}
-          {!isImage && (
+          {!isImage && !isLogo && (
             <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
               <Copy className="h-4 w-4" />
             </button>
