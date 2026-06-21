@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 const supabase = _sb as any;
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SharedAsset = () => {
   const { token } = useParams();
@@ -17,7 +18,13 @@ const SharedAsset = () => {
     })();
   }, [token]);
 
-  if (loading) return <div className="p-10 text-center text-sm text-neutral-500">Loading…</div>;
+  if (loading) return (
+    <div className="mx-auto max-w-3xl space-y-4 p-10">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="aspect-video w-full" />
+      <Skeleton className="h-4 w-3/4" />
+    </div>
+  );
   if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">This share link is invalid or has been disabled.</div>;
 
   return (

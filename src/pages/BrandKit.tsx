@@ -5,6 +5,7 @@ import { ArrowLeft, Download, FileDown, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 const supabase = _sb as any;
+import { Skeleton } from "@/components/ui/skeleton";
 
 const HEX_RE = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi;
 const FONT_RE = /(?:font[-\s]?family|typeface|heading|body)\s*[:\-—]?\s*["']?([A-Z][A-Za-z0-9 ]{2,30})["']?/g;
@@ -30,7 +31,15 @@ const BrandKit = () => {
     })();
   }, [id]);
 
-  if (loading) return <div className="p-10 text-center text-sm text-neutral-500">Loading…</div>;
+  if (loading) return (
+    <div className="mx-auto max-w-5xl space-y-4 p-10">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-48 w-full" />
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-square w-full" />)}
+      </div>
+    </div>
+  );
   if (!project) return <div className="p-10 text-center text-sm text-neutral-500">Project not found.</div>;
 
   const logos = assets.filter(a => a.asset_type === "logo" && a.image_url);

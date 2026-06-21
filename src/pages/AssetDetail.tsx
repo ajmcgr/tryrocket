@@ -9,6 +9,7 @@ import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import ShareExportModal from "@/components/ShareExportModal";
 import AddToProjectMenu from "@/components/AddToProjectMenu";
 import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -49,7 +50,13 @@ const AssetDetail = () => {
   };
   useEffect(() => { load(); }, [id]);
 
-  if (loading) return <div className="p-10 text-center text-sm text-neutral-500">Loading…</div>;
+  if (loading) return (
+    <div className="mx-auto max-w-5xl space-y-4 p-10">
+      <Skeleton className="h-6 w-32" />
+      <Skeleton className="h-10 w-64" />
+      <Skeleton className="aspect-video w-full" />
+    </div>
+  );
   if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">Asset not found.</div>;
 
   const isImage = !!asset.image_url;

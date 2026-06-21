@@ -6,6 +6,7 @@ import {
   Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check,
 } from "lucide-react";
 const supabase = _sb as any;
+import { Skeleton } from "@/components/ui/skeleton";
 
 // A hub "item" maps a Looka-style asset slot to a generator entry-point.
 // asset_type values reuse existing Rocket types where possible; new visual
@@ -119,7 +120,14 @@ const BrandKitHub = () => {
     return `/create?${qs.toString()}`;
   };
 
-  if (loading) return <div className="p-10 text-center text-sm text-neutral-500">Loading…</div>;
+  if (loading) return (
+    <div className="mx-auto max-w-7xl space-y-6 px-6 py-10">
+      <Skeleton className="h-8 w-64" />
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+      </div>
+    </div>
+  );
   if (!project) return <div className="p-10 text-center text-sm text-neutral-500">Project not found.</div>;
 
   const active = GROUPS.find(g => g.id === activeGroup)!;

@@ -33,9 +33,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return () => { cancelled = true; };
   }, [user, authConfirmed]);
 
-  if (loading) return <div className="grid min-h-screen place-items-center bg-white text-sm text-neutral-500">Loading…</div>;
+  if (loading) return <div className="min-h-screen bg-white" />;
   if (!user) return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;
-  if (verified === null) return <div className="grid min-h-screen place-items-center bg-white text-sm text-neutral-500">Loading…</div>;
+  if (verified === null) return <div className="min-h-screen bg-white" />;
   if (!verified) return <Navigate to={`/verify-email?email=${encodeURIComponent(user.email || "")}`} replace />;
   return <>{children}</>;
 };
