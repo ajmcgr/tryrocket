@@ -20,15 +20,15 @@ const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string }[] =
 
 type WF = "auto" | "brand" | "design" | "launch" | "promote";
 const WORKFLOWS: { id: WF; label: string; Icon: any; hint: string }[] = [
-  { id: "auto", label: "Auto-detect", Icon: Wand, hint: "Rocket picks the specialist (1 asset)" },
-  { id: "brand", label: "Brand It", Icon: Sparkles, hint: "Logo + colors + fonts + voice" },
-  { id: "design", label: "Design It", Icon: Paintbrush, hint: "3 logo concepts + color system" },
+  { id: "auto", label: "Auto-detect", Icon: Wand, hint: "Rocket picks the specialist and generates a full option gallery" },
+  { id: "brand", label: "Brand It", Icon: Sparkles, hint: "Full galleries for logos, colors, fonts, and voice" },
+  { id: "design", label: "Design It", Icon: Paintbrush, hint: "Full logo gallery + color system gallery" },
   { id: "launch", label: "Launch It", Icon: Send, hint: "Launch copy + PH copy + social" },
   { id: "promote", label: "Promote It", Icon: Radio, hint: "3 social posts + founder bio" },
 ];
 const WORKFLOW_PLAN: Record<Exclude<WF, "auto">, { asset_type: string; count?: number }[]> = {
-  brand: [{ asset_type: "logo", count: 1 }, { asset_type: "color_system" }, { asset_type: "font_system" }, { asset_type: "brand_voice" }],
-  design: [{ asset_type: "logo", count: 3 }, { asset_type: "color_system" }],
+  brand: [{ asset_type: "logo" }, { asset_type: "color_system" }, { asset_type: "font_system" }, { asset_type: "brand_voice" }],
+  design: [{ asset_type: "logo" }, { asset_type: "color_system" }],
   launch: [{ asset_type: "launch_copy" }, { asset_type: "product_hunt_copy" }, { asset_type: "social_post" }],
   promote: [{ asset_type: "social_post" }, { asset_type: "social_post" }, { asset_type: "social_post" }, { asset_type: "founder_bio" }],
 };
@@ -84,7 +84,7 @@ const Generate = () => {
   const [assetType, setAssetType] = useState<string | null>(params.get("asset_type"));
   const [workflow, setWorkflow] = useState<WF>((params.get("workflow") as WF) || "auto");
   const [template, setTemplate] = useState<string | null>(null);
-  const [count, setCount] = useState<number>(4);
+  const [count, setCount] = useState<number>(24);
   const projectId = params.get("project");
   const chatId = params.get("chat");
   const [loading, setLoading] = useState(false);
@@ -172,10 +172,9 @@ const Generate = () => {
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
-      const isImageType = effectiveAssetType === "logo" || effectiveAssetType === "graphic";
       if (tpl || effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: isImageType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
+          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: effectiveAssetType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
         });
         if (error) throw new Error("Rocket is busy. Please try again.");
         const d: any = data;
@@ -366,7 +365,7 @@ const Generate = () => {
         </div>
       </form>
 
-      {workflow === "auto" && (assetType === "logo" || assetType === "graphic") && (
+      {workflow === "auto" && assetType && (
         <div className="mt-3 w-full">
           <div className="mb-1.5 flex items-center justify-between">
             <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Variations</div>
