@@ -234,42 +234,62 @@ const Generate = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  const isChatView = !!(chatId && chatData);
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col items-center px-6 py-12">
-      {chatId && chatData ? (
-        <div className="w-full">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">{chatData.title}</h1>
-          {chatData.prompt && (
-            <div className="mt-4 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">{chatData.prompt}</div>
-          )}
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {chatAssets.map((a) => (
-              <Link
-                key={a.id}
-                to={`/assets/${a.id}`}
-                className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm"
-              >
-                {a.image_url ? (
-                  <div className="aspect-square w-full bg-neutral-50">
-                    <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
-                  </div>
-                ) : (
-                  <div className="line-clamp-6 whitespace-pre-wrap p-4 text-xs text-neutral-700">{a.content || ""}</div>
-                )}
-                <div className="border-t border-neutral-100 px-3 py-2">
-                  <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-neutral-400">{a.asset_type}</p>
-                </div>
-              </Link>
-            ))}
-            {chatAssets.length === 0 && (
-              <p className="col-span-full text-sm text-neutral-500">No assets in this chat.</p>
+    <div className={`mx-auto flex min-h-[calc(100vh-4rem)] w-full flex-col px-6 py-12 ${isChatView ? "max-w-7xl" : "max-w-3xl items-center"}`}>
+      {isChatView ? (
+        <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+          {/* Left: chat panel */}
+          <div className="flex flex-col gap-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-neutral-900">{chatData.title}</h1>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-neutral-400">Chat</p>
+            </div>
+            {chatData.prompt && (
+              <div className="ml-auto max-w-[90%] rounded-2xl bg-brand px-4 py-2.5 text-sm text-brand-foreground">
+                {chatData.prompt}
+              </div>
             )}
-          </div>
-          <div className="mt-10 text-center">
-            <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
+            <div className="mr-auto max-w-[90%] rounded-2xl bg-neutral-100 px-4 py-2.5 text-sm text-neutral-800">
+              {chatAssets.length > 0
+                ? `Generated ${chatAssets.length} asset${chatAssets.length > 1 ? "s" : ""}. See the results panel →`
+                : "No assets in this chat."}
+            </div>
+            <Link to="/create" className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
               + New chat
             </Link>
+          </div>
+
+          {/* Right: results panel */}
+          <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-neutral-900">Results</h2>
+              <span className="text-xs text-neutral-500">{chatAssets.length} asset{chatAssets.length === 1 ? "" : "s"}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {chatAssets.map((a) => (
+                <Link
+                  key={a.id}
+                  to={`/assets/${a.id}`}
+                  className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm"
+                >
+                  {a.image_url ? (
+                    <div className="aspect-square w-full bg-neutral-50">
+                      <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="line-clamp-6 whitespace-pre-wrap p-4 text-xs text-neutral-700">{a.content || ""}</div>
+                  )}
+                  <div className="border-t border-neutral-100 px-3 py-2">
+                    <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-neutral-400">{a.asset_type}</p>
+                  </div>
+                </Link>
+              ))}
+              {chatAssets.length === 0 && (
+                <p className="col-span-full text-sm text-neutral-500">No assets in this chat.</p>
+              )}
+            </div>
           </div>
         </div>
       ) : (
