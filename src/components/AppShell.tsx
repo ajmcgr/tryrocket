@@ -60,27 +60,25 @@ const AppShell = () => {
                   <AvatarFallback className="bg-neutral-100 text-xs font-medium text-neutral-700">{initial}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 bg-white rounded-xl border border-neutral-200 shadow-lg p-0">
-                <div className="px-4 pt-3 pb-3 border-b border-neutral-100">
-                  <p className="text-xs text-neutral-500">Signed in as</p>
-                  <p className="mt-0.5 truncate text-sm font-medium text-neutral-900">{user?.email}</p>
+              <DropdownMenuContent align="end" className="w-64">
+                <div className="px-2 pb-2">
+                  <p className="text-xs text-muted-foreground">Signed in as</p>
+                  <p className="mt-0.5 truncate text-sm font-medium">{user?.email}</p>
                 </div>
-                <div className="py-2">
-                  <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
-                    <Link to="/settings">Settings</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer">
-                    <Link to="/pricing">Plans</Link>
-                  </DropdownMenuItem>
-                </div>
-                <div className="border-t border-neutral-100 py-2">
-                  <DropdownMenuItem
-                    onClick={async () => { await signOut(); nav("/"); }}
-                    className="px-4 py-2 text-sm text-neutral-800 focus:bg-neutral-100 rounded-none cursor-pointer"
-                  >
-                    Sign out
-                  </DropdownMenuItem>
-                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link to="/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link to="/pricing">Plans</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={async () => { await signOut(); nav("/"); }}
+                  className="cursor-pointer"
+                >
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
