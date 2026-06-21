@@ -219,14 +219,24 @@ Deno.serve(async (req) => {
         }).select().single();
         return asset?.id;
       };
-      try {
-        const results = await mapLimit(count, 4, createImageVariant);
-        for (const id of results) if (id) ids.push(id);
-      } catch (e) {
-        if (e instanceof GeminiUnavailableError) {
-          return new Response(JSON.stringify({ error: "ai_provider_unavailable", message: "Rocket is busy right now. Please try again in a moment." }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
+      // Per-variant failures must NOT abort the whole batch — users asked for many
+      // variants and one Gemini hiccup shouldn't throw away the rest.
+      let variantErrors = 0;
+      let lastUnavailable: GeminiUnavailableError | null = null;
+      const safeVariant = async (i: number) => {
+        try { return await createImageVariant(i); }
+        catch (e) {
+          variantErrors++;
+          if (e instanceof GeminiUnavailableError) lastUnavailable = e;
+          console.error(`variant ${i} failed`, (e as Error).message);
+          return undefined;
         }
-        throw e;
+      };
+      const results = await mapLimit(count, 4, safeVariant);
+      for (const id of results) if (id) ids.push(id);
+      // If literally every variant failed AND it was a provider outage, surface that.
+      if (ids.length === 0 && lastUnavailable) {
+        return new Response(JSON.stringify({ error: "ai_provider_unavailable", message: "Rocket is busy right now. Please try again in a moment." }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
       }
 
       // When generating logos, also generate matching logotype (text wordmark) variants.
