@@ -234,17 +234,21 @@ Deno.serve(async (req) => {
         return asset?.id;
       };
       // Per-variant failures must NOT abort the whole batch — users asked for many
-      // variants and one Gemini hiccup shouldn't throw away the rest.
-      let variantErrors = 0;
+      // variants and one Gemini hiccup shouldn't throw away the rest. We also retry
+      // each failed slot up to 2 extra times so a flaky provider doesn't silently
+      // halve the user's results.
       let lastUnavailable: GeminiUnavailableError | null = null;
       const safeVariant = async (i: number) => {
-        try { return await createImageVariant(i); }
-        catch (e) {
-          variantErrors++;
-          if (e instanceof GeminiUnavailableError) lastUnavailable = e;
-          console.error(`variant ${i} failed`, (e as Error).message);
-          return undefined;
+        const MAX_ATTEMPTS = 3;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          try { return await createImageVariant(i); }
+          catch (e) {
+            if (e instanceof GeminiUnavailableError) lastUnavailable = e;
+            console.error(`variant ${i} attempt ${attempt} failed: ${(e as Error).message}`);
+            if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, 600 * attempt));
+          }
         }
+        return undefined;
       };
       const results = await mapLimit(count, 4, safeVariant);
       for (const id of results) if (id) ids.push(id);
