@@ -16,6 +16,19 @@ function extractUrl(text: string): string | null {
   return /^https?:\/\//i.test(u) ? u : "https://" + u;
 }
 
+async function mapLimit<T>(count: number, limit: number, task: (index: number) => Promise<T>): Promise<T[]> {
+  const results = new Array<T>(count);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, count) }, async () => {
+    while (true) {
+      const index = next++;
+      if (index >= count) break;
+      results[index] = await task(index);
+    }
+  }));
+  return results;
+}
+
 async function classify(prompt: string): Promise<{ asset_type: AssetType; count: number }> {
   try {
     const out = await geminiText({ system: CLASSIFIER_SYSTEM, user: prompt, temperature: 0.1, json: true });
