@@ -28,6 +28,54 @@ async function mapLimit<T>(count: number, limit: number, task: (index: number) =
   return results;
 }
 
+// Fan out graphic/icon/photo across distinct categories so a multi-variant gallery
+// is a real PACK (hero, launch, pattern, illustration, social, etc.) instead of
+// 24 versions of the same image. Only applied when count > 1; single-asset
+// requests use the raw user prompt unchanged.
+function augmentImagePrompt(assetType: AssetType, basePrompt: string, i: number, count: number): string {
+  if (count <= 1) return basePrompt;
+  const lower = basePrompt.toLowerCase();
+  if (assetType === "graphic") {
+    if (/(hero|launch|pattern|background|illustration|product showcase|social|banner|ad)/.test(lower)) return basePrompt;
+    const categories = [
+      "hero graphic for the website",
+      "launch announcement graphic",
+      "subtle abstract background pattern",
+      "abstract illustration that conveys the product's value",
+      "product showcase graphic featuring a UI mockup",
+      "social-share graphic (1200x630) for Twitter/LinkedIn",
+    ];
+    const cat = categories[i % categories.length];
+    return `${basePrompt}\n\nThis variant (${i + 1}/${count}) is specifically a ${cat}. Make it visually distinct from other variants while staying on-brand.`;
+  }
+  if (assetType === "icon") {
+    const styles = [
+      "outline (stroke) style icon",
+      "filled (solid) style icon",
+      "duotone icon using two brand colors",
+      "rounded app-icon concept (rounded square background)",
+    ];
+    const style = styles[i % styles.length];
+    return `${basePrompt}\n\nThis variant (${i + 1}/${count}) is a ${style}. Keep the icon family visually consistent across variants — same proportions, same stroke weight family, same level of detail — so they read as a single icon pack.`;
+  }
+  if (assetType === "photo") {
+    if (i === 0) {
+      return `${basePrompt}\n\nThis is variant 1 of ${count}: produce a "hero" reference photograph that defines the photography style guide for this brand — lock in the lighting (natural/studio/cinematic), composition (centered/rule-of-thirds/negative-space), color grading (warm/cool/desaturated/vibrant), and art direction. Subsequent variants will match this guide.`;
+    }
+    const subjects = [
+      "product-in-use lifestyle shot",
+      "founder/team portrait in workspace",
+      "abstract texture or detail shot for backgrounds",
+      "wide environmental hero shot",
+      "candid customer/user moment",
+      "close-up product detail",
+    ];
+    const subj = subjects[(i - 1) % subjects.length];
+    return `${basePrompt}\n\nThis variant (${i + 1}/${count}) is a ${subj}. Match the lighting, composition, and color grading of the brand's photography style — consistent with a cohesive photo set.`;
+  }
+  return basePrompt;
+}
+
 async function classify(prompt: string): Promise<{ asset_type: AssetType; count: number }> {
   try {
     const out = await geminiText({ system: CLASSIFIER_SYSTEM, user: prompt, temperature: 0.1, json: true });
@@ -211,10 +259,12 @@ Deno.serve(async (req) => {
           imgPrompt = `Create a logo VARIATION of the brand shown in the attached reference image${ctx.productName ? ` ("${ctx.productName}")` : ""}.\n\nHARD RULES:\n- KEEP the same core motif/symbol from the reference (do not invent a new unrelated concept).\n- KEEP the same silhouette family, proportions, and overall style.\n- KEEP the exact brand colors${ctx.colors?.length ? `: ${ctx.colors.slice(0,3).join(", ")}` : " from the reference"}. No new colors.\n- This variant: ${variantHint}.\n- Solid white background, flat vector, app-icon ready, no text, no typography, no letters.\n- The result must look like it belongs to the SAME brand as the reference.`;
         } else if (logoRefs) {
           // Non-logo image with brand visual references attached — instruct Gemini to evolve, not invent.
-          const base = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
+          const variantPrompt = augmentImagePrompt(cls.asset_type, prompt, i, count);
+          const base = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.9 });
           imgPrompt = `${base}\n\nVISUAL BRAND CONSTRAINTS (reference images are attached):\n- Match the visual language, color palette, and typographic feel of the attached reference(s).\n- This is for the EXISTING brand${ctx.productName ? ` "${ctx.productName}"` : ""}${ctx.colors?.length ? ` — use ONLY these brand colors: ${ctx.colors.slice(0,4).join(", ")}` : ""}.\n- Do not invent a new visual identity. Evolve the one shown.`;
         } else {
-          imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
+          const variantPrompt = augmentImagePrompt(cls.asset_type, prompt, i, count);
+          imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.9 });
         }
         const png = await geminiImage(imgPrompt, logoRefs);
         const path = `${user.id}/${Date.now()}-${i}.png`;
