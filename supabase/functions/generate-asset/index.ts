@@ -211,10 +211,12 @@ Deno.serve(async (req) => {
           imgPrompt = `Create a logo VARIATION of the brand shown in the attached reference image${ctx.productName ? ` ("${ctx.productName}")` : ""}.\n\nHARD RULES:\n- KEEP the same core motif/symbol from the reference (do not invent a new unrelated concept).\n- KEEP the same silhouette family, proportions, and overall style.\n- KEEP the exact brand colors${ctx.colors?.length ? `: ${ctx.colors.slice(0,3).join(", ")}` : " from the reference"}. No new colors.\n- This variant: ${variantHint}.\n- Solid white background, flat vector, app-icon ready, no text, no typography, no letters.\n- The result must look like it belongs to the SAME brand as the reference.`;
         } else if (logoRefs) {
           // Non-logo image with brand visual references attached — instruct Gemini to evolve, not invent.
-          const base = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
+          const variantPrompt = augmentImagePrompt(cls.asset_type, prompt, i, count);
+          const base = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.9 });
           imgPrompt = `${base}\n\nVISUAL BRAND CONSTRAINTS (reference images are attached):\n- Match the visual language, color palette, and typographic feel of the attached reference(s).\n- This is for the EXISTING brand${ctx.productName ? ` "${ctx.productName}"` : ""}${ctx.colors?.length ? ` — use ONLY these brand colors: ${ctx.colors.slice(0,4).join(", ")}` : ""}.\n- Do not invent a new visual identity. Evolve the one shown.`;
         } else {
-          imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, prompt), temperature: 0.9 });
+          const variantPrompt = augmentImagePrompt(cls.asset_type, prompt, i, count);
+          imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.9 });
         }
         const png = await geminiImage(imgPrompt, logoRefs);
         const path = `${user.id}/${Date.now()}-${i}.png`;
