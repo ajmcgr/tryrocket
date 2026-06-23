@@ -291,7 +291,7 @@ const AssetDetail = () => {
             saving={savingEdit}
             onSave={saveLogotype}
           />
-        ) : (
+        ) : (!isImage && !editing && hasVisual) ? null : (
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
           {isImage ? (
             <div className="flex items-center justify-center bg-neutral-50 p-8">
