@@ -12,6 +12,7 @@ import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogotypeEditor } from "@/components/LogotypeEditor";
 import { isLogotype, type LogotypeState } from "@/lib/logotype";
+import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -41,6 +42,7 @@ const AssetDetail = () => {
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -63,6 +65,7 @@ const AssetDetail = () => {
 
   const isLogo = isLogotype(asset);
   const isImage = !!asset.image_url && !isLogo;
+  const hasVisual = hasVisualRenderer(asset);
 
   const startEdit = () => {
     setDraftTitle(asset.title || "");
@@ -288,7 +291,7 @@ const AssetDetail = () => {
             saving={savingEdit}
             onSave={saveLogotype}
           />
-        ) : (
+        ) : (!isImage && !editing && hasVisual) ? null : (
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
           {isImage ? (
             <div className="flex items-center justify-center bg-neutral-50 p-8">
@@ -323,6 +326,31 @@ const AssetDetail = () => {
             </div>
           )}
         </div>
+        )}
+        {!isLogo && !isImage && !editing && hasVisual && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowRaw((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] text-neutral-600 hover:bg-neutral-50"
+              >
+                {showRaw ? "Visual view" : "Raw"}
+              </button>
+              <button
+                onClick={startEdit}
+                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] text-neutral-600 hover:bg-neutral-50"
+              >
+                <Pencil className="h-3 w-3" /> Edit source
+              </button>
+            </div>
+            {showRaw ? (
+              <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+                <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+              </div>
+            ) : (
+              <AssetVisual asset={asset} />
+            )}
+          </div>
         )}
       </div>
 
