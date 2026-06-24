@@ -38,15 +38,26 @@ export async function geminiText(opts: { system: string; user: string; temperatu
   const body: any = {
     systemInstruction: { parts: [{ text: opts.system }] },
     contents: [{ role: "user", parts: [{ text: opts.user }] }],
-    generationConfig: { temperature: opts.temperature ?? 0.7 },
+    generationConfig: { temperature: opts.temperature ?? 0.7, maxOutputTokens: 16384 },
   };
-  if (opts.json) body.generationConfig.responseMimeType = "application/json";
+  if (opts.json) {
+    body.generationConfig.responseMimeType = "application/json";
+    // Disable thinking to preserve output token budget for JSON responses (avoids truncation mid-JSON).
+    body.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+  }
   const res = await gFetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
     { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
   );
   const data = await res.json();
-  return (data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
+  const cand = data?.candidates?.[0];
+  const text = (cand?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
+  if (!text) {
+    console.warn("geminiText empty response", { finishReason: cand?.finishReason, usage: data?.usageMetadata });
+  } else if (cand?.finishReason && cand.finishReason !== "STOP") {
+    console.warn("geminiText non-STOP finish", { finishReason: cand.finishReason, len: text.length, usage: data?.usageMetadata });
+  }
+  return text;
 }
 
 export async function geminiImage(prompt: string, referenceImages?: { mimeType: string; data: string }[]): Promise<Uint8Array> {
