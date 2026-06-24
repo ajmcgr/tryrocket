@@ -322,7 +322,7 @@ const AssetDetail = () => {
               >
                 <Pencil className="h-3.5 w-3.5" /> Edit
               </button>
-              <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+              <div className="prose prose-neutral max-w-none p-8 text-sm leading-relaxed text-neutral-800" dangerouslySetInnerHTML={{ __html: mdToHtml(asset.content || "") }} />
             </div>
           )}
         </div>
@@ -345,7 +345,7 @@ const AssetDetail = () => {
             </div>
             {showRaw ? (
               <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                <pre className="whitespace-pre-wrap p-8 font-sans text-sm leading-relaxed text-neutral-800">{asset.content || ""}</pre>
+                <pre className="whitespace-pre-wrap p-8 font-mono text-xs leading-relaxed text-neutral-700">{asset.content || ""}</pre>
               </div>
             ) : (
               <AssetVisual asset={asset} />
