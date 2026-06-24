@@ -335,7 +335,7 @@ Deno.serve(async (req) => {
     } else {
       const results = await mapLimit(count, 6, async (i) => {
         const variantPrompt = count > 1 ? `${prompt}\n\nCreate variation ${i + 1} of ${count}. Make it meaningfully distinct in structure, angle, naming, and recommendations while staying on-brand.` : prompt;
-        const content = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.7 });
+        const content = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.7, json: !!spec.json });
         const { data: asset } = await admin.from("assets").insert({
           user_id: user.id, project_id,
           asset_type: cls.asset_type,
