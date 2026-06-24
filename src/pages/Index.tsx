@@ -157,7 +157,6 @@ const Index = () => {
     { label: "Components", slug: "components", Icon: Box },
     { label: "Graphics", slug: "graphics", Icon: Sparkle },
     { label: "Icons", slug: "icons", Icon: Puzzle },
-    { label: "Charts", slug: "charts", Icon: BarChart3 },
     { label: "Launch Copy", slug: "launch-copy", Icon: Megaphone },
   ];
 
@@ -441,7 +440,6 @@ const Index = () => {
                     "Components",
                     "Graphics",
                     "Icons",
-                    "Charts",
                     "Launch Copy",
                   ].map((item) => (
                     <span key={item} className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
@@ -495,7 +493,6 @@ const Index = () => {
                     "Components",
                     "Graphics",
                     "Icons",
-                    "Charts",
                     "Launch Copy",
                   ].map((item) => (
                     <span key={item} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-700 ring-1 ring-neutral-200">
