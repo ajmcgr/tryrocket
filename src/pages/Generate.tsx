@@ -7,6 +7,40 @@ import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, M
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 const supabase = _sb as any;
 
+function previewText(raw: string): string {
+  if (!raw) return "";
+  const t = raw.trim();
+  // If it's JSON, extract a few readable fields
+  if (t.startsWith("{") || t.startsWith("[")) {
+    try {
+      const j = JSON.parse(t);
+      const parts: string[] = [];
+      const walk = (o: any, depth = 0) => {
+        if (depth > 2 || parts.length > 12) return;
+        if (o && typeof o === "object" && !Array.isArray(o)) {
+          for (const [k, v] of Object.entries(o)) {
+            if (typeof v === "string" || typeof v === "number") parts.push(`${k}: ${v}`);
+            else walk(v, depth + 1);
+          }
+        }
+      };
+      walk(j);
+      if (parts.length) return parts.slice(0, 12).join(" · ");
+    } catch {}
+  }
+  return t
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^>\s?/gm, "")
+    .replace(/\n{2,}/g, " — ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string; assetType?: string; promptPrefix?: string }[] = [
   { id: "brand_guidelines", label: "Brand Guidelines", Icon: FileText, example: "Brand guidelines for TryLaunch" },
   { id: "template", label: "Brand Templates", Icon: LayoutTemplate, example: "Brand templates for a developer-tools startup" },
