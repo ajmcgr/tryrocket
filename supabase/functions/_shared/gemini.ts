@@ -35,29 +35,89 @@ async function gFetch(url: string, init: RequestInit): Promise<Response> {
 
 export async function geminiText(opts: { system: string; user: string; temperature?: number; json?: boolean }): Promise<string> {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
-  const body: any = {
-    systemInstruction: { parts: [{ text: opts.system }] },
-    contents: [{ role: "user", parts: [{ text: opts.user }] }],
-    generationConfig: { temperature: opts.temperature ?? 0.7, maxOutputTokens: 16384 },
+
+  const callOnce = async (userText: string, maxTokens: number): Promise<{ text: string; finishReason: string | undefined }> => {
+    const body: any = {
+      systemInstruction: { parts: [{ text: opts.system }] },
+      contents: [{ role: "user", parts: [{ text: userText }] }],
+      generationConfig: { temperature: opts.temperature ?? 0.7, maxOutputTokens: maxTokens },
+    };
+    if (opts.json) {
+      body.generationConfig.responseMimeType = "application/json";
+      body.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    }
+    const res = await gFetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+    );
+    const data = await res.json();
+    const cand = data?.candidates?.[0];
+    const text = (cand?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
+    if (!text) console.warn("geminiText empty", { finishReason: cand?.finishReason, usage: data?.usageMetadata });
+    else if (cand?.finishReason && cand.finishReason !== "STOP") console.warn("geminiText non-STOP", { finishReason: cand.finishReason, len: text.length });
+    return { text, finishReason: cand?.finishReason };
   };
-  if (opts.json) {
-    body.generationConfig.responseMimeType = "application/json";
-    // Disable thinking to preserve output token budget for JSON responses (avoids truncation mid-JSON).
-    body.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+
+  if (!opts.json) {
+    const { text } = await callOnce(opts.user, 16384);
+    return text;
   }
-  const res = await gFetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
-  );
-  const data = await res.json();
-  const cand = data?.candidates?.[0];
-  const text = (cand?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("") ?? "").trim();
-  if (!text) {
-    console.warn("geminiText empty response", { finishReason: cand?.finishReason, usage: data?.usageMetadata });
-  } else if (cand?.finishReason && cand.finishReason !== "STOP") {
-    console.warn("geminiText non-STOP finish", { finishReason: cand.finishReason, len: text.length, usage: data?.usageMetadata });
+
+  // JSON mode: validate, repair, and retry up to 2x to guarantee parseable JSON.
+  let lastText = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const maxTokens = attempt === 0 ? 32768 : 65536;
+    const userText = attempt === 0
+      ? opts.user
+      : `${opts.user}\n\nCRITICAL: Your previous response was not valid JSON or was truncated. Return ONLY a single complete, valid JSON object. No markdown fences. No preamble. No trailing text. Keep field values concise so the entire object fits.`;
+    const { text, finishReason } = await callOnce(userText, maxTokens);
+    lastText = text;
+    if (!text) continue;
+    // Strip fences if any
+    const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+    const body = (fenced ? fenced[1] : text).trim();
+    try { JSON.parse(body); return body; } catch {}
+    // Try repair
+    const repaired = repairJson(body);
+    if (repaired) { try { JSON.parse(repaired); return repaired; } catch {} }
+    console.warn("geminiText JSON parse failed", { attempt, finishReason, len: text.length, head: text.slice(0, 120) });
   }
-  return text;
+  // Final fallback: return last text (frontend has its own repair as last resort).
+  return lastText;
+}
+
+/** Close unclosed strings, arrays, and objects in truncated JSON. */
+function repairJson(s: string): string | null {
+  const start = s.indexOf("{");
+  if (start < 0) return null;
+  let out = "";
+  const stack: string[] = [];
+  let escape = false;
+  let inString = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    out += c;
+    if (inString) {
+      if (escape) { escape = false; continue; }
+      if (c === "\\") { escape = true; continue; }
+      if (c === '"') { inString = false; stack.pop(); }
+      continue;
+    }
+    if (c === '"') { inString = true; stack.push('"'); continue; }
+    if (c === "{" || c === "[") stack.push(c);
+    else if (c === "}" || c === "]") {
+      const open = c === "}" ? "{" : "[";
+      if (stack[stack.length - 1] === open) stack.pop();
+    }
+  }
+  if (inString) { out += '"'; stack.pop(); }
+  out = out.replace(/,\s*$/, "").replace(/:\s*$/, ": null").replace(/,\s*([\}\]])/g, "$1");
+  while (stack.length) {
+    const top = stack.pop();
+    if (top === "{") out += "}";
+    else if (top === "[") out += "]";
+  }
+  return out;
 }
 
 export async function geminiImage(prompt: string, referenceImages?: { mimeType: string; data: string }[]): Promise<Uint8Array> {
