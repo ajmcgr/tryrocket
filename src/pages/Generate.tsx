@@ -6,6 +6,62 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 const supabase = _sb as any;
+import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData } from "@/lib/assetSchemas";
+
+function AssetCardThumb({ asset }: { asset: any }) {
+  const at = asset.asset_type as string;
+  if (at === "color_system") {
+    const c = tryJson<ColorSystem>(asset.content || "");
+    const swatches = [c?.primary, c?.secondary, c?.accent, c?.success, c?.warning, c?.danger].filter(Boolean) as string[];
+    if (swatches.length) {
+      return (
+        <div className="grid aspect-square w-full grid-cols-2 grid-rows-2 overflow-hidden">
+          {swatches.slice(0, 4).map((hex, i) => (
+            <div key={i} className="flex items-end justify-start p-2" style={{ backgroundColor: hex }}>
+              <span className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-[9px] uppercase text-neutral-800">{hex}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+  }
+  if (at === "font_system") {
+    const f = tryJson<FontSystem>(asset.content || "");
+    const heading = f?.display_font || f?.heading_font || "Georgia";
+    const body = f?.body_font || "system-ui";
+    return (
+      <div className="flex aspect-square w-full flex-col justify-center gap-2 bg-gradient-to-br from-neutral-50 to-neutral-100 p-5">
+        <div className="text-[10px] uppercase tracking-wider text-neutral-400">Aa</div>
+        <div className="text-3xl leading-tight text-neutral-900" style={{ fontFamily: `'${heading}', serif` }}>{heading}</div>
+        <div className="mt-1 text-xs text-neutral-600" style={{ fontFamily: `'${body}', system-ui, sans-serif` }}>The quick brown fox · {body}</div>
+      </div>
+    );
+  }
+  if (at === "brand_voice") {
+    const v = tryJson<BrandVoiceData>(asset.content || "");
+    const pillars = v?.pillars?.slice(0, 3) || [];
+    return (
+      <div className="flex aspect-square w-full flex-col justify-between bg-gradient-to-br from-brand/5 to-neutral-50 p-4">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-brand">Voice</div>
+        {pillars.length ? (
+          <div className="space-y-1.5">
+            {pillars.map((p, i) => (
+              <div key={i} className="rounded-md bg-white/80 px-2 py-1 text-[11px] font-medium text-neutral-800">{p.name}</div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm italic text-neutral-600 line-clamp-4">{v?.overview || "Brand voice"}</div>
+        )}
+        <div className="text-[9px] uppercase tracking-wider text-neutral-400">Tone · Pillars · Do/Don't</div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex aspect-square w-full items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 p-4 text-center">
+      <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">{at.replace(/_/g, " ")}</span>
+    </div>
+  );
+}
 
 const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string; assetType?: string; promptPrefix?: string }[] = [
   { id: "brand_guidelines", label: "Brand Guidelines", Icon: FileText, example: "Brand guidelines for TryLaunch" },
@@ -314,9 +370,7 @@ const Generate = () => {
                       <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
                     </div>
                   ) : (
-                    <div className="flex aspect-square w-full items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 p-4 text-center">
-                      <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">{a.asset_type.replace(/_/g, " ")}</span>
-                    </div>
+                    <AssetCardThumb asset={a} />
                   )}
                   <div className="border-t border-neutral-100 px-3 py-2">
                     <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
