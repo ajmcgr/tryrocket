@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowRight, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase as _sb } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 const supabase = _sb as any;
 
 type Status = "idle" | "checking" | "available" | "taken" | "collecting" | "reserving" | "reserved" | "invalid";
@@ -16,8 +17,10 @@ const RESERVED_HANDLES = new Set([
 
 const HandleReserveForm = () => {
   const { toast } = useToast();
+  const nav = useNavigate();
   const [handle, setHandle] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<Status>("idle");
 
   const normalized = handle.trim().replace(/^@/, "");
@@ -39,23 +42,40 @@ const HandleReserveForm = () => {
 
   const reserve = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("reserving");
-    const { error } = await supabase
-      .from("handle_reservations")
-      .insert({ handle: normalized, email: email.trim() || null });
-    if (error) {
-      const msg = (error.message || "").toLowerCase();
-      if (msg.includes("duplicate") || msg.includes("unique")) {
-        setStatus("taken");
-        toast({ title: "Just got reserved", description: "Try a different handle.", variant: "destructive" });
-      } else {
-        setStatus("collecting");
-        toast({ title: "Couldn't reserve", description: error.message, variant: "destructive" });
-      }
+    if (password.length < 6) {
+      toast({ title: "Password too short", description: "Use at least 6 characters.", variant: "destructive" });
       return;
     }
+    setStatus("reserving");
+
+    // Best-effort reserve the handle so it can't be claimed twice while signup is in flight.
+    // (Ignore duplicate errors — the auth signup is the real source of truth.)
+    await supabase
+      .from("handle_reservations")
+      .insert({ handle: normalized, email: email.trim() || null });
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { handle: normalized, username: normalized },
+      },
+    });
+    if (error) {
+      setStatus("collecting");
+      toast({ title: "Couldn't create your account", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // Fire welcome verification email if we have a session (parity with /signup).
+    if (data?.session) {
+      supabase.functions.invoke("send-verification").catch(() => {});
+    }
+
     setStatus("reserved");
-    toast({ title: `@${normalized} is yours 🚀`, description: "We'll be in touch when launch is live." });
+    toast({ title: `@${normalized} is yours 🚀`, description: "Check your email to verify." });
+    nav(`/verify-email?email=${encodeURIComponent(email.trim())}`, { replace: true });
   };
 
   if (status === "reserved") {
@@ -64,8 +84,8 @@ const HandleReserveForm = () => {
         <div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-cream/15 text-cream">
           <Check className="h-5 w-5" />
         </div>
-        <p className="text-lg font-medium text-cream">@{normalized} is reserved.</p>
-        <p className="mt-1 text-sm text-cream/60">You'll get an email when Rocket goes live.</p>
+        <p className="text-lg font-medium text-cream">@{normalized} is yours.</p>
+        <p className="mt-1 text-sm text-cream/60">Check your email to verify your account.</p>
       </div>
     );
   }
@@ -91,12 +111,21 @@ const HandleReserveForm = () => {
           placeholder="your@email.com"
           className="h-14 w-full rounded-2xl border border-cream/15 bg-background/40 px-5 text-base text-cream placeholder:text-cream/40 outline-none backdrop-blur-md focus:border-cream/40"
         />
+        <input
+          type="password"
+          required
+          minLength={6}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password (min 6 chars)"
+          className="h-14 w-full rounded-2xl border border-cream/15 bg-background/40 px-5 text-base text-cream placeholder:text-cream/40 outline-none backdrop-blur-md focus:border-cream/40"
+        />
         <button
           type="submit"
           disabled={status === "reserving"}
           className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-cream text-sm font-semibold text-background transition hover:bg-white disabled:opacity-60"
         >
-          {status === "reserving" ? <><Loader2 className="h-4 w-4 animate-spin" /> Reserving…</> : <>Reserve @{normalized} <ArrowRight className="h-4 w-4" /></>}
+          {status === "reserving" ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating account…</> : <>Claim @{normalized} <ArrowRight className="h-4 w-4" /></>}
         </button>
         <button type="button" onClick={() => setStatus("idle")} className="block w-full text-center text-xs text-cream/50 hover:text-cream/80">
           ← try a different handle
@@ -144,7 +173,7 @@ const HandleReserveForm = () => {
             onClick={() => setStatus("collecting")}
             className="inline-flex h-12 items-center gap-2 rounded-2xl bg-cream px-5 text-sm font-semibold text-background transition hover:bg-white"
           >
-            <Sparkles className="h-4 w-4" /> Reserve @{normalized}
+            <Sparkles className="h-4 w-4" /> Claim @{normalized}
           </button>
         </div>
       )}
