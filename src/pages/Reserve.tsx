@@ -9,21 +9,29 @@ const Reserve = () => {
   const shareBody = encodeURIComponent("Check out https://tryrocket.ai/reserve — reserve your founder handle on Rocket.");
   const tweet = encodeURIComponent("Reserve your founder handle on Rocket 🚀 https://tryrocket.ai/reserve");
 
-  const palettes = [
-    ["#0b1a3a", "#5b2a86", "#d94f70"],
-    ["#0a2a3a", "#1f8a8a", "#f0c674"],
-    ["#1a0b3a", "#7a2a86", "#ff7a59"],
-    ["#08203a", "#3a6ea5", "#c9e4ff"],
-    ["#2a0a2a", "#a8324a", "#ffb86b"],
-    ["#0a1a0a", "#2a8a5a", "#cfe96c"],
-  ];
-  const [idx, setIdx] = useState(0);
+  const randomPalette = () => {
+    const baseHue = Math.floor(Math.random() * 360);
+    const hsl = (h: number, s: number, l: number) => `hsl(${((h % 360) + 360) % 360}, ${s}%, ${l}%)`;
+    return [
+      hsl(baseHue, 60 + Math.random() * 20, 12 + Math.random() * 10),
+      hsl(baseHue + 60 + Math.random() * 60, 55 + Math.random() * 25, 35 + Math.random() * 15),
+      hsl(baseHue + 160 + Math.random() * 80, 65 + Math.random() * 25, 55 + Math.random() * 15),
+    ];
+  };
+  const randomPositions = () =>
+    Array.from({ length: 3 }, () => `${Math.floor(Math.random() * 100)}% ${Math.floor(Math.random() * 100)}%`);
+  const [palette, setPalette] = useState<string[]>(() => randomPalette());
+  const [positions, setPositions] = useState<string[]>(() => randomPositions());
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % palettes.length), 12000);
+    const t = setInterval(() => {
+      setPalette(randomPalette());
+      setPositions(randomPositions());
+    }, 12000);
     return () => clearInterval(t);
   }, []);
-  const c = palettes[idx];
-  const bg = `radial-gradient(at 20% 30%, ${c[0]} 0px, transparent 50%), radial-gradient(at 80% 20%, ${c[1]} 0px, transparent 50%), radial-gradient(at 50% 80%, ${c[2]} 0px, transparent 50%), linear-gradient(135deg, ${c[0]}, ${c[2]})`;
+  const [p0, p1, p2] = positions;
+  const [c0, c1, c2] = palette;
+  const bg = `radial-gradient(at ${p0}, ${c0} 0px, transparent 50%), radial-gradient(at ${p1}, ${c1} 0px, transparent 50%), radial-gradient(at ${p2}, ${c2} 0px, transparent 50%), linear-gradient(135deg, ${c0}, ${c2})`;
 
   return (
     <div className="relative min-h-screen min-h-[100dvh] overflow-hidden">
