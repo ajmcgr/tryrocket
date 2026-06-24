@@ -5,42 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
-import { mdToHtml } from "@/lib/assetSchemas";
 const supabase = _sb as any;
-
-function previewText(raw: string): string {
-  if (!raw) return "";
-  const t = raw.trim();
-  // If it's JSON, extract a few readable fields
-  if (t.startsWith("{") || t.startsWith("[")) {
-    try {
-      const j = JSON.parse(t);
-      const parts: string[] = [];
-      const walk = (o: any, depth = 0) => {
-        if (depth > 2 || parts.length > 12) return;
-        if (o && typeof o === "object" && !Array.isArray(o)) {
-          for (const [k, v] of Object.entries(o)) {
-            if (typeof v === "string" || typeof v === "number") parts.push(`${k}: ${v}`);
-            else walk(v, depth + 1);
-          }
-        }
-      };
-      walk(j);
-      if (parts.length) return parts.slice(0, 12).join(" · ");
-    } catch {}
-  }
-  return t
-    .replace(/```[\s\S]*?```/g, "")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^\s*[-*+]\s+/gm, "")
-    .replace(/\*\*(.*?)\*\*/g, "$1")
-    .replace(/\*(.*?)\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/^>\s?/gm, "")
-    .replace(/\n{2,}/g, " — ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string; assetType?: string; promptPrefix?: string }[] = [
   { id: "brand_guidelines", label: "Brand Guidelines", Icon: FileText, example: "Brand guidelines for TryLaunch" },
@@ -349,11 +314,9 @@ const Generate = () => {
                       <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
                     </div>
                   ) : (
-                    <div
-                      className="prose prose-sm prose-neutral max-w-none overflow-hidden p-4 text-xs leading-relaxed text-neutral-700 [&_h1]:hidden [&_h2]:mt-0 [&_h2]:text-xs [&_h3]:text-xs [&>*]:my-1"
-                      style={{ maxHeight: 180 }}
-                      dangerouslySetInnerHTML={{ __html: mdToHtml(a.content || "") }}
-                    />
+                    <div className="flex aspect-square w-full items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 p-4 text-center">
+                      <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">{a.asset_type.replace(/_/g, " ")}</span>
+                    </div>
                   )}
                   <div className="border-t border-neutral-100 px-3 py-2">
                     <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
