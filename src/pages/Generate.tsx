@@ -261,6 +261,22 @@ const MESSAGES = [
   "Saving asset…",
 ];
 
+function formatPromptTime(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return time;
+  if (isYesterday) return `Yesterday · ${time}`;
+  const sameYear = d.getFullYear() === now.getFullYear();
+  const date = d.toLocaleDateString([], sameYear ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
+  return `${date} · ${time}`;
+}
+
 const Generate = () => {
   const [params] = useSearchParams();
   const [prompt, setPrompt] = useState(params.get("prompt") ?? "");
@@ -275,8 +291,8 @@ const Generate = () => {
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
-  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
-  const [pendingPrompts, setPendingPrompts] = useState<string[]>([]);
+  const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
+  const [pendingPrompts, setPendingPrompts] = useState<{ text: string; at: string }[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -307,8 +323,9 @@ const Generate = () => {
     const p = prompt.trim();
     if (!p || loading) return;
     setLoading(true);
-    setPendingPrompt(p);
-    if (chatId) setPendingPrompts((prev) => [...prev, p]);
+    const nowIso = new Date().toISOString();
+    setPendingPrompt({ text: p, at: nowIso });
+    if (chatId) setPendingPrompts((prev) => [...prev, { text: p, at: nowIso }]);
     try {
       // Reuse the current chat when inside one; otherwise create a new chat row.
       let newChatId: string;
@@ -446,18 +463,18 @@ const Generate = () => {
   // Build the ordered list of user prompts in this chat: start with chat.prompt,
   // then append unique prompts from assets in creation order, then any pending prompts
   // currently being generated. Falls back to the live pendingPrompt if there's no chat yet.
-  const promptHistory: string[] = (() => {
-    const list: string[] = [];
-    const push = (s?: string | null) => {
+  const promptHistory: { text: string; at: string | null }[] = (() => {
+    const list: { text: string; at: string | null }[] = [];
+    const push = (s?: string | null, at?: string | null) => {
       const v = (s || "").trim();
       if (!v) return;
-      if (list[list.length - 1] === v) return;
-      list.push(v);
+      if (list[list.length - 1]?.text === v) return;
+      list.push({ text: v, at: at || null });
     };
-    push(chatData?.prompt);
-    for (const a of chatAssets) push(a.prompt);
-    for (const p of pendingPrompts) push(p);
-    if (list.length === 0 && pendingPrompt) push(pendingPrompt);
+    push(chatData?.prompt, chatData?.created_at);
+    for (const a of chatAssets) push(a.prompt, a.created_at);
+    for (const p of pendingPrompts) push(p.text, p.at);
+    if (list.length === 0 && pendingPrompt) push(pendingPrompt.text, pendingPrompt.at);
     return list;
   })();
   return (
@@ -469,8 +486,15 @@ const Generate = () => {
             {/* Messages */}
             <div className="flex-1 space-y-3 overflow-y-auto">
               {promptHistory.map((p, i) => (
-                <div key={i} className="w-full rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
-                  {p}
+                <div key={i} className="flex w-full flex-col gap-1">
+                  <div className="rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
+                    {p.text}
+                  </div>
+                  {p.at && (
+                    <span className="px-2 text-right text-[10px] text-neutral-400">
+                      {formatPromptTime(p.at)}
+                    </span>
+                  )}
                 </div>
               ))}
               <div className="flex w-full items-center gap-2 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
