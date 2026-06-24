@@ -3,10 +3,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Trash2, MoreHorizontal, Edit3, FolderPlus } from "lucide-react";
+import { Plus, Search, Trash2, MoreHorizontal, Edit3, FolderPlus, Download, CheckSquare, Square, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
+import { packAssetsZip } from "@/lib/exporters/zipPack";
 const supabase = _sb as any;
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
@@ -29,6 +30,9 @@ const Assets = () => {
   const [filter, setFilter] = useState<string>("all");
   const [q, setQ] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [zipping, setZipping] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -63,6 +67,27 @@ const Assets = () => {
       return true;
     });
   }, [assets, filter, q]);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAllVisible = () => setSelected(new Set(filtered.map((a) => a.id)));
+  const clearSelection = () => setSelected(new Set());
+  const downloadZip = async () => {
+    const items = assets.filter((a) => selected.has(a.id));
+    if (!items.length) return;
+    setZipping(true);
+    try {
+      await packAssetsZip(items, `rocket-pack-${items.length}-assets.zip`);
+      toast({ title: `Packed ${items.length} assets` });
+    } catch (e: any) {
+      toast({ title: "Pack failed", description: e?.message, variant: "destructive" });
+    } finally { setZipping(false); }
+  };
 
   const del = async (id: string) => {
     if (!confirm("Delete this asset?")) return;
@@ -116,7 +141,31 @@ const Assets = () => {
             </button>
           ))}
         </div>
+        <div className="ml-auto flex items-center gap-1.5">
+          <button
+            onClick={() => { setSelectMode((v) => !v); clearSelection(); }}
+            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition ${selectMode ? "border-brand bg-brand/10 text-brand" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}
+          >
+            {selectMode ? <X className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />} {selectMode ? "Cancel" : "Select"}
+          </button>
+        </div>
       </div>
+
+      {selectMode && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand/30 bg-brand/5 px-3 py-2 text-xs">
+          <span className="font-medium text-neutral-700">{selected.size} selected</span>
+          <button onClick={selectAllVisible} className="rounded-full border border-neutral-200 bg-white px-2 py-1 hover:bg-neutral-50">Select all visible</button>
+          <button onClick={clearSelection} className="rounded-full border border-neutral-200 bg-white px-2 py-1 hover:bg-neutral-50">Clear</button>
+          <div className="ml-auto" />
+          <button
+            onClick={downloadZip}
+            disabled={!selected.size || zipping}
+            className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-medium text-brand-foreground hover:bg-brand-hover disabled:opacity-50"
+          >
+            <Download className="h-3.5 w-3.5" /> {zipping ? "Packing…" : "Download .zip"}
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <AssetGridSkeleton />
@@ -135,8 +184,40 @@ const Assets = () => {
             const isLogotype = a?.editor_state?.kind === "logotype";
             const isImage = a.image_url && !isLogotype;
             const isHighlighted = highlight.includes(a.id);
+            const isSelected = selected.has(a.id);
             return (
-              <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${isHighlighted ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
+              <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${isSelected ? "border-brand ring-2 ring-brand/40" : isHighlighted ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
+                {selectMode && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); toggleSelect(a.id); }}
+                    className="absolute left-2 top-2 z-10 rounded-md bg-white/95 p-1 shadow-sm"
+                    aria-label="Select"
+                  >
+                    {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
+                  </button>
+                )}
+                {selectMode ? (
+                  <button onClick={() => toggleSelect(a.id)} className="block w-full text-left">
+                    <div className="aspect-square w-full overflow-hidden bg-neutral-50">
+                      {isImage ? (
+                        <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
+                      ) : isLogotype ? (
+                        <Logotype state={a.editor_state} fit="contain" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
+                          <div className="line-clamp-6 whitespace-pre-wrap">{(a.content || a.prompt || "").slice(0, 200)}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="border-t border-neutral-100 p-3">
+                      <div className="truncate text-sm font-medium text-neutral-900">{a.title}</div>
+                      <div className="mt-0.5 flex items-center justify-between gap-2">
+                        <span className="truncate text-[11px] text-neutral-500">{ASSET_TYPE_LABELS[a.asset_type] || a.asset_type}</span>
+                        <span className="shrink-0 text-[10px] text-neutral-400">{new Date(a.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </button>
+                ) : (
                 <Link to={`/assets/${a.id}`} className="block">
                   <div className="aspect-square w-full overflow-hidden bg-neutral-50">
                     {isImage ? (
@@ -157,6 +238,7 @@ const Assets = () => {
                     </div>
                   </div>
                 </Link>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="absolute right-2 top-2 rounded-md bg-white/90 p-1 opacity-0 transition group-hover:opacity-100" aria-label="Actions">
