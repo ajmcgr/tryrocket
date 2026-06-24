@@ -275,8 +275,8 @@ const Generate = () => {
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
-  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
-  const [pendingPrompts, setPendingPrompts] = useState<string[]>([]);
+  const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
+  const [pendingPrompts, setPendingPrompts] = useState<{ text: string; at: string }[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -307,8 +307,9 @@ const Generate = () => {
     const p = prompt.trim();
     if (!p || loading) return;
     setLoading(true);
-    setPendingPrompt(p);
-    if (chatId) setPendingPrompts((prev) => [...prev, p]);
+    const nowIso = new Date().toISOString();
+    setPendingPrompt({ text: p, at: nowIso });
+    if (chatId) setPendingPrompts((prev) => [...prev, { text: p, at: nowIso }]);
     try {
       // Reuse the current chat when inside one; otherwise create a new chat row.
       let newChatId: string;
