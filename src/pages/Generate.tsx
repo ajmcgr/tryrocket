@@ -447,7 +447,7 @@ const Generate = () => {
   // Build the ordered list of user prompts in this chat: start with chat.prompt,
   // then append unique prompts from assets in creation order, then any pending prompts
   // currently being generated. Falls back to the live pendingPrompt if there's no chat yet.
-  const promptHistory: string[] = (() => {
+  const promptHistory: { text: string; at: string | null }[] = (() => {
     const list: { text: string; at: string | null }[] = [];
     const push = (s?: string | null, at?: string | null) => {
       const v = (s || "").trim();
@@ -470,8 +470,15 @@ const Generate = () => {
             {/* Messages */}
             <div className="flex-1 space-y-3 overflow-y-auto">
               {promptHistory.map((p, i) => (
-                <div key={i} className="w-full rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
-                  {p}
+                <div key={i} className="flex w-full flex-col gap-1">
+                  <div className="rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
+                    {p.text}
+                  </div>
+                  {p.at && (
+                    <span className="px-2 text-right text-[10px] text-neutral-400">
+                      {formatPromptTime(p.at)}
+                    </span>
+                  )}
                 </div>
               ))}
               <div className="flex w-full items-center gap-2 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
