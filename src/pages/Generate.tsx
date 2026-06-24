@@ -314,7 +314,7 @@ const Generate = () => {
                       <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
                     </div>
                   ) : (
-                    <div className="line-clamp-6 whitespace-pre-wrap p-4 text-xs text-neutral-700">{a.content || ""}</div>
+                    <div className="line-clamp-6 p-4 text-xs leading-relaxed text-neutral-700">{previewText(a.content || "")}</div>
                   )}
                   <div className="border-t border-neutral-100 px-3 py-2">
                     <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
