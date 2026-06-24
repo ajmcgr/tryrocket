@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const FAQS = [
   { q: "What does Rocket actually generate?", a: "A complete brand kit from a single URL: positioning, taglines, value props, audience analysis, founder bio, social posts, Product Hunt copy, directory submissions, launch strategy, email templates, messaging framework, and a full launch checklist." },
-  { q: "What types of brand assets can I create?", a: "Choose from 12 asset types: Brand Guidelines, Brand Templates, Logos, Colors, Fonts, Brand Voice, Photos, Components, Graphics, Icons, Charts, and Launch Copy. Every Rocket generates a full kit across all categories, organized and ready to export." },
+  { q: "What types of brand assets can I create?", a: "Choose from 11 asset types: Brand Guidelines, Brand Templates, Logos, Colors, Fonts, Brand Voice, Photos, Components, Graphics, Icons, and Launch Copy. Every Rocket generates a full kit across all categories, organized and ready to export." },
   { q: "How long does it take?", a: "About 30–60 seconds. You'll see a live progress UI, then land on your editable Rocket." },
   { q: "Can I edit and regenerate sections?", a: "Yes. Every section has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit." },
   { q: "What's a credit?", a: "Credits power every generation. Text assets cost 1 credit; images cost more. Free plan gets 100 credits/month, Pro gets 3,000. Top up anytime with credit packs." },
