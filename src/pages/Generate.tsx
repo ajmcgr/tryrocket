@@ -448,17 +448,17 @@ const Generate = () => {
   // then append unique prompts from assets in creation order, then any pending prompts
   // currently being generated. Falls back to the live pendingPrompt if there's no chat yet.
   const promptHistory: string[] = (() => {
-    const list: string[] = [];
-    const push = (s?: string | null) => {
+    const list: { text: string; at: string | null }[] = [];
+    const push = (s?: string | null, at?: string | null) => {
       const v = (s || "").trim();
       if (!v) return;
-      if (list[list.length - 1] === v) return;
-      list.push(v);
+      if (list[list.length - 1]?.text === v) return;
+      list.push({ text: v, at: at || null });
     };
-    push(chatData?.prompt);
-    for (const a of chatAssets) push(a.prompt);
-    for (const p of pendingPrompts) push(p);
-    if (list.length === 0 && pendingPrompt) push(pendingPrompt);
+    push(chatData?.prompt, chatData?.created_at);
+    for (const a of chatAssets) push(a.prompt, a.created_at);
+    for (const p of pendingPrompts) push(p.text, p.at);
+    if (list.length === 0 && pendingPrompt) push(pendingPrompt.text, pendingPrompt.at);
     return list;
   })();
   return (
