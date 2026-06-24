@@ -2,6 +2,8 @@
 // Today: txt, md, json, html, pdf, png (image assets), jpg (image assets), svg (image wrapper).
 // Tomorrow: register additional formats (eps, pptx, figma) without touching call sites.
 import jsPDF from "jspdf";
+import { brandGuidelinesPdf, structuredMarkdownPdf, presentationPdf } from "@/lib/exporters/pdfMultipage";
+import { presentationPptx } from "@/lib/exporters/pptx";
 
 export type ExportableAsset = {
   id: string;
@@ -11,7 +13,7 @@ export type ExportableAsset = {
   asset_type?: string;
 };
 
-export type ExportFormat = "txt" | "md" | "json" | "html" | "pdf" | "png" | "jpg" | "svg";
+export type ExportFormat = "txt" | "md" | "json" | "html" | "pdf" | "png" | "jpg" | "svg" | "pptx";
 
 const safeName = (s: string) => s.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "") || "asset";
 
@@ -108,6 +110,7 @@ async function exportSvgWrapper(asset: ExportableAsset): Promise<Blob> {
 }
 
 export const FORMATS_FOR_TEXT: ExportFormat[] = ["txt", "md", "html", "pdf", "json"];
+export const FORMATS_FOR_PRESENTATION: ExportFormat[] = ["pdf", "pptx", "md", "html", "json"];
 export const FORMATS_FOR_IMAGE: ExportFormat[] = ["png", "jpg", "pdf", "svg", "html", "json"];
 
 export const FORMAT_LABEL: Record<ExportFormat, string> = {
@@ -119,7 +122,14 @@ export const FORMAT_LABEL: Record<ExportFormat, string> = {
   png: "PNG (.png)",
   jpg: "JPEG (.jpg)",
   svg: "SVG (.svg)",
+  pptx: "PowerPoint (.pptx)",
 };
+
+export function formatsForAsset(asset: ExportableAsset): ExportFormat[] {
+  if (asset.image_url) return FORMATS_FOR_IMAGE;
+  if (asset.asset_type === "presentation") return FORMATS_FOR_PRESENTATION;
+  return FORMATS_FOR_TEXT;
+}
 
 export async function exportAsset(asset: ExportableAsset, format: ExportFormat): Promise<void> {
   const base = safeName(asset.title);
@@ -139,8 +149,26 @@ export async function exportAsset(asset: ExportableAsset, format: ExportFormat):
       downloadBlob(exportHtml(asset), `${base}.html`); return;
     }
     case "pdf": {
-      const blob = asset.image_url ? await exportImagePdf(asset) : exportTextPdf(asset);
+      let blob: Blob;
+      if (asset.image_url) blob = await exportImagePdf(asset);
+      else if (asset.asset_type === "brand_guidelines") blob = brandGuidelinesPdf(asset.title, asset.content || "");
+      else if (asset.asset_type === "presentation") blob = presentationPdf(asset.title, asset.content || "");
+      else if (
+        asset.asset_type === "brand_voice" ||
+        asset.asset_type === "launch_copy" ||
+        asset.asset_type === "product_hunt_copy" ||
+        asset.asset_type === "social_post" ||
+        asset.asset_type === "founder_bio" ||
+        asset.asset_type === "template"
+      ) {
+        blob = structuredMarkdownPdf(asset.title, asset.content || "", asset.asset_type?.replace(/_/g, " "));
+      } else blob = exportTextPdf(asset);
       downloadBlob(blob, `${base}.pdf`); return;
+    }
+    case "pptx": {
+      if (asset.asset_type !== "presentation") throw new Error("PPTX only available for presentations");
+      const blob = await presentationPptx(asset.title, asset.content || "");
+      downloadBlob(blob, `${base}.pptx`); return;
     }
     case "png":
     case "jpg": {

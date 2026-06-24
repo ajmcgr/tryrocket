@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Mail, MessageCircle, MessageSquare, Facebook, Send, Copy, Link as LinkIcon, FileText, Image as ImageIcon, Cloud, Lock } from "lucide-react";
-import { exportAsset, FORMATS_FOR_IMAGE, FORMATS_FOR_TEXT, FORMAT_LABEL, type ExportFormat } from "@/lib/exporters";
+import { exportAsset, formatsForAsset, FORMAT_LABEL, type ExportFormat } from "@/lib/exporters";
 
 const XLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
@@ -97,7 +97,7 @@ export default function ShareExportModal({
       setExporting(null);
     }
   };
-  const formats = isImage ? FORMATS_FOR_IMAGE : FORMATS_FOR_TEXT;
+  const formats = formatsForAsset(asset as any);
 
   const cloudPlaceholder = (name: string) => () => {
     toast({ title: `${name} export coming soon`, description: "Needs per-user OAuth connection." });
