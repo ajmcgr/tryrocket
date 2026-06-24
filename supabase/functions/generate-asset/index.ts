@@ -215,15 +215,33 @@ Deno.serve(async (req) => {
     const title = cls.asset_type === "graphic" && /component|ui kit|buttons|cards|inputs/i.test(prompt) ? "Component" : ASSET_TITLES[cls.asset_type];
     const ids: string[] = [];
 
-    // Fetch visual references from the scraped brand (raster only — Gemini ignores SVG).
+    // Fetch visual references from the scraped brand. Gemini only accepts raster
+    // formats (jpg/png/webp), so SVG/ICO/AVIF get rasterized through wsrv.nl,
+    // a free image proxy that converts arbitrary image URLs to PNG.
     async function fetchAsRef(u?: string | null): Promise<{ mimeType: string; data: string } | null> {
       if (!u) return null;
+      const directThenProxy = async (url: string): Promise<Response | null> => {
+        try {
+          const r = await fetch(url);
+          if (!r.ok) return null;
+          const ct = (r.headers.get("content-type") || "").toLowerCase();
+          // If it's a format Gemini can't consume directly (svg/ico/avif/heic),
+          // re-fetch via wsrv.nl to rasterize to PNG.
+          if (!ct || ct.includes("svg") || ct.includes("icon") || ct.includes("avif") || ct.includes("heic")) {
+            const proxied = `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ""))}&output=png&w=1024&we`;
+            const p = await fetch(proxied);
+            return p.ok ? p : null;
+          }
+          return r;
+        } catch { return null; }
+      };
       try {
-        const r = await fetch(u);
-        if (!r.ok) return null;
-        const ct = (r.headers.get("content-type") || "image/png").split(";")[0];
-        if (ct.includes("svg")) return null;
+        const r = await directThenProxy(u);
+        if (!r) return null;
+        let ct = (r.headers.get("content-type") || "image/png").split(";")[0].toLowerCase();
+        if (!/^image\/(png|jpeg|jpg|webp)$/.test(ct)) ct = "image/png";
         const buf = new Uint8Array(await r.arrayBuffer());
+        if (buf.length === 0) return null;
         let bin = "";
         for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
         return { mimeType: ct, data: btoa(bin) };
@@ -231,13 +249,14 @@ Deno.serve(async (req) => {
     }
 
     // Visual refs used for ALL image generation so the output evolves the existing brand.
+    // For logos: always include the logo image first (rasterized if SVG) AND the
+    // homepage screenshot so Gemini sees both the mark and its in-context palette.
     let logoRefs: { mimeType: string; data: string }[] | undefined;
     if (spec.kind === "image") {
       const candidates: (string | undefined)[] = [];
       if (cls.asset_type === "logo") {
-        candidates.push(ctx.logo, ctx.favicon, ctx.ogImage, ctx.screenshot);
+        candidates.push(ctx.logo, ctx.screenshot, ctx.ogImage, ctx.favicon);
       } else {
-        // Graphics/icons/photos: anchor to homepage screenshot + logo for visual language.
         candidates.push(ctx.screenshot, ctx.ogImage, ctx.logo);
       }
       const refs: { mimeType: string; data: string }[] = [];
@@ -246,7 +265,12 @@ Deno.serve(async (req) => {
         const ref = await fetchAsRef(u);
         if (ref) refs.push(ref);
       }
-      if (refs.length) logoRefs = refs;
+      if (refs.length) {
+        logoRefs = refs;
+        console.log(`[refs] attached ${refs.length} brand ref image(s) for ${cls.asset_type} (logo=${!!ctx.logo} screenshot=${!!ctx.screenshot} favicon=${!!ctx.favicon})`);
+      } else {
+        console.warn(`[refs] NO brand refs resolved for ${cls.asset_type} — ctx urls: logo=${ctx.logo} screenshot=${ctx.screenshot} favicon=${ctx.favicon} ogImage=${ctx.ogImage}`);
+      }
     }
 
     if (spec.kind === "image") {
