@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import HandleReserveForm from "@/components/HandleReserveForm";
 import AudioControls from "@/components/AudioControls";
-import backgroundVideo from "@/assets/background.mov.asset.json";
 import rocketLogo from "@/assets/rocket-logo-white-2.png.asset.json";
 
 const Reserve = () => {
@@ -9,17 +9,28 @@ const Reserve = () => {
   const shareBody = encodeURIComponent("Check out https://tryrocket.ai/reserve — reserve your founder handle on Rocket.");
   const tweet = encodeURIComponent("Reserve your founder handle on Rocket 🚀 https://tryrocket.ai/reserve");
 
+  const gradients = [
+    { angle: 135, colors: ["#0b1a3a", "#5b2a86", "#d94f70"] },
+    { angle: 45,  colors: ["#0a2a3a", "#1f8a8a", "#f0c674"] },
+    { angle: 200, colors: ["#1a0b3a", "#7a2a86", "#ff7a59"] },
+    { angle: 90,  colors: ["#08203a", "#3a6ea5", "#c9e4ff"] },
+    { angle: 315, colors: ["#2a0a2a", "#a8324a", "#ffb86b"] },
+    { angle: 25,  colors: ["#0a1a0a", "#2a8a5a", "#cfe96c"] },
+  ];
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % gradients.length), 12000);
+    return () => clearInterval(t);
+  }, []);
+  const g = gradients[idx];
+  const bg = `linear-gradient(${g.angle}deg, ${g.colors.join(", ")})`;
+
   return (
     <div className="relative min-h-screen min-h-[100dvh] overflow-hidden">
-      <video
-        autoPlay loop muted playsInline
-        // @ts-ignore
-        webkit-playsinline="true"
-        preload="auto"
-        className="absolute inset-0 h-full w-full object-cover bg-background"
-      >
-        <source src={backgroundVideo.url} type="video/mp4" />
-      </video>
+      <div
+        className="absolute inset-0 transition-[background] duration-[3000ms] ease-in-out"
+        style={{ backgroundImage: bg }}
+      />
       <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/50" />
 
       <main className="relative z-10 flex min-h-screen min-h-[100dvh] flex-col items-center justify-center px-6 py-20">
