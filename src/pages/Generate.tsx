@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 const supabase = _sb as any;
-import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData } from "@/lib/assetSchemas";
+import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData, type LaunchCopyData, type ProductHuntCopyData, type SocialPostData, type FounderBio, type PresentationData, type TemplateLibraryData } from "@/lib/assetSchemas";
 
 function AssetCardThumb({ asset }: { asset: any }) {
   const at = asset.asset_type as string;
@@ -53,6 +53,128 @@ function AssetCardThumb({ asset }: { asset: any }) {
           <div className="text-sm italic text-neutral-600 line-clamp-4">{v?.overview || "Brand voice"}</div>
         )}
         <div className="text-[9px] uppercase tracking-wider text-neutral-400">Tone · Pillars · Do/Don't</div>
+      </div>
+    );
+  }
+  if (at === "brand_guidelines") {
+    const g = tryJson<BrandGuidelinesData>(asset.content || "");
+    const tagline = g?.taglines?.[0] || g?.elevator_pitch?.one_sentence;
+    return (
+      <div className="flex aspect-square w-full flex-col justify-between bg-gradient-to-br from-neutral-900 to-neutral-700 p-4 text-white">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">Brand Book</div>
+        <div className="space-y-1">
+          <div className="text-lg font-semibold leading-tight line-clamp-2">{g?.brand_name || asset.title}</div>
+          {tagline && <div className="text-[11px] italic text-white/70 line-clamp-3">"{tagline}"</div>}
+        </div>
+        <div className="flex gap-1 text-[9px] uppercase tracking-wider text-white/50">
+          {g?.mission && <span>Mission</span>}
+          {g?.vision && <span>· Vision</span>}
+          {g?.values?.length ? <span>· Values</span> : null}
+        </div>
+      </div>
+    );
+  }
+  if (at === "launch_copy") {
+    const l = tryJson<LaunchCopyData>(asset.content || "");
+    return (
+      <div className="flex aspect-square w-full flex-col justify-between bg-gradient-to-br from-brand/10 via-white to-neutral-50 p-4">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-brand">Launch Copy</div>
+        <div className="space-y-1.5">
+          {l?.hero?.headline && <div className="text-base font-semibold leading-tight text-neutral-900 line-clamp-2">{l.hero.headline}</div>}
+          {l?.hero?.subheadline && <div className="text-[11px] text-neutral-600 line-clamp-2">{l.hero.subheadline}</div>}
+          {!l?.hero?.headline && l?.tagline && <div className="text-base font-semibold text-neutral-900 line-clamp-3">{l.tagline}</div>}
+        </div>
+        {l?.hero?.cta && <div className="inline-flex w-fit rounded-full bg-brand px-2.5 py-1 text-[10px] font-medium text-brand-foreground">{l.hero.cta}</div>}
+      </div>
+    );
+  }
+  if (at === "product_hunt_copy") {
+    const p = tryJson<ProductHuntCopyData>(asset.content || "");
+    return (
+      <div className="flex aspect-square w-full flex-col justify-between bg-gradient-to-br from-orange-50 to-white p-4">
+        <div className="flex items-center gap-1.5">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">P</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-orange-600">Product Hunt</div>
+        </div>
+        <div className="space-y-1">
+          {p?.tagline && <div className="text-sm font-semibold leading-tight text-neutral-900 line-clamp-2">{p.tagline}</div>}
+          {p?.short_description && <div className="text-[11px] text-neutral-600 line-clamp-3">{p.short_description}</div>}
+        </div>
+        <div className="text-[9px] uppercase tracking-wider text-neutral-400">Tagline · Comment · FAQ</div>
+      </div>
+    );
+  }
+  if (at === "social_post") {
+    const s = tryJson<SocialPostData>(asset.content || "");
+    const post = s && "kind" in s && s.kind === "post" ? s : null;
+    const lib = s && "kind" in s && s.kind === "library" ? s : null;
+    const sample = post?.copy || lib?.categories?.[0]?.posts?.[0]?.copy;
+    const platform = post?.platform || lib?.categories?.[0]?.posts?.[0]?.platform || "Social";
+    return (
+      <div className="flex aspect-square w-full flex-col justify-between bg-white p-4">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">{platform}</div>
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-[11px] leading-snug text-neutral-800 line-clamp-6">
+          {sample || "Social post"}
+        </div>
+        <div className="text-[9px] uppercase tracking-wider text-neutral-400">Post</div>
+      </div>
+    );
+  }
+  if (at === "founder_bio") {
+    const b = tryJson<FounderBio>(asset.content || "");
+    const sample = b?.short || b?.x_bio || b?.linkedin_headline || b?.medium;
+    return (
+      <div className="flex aspect-square w-full flex-col justify-between bg-gradient-to-br from-neutral-50 to-white p-4">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Founder Bio</div>
+        <div className="flex items-start gap-2">
+          <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gradient-to-br from-brand to-brand/60" />
+          <div className="text-[11px] leading-snug text-neutral-700 line-clamp-5">{sample || "Bio"}</div>
+        </div>
+        <div className="text-[9px] uppercase tracking-wider text-neutral-400">X · LinkedIn · Press</div>
+      </div>
+    );
+  }
+  if (at === "presentation") {
+    const d = tryJson<PresentationData>(asset.content || "");
+    const slides = d?.slides?.slice(0, 3) || [];
+    return (
+      <div className="flex aspect-square w-full flex-col justify-center gap-2 bg-neutral-100 p-4">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Deck · {d?.slides?.length || 0} slides</div>
+        <div className="space-y-1.5">
+          {slides.map((s, i) => (
+            <div key={i} className="flex aspect-[16/9] w-full items-center justify-center rounded border border-neutral-200 bg-white px-2 text-center">
+              <div className="text-[9px] font-medium text-neutral-700 line-clamp-2">{s.title}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  if (at === "template") {
+    const t = tryJson<TemplateLibraryData>(asset.content || "");
+    const groups = t?.groups?.slice(0, 3) || [];
+    return (
+      <div className="flex aspect-square w-full flex-col justify-between bg-gradient-to-br from-neutral-50 to-white p-4">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Templates</div>
+        <div className="space-y-1">
+          {groups.map((g, i) => (
+            <div key={i} className="flex items-center justify-between rounded-md bg-neutral-100 px-2 py-1 text-[10px] text-neutral-700">
+              <span className="truncate font-medium">{g.name}</span>
+              <span className="text-neutral-400">{g.templates?.length || 0}</span>
+            </div>
+          ))}
+        </div>
+        <div className="text-[9px] uppercase tracking-wider text-neutral-400">Library</div>
+      </div>
+    );
+  }
+  // Generic text-asset fallback with a snippet from content
+  const snippet = (asset.content || "").replace(/[{}\[\]"`#*_]/g, " ").replace(/\s+/g, " ").trim().slice(0, 140);
+  if (snippet) {
+    return (
+      <div className="flex aspect-square w-full flex-col justify-between bg-gradient-to-br from-neutral-50 to-white p-4">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">{at.replace(/_/g, " ")}</div>
+        <div className="text-[11px] leading-snug text-neutral-700 line-clamp-6">{snippet}</div>
       </div>
     );
   }
