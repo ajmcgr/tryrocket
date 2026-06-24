@@ -15,7 +15,6 @@ const OUTPUT_TYPES = [
   "Components",
   "Graphics",
   "Icons",
-  "Charts",
   "Launch Copy",
 ];
 

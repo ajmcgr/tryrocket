@@ -461,7 +461,6 @@ const CARDS: { id: string; minH: string; mobileH: string; render: () => React.Re
   { id: "photos", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: PhotosContent },
   { id: "linkedin", minH: "min-h-[280px]", mobileH: "min-h-[300px]", render: LinkedInContent },
   { id: "components", minH: "min-h-[320px]", mobileH: "min-h-[340px]", render: ComponentsContent },
-  { id: "charts", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: ChartsContent },
   { id: "launch", minH: "min-h-[360px]", mobileH: "min-h-[360px]", render: LaunchStrategyContent },
   { id: "narrative", minH: "min-h-[420px]", mobileH: "min-h-[380px]", render: BrandNarrativeContent },
   { id: "audience", minH: "min-h-[300px]", mobileH: "min-h-[320px]", render: AudienceContent },
