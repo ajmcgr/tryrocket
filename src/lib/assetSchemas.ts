@@ -144,7 +144,46 @@ export function tryJson<T = any>(raw: string | null | undefined): T | null {
   // Try to find first {...} block
   const m = body.match(/\{[\s\S]*\}/);
   if (m) { try { return JSON.parse(m[0]); } catch {} }
+  // Attempt to repair truncated JSON (model hit token limit mid-output).
+  const start = body.indexOf("{");
+  if (start >= 0) {
+    const repaired = repairTruncatedJson(body.slice(start));
+    if (repaired) { try { return JSON.parse(repaired); } catch {} }
+  }
   return null;
+}
+
+/** Best-effort repair for JSON truncated mid-stream: closes open strings, arrays, and objects. */
+function repairTruncatedJson(s: string): string | null {
+  let out = "";
+  const stack: string[] = []; // '{', '[', or '"'
+  let escape = false;
+  let inString = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    out += c;
+    if (inString) {
+      if (escape) { escape = false; continue; }
+      if (c === "\\") { escape = true; continue; }
+      if (c === '"') { inString = false; stack.pop(); }
+      continue;
+    }
+    if (c === '"') { inString = true; stack.push('"'); continue; }
+    if (c === "{" || c === "[") stack.push(c);
+    else if (c === "}" || c === "]") {
+      const open = c === "}" ? "{" : "[";
+      if (stack[stack.length - 1] === open) stack.pop();
+    }
+  }
+  if (inString) out += '"';
+  // Trim trailing comma or partial key before closing
+  out = out.replace(/,\s*$/, "").replace(/:\s*$/, ": null").replace(/,\s*([\}\]])/g, "$1");
+  while (stack.length) {
+    const top = stack.pop();
+    if (top === "{") out += "}";
+    else if (top === "[") out += "]";
+  }
+  return out;
 }
 
 /** Parse markdown into a nested tree of sections by heading level. */
