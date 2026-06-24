@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LogotypeEditor } from "@/components/LogotypeEditor";
 import { isLogotype, type LogotypeState } from "@/lib/logotype";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
+import { mdToHtml } from "@/lib/assetSchemas";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
