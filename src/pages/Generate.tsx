@@ -276,6 +276,7 @@ const Generate = () => {
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+  const [pendingPrompts, setPendingPrompts] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -293,10 +294,11 @@ const Generate = () => {
     (async () => {
       const [{ data: c }, { data: a }] = await Promise.all([
         supabase.from("chats").select("*").eq("id", chatId).maybeSingle(),
-        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content").eq("chat_id", chatId).order("created_at", { ascending: true }),
+        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
       ]);
       setChatData(c);
       setChatAssets(a || []);
+      setPendingPrompts([]);
     })();
   }, [chatId, user]);
 
@@ -306,16 +308,22 @@ const Generate = () => {
     if (!p || loading) return;
     setLoading(true);
     setPendingPrompt(p);
+    if (chatId) setPendingPrompts((prev) => [...prev, p]);
     try {
-      // Create a chat row for this submission
-      const title = p.length > 60 ? p.slice(0, 57) + "…" : p;
-      const { data: newChat, error: chatErr } = await supabase
-        .from("chats")
-        .insert({ user_id: user!.id, title, prompt: p })
-        .select("id")
-        .single();
-      if (chatErr) throw new Error(chatErr.message);
-      const newChatId: string = newChat.id;
+      // Reuse the current chat when inside one; otherwise create a new chat row.
+      let newChatId: string;
+      if (chatId) {
+        newChatId = chatId;
+      } else {
+        const title = p.length > 60 ? p.slice(0, 57) + "…" : p;
+        const { data: newChat, error: chatErr } = await supabase
+          .from("chats")
+          .insert({ user_id: user!.id, title, prompt: p })
+          .select("id")
+          .single();
+        if (chatErr) throw new Error(chatErr.message);
+        newChatId = newChat.id;
+      }
 
       let effective: WF = workflow;
       // Auto-detect (client-side keyword classifier — fast, no extra round trip)
@@ -405,10 +413,22 @@ const Generate = () => {
       }
       if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
       // Link generated assets to this chat
-      await supabase.from("assets").update({ chat_id: newChatId }).in("id", allIds);
+      await supabase.from("assets").update({ chat_id: newChatId, prompt: p }).in("id", allIds);
       window.dispatchEvent(new Event("chats:refresh"));
       setPrompt("");
-      nav(`/create?chat=${newChatId}`);
+      if (chatId) {
+        // Already in this chat — refresh assets in place so the new prompt appears in history.
+        const { data: a } = await supabase
+          .from("assets")
+          .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,created_at")
+          .eq("chat_id", newChatId)
+          .order("created_at", { ascending: true });
+        setChatAssets(a || []);
+        setPendingPrompts([]);
+        setPendingPrompt(null);
+      } else {
+        nav(`/create?chat=${newChatId}`);
+      }
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
     } finally {
@@ -423,7 +443,23 @@ const Generate = () => {
   }, [user]);
 
   const isChatView = !!(chatId && chatData) || (loading && !!pendingPrompt);
-  const viewPrompt = chatData?.prompt ?? pendingPrompt;
+  // Build the ordered list of user prompts in this chat: start with chat.prompt,
+  // then append unique prompts from assets in creation order, then any pending prompts
+  // currently being generated. Falls back to the live pendingPrompt if there's no chat yet.
+  const promptHistory: string[] = (() => {
+    const list: string[] = [];
+    const push = (s?: string | null) => {
+      const v = (s || "").trim();
+      if (!v) return;
+      if (list[list.length - 1] === v) return;
+      list.push(v);
+    };
+    push(chatData?.prompt);
+    for (const a of chatAssets) push(a.prompt);
+    for (const p of pendingPrompts) push(p);
+    if (list.length === 0 && pendingPrompt) push(pendingPrompt);
+    return list;
+  })();
   return (
     <div className={`flex min-h-[calc(100vh-4rem)] w-full flex-col ${isChatView ? "px-6 py-6" : "mx-auto max-w-3xl items-center px-6 py-12"}`}>
       {isChatView ? (
@@ -432,11 +468,11 @@ const Generate = () => {
           <div className="flex h-[calc(100vh-8rem)] flex-col lg:sticky lg:top-20">
             {/* Messages */}
             <div className="flex-1 space-y-3 overflow-y-auto">
-              {viewPrompt && (
-                <div className="w-full rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
-                  {viewPrompt}
+              {promptHistory.map((p, i) => (
+                <div key={i} className="w-full rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
+                  {p}
                 </div>
-              )}
+              ))}
               <div className="flex w-full items-center gap-2 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
                 {loading && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-neutral-500" />}
                 <span>
