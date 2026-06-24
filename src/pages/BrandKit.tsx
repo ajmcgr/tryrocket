@@ -7,6 +7,7 @@ import jsPDF from "jspdf";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logotype } from "@/components/Logotype";
+import { mdToHtml } from "@/lib/assetSchemas";
 
 const HEX_RE = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi;
 const FONT_RE = /(?:font[-\s]?family|typeface|heading|body)\s*[:\-—]?\s*["']?([A-Z][A-Za-z0-9 ]{2,30})["']?/g;
@@ -172,14 +173,14 @@ const BrandKit = () => {
         {voice && (
           <section>
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-500">Voice</h2>
-            <div className="whitespace-pre-wrap rounded-2xl border border-neutral-200 bg-neutral-50 p-6 text-sm leading-relaxed text-neutral-800">{voice}</div>
+            <div className="prose prose-neutral max-w-none rounded-2xl border border-neutral-200 bg-neutral-50 p-6 text-sm leading-relaxed text-neutral-800" dangerouslySetInnerHTML={{ __html: mdToHtml(voice) }} />
           </section>
         )}
 
         {guidelines && (
           <section>
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-500">Guidelines</h2>
-            <div className="whitespace-pre-wrap rounded-2xl border border-neutral-200 p-6 text-sm leading-relaxed text-neutral-800">{guidelines}</div>
+            <div className="prose prose-neutral max-w-none rounded-2xl border border-neutral-200 p-6 text-sm leading-relaxed text-neutral-800" dangerouslySetInnerHTML={{ __html: mdToHtml(guidelines) }} />
           </section>
         )}
 
