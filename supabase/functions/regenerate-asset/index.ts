@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
         await admin.from("user_usage").update({ credits_used: usage.credits_used + cost }).eq("user_id", user.id);
         return new Response(JSON.stringify({ image_url: pub.publicUrl, credits_charged: cost }), { headers: { ...ch, "Content-Type": "application/json" } });
       } else {
-        const content = await geminiText({ system: spec.system, user: spec.build(ctx, userPrompt), temperature: 0.8 });
+        const content = await geminiText({ system: spec.system, user: spec.build(ctx, userPrompt), temperature: 0.8, json: !!spec.json });
         await admin.from("assets").update({ content }).eq("id", asset_id);
         await admin.from("user_usage").update({ credits_used: usage.credits_used + cost }).eq("user_id", user.id);
         return new Response(JSON.stringify({ content, credits_charged: cost }), { headers: { ...ch, "Content-Type": "application/json" } });

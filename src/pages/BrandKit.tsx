@@ -7,10 +7,7 @@ import jsPDF from "jspdf";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logotype } from "@/components/Logotype";
-import { mdToHtml } from "@/lib/assetSchemas";
-
-const HEX_RE = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi;
-const FONT_RE = /(?:font[-\s]?family|typeface|heading|body)\s*[:\-—]?\s*["']?([A-Z][A-Za-z0-9 ]{2,30})["']?/g;
+import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData } from "@/lib/assetSchemas";
 
 function uniq<T>(a: T[]) { return Array.from(new Set(a)); }
 
@@ -47,13 +44,16 @@ const BrandKit = () => {
   const logos = assets.filter(a => a.asset_type === "logo" && a.image_url && a?.editor_state?.kind !== "logotype");
   const logotypes = assets.filter(a => a?.editor_state?.kind === "logotype");
   const graphics = assets.filter(a => ["graphic", "icon", "photo"].includes(a.asset_type) && a.image_url);
-  const colorTexts = assets.filter(a => ["color_system", "brand_guidelines", "design_color_palette"].includes(a.asset_type)).map(a => a.content || "").join("\n");
-  const colors = uniq((colorTexts.match(HEX_RE) || []).map(c => c.toLowerCase())).slice(0, 12);
-  const fontTexts = assets.filter(a => ["font_system", "brand_guidelines", "design_typography"].includes(a.asset_type)).map(a => a.content || "").join("\n");
-  const fonts = uniq(Array.from(fontTexts.matchAll(FONT_RE)).map(m => m[1].trim())).filter(f => f.length > 2).slice(0, 6);
-  const voice = assets.find(a => a.asset_type === "brand_voice")?.content;
-  const guidelines = assets.find(a => a.asset_type === "brand_guidelines")?.content;
-  const tagline = assets.find(a => a.asset_type === "other" && /tagline/i.test(a.title))?.content;
+
+  // Structured JSON sources only — no markdown parsing.
+  const colorAssets: ColorSystem[] = assets.filter(a => a.asset_type === "color_system").map(a => tryJson<ColorSystem>(a.content || "")).filter(Boolean) as ColorSystem[];
+  const fontAssets: FontSystem[] = assets.filter(a => a.asset_type === "font_system").map(a => tryJson<FontSystem>(a.content || "")).filter(Boolean) as FontSystem[];
+  const voice: BrandVoiceData | null = (() => { const a = assets.find(x => x.asset_type === "brand_voice"); return a ? tryJson<BrandVoiceData>(a.content || "") : null; })();
+  const guidelines: BrandGuidelinesData | null = (() => { const a = assets.find(x => x.asset_type === "brand_guidelines"); return a ? tryJson<BrandGuidelinesData>(a.content || "") : null; })();
+
+  const colors = uniq(colorAssets.flatMap(c => [c.primary, c.secondary, c.accent, c.success, c.warning, c.danger].filter(Boolean) as string[]).map(c => c.toLowerCase())).slice(0, 12);
+  const fonts = uniq(fontAssets.flatMap(f => [f.display_font, f.heading_font, f.body_font].filter(Boolean) as string[])).slice(0, 6);
+  const tagline = guidelines?.taglines?.[0];
 
   const exportPng = async () => {
     if (!sheetRef.current) return;
@@ -111,7 +111,7 @@ const BrandKit = () => {
         <header className="border-b border-neutral-200 pb-8">
           <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Brand Kit</div>
           <h1 className="mt-2 text-5xl font-semibold tracking-tight">{project.name}</h1>
-          {tagline && <p className="mt-3 text-lg text-neutral-600">{tagline}</p>}
+          {tagline && <p className="mt-3 text-lg text-neutral-600">"{tagline}"</p>}
           {project.description && !tagline && <p className="mt-3 text-lg text-neutral-600">{project.description}</p>}
         </header>
 
@@ -173,14 +173,42 @@ const BrandKit = () => {
         {voice && (
           <section>
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-500">Voice</h2>
-            <div className="prose prose-neutral max-w-none rounded-2xl border border-neutral-200 bg-neutral-50 p-6 text-sm leading-relaxed text-neutral-800" dangerouslySetInnerHTML={{ __html: mdToHtml(voice) }} />
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
+              {voice.overview && <p className="text-sm leading-relaxed text-neutral-800">{voice.overview}</p>}
+              {voice.pillars?.length ? (
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {voice.pillars.map((p, i) => (
+                    <div key={i} className="rounded-xl border border-neutral-200 bg-white p-4">
+                      <div className="text-[10px] uppercase tracking-wider text-brand">Pillar {i + 1}</div>
+                      <div className="mt-1 font-semibold text-neutral-900">{p.name}</div>
+                      <p className="mt-1 text-xs text-neutral-600">{p.description}</p>
+                      {p.example && <p className="mt-2 border-l-2 border-brand/30 pl-2 text-xs italic text-neutral-700">"{p.example}"</p>}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </section>
         )}
 
         {guidelines && (
           <section>
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-500">Guidelines</h2>
-            <div className="prose prose-neutral max-w-none rounded-2xl border border-neutral-200 p-6 text-sm leading-relaxed text-neutral-800" dangerouslySetInnerHTML={{ __html: mdToHtml(guidelines) }} />
+            <div className="rounded-2xl border border-neutral-200 p-6 text-sm leading-relaxed text-neutral-800">
+              {guidelines.mission && <div className="mb-4"><div className="text-[10px] uppercase tracking-wider text-neutral-500">Mission</div><p className="mt-1">{guidelines.mission}</p></div>}
+              {guidelines.vision && <div className="mb-4"><div className="text-[10px] uppercase tracking-wider text-neutral-500">Vision</div><p className="mt-1">{guidelines.vision}</p></div>}
+              {guidelines.positioning && <div className="mb-4"><div className="text-[10px] uppercase tracking-wider text-neutral-500">Positioning</div><blockquote className="mt-1 border-l-4 border-brand pl-3 italic">{guidelines.positioning}</blockquote></div>}
+              {guidelines.values?.length ? (
+                <div className="mb-4"><div className="text-[10px] uppercase tracking-wider text-neutral-500">Values</div>
+                  <ul className="mt-1 grid gap-1 md:grid-cols-2">{guidelines.values.map((v, i) => <li key={i}><strong>{v.name}.</strong> {v.description}</li>)}</ul>
+                </div>
+              ) : null}
+              {guidelines.taglines?.length ? (
+                <div><div className="text-[10px] uppercase tracking-wider text-neutral-500">Taglines</div>
+                  <ul className="mt-1 list-disc pl-5">{guidelines.taglines.slice(0, 6).map((t, i) => <li key={i}>"{t}"</li>)}</ul>
+                </div>
+              ) : null}
+            </div>
           </section>
         )}
 

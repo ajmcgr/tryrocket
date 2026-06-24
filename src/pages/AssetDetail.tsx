@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LogotypeEditor } from "@/components/LogotypeEditor";
 import { isLogotype, type LogotypeState } from "@/lib/logotype";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
-import { mdToHtml } from "@/lib/assetSchemas";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -318,12 +317,12 @@ const AssetDetail = () => {
             <div className="relative">
               <button
                 onClick={startEdit}
-                className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1 text-xs text-neutral-600 backdrop-blur hover:bg-neutral-50"
-                title="Edit copy"
+                className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1 text-xs text-neutral-600 backdrop-blur hover:bg-neutral-50"
+                title="Edit source"
               >
                 <Pencil className="h-3.5 w-3.5" /> Edit
               </button>
-              <div className="prose prose-neutral max-w-none p-8 text-sm leading-relaxed text-neutral-800" dangerouslySetInnerHTML={{ __html: mdToHtml(asset.content || "") }} />
+              <div className="p-6"><AssetVisual asset={asset} /></div>
             </div>
           )}
         </div>

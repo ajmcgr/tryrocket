@@ -47,6 +47,86 @@ export type FounderBio = {
   press_bio?: string;
 };
 
+export type BrandVoiceData = {
+  overview?: string;
+  pillars?: { name: string; description: string; why_it_fits?: string; example?: string }[];
+  tone_by_context?: { context: string; guidance: string }[];
+  do?: { phrase: string; why?: string }[];
+  dont?: { phrase: string; why?: string }[];
+  website_examples?: { label: string; copy: string }[];
+  social_examples?: { platform: string; copy: string }[];
+  launch_examples?: { label: string; copy: string }[];
+  email_examples?: { subject: string; body: string }[];
+};
+
+export type BrandGuidelinesData = {
+  brand_name?: string;
+  overview?: string;
+  mission?: string;
+  vision?: string;
+  positioning?: string;
+  audience?: string;
+  personas?: { name: string; role?: string; demographics?: string; goals?: string[]; pains?: string[]; triggers?: string[]; channels?: string[]; quote?: string }[];
+  personality_traits?: { trait: string; description: string }[];
+  values?: { name: string; description: string }[];
+  voice?: { overview?: string; tone_shifts?: { context: string; guidance: string }[] };
+  messaging?: { core_message?: string; value_prop?: string; pillars?: { name: string; proof: string }[]; reasons_to_believe?: string[] };
+  taglines?: string[];
+  elevator_pitch?: { one_sentence?: string; thirty_second?: string; two_minute?: string };
+  do?: string[];
+  dont?: string[];
+  website_examples?: { hero?: { headline: string; subheadline: string }; feature?: { headline: string; body: string }; cta?: { headline: string; body: string } };
+  social_examples?: { platform: string; copy: string }[];
+  launch_examples?: { label: string; copy: string }[];
+};
+
+export type LaunchCopyData = {
+  tagline?: string;
+  one_liner?: string;
+  short_description?: string;
+  medium_description?: string;
+  long_description?: string;
+  hero?: { headline: string; subheadline: string; cta: string };
+  cta_variations?: string[];
+  launch_announcement?: string;
+  seo?: { title: string; meta_description: string };
+};
+
+export type ProductHuntCopyData = {
+  tagline?: string;
+  short_description?: string;
+  full_description?: string;
+  first_comment?: string;
+  maker_comment?: string;
+  launch_tweet?: string;
+  faq?: { q: string; a: string }[];
+  community_responses?: { scenario: string; reply: string }[];
+  topics?: string[];
+};
+
+export type SocialPostData =
+  | { kind: "post"; platform: string; copy: string }
+  | { kind: "library"; categories: { name: string; posts: { platform: string; copy: string }[] }[] };
+
+export type PresentationData = {
+  deck_type?: string;
+  overview?: string;
+  slides: {
+    title: string;
+    purpose?: string;
+    bullets?: string[];
+    layout?: string;
+    visual_guidance?: string;
+    big_number?: { value: string; label: string };
+    quote?: { text: string; attribution?: string };
+  }[];
+  layout_notes?: string;
+};
+
+export type TemplateLibraryData = {
+  groups: { name: string; templates: { name: string; body: string; placeholders?: string[] }[] }[];
+};
+
 export type MarkdownSection = {
   level: number;
   title: string;
