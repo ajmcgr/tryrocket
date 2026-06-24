@@ -9,27 +9,27 @@ const Reserve = () => {
   const shareBody = encodeURIComponent("Check out https://tryrocket.ai/reserve — reserve your founder handle on Rocket.");
   const tweet = encodeURIComponent("Reserve your founder handle on Rocket 🚀 https://tryrocket.ai/reserve");
 
-  const gradients = [
-    { angle: 135, colors: ["#0b1a3a", "#5b2a86", "#d94f70"] },
-    { angle: 45,  colors: ["#0a2a3a", "#1f8a8a", "#f0c674"] },
-    { angle: 200, colors: ["#1a0b3a", "#7a2a86", "#ff7a59"] },
-    { angle: 90,  colors: ["#08203a", "#3a6ea5", "#c9e4ff"] },
-    { angle: 315, colors: ["#2a0a2a", "#a8324a", "#ffb86b"] },
-    { angle: 25,  colors: ["#0a1a0a", "#2a8a5a", "#cfe96c"] },
+  const palettes = [
+    ["#0b1a3a", "#5b2a86", "#d94f70"],
+    ["#0a2a3a", "#1f8a8a", "#f0c674"],
+    ["#1a0b3a", "#7a2a86", "#ff7a59"],
+    ["#08203a", "#3a6ea5", "#c9e4ff"],
+    ["#2a0a2a", "#a8324a", "#ffb86b"],
+    ["#0a1a0a", "#2a8a5a", "#cfe96c"],
   ];
   const [idx, setIdx] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % gradients.length), 12000);
+    const t = setInterval(() => setIdx((i) => (i + 1) % palettes.length), 12000);
     return () => clearInterval(t);
   }, []);
-  const g = gradients[idx];
-  const bg = `linear-gradient(${g.angle}deg, ${g.colors.join(", ")})`;
+  const c = palettes[idx];
+  const bg = `radial-gradient(at 20% 30%, ${c[0]} 0px, transparent 50%), radial-gradient(at 80% 20%, ${c[1]} 0px, transparent 50%), radial-gradient(at 50% 80%, ${c[2]} 0px, transparent 50%), linear-gradient(135deg, ${c[0]}, ${c[2]})`;
 
   return (
     <div className="relative min-h-screen min-h-[100dvh] overflow-hidden">
       <div
-        className="absolute inset-0 transition-[background] duration-[3000ms] ease-in-out"
-        style={{ backgroundImage: bg }}
+        className="absolute inset-0 animate-fluid-gradient transition-[background-image] duration-[3000ms] ease-in-out"
+        style={{ backgroundImage: bg, backgroundSize: "200% 200%" }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/50" />
 
