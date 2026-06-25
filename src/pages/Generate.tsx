@@ -485,28 +485,40 @@ const Generate = () => {
           <div className="flex h-[calc(100vh-8rem)] flex-col lg:sticky lg:top-20">
             {/* Messages */}
             <div className="flex-1 space-y-3 overflow-y-auto">
-              {promptHistory.map((p, i) => (
-                <div key={i} className="flex w-full flex-col gap-1">
-                  <div className="rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
-                    {p.text}
+              {promptHistory.map((p, i) => {
+                const isLast = i === promptHistory.length - 1;
+                const matchCount = chatAssets.filter((a) => (a.prompt || "").trim() === p.text).length;
+                const showLoading = isLast && loading;
+                const replyText = showLoading
+                  ? MESSAGES[msgIdx]
+                  : matchCount > 0
+                    ? `Found ${matchCount} result${matchCount === 1 ? "" : "s"}. See the results panel.`
+                    : isLast && chatAssets.length === 0
+                      ? "No assets yet."
+                      : "Done. See the results panel.";
+                return (
+                  <div key={i} className="space-y-3">
+                    {/* User bubble — right */}
+                    <div className="flex w-full flex-col items-end gap-1">
+                      <div className="max-w-[85%] rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
+                        {p.text}
+                      </div>
+                      {p.at && (
+                        <span className="px-2 text-[10px] text-neutral-400">
+                          {formatPromptTime(p.at)}
+                        </span>
+                      )}
+                    </div>
+                    {/* Assistant bubble — left */}
+                    <div className="flex w-full flex-col items-start gap-1">
+                      <div className="flex max-w-[85%] items-center gap-2 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
+                        {showLoading && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-neutral-500" />}
+                        <span>{replyText}</span>
+                      </div>
+                    </div>
                   </div>
-                  {p.at && (
-                    <span className="px-2 text-right text-[10px] text-neutral-400">
-                      {formatPromptTime(p.at)}
-                    </span>
-                  )}
-                </div>
-              ))}
-              <div className="flex w-full items-center gap-2 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
-                {loading && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-neutral-500" />}
-                <span>
-                  {loading
-                    ? `${MESSAGES[msgIdx]}`
-                    : chatAssets.length > 0
-                      ? `Found ${chatAssets.length} result${chatAssets.length === 1 ? "" : "s"}. See the results panel.`
-                      : "No assets in this chat."}
-                </span>
-              </div>
+                );
+              })}
             </div>
             {/* Composer pinned to bottom */}
             <form onSubmit={submit} className="mt-3">
