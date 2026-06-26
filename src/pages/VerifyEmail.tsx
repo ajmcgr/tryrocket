@@ -62,7 +62,10 @@ const VerifyEmail = () => {
     let cancelled = false;
     (async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("verify-email", { body: { token } });
+        const { data, error } = await supabase.functions.invoke(`verify-email?token=${encodeURIComponent(token)}`, {
+          body: { token },
+          headers: { "x-verification-token": token },
+        });
         if (cancelled) return;
         const payload = data as { ok?: boolean; error?: string; message?: string } | null;
         if (error || payload?.error) {
