@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     console.log("[send-verification] 3_stored_in_db", "verification_id", insRow?.id, "stored_hash_prefix", token_hash.slice(0, 8), "expires_at", expires_at);
     step("token_saved");
 
-    const confirmUrl = `${SITE_URL}/verify-email?token=${token}`;
+    const confirmUrl = `${SITE_URL}/verify-email?token=${token}&uid=${user.id}`;
     console.log("[send-verification] 4_email_link_token", "len", token.length, "prefix", token.slice(0, 8), "is_raw_token", true);
     const html = renderEmail(confirmUrl);
     step("email_rendered");

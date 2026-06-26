@@ -92,10 +92,12 @@ Deno.serve(async (req) => {
 
     const requestUrl = new URL(req.url);
     let token = (requestUrl.searchParams.get("token") || req.headers.get("x-verification-token") || "").trim();
-    if (!token && req.method === "POST") {
+    let uidParam = (requestUrl.searchParams.get("uid") || "").trim();
+    if ((!token || !uidParam) && req.method === "POST") {
       try {
         const body = await req.json();
-        token = String(body?.token || body?.verification_token || "").trim();
+        token = token || String(body?.token || body?.verification_token || "").trim();
+        uidParam = uidParam || String(body?.uid || body?.user_id || "").trim();
       } catch { /* ignore */ }
     }
     if (!token) {
@@ -118,23 +120,42 @@ Deno.serve(async (req) => {
     const token_hash = await sha256Hex(token);
     console.log("[verify-email] 6_computed_hash", "len", token_hash.length, "prefix", token_hash.slice(0, 8));
 
-    const { data: rows, error: selErr } = await admin
+    // Primary lookup: exact token_hash match.
+    let { data: rows, error: selErr } = await admin
       .from("email_verifications")
       .select("id, user_id, email, expires_at, used_at")
       .eq("token_hash", token_hash)
       .order("created_at", { ascending: false })
       .limit(1);
+    // Secondary lookup: most recent row for this uid (handles email-client URL mangling).
+    if (!selErr && !(rows && rows.length) && uidParam) {
+      const r = await admin
+        .from("email_verifications")
+        .select("id, user_id, email, expires_at, used_at")
+        .eq("user_id", uidParam)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (!r.error && r.data && r.data.length) {
+        rows = r.data;
+        console.log("[verify-email] 7b_uid_fallback_match", "uid", uidParam);
+      }
+    }
     if (selErr) return fail(500, "db_select_failed", "Lookup failed", selErr.message, "token_looked_up");
     const row = rows?.[0];
     console.log("[verify-email] 7_db_lookup", "found", !!row, "lookup_hash_prefix", token_hash.slice(0, 8));
     if (!row) {
-      // FALLBACK: token row not found (rotated, cleaned up, or older flow).
-      // If the request is from a signed-in user, trust the JWT + the fact that
-      // they clicked an email link delivered to their address — confirm them.
+      // FALLBACK A: signed-in caller → trust the JWT.
       if (caller) {
         const confirmedAt = caller.email_confirmed_at || await authConfirmedAt(caller.id);
         step(confirmedAt ? "auth_confirmed_fallback_no_row" : "signed_in_fallback_no_row");
         return await finalize(caller.id, confirmedAt);
+      }
+      // FALLBACK B: signed-out but link carries uid → confirm that user.
+      // Same trust model as a standard email confirmation link.
+      if (uidParam) {
+        const confirmedAt = await authConfirmedAt(uidParam);
+        step(confirmedAt ? "auth_confirmed_fallback_uid" : "uid_fallback_no_row");
+        return await finalize(uidParam, confirmedAt);
       }
       return fail(400, "invalid_token", "This verification link is invalid.", token_hash.slice(0, 12), "token_looked_up");
     }
