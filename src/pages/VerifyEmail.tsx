@@ -62,6 +62,8 @@ const VerifyEmail = () => {
     let cancelled = false;
     (async () => {
       try {
+        // Ensure we have a fresh session so the edge function sees the user as authenticated.
+        await supabase.auth.getSession();
         const { data, error } = await supabase.functions.invoke(`verify-email?token=${encodeURIComponent(token)}`, {
           body: { token },
           headers: { "x-verification-token": token },
