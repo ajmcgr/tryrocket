@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ArrowRight, Check, Loader2, Sparkles, X } from "lucide-react";
+import { ArrowRight, Check, Loader2, Sparkles, X, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 const supabase = _sb as any;
 
 type Status = "idle" | "checking" | "available" | "taken" | "collecting" | "reserving" | "reserved" | "invalid";
@@ -18,6 +19,7 @@ const RESERVED_HANDLES = new Set([
 const HandleReserveForm = () => {
   const { toast } = useToast();
   const nav = useNavigate();
+  const { user, signOut } = useAuth();
   const [handle, setHandle] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +27,23 @@ const HandleReserveForm = () => {
 
   const normalized = handle.trim().replace(/^@/, "");
   const isValid = /^[a-zA-Z0-9_]{2,30}$/.test(normalized);
+
+  if (user) {
+    return (
+      <div className="mx-auto w-full max-w-xl rounded-3xl border border-cream/10 bg-white p-5 shadow-xl sm:p-6">
+        <div className="flex items-start gap-4">
+          <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-background text-cream">
+            <AlertCircle className="h-5 w-5" />
+          </div>
+          <p className="flex-1 text-left text-base text-background sm:text-lg">
+            Reservations are for new makers only.{" "}
+            <button onClick={() => signOut()} className="underline underline-offset-2 hover:opacity-80">Sign out</button>{" "}
+            to reserve a handle.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const check = async (e: React.FormEvent) => {
     e.preventDefault();
