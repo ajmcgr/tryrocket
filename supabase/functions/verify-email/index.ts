@@ -68,8 +68,27 @@ Deno.serve(async (req) => {
         await admin.auth.admin.updateUserById(user_id, { email_confirm: true, app_metadata: { email_verified: true } });
       } catch (e) { console.warn("[verify-email] auth confirm warn", (e as Error).message); }
 
+      // Generate a magic link so the (likely signed-out) browser can establish a session
+      // and land on /create without an extra login step.
+      let signInUrl: string | null = null;
+      try {
+        const { data: u } = await admin.auth.admin.getUserById(user_id);
+        const email = u?.user?.email;
+        if (email) {
+          const origin = req.headers.get("Origin") || "https://tryrocket.ai";
+          const redirectTo = `${origin}/auth/callback?next=/create`;
+          const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+            type: "magiclink",
+            email,
+            options: { redirectTo },
+          });
+          if (linkErr) console.warn("[verify-email] magiclink warn", linkErr.message);
+          else signInUrl = linkData?.properties?.action_link ?? null;
+        }
+      } catch (e) { console.warn("[verify-email] magiclink exception", (e as Error).message); }
+
       step("response_sent");
-      return new Response(JSON.stringify({ success: true, verified: true, redirectTo: "/create", user_id, log }), { status: 200, headers });
+      return new Response(JSON.stringify({ success: true, verified: true, redirectTo: "/create", signInUrl, user_id, log }), { status: 200, headers });
     };
 
     // Returns email_confirmed_at for a user id, or null.
