@@ -69,7 +69,7 @@ const VerifyEmail = () => {
           headers: { "x-verification-token": token },
         });
         if (cancelled) return;
-        const payload = data as { ok?: boolean; error?: string; message?: string } | null;
+        const payload = data as { ok?: boolean; success?: boolean; error?: string; message?: string; signInUrl?: string } | null;
         if (error || payload?.error) {
           // FALLBACK: if Supabase Auth already confirmed this user, treat as verified.
           try {
@@ -94,8 +94,12 @@ const VerifyEmail = () => {
           return;
         }
         setState("success");
-        // Brief pause so the user sees the success state, then redirect.
-        setTimeout(() => nav("/create", { replace: true }), 600);
+        // If signed out, the edge function returns a magic link — follow it to establish a session.
+        if (payload?.signInUrl) {
+          setTimeout(() => { window.location.href = payload.signInUrl!; }, 400);
+        } else {
+          setTimeout(() => nav("/create", { replace: true }), 600);
+        }
       } catch (e) {
         if (!cancelled) { setState("error"); setMessage((e as Error).message || "Something went wrong."); }
       }
