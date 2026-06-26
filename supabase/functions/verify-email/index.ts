@@ -15,8 +15,8 @@ function corsHeaders(req: Request): Record<string, string> {
   const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-verification-token",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Vary": "Origin",
   };
 }
@@ -90,11 +90,17 @@ Deno.serve(async (req) => {
       } catch { /* anon key or invalid jwt — ignore */ }
     }
 
-    let token = "";
-    if (req.method === "POST") {
-      try { const body = await req.json(); token = String(body?.token || "").trim(); } catch { /* ignore */ }
-    } else {
-      token = (new URL(req.url).searchParams.get("token") || "").trim();
+    const requestUrl = new URL(req.url);
+    let token = (requestUrl.searchParams.get("token") || req.headers.get("x-verification-token") || "").trim();
+    if (!token && req.method === "POST") {
+      try {
+        const body = await req.json();
+        token = String(body?.token || body?.verification_token || "").trim();
+      } catch { /* ignore */ }
+    }
+    if (!token) {
+      const referrer = req.headers.get("Referer") || req.headers.get("Referrer") || "";
+      try { token = (new URL(referrer).searchParams.get("token") || "").trim(); } catch { /* ignore */ }
     }
     token = token.replace(/[).,>\s]+$/g, "");
     if (!token) {
