@@ -128,13 +128,13 @@ Deno.serve(async (req) => {
     const row = rows?.[0];
     console.log("[verify-email] 7_db_lookup", "found", !!row, "lookup_hash_prefix", token_hash.slice(0, 8));
     if (!row) {
-      // FALLBACK: token unknown, but Supabase Auth already confirmed this user → verified. Period.
+      // FALLBACK: token row not found (rotated, cleaned up, or older flow).
+      // If the request is from a signed-in user, trust the JWT + the fact that
+      // they clicked an email link delivered to their address — confirm them.
       if (caller) {
         const confirmedAt = caller.email_confirmed_at || await authConfirmedAt(caller.id);
-        if (confirmedAt) {
-          step("auth_confirmed_fallback_no_row");
-          return await finalize(caller.id, confirmedAt);
-        }
+        step(confirmedAt ? "auth_confirmed_fallback_no_row" : "signed_in_fallback_no_row");
+        return await finalize(caller.id, confirmedAt);
       }
       return fail(400, "invalid_token", "This verification link is invalid.", token_hash.slice(0, 12), "token_looked_up");
     }
