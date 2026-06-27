@@ -215,6 +215,37 @@ Deno.serve(async (req) => {
     const title = cls.asset_type === "graphic" && /component|ui kit|buttons|cards|inputs/i.test(prompt) ? "Component" : ASSET_TITLES[cls.asset_type];
     const ids: string[] = [];
 
+    // ─── Logotype-only fast path ──────────────────────────────────────────
+    // If the user explicitly asks for a logotype / wordmark / text-based logo
+    // (and NOT a pictorial mark/icon), skip Gemini image generation entirely
+    // and return only editable text-based logotype variants. Free of charge.
+    const lowerPrompt = prompt.toLowerCase();
+    const wantsLogotype = /\b(logotype|logotypes|wordmark|word\s*mark|word-mark|text[- ]?based\s+logo|text\s+logo|type[- ]?based\s+logo)\b/.test(lowerPrompt);
+    const wantsPictorial = /\b(icon|symbol|mark|emblem|pictorial|illustration|graphic)\b/.test(lowerPrompt);
+    if (cls.asset_type === "logo" && wantsLogotype && !wantsPictorial) {
+      try {
+        const brandText = (ctx.productName || extractNameFromUrl(ctx.url) || extractNameFromUrl(detectedUrl || undefined) || "Brand").trim();
+        const brandColor = ctx.colors?.[0];
+        const variants = buildLogotypeVariants(brandText, count, brandColor);
+        const rows = variants.map((state, i) => ({
+          user_id: user.id,
+          project_id,
+          asset_type: "logo" as const,
+          title: count > 1 ? `Logotype ${i + 1}` : "Logotype",
+          prompt,
+          source_url: detectedUrl,
+          editor_state: state,
+          meta: { brand_context: ctx, kind: "logotype", variant: i + 1, of: count },
+        }));
+        const { data: inserted } = await admin.from("assets").insert(rows).select("id");
+        if (inserted) for (const row of inserted) ids.push(row.id);
+      } catch (e) {
+        console.error("logotype-only gen failed", e);
+      }
+      return new Response(JSON.stringify({ asset_ids: ids, asset_type: "logo", count: ids.length, credits_charged: 0 }), { headers: { ...ch, "Content-Type": "application/json" } });
+    }
+    // ──────────────────────────────────────────────────────────────────────
+
     // Fetch visual references from the scraped brand. Gemini only accepts raster
     // formats (jpg/png/webp), so SVG/ICO/AVIF get rasterized through wsrv.nl,
     // a free image proxy that converts arbitrary image URLs to PNG.
