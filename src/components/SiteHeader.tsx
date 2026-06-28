@@ -22,6 +22,14 @@ const LANGUAGES = [
 
 const SiteHeader = () => {
   const [lang, setLang] = useState(LANGUAGES[0]);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 4);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const m = document.cookie.match(/googtrans=\/[a-z-]+\/([a-z-]+)/i);
@@ -53,7 +61,7 @@ const SiteHeader = () => {
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
   const initial = (user?.email?.[0] || "U").toUpperCase();
   return (
-    <header className="sticky top-2 z-50 bg-white/80 backdrop-blur-xl">
+    <header className={`sticky z-50 bg-white/80 backdrop-blur-xl transition-[top] duration-200 ${scrolled ? "top-0" : "top-2"}`}>
       <div className="relative mx-auto flex h-16 max-w-4xl items-center px-6">
         <Logo />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
