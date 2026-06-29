@@ -28,6 +28,33 @@ async function mapLimit<T>(count: number, limit: number, task: (index: number) =
   return results;
 }
 
+function requestedCount(prompt: string, fallback: number): number {
+  const lower = prompt.toLowerCase();
+  const wordCounts: Record<string, number> = {
+    "a couple": 2, "couple": 2,
+    "a few": 3, "few": 3, "several": 4, "handful": 5,
+    "half a dozen": 6, "half dozen": 6,
+    "a dozen": 12, "dozen": 12, "twelve": 12,
+    "two dozen": 24, "lots": 12, "many": 12, "bunch": 12,
+  };
+  let explicitCount: number | null = null;
+  for (const [word, n] of Object.entries(wordCounts)) {
+    if (lower.includes(word)) { explicitCount = n; break; }
+  }
+  const digitMatch = prompt.match(/\b(\d{1,2})\b/);
+  if (digitMatch) explicitCount = parseInt(digitMatch[1]);
+  return explicitCount ? Math.max(1, Math.min(24, explicitCount)) : fallback;
+}
+
+function isLogotypeOnlyPrompt(prompt: string): boolean {
+  const lower = prompt.toLowerCase();
+  const wantsTextLogo = /\b(logotype|logotypes|wordmark|word\s*mark|word-mark|text[- ]?based\s+logo|text\s+logo|type[- ]?based\s+logo|typographic\s+logo|typography\s+logo|lettering|letters\s+only|name\s+only)\b/.test(lower);
+  const saysTextNotLogo = /\b(text|type|typographic|typography|lettering|wordmark|logotype)\b[\s\S]{0,40}\b(not\s+(a\s+)?logo|no\s+(logo|icon|symbol|mark)|not\s+(an\s+)?icon|not\s+(a\s+)?symbol)\b/.test(lower)
+    || /\b(not\s+(a\s+)?logo|no\s+(logo|icon|symbol|mark)|not\s+(an\s+)?icon|not\s+(a\s+)?symbol)\b[\s\S]{0,40}\b(text|type|typographic|typography|lettering|wordmark|logotype)\b/.test(lower);
+  const wantsPictorial = /\b(icon|symbol|emblem|pictorial|illustration|graphic|mascot|badge|app\s*icon|favicon)\b/.test(lower);
+  return (wantsTextLogo || saysTextNotLogo) && !wantsPictorial;
+}
+
 // Fan out graphic/icon/photo across distinct categories so a multi-variant gallery
 // is a real PACK (hero, launch, pattern, illustration, social, etc.) instead of
 // 24 versions of the same image. Only applied when count > 1; single-asset
@@ -85,23 +112,8 @@ async function classify(prompt: string): Promise<{ asset_type: AssetType; count:
     // Parse any explicit count from the prompt — number-before-noun, number-after-noun,
     // or spelled-out words like "dozen", "a few", "couple". The classifier's own count
     // under-counts, so we ignore it.
-    const lower = prompt.toLowerCase();
-    const wordCounts: Record<string, number> = {
-      "a couple": 2, "couple": 2,
-      "a few": 3, "few": 3, "several": 4, "handful": 5,
-      "half a dozen": 6, "half dozen": 6,
-      "a dozen": 12, "dozen": 12, "twelve": 12,
-      "two dozen": 24, "lots": 12, "many": 12, "bunch": 12,
-    };
-    let explicitCount: number | null = null;
-    for (const [word, n] of Object.entries(wordCounts)) {
-      if (lower.includes(word)) { explicitCount = n; break; }
-    }
-    // Any bare 1-2 digit number anywhere in the prompt.
-    const digitMatch = prompt.match(/\b(\d{1,2})\b/);
-    if (digitMatch) explicitCount = parseInt(digitMatch[1]);
     const fallback = GENERATORS[at].defaultCount || 1;
-    const c = explicitCount ? Math.max(1, Math.min(24, explicitCount)) : fallback;
+    const c = requestedCount(prompt, fallback);
     return { asset_type: at, count: c };
   } catch {
     return { asset_type: "other", count: 1 };
@@ -162,9 +174,16 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Classify
-    const cls = explicitType
+    let cls = explicitType
       ? { asset_type: explicitType, count: Math.max(1, Math.min(24, body.count || GENERATORS[explicitType].defaultCount || 1)) }
       : await classify(prompt);
+    const logotypeOnly = isLogotypeOnlyPrompt(prompt);
+    if (logotypeOnly) {
+      cls = {
+        asset_type: "logo",
+        count: Math.max(1, Math.min(24, body.count || requestedCount(prompt, GENERATORS.logo.defaultCount || 24))),
+      };
+    }
 
     // Refuse non-branding
     if (cls.asset_type === "other") {
@@ -219,10 +238,7 @@ Deno.serve(async (req) => {
     // If the user explicitly asks for a logotype / wordmark / text-based logo
     // (and NOT a pictorial mark/icon), skip Gemini image generation entirely
     // and return only editable text-based logotype variants. Free of charge.
-    const lowerPrompt = prompt.toLowerCase();
-    const wantsLogotype = /\b(logotype|logotypes|wordmark|word\s*mark|word-mark|text[- ]?based\s+logo|text\s+logo|type[- ]?based\s+logo)\b/.test(lowerPrompt);
-    const wantsPictorial = /\b(icon|symbol|mark|emblem|pictorial|illustration|graphic)\b/.test(lowerPrompt);
-    if (cls.asset_type === "logo" && wantsLogotype && !wantsPictorial) {
+    if (logotypeOnly) {
       try {
         const brandText = (ctx.productName || extractNameFromUrl(ctx.url) || extractNameFromUrl(detectedUrl || undefined) || "Brand").trim();
         const brandColor = ctx.colors?.[0];
