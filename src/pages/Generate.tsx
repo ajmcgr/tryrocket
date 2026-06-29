@@ -5,11 +5,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
+import { Logotype } from "@/components/Logotype";
 const supabase = _sb as any;
 import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData, type LaunchCopyData, type ProductHuntCopyData, type SocialPostData, type FounderBio, type PresentationData, type TemplateLibraryData } from "@/lib/assetSchemas";
 
 function AssetCardThumb({ asset }: { asset: any }) {
   const at = asset.asset_type as string;
+  if (asset?.editor_state?.kind === "logotype") {
+    return <Logotype state={asset.editor_state} fit="contain" />;
+  }
   if (at === "color_system") {
     const c = tryJson<ColorSystem>(asset.content || "");
     const swatches = [c?.primary, c?.secondary, c?.accent, c?.success, c?.warning, c?.danger].filter(Boolean) as string[];
@@ -310,7 +314,7 @@ const Generate = () => {
     (async () => {
       const [{ data: c }, { data: a }] = await Promise.all([
         supabase.from("chats").select("*").eq("id", chatId).maybeSingle(),
-        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
+        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
       ]);
       setChatData(c);
       setChatAssets(a || []);
@@ -437,7 +441,7 @@ const Generate = () => {
         // Already in this chat — refresh assets in place so the new prompt appears in history.
         const { data: a } = await supabase
           .from("assets")
-          .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,created_at")
+          .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,created_at")
           .eq("chat_id", newChatId)
           .order("created_at", { ascending: true });
         setChatAssets(a || []);
