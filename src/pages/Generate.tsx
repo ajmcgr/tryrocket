@@ -5,11 +5,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
-const supabase = _sb as any;
+import { Logotype } from "@/components/Logotype";
 import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData, type LaunchCopyData, type ProductHuntCopyData, type SocialPostData, type FounderBio, type PresentationData, type TemplateLibraryData } from "@/lib/assetSchemas";
+import { buildLogotypeVariants } from "@/lib/logotype";
+
+const supabase = _sb as any;
 
 function AssetCardThumb({ asset }: { asset: any }) {
   const at = asset.asset_type as string;
+  if (asset?.editor_state?.kind === "logotype") {
+    return <Logotype state={asset.editor_state} fit="contain" />;
+  }
   if (at === "color_system") {
     const c = tryJson<ColorSystem>(asset.content || "");
     const swatches = [c?.primary, c?.secondary, c?.accent, c?.success, c?.warning, c?.danger].filter(Boolean) as string[];
@@ -223,6 +229,30 @@ const SAMPLE_PROMPTS = [
   "Brand voice for an indie newsletter app",
 ];
 
+function isLogotypeOnlyPrompt(text: string) {
+  const lower = text.toLowerCase();
+  const wantsTextLogo = /\b(logotype|logotypes|wordmark|word\s*mark|word-mark|text[- ]?based\s+logo|text\s+logo|type[- ]?based\s+logo|typographic\s+logo|typography\s+logo|lettering|letters\s+only|name\s+only)\b/.test(lower);
+  const saysTextNotLogo = /\b(text|type|typographic|typography|lettering|wordmark|logotype)\b[\s\S]{0,40}\b(not\s+(a\s+)?logo|no\s+(logo|icon|symbol|mark)|not\s+(an\s+)?icon|not\s+(a\s+)?symbol)\b/.test(lower)
+    || /\b(not\s+(a\s+)?logo|no\s+(logo|icon|symbol|mark)|not\s+(an\s+)?icon|not\s+(a\s+)?symbol)\b[\s\S]{0,40}\b(text|type|typographic|typography|lettering|wordmark|logotype)\b/.test(lower);
+  const wantsPictorial = /\b(icon|symbol|emblem|pictorial|illustration|graphic|mascot|badge|app\s*icon|favicon)\b/.test(lower);
+  return (wantsTextLogo || saysTextNotLogo) && !wantsPictorial;
+}
+
+function requestedCount(text: string, fallback = 6) {
+  const lower = text.toLowerCase();
+  const words: Record<string, number> = { "a couple": 2, couple: 2, "a few": 3, few: 3, several: 4, handful: 5, "half a dozen": 6, "half dozen": 6, "a dozen": 12, dozen: 12, twelve: 12, "two dozen": 24 };
+  for (const [word, n] of Object.entries(words)) if (lower.includes(word)) return n;
+  const digit = text.match(/\b(\d{1,2})\b/);
+  return digit ? Math.max(1, Math.min(24, Number(digit[1]))) : fallback;
+}
+
+function nameFromUrlOrPrompt(text: string) {
+  const url = text.match(/(?:https?:\/\/)?([\w-]+)\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b/i)?.[1];
+  if (url) return url.charAt(0).toUpperCase() + url.slice(1);
+  const named = text.match(/\bfor\s+([A-Za-z][\w-]{1,30})\b/i)?.[1];
+  return named || "Brand";
+}
+
 // Specialized Design templates: pre-canned visual prompt scaffolds.
 // Each chip prepends a vivid format-specific style header to the user's prompt
 // and forces asset_type=graphic so the generator goes through image generation.
@@ -310,7 +340,7 @@ const Generate = () => {
     (async () => {
       const [{ data: c }, { data: a }] = await Promise.all([
         supabase.from("chats").select("*").eq("id", chatId).maybeSingle(),
-        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
+        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
       ]);
       setChatData(c);
       setChatAssets(a || []);
@@ -382,7 +412,23 @@ const Generate = () => {
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
-      if (tpl || effective === "auto") {
+      if (!tpl && isLogotypeOnlyPrompt(p)) {
+        const brandText = (sharedCtx?.productName || nameFromUrlOrPrompt(p)).trim();
+        const variants = buildLogotypeVariants(brandText, requestedCount(p, 6), sharedCtx?.colors?.[0]);
+        const rows = variants.map((state, i) => ({
+          user_id: user!.id,
+          project_id: projectId || null,
+          asset_type: "logo",
+          title: variants.length > 1 ? `Logotype ${i + 1}` : "Logotype",
+          prompt: p,
+          source_url: sharedCtx?.url || null,
+          editor_state: state,
+          meta: { brand_context: sharedCtx, kind: "logotype", variant: i + 1, of: variants.length },
+        }));
+        const { data, error } = await supabase.from("assets").insert(rows).select("id");
+        if (error) throw new Error(error.message);
+        allIds = (data || []).map((row: any) => row.id);
+      } else if (tpl || effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: effectiveAssetType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
         });
@@ -437,7 +483,7 @@ const Generate = () => {
         // Already in this chat — refresh assets in place so the new prompt appears in history.
         const { data: a } = await supabase
           .from("assets")
-          .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,created_at")
+          .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,created_at")
           .eq("chat_id", newChatId)
           .order("created_at", { ascending: true });
         setChatAssets(a || []);
