@@ -7,7 +7,7 @@ import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, M
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { Logotype } from "@/components/Logotype";
 import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData, type LaunchCopyData, type ProductHuntCopyData, type SocialPostData, type FounderBio, type PresentationData, type TemplateLibraryData } from "@/lib/assetSchemas";
-import { buildLogotypeVariants } from "@/lib/logotype";
+import { buildLogotypeVariants, pickLogotypeText } from "@/lib/logotype";
 
 const supabase = _sb as any;
 
@@ -246,13 +246,6 @@ function requestedCount(text: string, fallback = 6) {
   return digit ? Math.max(1, Math.min(24, Number(digit[1]))) : fallback;
 }
 
-function nameFromUrlOrPrompt(text: string) {
-  const url = text.match(/(?:https?:\/\/)?([\w-]+)\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b/i)?.[1];
-  if (url) return url.charAt(0).toUpperCase() + url.slice(1);
-  const named = text.match(/\bfor\s+([A-Za-z][\w-]{1,30})\b/i)?.[1];
-  return named || "Brand";
-}
-
 // Specialized Design templates: pre-canned visual prompt scaffolds.
 // Each chip prepends a vivid format-specific style header to the user's prompt
 // and forces asset_type=graphic so the generator goes through image generation.
@@ -413,8 +406,15 @@ const Generate = () => {
         } catch { /* noop */ }
       }
       if (!tpl && isLogotypeOnlyPrompt(p)) {
-        const brandText = (sharedCtx?.productName || nameFromUrlOrPrompt(p)).trim();
-        const variants = buildLogotypeVariants(brandText, requestedCount(p, 6), sharedCtx?.colors?.[0]);
+        const brandText = pickLogotypeText({
+          prompt: p,
+          productName: sharedCtx?.productName,
+          url: sharedCtx?.url,
+        });
+        if (!brandText) {
+          throw new Error("I need a brand name or URL to create a wordmark.");
+        }
+        const variants = buildLogotypeVariants(brandText, requestedCount(p, 6), sharedCtx?.colors?.[0], sharedCtx?.fonts || []);
         const rows = variants.map((state, i) => ({
           user_id: user!.id,
           project_id: projectId || null,
