@@ -9,6 +9,35 @@ export interface LogotypeState {
   transform: "none" | "uppercase" | "lowercase" | "capitalize";
 }
 
+const GENERIC_BRAND_NAMES = new Set([
+  "brand",
+  "logo",
+  "logotype",
+  "wordmark",
+  "word mark",
+  "text logo",
+  "startup",
+  "company",
+  "product",
+]);
+
+const DOMAIN_PREFIXES = ["try", "get", "use", "join", "go"];
+
+function titleCase(value: string): string {
+  return value
+    .split(/([\s-]+)/)
+    .map((part) => (/^[a-z]/i.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+    .join("");
+}
+
+function cleanDomainLabel(label: string): string | undefined {
+  const raw = label.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  if (!raw || raw.length < 2) return undefined;
+  const prefix = DOMAIN_PREFIXES.find((p) => raw.startsWith(p) && raw.length - p.length >= 4);
+  const withoutPrefix = prefix ? raw.slice(prefix.length) : raw;
+  return titleCase(withoutPrefix.replace(/-/g, " ")).replace(/\s+/g, "").trim() || undefined;
+}
+
 const STYLES: Array<Partial<LogotypeState>> = [
   { font: "Space Grotesk", weight: 700, letterSpacing: -0.03, transform: "none" },
   { font: "Geist", weight: 600, letterSpacing: -0.02, transform: "lowercase" },
@@ -32,14 +61,69 @@ const STYLES: Array<Partial<LogotypeState>> = [
   { font: "Recursive", weight: 700, letterSpacing: -0.03, transform: "lowercase" },
 ];
 
-export function buildLogotypeVariants(text: string, count: number, brandColor?: string): LogotypeState[] {
+export function normalizeLogotypeText(value?: string | null, urlHint?: string | null): string | undefined {
+  if (!value) return extractNameFromUrl(urlHint || undefined);
+  const fromUrl = extractNameFromUrl(value);
+  if (fromUrl) return fromUrl;
+
+  const urlFallback = extractNameFromUrl(urlHint || undefined);
+  let text = String(value)
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\.(com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b.*$/i, "")
+    .split(/[|—–:]/)[0]
+    .replace(/^['"“”‘’]+|['"“”‘’]+$/g, "")
+    .replace(/\b(logo|logotype|wordmark|brand assets?|brand kit|existing assets?)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) return urlFallback;
+  if (text.length > 34 || text.split(/\s+/).length > 4) return urlFallback;
+  if (GENERIC_BRAND_NAMES.has(text.toLowerCase())) return urlFallback;
+  return titleCase(text);
+}
+
+export function extractNameFromPrompt(prompt: string, urlHint?: string | null): string | undefined {
+  const fromUrl = extractNameFromUrl(prompt) || extractNameFromUrl(urlHint || undefined);
+  if (fromUrl) return fromUrl;
+
+  const patterns = [
+    /\b(?:for|called|named|brand(?:ed)? as)\s+([A-Za-z][A-Za-z0-9 -]{1,40})\b/i,
+    /\b([A-Za-z][A-Za-z0-9 -]{1,40})\s+(?:logotype|wordmark|word mark|text logo)\b/i,
+  ];
+  for (const pattern of patterns) {
+    const match = prompt.match(pattern)?.[1];
+    const cleaned = normalizeLogotypeText(match, urlHint);
+    if (cleaned) return cleaned;
+  }
+  return undefined;
+}
+
+export function pickLogotypeText(input: { prompt?: string | null; productName?: string | null; url?: string | null; fallback?: string | null }): string | undefined {
+  return (
+    extractNameFromPrompt(input.prompt || "", input.url) ||
+    normalizeLogotypeText(input.productName, input.url) ||
+    normalizeLogotypeText(input.fallback, input.url) ||
+    extractNameFromUrl(input.url || undefined)
+  );
+}
+
+export function buildLogotypeVariants(text: string, count: number, brandColor?: string, brandFonts: string[] = []): LogotypeState[] {
   const color = brandColor && /^#[0-9a-f]{3,8}$/i.test(brandColor) ? brandColor : "#0a0a0a";
+  const brandText = normalizeLogotypeText(text) || "Brand";
+  const styles = [
+    ...brandFonts
+      .filter((font, index, arr) => !!font && arr.indexOf(font) === index)
+      .slice(0, 3)
+      .map((font) => ({ font, weight: 700, letterSpacing: -0.02, transform: "none" as const })),
+    ...STYLES,
+  ];
   const out: LogotypeState[] = [];
   for (let i = 0; i < count; i++) {
-    const s = STYLES[i % STYLES.length];
+    const s = styles[i % styles.length];
     out.push({
       kind: "logotype",
-      text: text || "Brand",
+      text: brandText,
       font: s.font || "Space Grotesk",
       weight: s.weight ?? 700,
       color,
@@ -52,10 +136,11 @@ export function buildLogotypeVariants(text: string, count: number, brandColor?: 
 
 export function extractNameFromUrl(url?: string): string | undefined {
   if (!url) return undefined;
+  const inline = String(url).match(/(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+)\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b/i)?.[1];
+  if (inline) return cleanDomainLabel(inline);
   try {
     const u = new URL(url.startsWith("http") ? url : `https://${url}`);
     const host = u.hostname.replace(/^www\./, "").split(".")[0];
-    if (!host) return undefined;
-    return host.charAt(0).toUpperCase() + host.slice(1);
+    return host ? cleanDomainLabel(host) : undefined;
   } catch { return undefined; }
 }

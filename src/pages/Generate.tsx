@@ -7,14 +7,29 @@ import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, M
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { Logotype } from "@/components/Logotype";
 import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData, type LaunchCopyData, type ProductHuntCopyData, type SocialPostData, type FounderBio, type PresentationData, type TemplateLibraryData } from "@/lib/assetSchemas";
-import { buildLogotypeVariants } from "@/lib/logotype";
+import { buildLogotypeVariants, pickLogotypeText } from "@/lib/logotype";
 
 const supabase = _sb as any;
+
+function withResolvedLogotypeText(asset: any) {
+  const state = asset?.editor_state;
+  if (state?.kind !== "logotype") return state;
+  const current = String(state.text || "").trim();
+  const isGeneric = /^(brand|logo|logotype|wordmark|text logo)$/i.test(current);
+  if (!isGeneric) return state;
+  const ctx = asset?.meta?.brand_context || {};
+  const resolved = pickLogotypeText({
+    prompt: asset?.prompt,
+    productName: ctx.productName,
+    url: ctx.url || asset?.source_url,
+  });
+  return resolved ? { ...state, text: resolved, color: state.color || ctx.colors?.[0] } : state;
+}
 
 function AssetCardThumb({ asset }: { asset: any }) {
   const at = asset.asset_type as string;
   if (asset?.editor_state?.kind === "logotype") {
-    return <Logotype state={asset.editor_state} fit="contain" />;
+    return <Logotype state={withResolvedLogotypeText(asset)} fit="contain" />;
   }
   if (at === "color_system") {
     const c = tryJson<ColorSystem>(asset.content || "");
@@ -246,13 +261,6 @@ function requestedCount(text: string, fallback = 6) {
   return digit ? Math.max(1, Math.min(24, Number(digit[1]))) : fallback;
 }
 
-function nameFromUrlOrPrompt(text: string) {
-  const url = text.match(/(?:https?:\/\/)?([\w-]+)\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b/i)?.[1];
-  if (url) return url.charAt(0).toUpperCase() + url.slice(1);
-  const named = text.match(/\bfor\s+([A-Za-z][\w-]{1,30})\b/i)?.[1];
-  return named || "Brand";
-}
-
 // Specialized Design templates: pre-canned visual prompt scaffolds.
 // Each chip prepends a vivid format-specific style header to the user's prompt
 // and forces asset_type=graphic so the generator goes through image generation.
@@ -340,7 +348,7 @@ const Generate = () => {
     (async () => {
       const [{ data: c }, { data: a }] = await Promise.all([
         supabase.from("chats").select("*").eq("id", chatId).maybeSingle(),
-        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
+        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,meta,source_url,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
       ]);
       setChatData(c);
       setChatAssets(a || []);
@@ -412,9 +420,29 @@ const Generate = () => {
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
+      if (!sharedCtx && chatAssets.length) {
+        const recentWithContext = [...chatAssets].reverse().find((asset) => {
+          const ctx = asset?.meta?.brand_context;
+          return ctx && (ctx.productName || ctx.url || ctx.colors?.length || ctx.logo || asset.source_url);
+        });
+        if (recentWithContext) {
+          sharedCtx = {
+            ...(recentWithContext.meta?.brand_context || {}),
+            url: recentWithContext.meta?.brand_context?.url || recentWithContext.source_url || undefined,
+          };
+        }
+      }
       if (!tpl && isLogotypeOnlyPrompt(p)) {
-        const brandText = (sharedCtx?.productName || nameFromUrlOrPrompt(p)).trim();
-        const variants = buildLogotypeVariants(brandText, requestedCount(p, 6), sharedCtx?.colors?.[0]);
+        const priorPromptText = [p, chatData?.prompt, ...[...chatAssets].reverse().map((asset) => asset.prompt)].filter(Boolean).join("\n");
+        const brandText = pickLogotypeText({
+          prompt: priorPromptText,
+          productName: sharedCtx?.productName,
+          url: sharedCtx?.url,
+        });
+        if (!brandText) {
+          throw new Error("I need a brand name or URL to create a wordmark.");
+        }
+        const variants = buildLogotypeVariants(brandText, requestedCount(p, 6), sharedCtx?.colors?.[0], sharedCtx?.fonts || []);
         const rows = variants.map((state, i) => ({
           user_id: user!.id,
           project_id: projectId || null,
@@ -483,7 +511,7 @@ const Generate = () => {
         // Already in this chat — refresh assets in place so the new prompt appears in history.
         const { data: a } = await supabase
           .from("assets")
-          .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,created_at")
+            .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,meta,source_url,created_at")
           .eq("chat_id", newChatId)
           .order("created_at", { ascending: true });
         setChatAssets(a || []);

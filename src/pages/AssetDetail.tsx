@@ -11,7 +11,7 @@ import AddToProjectMenu from "@/components/AddToProjectMenu";
 import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogotypeEditor } from "@/components/LogotypeEditor";
-import { isLogotype, type LogotypeState } from "@/lib/logotype";
+import { isLogotype, pickLogotypeText, type LogotypeState } from "@/lib/logotype";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
@@ -23,6 +23,20 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   product_hunt_copy: "Product Hunt Copy", social_post: "Social Post", founder_bio: "Founder Bio",
   presentation: "Presentation", other: "Other",
 };
+
+function withResolvedLogotypeText(asset: any): LogotypeState {
+  const state = asset.editor_state as LogotypeState;
+  const current = String(state?.text || "").trim();
+  const isGeneric = /^(brand|logo|logotype|wordmark|text logo)$/i.test(current);
+  if (!isGeneric) return state;
+  const ctx = asset?.meta?.brand_context || {};
+  const resolved = pickLogotypeText({
+    prompt: asset?.prompt,
+    productName: ctx.productName,
+    url: ctx.url || asset?.source_url,
+  });
+  return resolved ? { ...state, text: resolved, color: state.color || ctx.colors?.[0] } : state;
+}
 
 const AssetDetail = () => {
   const { id } = useParams();
@@ -66,6 +80,7 @@ const AssetDetail = () => {
   const isLogo = isLogotype(asset);
   const isImage = !!asset.image_url && !isLogo;
   const hasVisual = hasVisualRenderer(asset);
+  const logotypeState = isLogo ? withResolvedLogotypeText(asset) : null;
 
   const startEdit = () => {
     setDraftTitle(asset.title || "");
@@ -286,8 +301,8 @@ const AssetDetail = () => {
       <div className="grid gap-6">
         {isLogo ? (
           <LogotypeEditor
-            initial={asset.editor_state as LogotypeState}
-            defaultText={asset.editor_state?.text || asset.title || "Brand"}
+            initial={logotypeState}
+            defaultText={logotypeState?.text || asset.title || "Brand"}
             saving={savingEdit}
             onSave={saveLogotype}
           />
