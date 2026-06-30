@@ -136,6 +136,8 @@ export function buildLogotypeVariants(text: string, count: number, brandColor?: 
 
 export function extractNameFromUrl(url?: string): string | undefined {
   if (!url) return undefined;
+  const inline = String(url).match(/(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+)\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b/i)?.[1];
+  if (inline) return cleanDomainLabel(inline);
   try {
     const u = new URL(url.startsWith("http") ? url : `https://${url}`);
     const host = u.hostname.replace(/^www\./, "").split(".")[0];
