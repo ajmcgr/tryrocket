@@ -2,7 +2,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
 import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
-import { buildLogotypeVariants, extractNameFromUrl } from "../_shared/logotype.ts";
+import { buildLogotypeVariants, pickLogotypeText } from "../_shared/logotype.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -240,9 +240,16 @@ Deno.serve(async (req) => {
     // and return only editable text-based logotype variants. Free of charge.
     if (logotypeOnly) {
       try {
-        const brandText = (ctx.productName || extractNameFromUrl(ctx.url) || extractNameFromUrl(detectedUrl || undefined) || "Brand").trim();
+        const brandText = pickLogotypeText({
+          prompt,
+          productName: ctx.productName,
+          url: ctx.url || detectedUrl,
+        });
+        if (!brandText) {
+          return new Response(JSON.stringify({ error: "brand_name_required", message: "I need a brand name or URL to create a wordmark." }), { status: 400, headers: { ...ch, "Content-Type": "application/json" } });
+        }
         const brandColor = ctx.colors?.[0];
-        const variants = buildLogotypeVariants(brandText, count, brandColor);
+        const variants = buildLogotypeVariants(brandText, count, brandColor, ctx.fonts || []);
         const rows = variants.map((state, i) => ({
           user_id: user.id,
           project_id,
@@ -384,9 +391,10 @@ Deno.serve(async (req) => {
       // These are free (no Gemini call) and editable in the client.
       if (cls.asset_type === "logo") {
         try {
-          const brandText = (ctx.productName || extractNameFromUrl(ctx.url) || "Brand").trim();
+          const brandText = pickLogotypeText({ prompt, productName: ctx.productName, url: ctx.url || detectedUrl });
+          if (!brandText) throw new Error("brand name missing for logotype add-on");
           const brandColor = ctx.colors?.[0];
-          const variants = buildLogotypeVariants(brandText, count, brandColor);
+          const variants = buildLogotypeVariants(brandText, count, brandColor, ctx.fonts || []);
           const logotypeRows = variants.map((state, i) => ({
             user_id: user.id,
             project_id,
