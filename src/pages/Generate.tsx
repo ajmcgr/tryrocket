@@ -11,10 +11,25 @@ import { buildLogotypeVariants, pickLogotypeText } from "@/lib/logotype";
 
 const supabase = _sb as any;
 
+function withResolvedLogotypeText(asset: any) {
+  const state = asset?.editor_state;
+  if (state?.kind !== "logotype") return state;
+  const current = String(state.text || "").trim();
+  const isGeneric = /^(brand|logo|logotype|wordmark|text logo)$/i.test(current);
+  if (!isGeneric) return state;
+  const ctx = asset?.meta?.brand_context || {};
+  const resolved = pickLogotypeText({
+    prompt: asset?.prompt,
+    productName: ctx.productName,
+    url: ctx.url || asset?.source_url,
+  });
+  return resolved ? { ...state, text: resolved, color: state.color || ctx.colors?.[0] } : state;
+}
+
 function AssetCardThumb({ asset }: { asset: any }) {
   const at = asset.asset_type as string;
   if (asset?.editor_state?.kind === "logotype") {
-    return <Logotype state={asset.editor_state} fit="contain" />;
+    return <Logotype state={withResolvedLogotypeText(asset)} fit="contain" />;
   }
   if (at === "color_system") {
     const c = tryJson<ColorSystem>(asset.content || "");
