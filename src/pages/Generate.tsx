@@ -333,7 +333,7 @@ const Generate = () => {
     (async () => {
       const [{ data: c }, { data: a }] = await Promise.all([
         supabase.from("chats").select("*").eq("id", chatId).maybeSingle(),
-        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
+        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,meta,source_url,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
       ]);
       setChatData(c);
       setChatAssets(a || []);
@@ -405,9 +405,22 @@ const Generate = () => {
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
+      if (!sharedCtx && chatAssets.length) {
+        const recentWithContext = [...chatAssets].reverse().find((asset) => {
+          const ctx = asset?.meta?.brand_context;
+          return ctx && (ctx.productName || ctx.url || ctx.colors?.length || ctx.logo || asset.source_url);
+        });
+        if (recentWithContext) {
+          sharedCtx = {
+            ...(recentWithContext.meta?.brand_context || {}),
+            url: recentWithContext.meta?.brand_context?.url || recentWithContext.source_url || undefined,
+          };
+        }
+      }
       if (!tpl && isLogotypeOnlyPrompt(p)) {
+        const priorPromptText = [p, chatData?.prompt, ...[...chatAssets].reverse().map((asset) => asset.prompt)].filter(Boolean).join("\n");
         const brandText = pickLogotypeText({
-          prompt: p,
+          prompt: priorPromptText,
           productName: sharedCtx?.productName,
           url: sharedCtx?.url,
         });
@@ -483,7 +496,7 @@ const Generate = () => {
         // Already in this chat — refresh assets in place so the new prompt appears in history.
         const { data: a } = await supabase
           .from("assets")
-          .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,created_at")
+            .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,meta,source_url,created_at")
           .eq("chat_id", newChatId)
           .order("created_at", { ascending: true });
         setChatAssets(a || []);
