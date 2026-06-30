@@ -101,8 +101,8 @@ export function extractNameFromPrompt(prompt: string, urlHint?: string | null): 
 
 export function pickLogotypeText(input: { prompt?: string | null; productName?: string | null; url?: string | null; fallback?: string | null }): string | undefined {
   return (
-    normalizeLogotypeText(input.productName, input.url) ||
     extractNameFromPrompt(input.prompt || "", input.url) ||
+    normalizeLogotypeText(input.productName, input.url) ||
     normalizeLogotypeText(input.fallback, input.url) ||
     extractNameFromUrl(input.url || undefined)
   );
