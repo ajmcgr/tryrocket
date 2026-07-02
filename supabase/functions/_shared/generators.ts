@@ -25,6 +25,10 @@ export interface BrandContext {
   audience?: string; tone?: string; colors?: string[]; fonts?: string[];
   description?: string; competitors?: string[]; logo?: string; favicon?: string;
   ogImage?: string; colorScheme?: string; screenshot?: string;
+  // Brand Intelligence Layer (from scrape-url + Gemini analysis)
+  category?: string; product?: string; targetCustomer?: string;
+  audienceSegments?: string[]; positioning?: string; keywords?: string[];
+  valueProps?: string[]; voice?: { tone?: string; traits?: string[]; notToBe?: string[] };
 }
 
 function ctxBlock(c: BrandContext, userPrompt: string): string {
@@ -33,8 +37,18 @@ function ctxBlock(c: BrandContext, userPrompt: string): string {
   if (c.url) lines.push(`URL: ${c.url}`);
   if (c.tagline) lines.push(`Tagline: ${c.tagline}`);
   if (c.industry) lines.push(`Industry: ${c.industry}`);
+  if (c.category) lines.push(`Category: ${c.category}`);
+  if (c.product) lines.push(`What it does: ${c.product}`);
+  if (c.positioning) lines.push(`Positioning: ${c.positioning}`);
+  if (c.targetCustomer) lines.push(`Target customer: ${c.targetCustomer}`);
+  if (c.audienceSegments?.length) lines.push(`Audience segments: ${c.audienceSegments.join(", ")}`);
   if (c.audience) lines.push(`Audience: ${c.audience}`);
   if (c.tone) lines.push(`Tone: ${c.tone}`);
+  if (c.voice?.tone) lines.push(`Voice tone: ${c.voice.tone}`);
+  if (c.voice?.traits?.length) lines.push(`Voice traits: ${c.voice.traits.join(", ")}`);
+  if (c.voice?.notToBe?.length) lines.push(`Voice — not to be: ${c.voice.notToBe.join(", ")}`);
+  if (c.valueProps?.length) lines.push(`Value props: ${c.valueProps.join(" | ")}`);
+  if (c.keywords?.length) lines.push(`Keywords: ${c.keywords.join(", ")}`);
   if (c.description) lines.push(`Description: ${c.description}`);
   if (c.colors?.length) lines.push(`Brand colors: ${c.colors.join(", ")}`);
   if (c.fonts?.length) lines.push(`Brand fonts: ${c.fonts.join(", ")}`);
