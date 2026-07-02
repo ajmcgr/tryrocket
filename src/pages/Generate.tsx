@@ -356,6 +356,24 @@ const Generate = () => {
     })();
   }, [chatId, user]);
 
+  // Brand Intelligence: derive the active brand context so the user can see what
+  // Rocket knows about their brand before generating more assets.
+  const [projectBrandCtx, setProjectBrandCtx] = useState<any>(null);
+  useEffect(() => {
+    if (!projectId) { setProjectBrandCtx(null); return; }
+    (async () => {
+      const { data: proj } = await supabase.from("projects").select("brand_context,source_url,name").eq("id", projectId).maybeSingle();
+      setProjectBrandCtx(proj?.brand_context || (proj?.source_url ? { url: proj.source_url, productName: proj.name } : null));
+    })();
+  }, [projectId]);
+  const activeBrandCtx: any = (() => {
+    if (projectBrandCtx) return projectBrandCtx;
+    const withCtx = [...chatAssets].reverse().find((a) => a?.meta?.brand_context && (a.meta.brand_context.productName || a.meta.brand_context.url));
+    return withCtx?.meta?.brand_context || null;
+  })();
+
+  const brandCtxIsRich = !!(activeBrandCtx && (activeBrandCtx.industry || activeBrandCtx.category || activeBrandCtx.positioning || activeBrandCtx.competitors?.length || activeBrandCtx.audienceSegments?.length));
+
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const p = prompt.trim();
