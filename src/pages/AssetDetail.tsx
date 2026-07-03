@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LogotypeEditor } from "@/components/LogotypeEditor";
 import { isLogotype, pickLogotypeText, type LogotypeState } from "@/lib/logotype";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
+import BrandContextStrip from "@/components/BrandContextStrip";
+import { tryJson } from "@/lib/assetSchemas";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -81,6 +83,37 @@ const AssetDetail = () => {
   const isImage = !!asset.image_url && !isLogo;
   const hasVisual = hasVisualRenderer(asset);
   const logotypeState = isLogo ? withResolvedLogotypeText(asset) : null;
+  const brandCtx = asset?.meta?.brand_context || null;
+  // JSON asset types that SHOULD parse into a structured visual but currently don't
+  // (older assets, half-broken JSON from the model, etc). We offer a one-click rebuild.
+  const isStructuredType = [
+    "color_system","font_system","brand_voice","brand_guidelines",
+    "launch_copy","product_hunt_copy","social_post","founder_bio",
+    "presentation","template",
+  ].includes(asset.asset_type);
+  const parsedOk = isStructuredType ? !!tryJson(asset.content || "") : true;
+  const needsRebuild = isStructuredType && !parsedOk && !!asset.content;
+  const [rebuilding, setRebuilding] = useState(false);
+
+  const rebuildAsStructured = async () => {
+    setRebuilding(true);
+    try {
+      const instruction = `Regenerate this ${asset.asset_type.replace(/_/g, " ")} and return STRICT JSON ONLY that matches Rocket's schema for this asset type. No markdown fences, no preamble, no commentary.`;
+      const { data, error } = await supabase.functions.invoke("regenerate-asset", {
+        body: { asset_id: asset.id, instruction },
+      });
+      if (error) throw error;
+      const d: any = data;
+      if (d?.error === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); return; }
+      if (d?.error) { toast({ title: "Rebuild failed", description: d.message || d.error, variant: "destructive" }); return; }
+      toast({ title: "Rebuilt as structured deliverable" });
+      load();
+    } catch (e: any) {
+      toast({ title: "Rebuild failed", description: e?.message || "Unknown error", variant: "destructive" });
+    } finally {
+      setRebuilding(false);
+    }
+  };
 
   const startEdit = () => {
     setDraftTitle(asset.title || "");
@@ -297,6 +330,31 @@ const AssetDetail = () => {
         )}
         {asset.prompt && <p className="mt-1 text-sm text-neutral-500">Prompt: {asset.prompt}</p>}
       </div>
+
+      {brandCtx && (
+        <div className="mb-4">
+          <BrandContextStrip ctx={brandCtx} />
+        </div>
+      )}
+
+      {needsRebuild && (
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3">
+          <Wand2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <div className="flex-1 text-sm">
+            <div className="font-medium text-amber-900">This asset didn't parse into its visual view.</div>
+            <div className="mt-0.5 text-xs text-amber-800/80">
+              Rebuild it as a structured deliverable so you get the designed layout, editable sections, and clean export.
+            </div>
+          </div>
+          <button
+            onClick={rebuildAsStructured}
+            disabled={rebuilding}
+            className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+          >
+            {rebuilding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />} Rebuild as structured
+          </button>
+        </div>
+      )}
 
       <div className="grid gap-6">
         {isLogo ? (
