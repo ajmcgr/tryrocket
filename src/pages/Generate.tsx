@@ -373,7 +373,7 @@ const Generate = () => {
     return withCtx?.meta?.brand_context || null;
   })();
 
-  const brandCtxIsRich = !!(activeBrandCtx && (activeBrandCtx.industry || activeBrandCtx.category || activeBrandCtx.positioning || activeBrandCtx.competitors?.length || activeBrandCtx.audienceSegments?.length));
+  // (brand-context "analyzed" badge is now handled inside <BrandContextStrip />)
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
