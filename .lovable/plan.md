@@ -1,119 +1,105 @@
-## Rocket /create Engine v2 — Visual-First Deliverables
+# Asset Engine Refactor — Slice 2 of Rocket V3
 
-This is a large additive upgrade. Before I start cutting code I want to confirm scope, sequencing, and a few decisions so we don't ship half a system. Everything below is **additive** — no existing route, table, edge function, generator, editor, export, or credit rule is removed or renamed.
+**Goal:** Every asset that Rocket generates opens as a **finished visual deliverable**, not a wall of markdown or a raw JSON dump. Content stays in `assets.content` / `assets.meta` — the *render + edit + export* layer becomes proper per-type surfaces.
 
----
-
-## Guiding principle
-
-Today every asset_type stores either `content` (markdown/JSON) or a single `image_url`. v2 introduces a **visual render layer** on top of that storage so the user never sees raw markdown/JSON in the final deliverable — they see designed pages, swatch cards, type specimens, slide thumbnails, icon grids, template canvases.
-
-Storage stays the same. Renderers change. Editor gains structured-edit surfaces.
+This is purely additive. Nothing existing is removed:
+- Auth, billing, credits, DB, projects, sharing, URL analysis, logo pipeline, `regenerate-asset` contract, existing routes — all preserved.
+- Every current asset (old markdown, old JSON, old image_url) keeps working via fallback.
 
 ---
 
-## Architecture (additive)
+## What's already in place (don't rebuild)
 
-```text
-        existing                          NEW v2 layer
-   ┌──────────────────┐            ┌─────────────────────────┐
-   │ generators.ts    │  content   │ assetSchemas.ts         │
-   │ (already         │ ─────────▶ │ parse → typed object    │
-   │  rich prompts)   │            │ (BrandGuidelines,       │
-   └──────────────────┘            │  ColorSystem, FontSys,  │
-                                   │  Voice, Deck, Icons,    │
-                                   │  Templates, Photos…)    │
-                                   └──────────┬──────────────┘
-                                              │
-                                   ┌──────────▼──────────────┐
-                                   │ /components/visuals/*   │
-                                   │ <BrandGuidelinesDoc/>   │
-                                   │ <ColorSystemBoard/>     │
-                                   │ <FontSpecimen/>         │
-                                   │ <VoiceGuide/>           │
-                                   │ <IconGrid/> <Deck/> …   │
-                                   └──────────┬──────────────┘
-                                              │
-                                   ┌──────────▼──────────────┐
-                                   │ AssetDetail / Editor    │
-                                   │ render visual by type   │
-                                   │ (markdown stays as      │
-                                   │  fallback / "raw" tab)  │
-                                   └─────────────────────────┘
-```
+- `src/lib/assetSchemas.ts` — parser for all 12 asset types
+- `src/components/visuals/AssetVisual.tsx` — visual renderers for color_system, font_system, brand_guidelines, brand_voice, launch_copy, product_hunt, social_post, founder_bio, presentation, template
+- Generators in `supabase/functions/_shared/generators.ts` already emit strict JSON per type
+- `AssetDetail` already dispatches to `AssetVisual` when a renderer exists (raw view hidden behind "Show source")
 
-- Generators already emit the structured content from the last pass. v2 makes that content **render visually** instead of as markdown/JSON.
-- A small `assetSchemas.ts` parser normalizes generator output (markdown sections → typed object; JSON → typed object) and tolerates older assets so nothing breaks.
-- Each asset_type gets a dedicated visual component. AssetDetail/Editor dispatches by `asset_type`.
-- Exports plug into the existing `exporters.ts` — we add `pdf-multipage`, `pptx`, `svg-pack(zip)` per asset type, keeping current formats.
+## Where it still falls short (fix in this slice)
+
+1. **Generate page** shows a raw markdown/JSON preview card in the results panel, not the finished visual. First impression = "AI text" instead of "designed deliverable."
+2. **Editor** (`/editor?id=…`) still opens a plain textarea for non-image assets. No inline inspector, no per-section edit surface, no structured save-back.
+3. **Image-set assets** (icon, graphic, photo when multiple were generated in one asset) render as a single hero image with no gallery / grid / ZIP export.
+4. **Brand context card** on Generate is siloed — the newly-analyzed Brand Intelligence isn't reused as a *header* on each asset the way the user expects.
+5. **Empty / partial JSON** from older generations falls straight through to the raw view. Needs a graceful "regenerate as structured" affordance.
 
 ---
 
-## Scope by asset_type (visual deliverable per type)
+## Scope of this slice
 
-| asset_type          | New visual deliverable                                                                 | New export targets        |
-|---------------------|----------------------------------------------------------------------------------------|---------------------------|
-| brand_guidelines    | 16-page designed doc (cover + section pages), page-thumbnail gallery, per-page edit    | multi-page PDF            |
-| color_system        | Swatch cards (hex/RGB/HSL/WCAG), gradient strip, light+dark UI mock, button samples    | PDF, ASE-style JSON, SVG  |
-| font_system         | Specimen sheet (H1–H6 + body + caption), pairing block, weight ladder, sample para     | PDF                       |
-| brand_voice         | Tone-spectrum sliders, voice-pillar cards, channel examples (web/email/social/founder) | PDF                       |
-| launch_copy         | Editable copy cards (tagline/headlines/desc/CTA/SEO) in a board layout                 | PDF, MD (kept)            |
-| product_hunt_copy   | PH-shaped preview cards (tagline, comments, tweet, FAQ accordion)                      | PDF                       |
-| social_post         | Content-library board grouped by category, per-post platform-shaped preview cards      | PDF, CSV                  |
-| founder_bio         | Profile cards per channel (X, LinkedIn, speaker, press) with copy-to-clipboard         | PDF                       |
-| presentation        | Slide deck (12–14 slides) with thumbnail strip + slide canvas, uses existing slides app | PDF, PPTX                 |
-| template            | Editable template canvases per channel (X / LinkedIn / IG / PH / banners / ads)        | PNG per template, PDF     |
-| graphic / icon / photo | Already images. Add gallery grid, set-level cover, ZIP export of full set            | ZIP (set), SVG for icons  |
+### 1. Generate page — visual results
+- Swap the raw content preview in `src/pages/Generate.tsx` for `<AssetVisual asset={...} />` for every non-image asset.
+- Image assets: show the image (unchanged).
+- Preserve everything else (progress, credit counter, retry, save-to-project, chat).
 
-For each type the visual component reads the structured object and exposes inline edits (text, color, font, image replace) that write back to `assets.content` / `assets.meta` — same storage, richer surface.
+### 2. Editor — structured surfaces per type
+- `src/pages/Editor.tsx`: when `hasVisualRenderer(asset)` is true, render `<AssetVisual>` as the main canvas and add a right-hand **Inspector** panel:
+  - **color_system**: color pickers for primary/secondary/accent/semantic, neutrals slider, gradient editor. Writes back to `assets.content` (JSON).
+  - **font_system**: font-family select (Google Fonts curated list from `LOGOTYPE_FONTS` reused), weight, scale sliders.
+  - **brand_voice / launch_copy / product_hunt_copy / founder_bio / social_post**: per-card inline `contentEditable` text with autosave (debounced 800ms).
+  - **brand_guidelines / presentation / template**: per-page/slide/variant left-hand navigator + inline editable body.
+- Autosave all edits to `assets.content` (stringified JSON) and mirror the parsed form in `assets.meta.parsed` for fast reload.
+- Existing plain textarea remains available as a "Raw" tab (safety net).
 
----
+### 3. Image-set gallery
+- Add `<ImageSetGrid>` visual for `graphic`, `icon`, `photo` assets where `meta.images: string[]` has 2+ entries (already how the generator returns batches).
+- Grid + hover-zoom + per-image download + "Download all (ZIP)" using existing `src/lib/exporters/zipPack.ts`.
+- Vectorize-to-SVG button per icon (reuses `src/lib/vectorize.ts`).
 
-## Editor (Looka-style, additive)
+### 4. Brand Context header on every asset
+- Add a compact `<BrandContextStrip>` at the top of `AssetDetail` and `Editor` when `asset.meta.brand_context` exists (product name, favicon, primary color chip, tone). Reinforces "this asset belongs to your brand," not to a generic prompt.
 
-- New route `/editor/:assetId` is the existing Editor — extend it, don't replace it.
-- Add a left **pages/items panel** (slides, brand-guideline pages, icon tiles, template variants).
-- Add a right **inspector** (text, color picker, font picker, image replace).
-- Inline editing on the visual component (contentEditable for copy, color-swatch click → picker).
-- "Variations" button = call existing `regenerate-asset` with a section-scoped instruction.
-- All edits autosave to `assets.content`/`assets.meta`. No schema changes required.
+### 5. "Rebuild as visual" affordance
+- When a parsed asset is missing required fields (older assets, half-broken JSON), show a single button: *"Regenerate as structured deliverable"* — calls existing `regenerate-asset` with a `structured=true` hint. No credit loop, no schema change.
 
 ---
 
-## What I will NOT touch
+## Files touched (additive)
 
-Chat, projects, auth, billing, credits, DB schema, routes for existing pages, current downloads, URL analysis, logo pipeline, classifier router, `regenerate-asset` contract, `generate-asset` orchestration/retries/concurrency.
+**New**
+- `src/components/visuals/ImageSetGrid.tsx`
+- `src/components/visuals/BrandContextStrip.tsx`
+- `src/components/editor/Inspector.tsx` (dispatch)
+- `src/components/editor/inspectors/ColorInspector.tsx`
+- `src/components/editor/inspectors/FontInspector.tsx`
+- `src/components/editor/inspectors/CopyInspector.tsx` (voice/launch/PH/founder/social)
+- `src/components/editor/inspectors/PagesInspector.tsx` (guidelines/deck/template)
+- `src/lib/assetAutosave.ts` (debounced writer, versions snapshot before major edits)
 
----
+**Edited**
+- `src/pages/Generate.tsx` — render `<AssetVisual>` in results
+- `src/pages/Editor.tsx` — dispatch to Inspector when visual renderer exists; keep textarea as Raw tab
+- `src/pages/AssetDetail.tsx` — add `<BrandContextStrip>`, add "Regenerate as structured" fallback
+- `src/components/visuals/AssetVisual.tsx` — register `ImageSetGrid`; export `parsedForAsset()` helper for editors
+- `src/lib/exporters.ts` — no new formats; wire `zipPack.ts` into gallery export button
 
-## Sequencing (so we can ship + verify in chunks)
-
-Because this is a multi-week build, I want to land it in vertical slices — each slice ships a visual deliverable + editor + export end-to-end before moving on. Suggested order (highest value first):
-
-1. **Foundations**: `assetSchemas.ts` parser, visual dispatcher in `AssetDetail`/`Editor`, shared "designed page" primitives (Page, Section, SwatchCard, SpecimenRow, SlideThumb).
-2. **Brand Guidelines** (multi-page doc + PDF export).
-3. **Color System + Font System** (swatch board + specimen sheet, with editor inspectors).
-4. **Presentation deck** (slide thumbnails + slide canvas + PDF/PPTX export, reusing the slides-app pattern).
-5. **Icon set + Graphics + Photos** (gallery, ZIP export, SVG vectorize for icons via existing `vectorize.ts`).
-6. **Templates** (editable canvases per channel).
-7. **Brand Voice, Launch Copy, Product Hunt, Social, Founder** (card-board renderers + per-card copy/export).
-
-Each slice ends with: type-check, generate one of that asset_type in preview, confirm visual render + edit + export, then move on.
-
----
-
-## Technical notes (for engineers)
-
-- New files: `src/lib/assetSchemas.ts`, `src/components/visuals/<Type>.tsx`, `src/components/editor/<Type>Inspector.tsx`, `src/lib/exporters/pdfMultipage.ts`, `src/lib/exporters/pptx.ts`, `src/lib/exporters/zipPack.ts`.
-- Touched files: `src/pages/AssetDetail.tsx`, `src/pages/Editor.tsx`, `src/lib/exporters.ts` (register new formats), `src/lib/vectorize.ts` (reuse).
-- No edge-function changes for slice 1–3. Slice 4+ may tweak `generators.ts` prompts to emit slightly more structured JSON for deck/icon set (still backwards compatible — old assets render via fallback).
-- `pptxgenjs` will be added as a dep for slice 4.
-- Raw markdown/JSON moves to a "Raw" tab in the editor (kept for power users + safety net), never the default view.
+**Not touched**
+- `supabase/functions/**` — no generator or DB change needed. Generators already emit the right shape.
+- Routes, auth, billing, credits, DB schema — all untouched.
 
 ---
 
-## Questions before I start
+## Non-goals for this slice
 
-1. **Scope to ship now**: do you want me to land **all 7 slices** in this session (long, dense edits, higher risk), or start with slices **1–3** (foundations + Brand Guidelines + Color/Font) so you can see the new visual+editor flow end-to-end before I keep going?
-2. **PPTX export**: OK to add `pptxgenjs` (~200KB client dep) so Presentation exports as a real .pptx? Otherwise I'll ship PDF-only for decks.
-3. **Raw markdown/JSON view**: keep it as a hidden "Raw" tab in the editor (recommended, safest), or drop it entirely from the UI (riskier — relies fully on the new renderers)?
+- Slide-canvas editor with drag/drop shapes (that's the **Presentation** slice, next).
+- PPTX layout regeneration (`pptx.ts` already ships).
+- New asset types.
+- Any prompt/generator rewrite.
+
+---
+
+## Risk & rollout
+
+- All new surfaces are gated on `hasVisualRenderer(asset)` — assets that don't parse fall back to today's behavior.
+- Autosave writes go through the existing versions snapshot flow — no data loss risk.
+- Ship in one PR, verified per asset type by generating one sample each in preview and confirming: visual render ✓ inline edit ✓ save round-trips ✓ export unchanged ✓.
+
+---
+
+## Open questions
+
+1. **Inspector layout**: right-hand panel (Looka-style, my default), or top toolbar (simpler on mobile)?
+2. **Autosave vs explicit Save**: I want to default to debounced autosave with a versions snapshot on every 5th change. OK, or would you prefer an explicit Save button like the Logotype editor?
+3. **Order of implementation** if this is too much for one pass: (a) Generate results → (b) Editor inspectors → (c) Image-set gallery → (d) BrandContextStrip → (e) Regenerate fallback. Ship (a)+(b) first if you want faster feedback.
+
+Reply with answers (or "go — all of it, autosave, right panel") and I'll start.

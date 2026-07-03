@@ -8,6 +8,7 @@ import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { Logotype } from "@/components/Logotype";
 import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData, type LaunchCopyData, type ProductHuntCopyData, type SocialPostData, type FounderBio, type PresentationData, type TemplateLibraryData } from "@/lib/assetSchemas";
 import { buildLogotypeVariants, pickLogotypeText } from "@/lib/logotype";
+import BrandContextStrip from "@/components/BrandContextStrip";
 
 const supabase = _sb as any;
 
@@ -372,7 +373,7 @@ const Generate = () => {
     return withCtx?.meta?.brand_context || null;
   })();
 
-  const brandCtxIsRich = !!(activeBrandCtx && (activeBrandCtx.industry || activeBrandCtx.category || activeBrandCtx.positioning || activeBrandCtx.competitors?.length || activeBrandCtx.audienceSegments?.length));
+  // (brand-context "analyzed" badge is now handled inside <BrandContextStrip />)
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -641,48 +642,8 @@ const Generate = () => {
           {/* Right: results panel */}
           <div className="rounded-2xl border border-neutral-200 bg-white p-4">
             {activeBrandCtx && (
-              <div className="mb-4 rounded-xl border border-neutral-200 bg-gradient-to-br from-neutral-50 to-white p-3">
-                <div className="flex items-start gap-3">
-                  {(activeBrandCtx.logo || activeBrandCtx.favicon || activeBrandCtx.screenshot) && (
-                    <img
-                      src={activeBrandCtx.logo || activeBrandCtx.favicon || activeBrandCtx.screenshot}
-                      alt=""
-                      className="h-10 w-10 shrink-0 rounded-md border border-neutral-200 bg-white object-contain p-1"
-                    />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-brand">Brand context</span>
-                      {brandCtxIsRich && <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-emerald-700">Analyzed</span>}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
-                      <span className="truncate text-sm font-semibold text-neutral-900">{activeBrandCtx.productName || activeBrandCtx.url || "Brand"}</span>
-                      {activeBrandCtx.url && <span className="truncate text-[11px] text-neutral-500">{String(activeBrandCtx.url).replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>}
-                    </div>
-                    {(activeBrandCtx.tagline || activeBrandCtx.description || activeBrandCtx.positioning) && (
-                      <p className="mt-1 line-clamp-2 text-[11px] text-neutral-600">{activeBrandCtx.positioning || activeBrandCtx.tagline || activeBrandCtx.description}</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {activeBrandCtx.industry && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] text-neutral-700">{activeBrandCtx.industry}</span>}
-                      {activeBrandCtx.category && activeBrandCtx.category !== activeBrandCtx.industry && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] text-neutral-700">{activeBrandCtx.category}</span>}
-                      {(activeBrandCtx.audienceSegments || []).slice(0, 2).map((seg: string) => (
-                        <span key={seg} className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] text-neutral-700">{seg}</span>
-                      ))}
-                      {(activeBrandCtx.colors || []).slice(0, 5).map((c: string, i: number) => (
-                        <span key={i} className="h-4 w-4 rounded border border-neutral-200" style={{ background: c }} title={c} />
-                      ))}
-                      {(activeBrandCtx.fonts || []).slice(0, 2).map((f: string) => (
-                        <span key={f} className="rounded-full border border-neutral-200 px-2 py-0.5 text-[10px] text-neutral-600" style={{ fontFamily: `'${f}', system-ui` }}>{f}</span>
-                      ))}
-                    </div>
-                    {(activeBrandCtx.competitors?.length || activeBrandCtx.targetCustomer) && (
-                      <div className="mt-1.5 space-y-0.5 text-[10px] text-neutral-500">
-                        {activeBrandCtx.targetCustomer && <div><span className="text-neutral-400">Target:</span> {activeBrandCtx.targetCustomer}</div>}
-                        {activeBrandCtx.competitors?.length ? <div><span className="text-neutral-400">Competitors:</span> {activeBrandCtx.competitors.slice(0, 4).join(" · ")}</div> : null}
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <div className="mb-4">
+                <BrandContextStrip ctx={activeBrandCtx} />
               </div>
             )}
             <div className="mb-3 flex items-center justify-between">
