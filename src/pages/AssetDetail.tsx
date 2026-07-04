@@ -273,7 +273,10 @@ const AssetDetail = () => {
               <Check className="h-3.5 w-3.5 text-emerald-600" />
             </button>
           )}
-          <Link to={`/editor?id=${asset.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+          <Link
+            to={`${hasVisualRenderer(asset) ? "/editor/structured" : "/editor"}?id=${asset.id}`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"
+          >
             <Edit3 className="h-4 w-4" /> Open in Editor
           </Link>
           {isImage && (
