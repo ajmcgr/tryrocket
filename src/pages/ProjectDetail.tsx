@@ -146,6 +146,9 @@ const ProjectDetail = () => {
             <span>{collabs.length ? `${collabs.length} collaborator${collabs.length === 1 ? "" : "s"}` : "Invite"}</span>
           </button>
           <button onClick={openPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add asset</button>
+          <button onClick={downloadPack} disabled={zipping || assets.length === 0} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50">
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download pack
+          </button>
           <div className="relative">
             <button onClick={() => setShowRun(v => !v)} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Plus className="h-4 w-4" /> Run workflow</button>
             {showRun && (
