@@ -14,6 +14,7 @@ import { LogotypeEditor } from "@/components/LogotypeEditor";
 import { isLogotype, pickLogotypeText, type LogotypeState } from "@/lib/logotype";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import BrandContextStrip from "@/components/BrandContextStrip";
+import RelatedVariantsGrid from "@/components/RelatedVariantsGrid";
 import { tryJson } from "@/lib/assetSchemas";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
@@ -339,6 +340,8 @@ const AssetDetail = () => {
           <BrandContextStrip ctx={brandCtx} />
         </div>
       )}
+
+      {isImage && <RelatedVariantsGrid asset={asset} />}
 
       {needsRebuild && (
         <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3">
