@@ -3,10 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 import { Logotype } from "@/components/Logotype";
+import { packAssetsZip } from "@/lib/exporters/zipPack";
 const supabase = _sb as any;
 
 type WF = "brand" | "design" | "launch" | "promote" | "other";
@@ -39,8 +40,29 @@ const ProjectDetail = () => {
   const [showRun, setShowRun] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
   const [collabs, setCollabs] = useState<Collaborator[]>([]);
+  const [zipping, setZipping] = useState(false);
 
   useEffect(() => { if (id) setCollabs(loadCollaborators(id)); }, [id]);
+
+  const downloadPack = async () => {
+    if (!assets.length) return;
+    setZipping(true);
+    try {
+      await packAssetsZip(
+        assets.map((a: any) => ({
+          title: a.title || "asset",
+          asset_type: a.asset_type,
+          image_url: a.image_url,
+          content: a.content,
+        })),
+        `${(project?.name || "brand").replace(/[^a-z0-9-_]+/gi, "-").toLowerCase()}-pack.zip`,
+      );
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e?.message || "Could not build ZIP.", variant: "destructive" });
+    } finally {
+      setZipping(false);
+    }
+  };
 
   const load = async () => {
     if (!id || !user) return;
