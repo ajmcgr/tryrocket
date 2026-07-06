@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save, FileCode } from "lucide-react";
+import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save, FileCode, Play } from "lucide-react";
 import { imageUrlToSvg, downloadSvg } from "@/lib/vectorize";
 const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
@@ -280,6 +280,15 @@ const AssetDetail = () => {
           >
             <Edit3 className="h-4 w-4" /> Open in Editor
           </Link>
+          {asset.asset_type === "presentation" && (
+            <Link
+              to={`/present?id=${asset.id}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+              title="Present fullscreen"
+            >
+              <Play className="h-4 w-4" /> Present
+            </Link>
+          )}
           {isImage && (
             <a href={asset.image_url} download className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
               <Download className="h-4 w-4" />
