@@ -60,6 +60,7 @@ const AssetDetail = () => {
   const [draftContent, setDraftContent] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -94,7 +95,6 @@ const AssetDetail = () => {
   ].includes(asset.asset_type);
   const parsedOk = isStructuredType ? !!tryJson(asset.content || "") : true;
   const needsRebuild = isStructuredType && !parsedOk && !!asset.content;
-  const [rebuilding, setRebuilding] = useState(false);
 
   const rebuildAsStructured = async () => {
     setRebuilding(true);
