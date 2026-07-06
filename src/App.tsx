@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Generate from "./pages/Generate.tsx";
 import Editor from "./pages/Editor.tsx";
 import StructuredEditor from "./pages/StructuredEditor.tsx";
+import Presenter from "./pages/Presenter.tsx";
 import { Navigate } from "react-router-dom";
 import Assets from "./pages/Assets.tsx";
 import AssetDetail from "./pages/AssetDetail.tsx";
@@ -92,6 +93,7 @@ const App = () => (
               <Route path="/create" element={<Generate />} />
               <Route path="/editor" element={<Editor />} />
               <Route path="/editor/structured" element={<StructuredEditor />} />
+              <Route path="/present" element={<Presenter />} />
               <Route path="/dashboard" element={<Navigate to="/projects" replace />} />
               <Route path="/generate" element={<Navigate to="/create" replace />} />
               <Route path="/rocket/:id" element={<Navigate to="/assets" replace />} />

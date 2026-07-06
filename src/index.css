@@ -135,3 +135,28 @@
 .animate-fluid-gradient {
   animation: fluid-gradient 24s ease-in-out infinite;
 }
+
+/* -------------------- Slide typography (1920x1080 canvas) -------------------- */
+.slide-content {
+  --slide-title-lg: 104px;
+  --slide-title:    88px;
+  --slide-subtitle: 52px;
+  --slide-body-lg:  40px;
+  --slide-body:     32px;
+  --slide-caption:  24px;
+  --slide-kicker:   22px;
+  --slide-chrome:   20px;
+}
+.slide-content .slide-title-lg { font-size: var(--slide-title-lg); line-height: 1.0;  letter-spacing: -0.05em; }
+.slide-content .slide-title    { font-size: var(--slide-title);    line-height: 1.05; letter-spacing: -0.04em; }
+.slide-content .slide-subtitle { font-size: var(--slide-subtitle); line-height: 1.15; letter-spacing: -0.025em; }
+.slide-content .slide-body-lg  { font-size: var(--slide-body-lg);  line-height: 1.22; }
+.slide-content .slide-body     { font-size: var(--slide-body);     line-height: 1.28; }
+.slide-content .slide-caption  { font-size: var(--slide-caption);  line-height: 1.25; }
+.slide-content .slide-kicker   { font-size: var(--slide-kicker);   line-height: 1.1;  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+.slide-content .slide-chrome,
+.slide-content .slide-badge,
+.slide-content .slide-footer,
+.slide-content .slide-page     { font-size: var(--slide-chrome); line-height: 1.15; }
+.slide-content .slide-badge,
+.slide-content .slide-page     { white-space: nowrap; }
