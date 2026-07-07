@@ -2,7 +2,7 @@
 // Used for brand_guidelines (one page per ## section), presentations,
 // and copy/social/founder boards. Markdown-aware (headings, bullets, blockquotes).
 import jsPDF from "jspdf";
-import { parseMarkdownSections, type MarkdownSection } from "@/lib/assetSchemas";
+import { parseMarkdownSections, tryJson, type MarkdownSection, type PresentationData } from "@/lib/assetSchemas";
 
 const MARGIN = 56;
 const PAGE_W = 612; // letter pt
@@ -125,19 +125,65 @@ export function presentationPdf(title: string, md: string): Blob {
   // landscape 16:9 deck (one section = one slide)
   const pdf = new jsPDF({ unit: "pt", format: [960, 540], orientation: "landscape" });
   const W = 960, H = 540, M = 56;
-  const sections = parseMarkdownSections(md);
+  // Prefer structured JSON if available.
+  const data = tryJson<PresentationData>(md);
+  const useJson = !!data?.slides?.length;
+  const sections = useJson ? [] : parseMarkdownSections(md);
   const flat: MarkdownSection[] = [];
-  const walk = (arr: MarkdownSection[]) => { for (const s of arr) { flat.push(s); walk(s.children); } };
-  walk(sections);
-  const slides = flat.filter((s) => /^slide\s+\d+/i.test(s.title));
-  const list = slides.length ? slides : flat.filter((s) => s.level === 2);
+  if (!useJson) {
+    const walk = (arr: MarkdownSection[]) => { for (const s of arr) { flat.push(s); walk(s.children); } };
+    walk(sections);
+  }
+  const mdSlides = flat.filter((s) => /^slide\s+\d+/i.test(s.title));
+  const list: MarkdownSection[] = useJson ? [] : (mdSlides.length ? mdSlides : flat.filter((s) => s.level === 2));
+  const totalCount = useJson ? data!.slides.length : list.length;
 
   // cover
   pdf.setFillColor(15, 15, 20); pdf.rect(0, 0, W, H, "F");
   pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(40);
   pdf.text(pdf.splitTextToSize(title, W - M * 2), M, 260);
   pdf.setFont("helvetica", "normal"); pdf.setFontSize(14); pdf.setTextColor(160, 160, 170);
-  pdf.text(`${list.length} slides · Generated with Rocket`, M, 300);
+  pdf.text(`${totalCount} slides · Generated with Rocket`, M, 300);
+
+  if (useJson) {
+    data!.slides.forEach((s, idx) => {
+      pdf.addPage([W, H], "landscape");
+      pdf.setFillColor(255, 255, 255); pdf.rect(0, 0, W, H, "F");
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.setTextColor(150, 150, 150);
+      pdf.text(`SLIDE ${idx + 1} / ${totalCount}`, M, 40);
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(30); pdf.setTextColor(15, 15, 25);
+      const titleLines = pdf.splitTextToSize(s.title || "", W - M * 2);
+      pdf.text(titleLines, M, 100);
+      let y = 100 + titleLines.length * 36 + 20;
+      if (s.big_number) {
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(96); pdf.setTextColor(15, 15, 25);
+        pdf.text(s.big_number.value, M, y + 60);
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(14); pdf.setTextColor(90, 90, 100);
+        pdf.text(pdf.splitTextToSize(s.big_number.label, W - M * 2), M, y + 110);
+      } else if (s.quote) {
+        pdf.setFont("helvetica", "italic"); pdf.setFontSize(24); pdf.setTextColor(30, 30, 40);
+        const ql = pdf.splitTextToSize(`"${s.quote.text}"`, W - M * 2);
+        pdf.text(ql, M, y); y += ql.length * 30 + 16;
+        if (s.quote.attribution) {
+          pdf.setFont("helvetica", "normal"); pdf.setFontSize(14); pdf.setTextColor(120, 120, 130);
+          pdf.text(`— ${s.quote.attribution}`, M, y);
+        }
+      } else {
+        if (s.purpose) {
+          pdf.setFont("helvetica", "italic"); pdf.setFontSize(14); pdf.setTextColor(90, 90, 100);
+          const pl = pdf.splitTextToSize(s.purpose, W - M * 2);
+          pdf.text(pl, M, y); y += pl.length * 18 + 16;
+        }
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(16); pdf.setTextColor(40, 40, 50);
+        for (const b of (s.bullets || []).slice(0, 6)) {
+          const lines = pdf.splitTextToSize("•  " + b, W - M * 2 - 12);
+          if (y + lines.length * 22 > H - M) break;
+          pdf.text(lines, M + 12, y); y += lines.length * 22 + 6;
+        }
+      }
+    });
+    return pdf.output("blob");
+  }
 
   list.forEach((s, idx) => {
     pdf.addPage([W, H], "landscape");
