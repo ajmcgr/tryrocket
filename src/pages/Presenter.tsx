@@ -139,6 +139,7 @@ export default function Presenter() {
 
   const slide = slides[idx];
   const noteBullets = slide?.bullets || [];
+  const hasNotes = !!(slide?.notes && slide.notes.trim());
 
   return (
     <div ref={rootRef} className="relative min-h-screen bg-neutral-950">
@@ -239,7 +240,13 @@ export default function Presenter() {
                 <div className="text-[11px] text-white/40">Press N to toggle</div>
               </div>
               <div className="text-base font-medium text-white">{slide?.title}</div>
-              {slide?.purpose && <p className="mt-2 text-sm text-white/70">{slide.purpose}</p>}
+              {hasNotes ? (
+                <p className="mt-2 whitespace-pre-wrap text-sm text-white/80">{slide?.notes}</p>
+              ) : (
+                <>
+                  {slide?.purpose && <p className="mt-2 text-sm text-white/70">{slide.purpose}</p>}
+                </>
+              )}
               {noteBullets.length > 0 && (
                 <ul className="mt-3 space-y-1.5 text-sm text-white/75">
                   {noteBullets.map((b, i) => (

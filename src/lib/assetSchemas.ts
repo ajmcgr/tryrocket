@@ -117,6 +117,7 @@ export type PresentationData = {
     bullets?: string[];
     layout?: string;
     visual_guidance?: string;
+    notes?: string;
     big_number?: { value: string; label: string };
     quote?: { text: string; attribution?: string };
   }[];
