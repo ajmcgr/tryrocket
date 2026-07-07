@@ -50,6 +50,10 @@ export async function presentationPptx(title: string, md: string): Promise<Blob>
       if (s.visual_guidance) {
         slide.addText(`Visual direction · ${s.visual_guidance}`, { x: 0.6, y: 7.0, w: 12, h: 0.3, fontSize: 10, italic: true, color: "888899" });
       }
+      if (s.notes && s.notes.trim()) {
+        // pptxgenjs speaker notes
+        (slide as any).addNotes ? (slide as any).addNotes(s.notes) : ((slide as any).notes = s.notes);
+      }
     });
     const bufJson = (await pres.write({ outputType: "blob" })) as Blob;
     return bufJson;
