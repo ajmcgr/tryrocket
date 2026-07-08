@@ -120,6 +120,19 @@ export type PresentationData = {
     notes?: string;
     big_number?: { value: string; label: string };
     quote?: { text: string; attribution?: string };
+    /** Two-column body copy — used when layout is "two_column". */
+    columns?: { heading?: string; body?: string; bullets?: string[] }[];
+    /** Side-by-side comparison — used when layout is "comparison". */
+    comparison?: {
+      left: { heading: string; bullets?: string[]; body?: string };
+      right: { heading: string; bullets?: string[]; body?: string };
+    };
+    /** Row of stat cards — used when layout is "stats". */
+    stats?: { value: string; label: string; caption?: string }[];
+    /** Ordered milestones — used when layout is "timeline". */
+    timeline?: { label: string; body?: string }[];
+    /** Numbered process steps — used when layout is "steps" or "process". */
+    steps?: { title: string; body?: string }[];
   }[];
   layout_notes?: string;
 };
