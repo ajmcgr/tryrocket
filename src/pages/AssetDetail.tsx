@@ -15,6 +15,7 @@ import { isLogotype, pickLogotypeText, type LogotypeState } from "@/lib/logotype
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import BrandContextStrip from "@/components/BrandContextStrip";
 import RelatedVariantsGrid from "@/components/RelatedVariantsGrid";
+import ImageSetGallery from "@/components/visuals/ImageSetGallery";
 import { tryJson } from "@/lib/assetSchemas";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
@@ -350,7 +351,10 @@ const AssetDetail = () => {
         </div>
       )}
 
-      {isImage && <RelatedVariantsGrid asset={asset} />}
+      {isImage && (asset.asset_type === "logo"
+        ? <RelatedVariantsGrid asset={asset} />
+        : <ImageSetGallery asset={asset} />
+      )}
 
       {needsRebuild && (
         <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3">
