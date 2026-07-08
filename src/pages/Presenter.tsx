@@ -17,6 +17,7 @@ export default function Presenter() {
   const [params, setParams] = useSearchParams();
   const id = params.get("id");
   const slideParam = parseInt(params.get("slide") || "0", 10);
+  const isPrint = params.get("print") === "1";
 
   const [asset, setAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -137,6 +138,34 @@ export default function Presenter() {
     </div>
   );
 
+  // Print/handout mode — stack every slide vertically at native 1920x1080 for Cmd+P → PDF.
+  if (isPrint) {
+    return (
+      <div className="slide-print-root bg-white">
+        <style>{`
+          @page { size: 1920px 1080px landscape; margin: 0; }
+          @media print {
+            html, body { margin: 0; padding: 0; background: #fff; }
+            .slide-print-page { page-break-after: always; break-after: page; }
+          }
+          .slide-print-page {
+            width: 1920px;
+            height: 1080px;
+            position: relative;
+            overflow: hidden;
+            background: #fff;
+            margin: 0 auto;
+          }
+        `}</style>
+        {slides.map((s, i) => (
+          <div key={i} className="slide-print-page">
+            <SlideRenderer slide={s} index={i} total={total} brand={brand} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const slide = slides[idx];
   const noteBullets = slide?.bullets || [];
   const hasNotes = !!(slide?.notes && slide.notes.trim());
@@ -189,6 +218,16 @@ export default function Presenter() {
               title="Export PPTX"
             >
               {exporting === "pptx" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} PPTX
+            </button>
+            <button
+              onClick={() => {
+                const url = `/present?id=${asset.id}&print=1`;
+                window.open(url, "_blank", "noopener");
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+              title="Open printable handout (Cmd+P → Save as PDF)"
+            >
+              <Download className="h-3.5 w-3.5" /> Handout
             </button>
             <button
               onClick={toggleFullscreen}
