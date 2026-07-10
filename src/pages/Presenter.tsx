@@ -6,7 +6,7 @@ import ScaledSlide, { SlideStage } from "@/components/slides/ScaledSlide";
 import SlideRenderer, { SLIDE_THEMES } from "@/components/slides/SlideRenderer";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Grid3x3, Maximize2, Minimize2, X,
-  Download, StickyNote, Loader2, GripVertical, Palette,
+  Download, StickyNote, Loader2, GripVertical, Palette, Copy, Trash2, Keyboard,
 } from "lucide-react";
 import { exportAsset } from "@/lib/exporters";
 import { toast } from "@/hooks/use-toast";
@@ -29,6 +29,7 @@ export default function Presenter() {
   const [exporting, setExporting] = useState<"pdf" | "pptx" | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
   const [savingTheme, setSavingTheme] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -96,6 +97,28 @@ export default function Presenter() {
     else if (from > idx && to <= idx) setSlide(idx + 1);
   };
 
+  const duplicateSlide = async (at: number) => {
+    if (!data) return;
+    const copy = slides.slice();
+    const clone = JSON.parse(JSON.stringify(copy[at]));
+    if (clone?.title) clone.title = `${clone.title} (copy)`;
+    copy.splice(at + 1, 0, clone);
+    await persistSlides(copy);
+    if (at <= idx) setSlide(idx + 1);
+  };
+
+  const deleteSlide = async (at: number) => {
+    if (!data || slides.length <= 1) {
+      toast({ title: "Can't delete", description: "A presentation needs at least one slide.", variant: "destructive" });
+      return;
+    }
+    const copy = slides.slice();
+    copy.splice(at, 1);
+    await persistSlides(copy);
+    if (at < idx) setSlide(idx - 1);
+    else if (at === idx) setSlide(Math.min(idx, copy.length - 1));
+  };
+
   const doExport = async (format: "pdf" | "pptx") => {
     if (!asset) return;
     setExporting(format);
@@ -125,12 +148,13 @@ export default function Presenter() {
       else if (e.key === "End") { e.preventDefault(); setSlide(total - 1); }
       else if (e.key.toLowerCase() === "g") { setGridOpen((v) => !v); }
       else if (e.key.toLowerCase() === "n") { setNotesOpen((v) => !v); }
+      else if (e.key === "?" || (e.shiftKey && e.key === "/")) { setHelpOpen((v) => !v); }
       else if (e.key === "f" || e.key === "F5") { e.preventDefault(); toggleFullscreen(); }
-      else if (e.key === "Escape") { if (gridOpen) setGridOpen(false); }
+      else if (e.key === "Escape") { if (helpOpen) setHelpOpen(false); else if (gridOpen) setGridOpen(false); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [idx, total, gridOpen]);
+  }, [idx, total, gridOpen, helpOpen]);
 
   const toggleFullscreen = async () => {
     const el = rootRef.current;
@@ -218,6 +242,13 @@ export default function Presenter() {
               title="Grid overview (G)"
             >
               <Grid3x3 className="h-3.5 w-3.5" /> Grid
+            </button>
+            <button
+              onClick={() => setHelpOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard className="h-3.5 w-3.5" /> Shortcuts
             </button>
             <div className="relative">
               <button
