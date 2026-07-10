@@ -95,6 +95,27 @@ const Assets = () => {
     await supabase.from("assets").delete().eq("id", id);
   };
 
+  const bulkDelete = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} assets? This can't be undone.`)) return;
+    setAssets(prev => prev.filter(a => !selected.has(a.id)));
+    clearSelection();
+    const { error } = await supabase.from("assets").delete().in("id", ids);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); load(); return; }
+    toast({ title: `Deleted ${ids.length} assets` });
+  };
+
+  const bulkAssignToProject = async (projectId: string | null) => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const { error } = await supabase.from("assets").update({ project_id: projectId }).in("id", ids);
+    if (error) { toast({ title: "Move failed", description: error.message, variant: "destructive" }); return; }
+    setAssets(prev => prev.map(a => selected.has(a.id) ? { ...a, project_id: projectId } : a));
+    toast({ title: projectId ? `Moved ${ids.length} assets to project` : `Removed ${ids.length} from project` });
+    clearSelection();
+  };
+
   const assignToProject = async (assetId: string, projectId: string | null) => {
     const { error } = await supabase.from("assets").update({ project_id: projectId }).eq("id", assetId);
     if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
@@ -163,6 +184,35 @@ const Assets = () => {
             className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-medium text-brand-foreground hover:bg-brand-hover disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" /> {zipping ? "Packing…" : "Download .zip"}
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                disabled={!selected.size}
+                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              >
+                <FolderPlus className="h-3.5 w-3.5" /> Move
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-white">
+              <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Move {selected.size} to…</DropdownMenuLabel>
+              {projects.length === 0 ? (
+                <div className="px-2 py-2 text-xs text-neutral-500">No projects yet.</div>
+              ) : projects.map(p => (
+                <DropdownMenuItem key={p.id} onClick={() => bulkAssignToProject(p.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
+                  {p.name}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => bulkAssignToProject(null)} className="cursor-pointer text-neutral-600 focus:bg-neutral-100 focus:text-neutral-900">Remove from project</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <button
+            onClick={bulkDelete}
+            disabled={!selected.size}
+            className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Delete
           </button>
         </div>
       )}
