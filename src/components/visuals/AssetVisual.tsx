@@ -236,6 +236,53 @@ function ColorSystemView({ data }: { data: ColorSystem }) {
 }
 
 /* =============================== FONT SYSTEM =============================== */
+function FontExportBar({
+  data, display, heading, body, mono,
+}: { data: FontSystem; display: string; heading: string; body: string; mono: string }) {
+  const families = Array.from(new Set([display, heading, body, mono].filter(Boolean)));
+  const qs = families.map((f) => `family=${encodeURIComponent(f)}:wght@300;400;500;600;700;800`).join("&");
+  const importCss = [
+    `@import url('https://fonts.googleapis.com/css2?${qs}&display=swap');`,
+    "",
+    ":root {",
+    `  --font-display: '${display}', serif;`,
+    `  --font-heading: '${heading}', sans-serif;`,
+    `  --font-body: '${body}', sans-serif;`,
+    `  --font-mono: '${mono}', ui-monospace, monospace;`,
+    "}",
+  ].join("\n");
+  const tw = [
+    "// tailwind.config.js — extend.fontFamily",
+    "module.exports = {",
+    "  theme: { extend: { fontFamily: {",
+    `      display: ['${display}', 'serif'],`,
+    `      heading: ['${heading}', 'sans-serif'],`,
+    `      body: ['${body}', 'sans-serif'],`,
+    `      mono: ['${mono}', 'ui-monospace', 'monospace'],`,
+    "  } } }",
+    "};",
+  ].join("\n");
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/70 px-3 py-2">
+      <span className="text-[11px] uppercase tracking-wider text-neutral-500">Export</span>
+      <CopyBtn text={importCss} label="Copy @import + vars" />
+      <button
+        onClick={() => downloadText("fonts.css", importCss, "text/css")}
+        className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] text-neutral-600 hover:bg-neutral-50"
+      >CSS file</button>
+      <button
+        onClick={() => downloadText("fonts-tailwind.js", tw, "text/javascript")}
+        className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] text-neutral-600 hover:bg-neutral-50"
+      >Tailwind config</button>
+      <a
+        href={`https://fonts.google.com/?query=${encodeURIComponent(families.join(" "))}`}
+        target="_blank" rel="noreferrer"
+        className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] text-neutral-600 hover:bg-neutral-50"
+      >Open in Google Fonts</a>
+    </div>
+  );
+}
+
 function ensureFontLink(families: string[]) {
   const id = "rocket-visual-fonts";
   const want = families.filter(Boolean).join("|");
