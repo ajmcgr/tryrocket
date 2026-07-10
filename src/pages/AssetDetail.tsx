@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save, FileCode, Play, Files } from "lucide-react";
+import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save, FileCode, Play, Files, ChevronLeft, ChevronRight } from "lucide-react";
 import { imageUrlToSvg, downloadSvg } from "@/lib/vectorize";
 const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
@@ -67,6 +67,7 @@ const AssetDetail = () => {
   const [showRaw, setShowRaw] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [siblings, setSiblings] = useState<string[]>([]);
 
   const load = async () => {
     if (!id) return;
@@ -77,6 +78,35 @@ const AssetDetail = () => {
     setAsset(a.data); setVersions(v.data || []); setLoading(false);
   };
   useEffect(() => { load(); }, [id]);
+
+  // Load sibling asset ids for prev/next navigation (scoped to the same project if any)
+  useEffect(() => {
+    if (!asset?.user_id) return;
+    let cancelled = false;
+    (async () => {
+      let q = supabase.from("assets").select("id").eq("user_id", asset.user_id).order("created_at", { ascending: false }).limit(500);
+      if (asset.project_id) q = q.eq("project_id", asset.project_id);
+      const { data } = await q;
+      if (!cancelled && data) setSiblings(data.map((r: any) => r.id));
+    })();
+    return () => { cancelled = true; };
+  }, [asset?.user_id, asset?.project_id]);
+
+  const sibIndex = id ? siblings.indexOf(id) : -1;
+  const prevId = sibIndex > 0 ? siblings[sibIndex - 1] : null;
+  const nextId = sibIndex >= 0 && sibIndex < siblings.length - 1 ? siblings[sibIndex + 1] : null;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (document.activeElement?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || (document.activeElement as HTMLElement)?.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "ArrowLeft" && prevId) { e.preventDefault(); nav(`/assets/${prevId}`); }
+      else if (e.key === "ArrowRight" && nextId) { e.preventDefault(); nav(`/assets/${nextId}`); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [prevId, nextId, nav]);
 
   if (loading) return (
     <div className="mx-auto max-w-5xl space-y-4 p-10">
