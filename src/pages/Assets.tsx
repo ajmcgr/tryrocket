@@ -220,12 +220,25 @@ const Assets = () => {
       {loading ? (
         <AssetGridSkeleton />
       ) : filtered.length === 0 ? (
-        <div className="mt-12 rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
-          <p className="text-sm text-neutral-500">{assets.length === 0 ? "No assets yet. Create your first one." : "No matches for current filter."}</p>
-          {assets.length === 0 && (
-            <Link to="/create" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground hover:bg-brand-hover">
-              <Plus className="h-3.5 w-3.5" /> Create your first asset
-            </Link>
+        <div className="mt-12 rounded-3xl border border-dashed border-neutral-300 bg-gradient-to-b from-white to-neutral-50 p-16 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+            <Plus className="h-6 w-6" />
+          </div>
+          {assets.length === 0 ? (
+            <>
+              <h2 className="text-lg font-semibold text-neutral-900">Your library is empty</h2>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+                Every logotype, palette, brand voice, and deck you make with Rocket lands here — searchable, exportable, and re-editable.
+              </p>
+              <Link to="/create" className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+                <Plus className="h-3.5 w-3.5" /> Create your first asset
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2 className="text-lg font-semibold text-neutral-900">No matches</h2>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">Try a different type, project, or clear the search to see everything.</p>
+            </>
           )}
         </div>
       ) : (
