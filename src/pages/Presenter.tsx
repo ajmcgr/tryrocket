@@ -219,6 +219,35 @@ export default function Presenter() {
             >
               <Grid3x3 className="h-3.5 w-3.5" /> Grid
             </button>
+            <div className="relative">
+              <button
+                onClick={() => setThemeOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+                title="Theme"
+              >
+                {savingTheme ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Palette className="h-3.5 w-3.5" />} Theme
+              </button>
+              {themeOpen && (
+                <div className="absolute right-0 z-30 mt-1 w-56 rounded-xl border border-white/10 bg-neutral-900 p-2 shadow-xl">
+                  {Object.entries(SLIDE_THEMES).map(([k, t]) => (
+                    <button
+                      key={k}
+                      onClick={() => applyTheme(k)}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${
+                        themeKey === k ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      <span className="inline-flex h-4 w-6 overflow-hidden rounded border border-white/10">
+                        <span className="flex-1" style={{ background: t.bg }} />
+                        <span className="w-2" style={{ background: t.accent || brand.primary || "#3B82F6" }} />
+                      </span>
+                      <span className="flex-1">{t.label}</span>
+                      {themeKey === k && <span className="text-brand">•</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => doExport("pdf")}
               disabled={exporting !== null}
