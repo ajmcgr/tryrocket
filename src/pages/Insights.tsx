@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { BarChart3, Folders, Image, Coins, Sparkles, Loader2 } from "lucide-react";
+import { Download } from "lucide-react";
 
 const supabase = _sb as any;
 
@@ -87,6 +88,32 @@ const Insights = () => {
   const recent = assets.slice(0, 8);
   const recentProjects = projects.slice(0, 5);
 
+  const exportCsv = () => {
+    const rows = [["id", "title", "asset_type", "project_id", "project_name", "created_at", "image_url"]];
+    const projById = new Map(projects.map((p) => [p.id, p.name]));
+    inRange.forEach((a) => {
+      rows.push([
+        a.id,
+        (a.title || "").replace(/"/g, '""'),
+        a.asset_type || "",
+        a.project_id || "",
+        (projById.get(a.project_id || "") || "").replace(/"/g, '""'),
+        a.created_at,
+        a.image_url || "",
+      ]);
+    });
+    const csv = rows.map((r) => r.map((c) => `"${String(c)}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `rocket-usage-last-${range}d.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="flex items-end justify-between gap-4">
@@ -94,12 +121,22 @@ const Insights = () => {
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Insights</h1>
           <p className="mt-1 text-sm text-neutral-500">Your generation activity, credits, and library at a glance.</p>
         </div>
-        <div className="inline-flex rounded-xl border border-neutral-200 bg-white p-1 text-sm">
-          {[7, 30, 90].map(n => (
-            <button key={n} onClick={() => setRange(n as 7 | 30 | 90)} className={`rounded-lg px-3 py-1.5 transition ${range === n ? "bg-neutral-900 text-white" : "text-neutral-600 hover:text-neutral-900"}`}>
-              {n}d
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportCsv}
+            disabled={loading || inRange.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 hover:border-neutral-400 disabled:opacity-40"
+            title="Export as CSV"
+          >
+            <Download className="h-3.5 w-3.5" /> Export CSV
+          </button>
+          <div className="inline-flex rounded-xl border border-neutral-200 bg-white p-1 text-sm">
+            {[7, 30, 90].map(n => (
+              <button key={n} onClick={() => setRange(n as 7 | 30 | 90)} className={`rounded-lg px-3 py-1.5 transition ${range === n ? "bg-neutral-900 text-white" : "text-neutral-600 hover:text-neutral-900"}`}>
+                {n}d
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
