@@ -262,7 +262,7 @@ export default function Presenter() {
         <div className="w-full">
           <SlideStage className="rounded-2xl border border-white/10 bg-white shadow-2xl">
             <ScaledSlide>
-              <SlideRenderer slide={slide} index={idx} total={total} brand={brand} />
+              <SlideRenderer slide={slide} index={idx} total={total} brand={brand} theme={theme} />
             </ScaledSlide>
           </SlideStage>
 
