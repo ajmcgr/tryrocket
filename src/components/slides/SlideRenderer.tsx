@@ -2,6 +2,16 @@ import type { PresentationData } from "@/lib/assetSchemas";
 
 type Slide = PresentationData["slides"][number];
 
+export type SlideTheme = { bg?: string; fg?: string; accent?: string; sectionText?: string };
+
+export const SLIDE_THEMES: Record<string, SlideTheme & { label: string }> = {
+  default: { label: "Default", bg: "#ffffff", fg: "#0A0A0A" },
+  ink:     { label: "Ink",     bg: "#0B0B0F", fg: "#F5F5F7", accent: "#8B5CF6", sectionText: "#fff" },
+  sunset:  { label: "Sunset",  bg: "#FFF7ED", fg: "#1F2937", accent: "#EA580C" },
+  sage:    { label: "Sage",    bg: "#F0FDF4", fg: "#1F2937", accent: "#16A34A" },
+  slate:   { label: "Slate",   bg: "#F8FAFC", fg: "#0F172A", accent: "#334155" },
+};
+
 function detectLayout(slide: Slide, index: number): string {
   const l = (slide.layout || "").toLowerCase();
   if (slide.big_number) return "big_number";
@@ -27,19 +37,23 @@ export default function SlideRenderer({
   index,
   total,
   brand,
+  theme,
 }: {
   slide: Slide;
   index: number;
   total: number;
   brand?: { name?: string; primary?: string };
+  theme?: SlideTheme;
 }) {
-  const primary = brand?.primary || "#3B82F6";
+  const primary = theme?.accent || brand?.primary || "#3B82F6";
+  const bg = theme?.bg || "#ffffff";
+  const fg = theme?.fg || "#0A0A0A";
   const kind = detectLayout(slide, index);
   const isTitle = kind === "title";
   const isSection = kind === "section";
 
   return (
-    <div className="flex h-full w-full flex-col bg-white text-neutral-900">
+    <div className="flex h-full w-full flex-col" style={{ background: bg, color: fg }}>
       {/* Header */}
       {!isTitle && !isSection && (
         <div className="flex items-center justify-between px-24 pt-14">
