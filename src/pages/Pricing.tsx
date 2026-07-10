@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Check, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,20 @@ const Pricing = () => {
       setLoading(null);
     }
   };
+
+  // Auto-resume checkout after signup redirect: /pricing?buy=growth
+  const autoTriggered = useRef(false);
+  useEffect(() => {
+    if (autoTriggered.current || !user) return;
+    const params = new URLSearchParams(window.location.search);
+    const buy = params.get("buy");
+    if (buy) {
+      autoTriggered.current = true;
+      startCheckout(buy);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 antialiased">
