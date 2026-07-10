@@ -3,10 +3,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { tryJson, type PresentationData } from "@/lib/assetSchemas";
 import ScaledSlide, { SlideStage } from "@/components/slides/ScaledSlide";
-import SlideRenderer from "@/components/slides/SlideRenderer";
+import SlideRenderer, { SLIDE_THEMES } from "@/components/slides/SlideRenderer";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Grid3x3, Maximize2, Minimize2, X,
-  Download, StickyNote, Loader2, GripVertical,
+  Download, StickyNote, Loader2, GripVertical, Palette,
 } from "lucide-react";
 import { exportAsset } from "@/lib/exporters";
 import { toast } from "@/hooks/use-toast";
@@ -27,6 +27,8 @@ export default function Presenter() {
   const [savingOrder, setSavingOrder] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [exporting, setExporting] = useState<"pdf" | "pptx" | null>(null);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [savingTheme, setSavingTheme] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -49,6 +51,20 @@ export default function Presenter() {
     const ctx = asset?.meta?.brand_context || {};
     return { name: ctx.productName || asset?.title, primary: ctx.colors?.[0] };
   }, [asset]);
+
+  const themeKey: string = asset?.meta?.presentation_theme || "default";
+  const theme = SLIDE_THEMES[themeKey] || SLIDE_THEMES.default;
+
+  const applyTheme = async (key: string) => {
+    if (!asset) return;
+    const nextMeta = { ...(asset.meta || {}), presentation_theme: key };
+    setAsset({ ...asset, meta: nextMeta });
+    setThemeOpen(false);
+    setSavingTheme(true);
+    const { error } = await supabase.from("assets").update({ meta: nextMeta }).eq("id", asset.id);
+    setSavingTheme(false);
+    if (error) toast({ title: "Could not save theme", description: error.message, variant: "destructive" });
+  };
 
   const setSlide = (n: number) => {
     const bounded = Math.max(0, Math.min(total - 1, n));
@@ -159,7 +175,7 @@ export default function Presenter() {
         `}</style>
         {slides.map((s, i) => (
           <div key={i} className="slide-print-page">
-            <SlideRenderer slide={s} index={i} total={total} brand={brand} />
+            <SlideRenderer slide={s} index={i} total={total} brand={brand} theme={theme} />
           </div>
         ))}
       </div>
@@ -203,6 +219,35 @@ export default function Presenter() {
             >
               <Grid3x3 className="h-3.5 w-3.5" /> Grid
             </button>
+            <div className="relative">
+              <button
+                onClick={() => setThemeOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+                title="Theme"
+              >
+                {savingTheme ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Palette className="h-3.5 w-3.5" />} Theme
+              </button>
+              {themeOpen && (
+                <div className="absolute right-0 z-30 mt-1 w-56 rounded-xl border border-white/10 bg-neutral-900 p-2 shadow-xl">
+                  {Object.entries(SLIDE_THEMES).map(([k, t]) => (
+                    <button
+                      key={k}
+                      onClick={() => applyTheme(k)}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${
+                        themeKey === k ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      <span className="inline-flex h-4 w-6 overflow-hidden rounded border border-white/10">
+                        <span className="flex-1" style={{ background: t.bg }} />
+                        <span className="w-2" style={{ background: t.accent || brand.primary || "#3B82F6" }} />
+                      </span>
+                      <span className="flex-1">{t.label}</span>
+                      {themeKey === k && <span className="text-brand">•</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => doExport("pdf")}
               disabled={exporting !== null}
@@ -246,7 +291,7 @@ export default function Presenter() {
         <div className="w-full">
           <SlideStage className="rounded-2xl border border-white/10 bg-white shadow-2xl">
             <ScaledSlide>
-              <SlideRenderer slide={slide} index={idx} total={total} brand={brand} />
+              <SlideRenderer slide={slide} index={idx} total={total} brand={brand} theme={theme} />
             </ScaledSlide>
           </SlideStage>
 
