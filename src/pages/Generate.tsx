@@ -9,6 +9,7 @@ import { Logotype } from "@/components/Logotype";
 import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData, type LaunchCopyData, type ProductHuntCopyData, type SocialPostData, type FounderBio, type PresentationData, type TemplateLibraryData } from "@/lib/assetSchemas";
 import { buildLogotypeVariants, pickLogotypeText } from "@/lib/logotype";
 import BrandContextStrip from "@/components/BrandContextStrip";
+import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 
 const supabase = _sb as any;
 
@@ -646,6 +647,25 @@ const Generate = () => {
                 <BrandContextStrip ctx={activeBrandCtx} />
               </div>
             )}
+            {(() => {
+              const latest = [...chatAssets].reverse().find(
+                (a) => !a.image_url && (a.editor_state?.kind === "logotype" || hasVisualRenderer(a))
+              );
+              if (!latest) return null;
+              return (
+                <div className="mb-5">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Latest deliverable</div>
+                    <Link to={`/assets/${latest.id}`} className="text-[11px] text-neutral-500 hover:text-neutral-900">
+                      Open →
+                    </Link>
+                  </div>
+                  <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white p-4">
+                    <AssetVisual asset={latest} />
+                  </div>
+                </div>
+              );
+            })()}
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-sans text-sm font-semibold text-neutral-900">Results</h2>
               <span className="text-xs text-neutral-500">{chatAssets.length} asset{chatAssets.length === 1 ? "" : "s"}</span>
