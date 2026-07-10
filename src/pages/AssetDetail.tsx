@@ -68,6 +68,7 @@ const AssetDetail = () => {
   const [rebuilding, setRebuilding] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [siblings, setSiblings] = useState<string[]>([]);
+  const [refreshingCtx, setRefreshingCtx] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -430,7 +431,29 @@ const AssetDetail = () => {
 
       {brandCtx && (
         <div className="mb-4">
-          <BrandContextStrip ctx={brandCtx} />
+          <BrandContextStrip
+            ctx={brandCtx}
+            refreshing={refreshingCtx}
+            onRefresh={async () => {
+              const url = brandCtx.url || brandCtx.source_url || asset.source_url;
+              if (!url) return;
+              setRefreshingCtx(true);
+              try {
+                const { data, error } = await supabase.functions.invoke("scrape-url", { body: { url } });
+                if (error) throw error;
+                const nextCtx = { ...(brandCtx || {}), ...(data || {}), url };
+                const nextMeta = { ...(asset.meta || {}), brand_context: nextCtx };
+                const { error: uErr } = await supabase.from("assets").update({ meta: nextMeta }).eq("id", asset.id);
+                if (uErr) throw uErr;
+                setAsset((a: any) => ({ ...a, meta: nextMeta }));
+                toast({ title: "Brand context refreshed" });
+              } catch (e: any) {
+                toast({ title: "Refresh failed", description: e?.message || String(e), variant: "destructive" });
+              } finally {
+                setRefreshingCtx(false);
+              }
+            }}
+          />
         </div>
       )}
 
