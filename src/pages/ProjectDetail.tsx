@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2, Zap, X } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2, Zap, X, RefreshCw } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 import { Logotype } from "@/components/Logotype";
@@ -43,6 +43,7 @@ const ProjectDetail = () => {
   const [zipping, setZipping] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [completionStatus, setCompletionStatus] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
+  const [completionErrors, setCompletionErrors] = useState<Record<string, string>>({});
   const [completePanelOpen, setCompletePanelOpen] = useState(false);
 
   const CORE_KIT: { type: string; label: string; prompt: (name: string, ctx: any) => string }[] = [
@@ -58,42 +59,72 @@ const ProjectDetail = () => {
     return CORE_KIT.filter(k => !have.has(k.type));
   };
 
-  const completeBrandKit = async () => {
-    if (!project || !user) return;
-    const missing = missingKit();
-    if (!missing.length) {
-      toast({ title: "Brand kit is complete", description: "All core brand assets already exist." });
-      return;
-    }
+  const runKitGeneration = async (targets: { type: string; label: string; prompt: (n: string, c: any) => string }[]) => {
+    if (!project || !user || !targets.length) return;
     setCompleting(true);
     setCompletePanelOpen(true);
-    const init: Record<string, "pending" | "running" | "done" | "error"> = {};
-    missing.forEach(k => (init[k.type] = "pending"));
-    setCompletionStatus(init);
+    setCompletionStatus(prev => {
+      const next = { ...prev };
+      targets.forEach(k => (next[k.type] = "pending"));
+      return next;
+    });
+    setCompletionErrors(prev => {
+      const next = { ...prev };
+      targets.forEach(k => { delete next[k.type]; });
+      return next;
+    });
 
     const name = project.name || "Brand";
     const ctx = project.brand_context || (project.source_url ? { url: project.source_url, productName: name } : null);
 
-    await Promise.all(missing.map(async (k) => {
+    await Promise.all(targets.map(async (k) => {
       setCompletionStatus(prev => ({ ...prev, [k.type]: "running" }));
       try {
-        const { data } = await supabase.functions.invoke("generate-asset", {
+        const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: k.prompt(name, ctx), asset_type: k.type, project_id: project.id, brand_context: ctx || undefined },
         });
+        if (error) throw error;
         const d: any = data;
-        if (d?.error === "no_credits" || d?.error || d?.refused) {
+        if (d?.error === "no_credits") {
           setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
+          setCompletionErrors(prev => ({ ...prev, [k.type]: "Out of credits" }));
+          return;
+        }
+        if (d?.error || d?.refused) {
+          setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
+          setCompletionErrors(prev => ({ ...prev, [k.type]: d?.message || d?.error || "Refused" }));
           return;
         }
         setCompletionStatus(prev => ({ ...prev, [k.type]: "done" }));
-      } catch {
+      } catch (e: any) {
         setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
+        setCompletionErrors(prev => ({ ...prev, [k.type]: e?.message || "Network error" }));
       }
     }));
 
     setCompleting(false);
     await load();
-    toast({ title: "Brand kit updated", description: "Core assets generated. Review in the Brand Kit tab." });
+  };
+
+  const completeBrandKit = async () => {
+    const missing = missingKit();
+    if (!missing.length) {
+      toast({ title: "Brand kit is complete", description: "All core brand assets already exist." });
+      return;
+    }
+    await runKitGeneration(missing);
+    toast({ title: "Brand kit updated", description: "Review results below — retry any that failed." });
+  };
+
+  const retryOne = async (type: string) => {
+    const k = CORE_KIT.find(x => x.type === type);
+    if (k) await runKitGeneration([k]);
+  };
+
+  const retryAllFailed = async () => {
+    const failed = Object.entries(completionStatus).filter(([, s]) => s === "error").map(([t]) => t);
+    const targets = CORE_KIT.filter(k => failed.includes(k.type));
+    if (targets.length) await runKitGeneration(targets);
   };
 
   useEffect(() => { if (id) setCollabs(loadCollaborators(id)); }, [id]);
@@ -321,18 +352,49 @@ const ProjectDetail = () => {
         <div className="fixed bottom-6 right-6 z-50 w-80 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
             <div className="flex items-center gap-2 text-sm font-medium"><Zap className="h-4 w-4 text-brand" /> Completing brand kit</div>
-            <button onClick={() => setCompletePanelOpen(false)} className="rounded p-1 text-neutral-500 hover:bg-neutral-100"><X className="h-3.5 w-3.5" /></button>
+            <div className="flex items-center gap-1">
+              {!completing && Object.values(completionStatus).some(s => s === "error") && (
+                <button
+                  onClick={retryAllFailed}
+                  className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-[11px] hover:bg-neutral-50"
+                  title="Retry all failed"
+                >
+                  <RefreshCw className="h-3 w-3" /> Retry failed
+                </button>
+              )}
+              <button onClick={() => setCompletePanelOpen(false)} className="rounded p-1 text-neutral-500 hover:bg-neutral-100"><X className="h-3.5 w-3.5" /></button>
+            </div>
           </div>
           <div className="max-h-72 overflow-auto p-2">
             {Object.entries(completionStatus).map(([type, s]) => {
               const label = CORE_KIT.find(k => k.type === type)?.label || type;
               return (
-                <div key={type} className="flex items-center justify-between px-2 py-1.5 text-sm">
-                  <span className="truncate text-neutral-700">{label}</span>
-                  {s === "pending" && <span className="text-xs text-neutral-400">queued</span>}
-                  {s === "running" && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
-                  {s === "done" && <Check className="h-4 w-4 text-emerald-600" />}
-                  {s === "error" && <span className="text-xs text-red-600">failed</span>}
+                <div key={type} className="px-2 py-1.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="truncate text-neutral-700">{label}</span>
+                    <div className="flex items-center gap-1.5">
+                      {s === "pending" && <span className="text-xs text-neutral-400">queued</span>}
+                      {s === "running" && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
+                      {s === "done" && <Check className="h-4 w-4 text-emerald-600" />}
+                      {s === "error" && (
+                        <>
+                          <span className="text-xs text-red-600">failed</span>
+                          <button
+                            onClick={() => retryOne(type)}
+                            disabled={completing}
+                            className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] hover:bg-neutral-50 disabled:opacity-50"
+                          >
+                            <RefreshCw className="h-2.5 w-2.5" /> Retry
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {s === "error" && completionErrors[type] && (
+                    <div className="mt-0.5 truncate pr-2 text-[10px] text-red-500" title={completionErrors[type]}>
+                      {completionErrors[type]}
+                    </div>
+                  )}
                 </div>
               );
             })}
