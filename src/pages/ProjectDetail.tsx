@@ -45,6 +45,19 @@ const ProjectDetail = () => {
   const [completionStatus, setCompletionStatus] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
   const [completionErrors, setCompletionErrors] = useState<Record<string, string>>({});
   const [completePanelOpen, setCompletePanelOpen] = useState(false);
+  const [galleryToggling, setGalleryToggling] = useState(false);
+
+  const toggleGallery = async () => {
+    if (!project) return;
+    if (!project.share_token) { toast({ title: "Share the project first", description: "Public gallery entries require an active share link." }); return; }
+    setGalleryToggling(true);
+    const next = !project.is_public_gallery;
+    const { error } = await supabase.from("projects").update({ is_public_gallery: next }).eq("id", project.id);
+    setGalleryToggling(false);
+    if (error) { toast({ title: "Could not update gallery status", description: error.message, variant: "destructive" }); return; }
+    toast({ title: next ? "Added to public gallery" : "Removed from public gallery" });
+    load();
+  };
 
   const CORE_KIT: { type: string; label: string; prompt: (name: string, ctx: any) => string }[] = [
     { type: "logo", label: "Logotype", prompt: (n, c) => `A polished text-based logotype for ${n}${c?.url ? ` (${c.url})` : ""}. ${c?.tagline || c?.description || ""}` },
@@ -271,6 +284,14 @@ const ProjectDetail = () => {
           <Check className="h-3.5 w-3.5 text-emerald-600" />
           <span className="flex-1 truncate font-mono text-emerald-900">{`${window.location.origin}/share/project/${project.share_token}`}</span>
           <button onClick={copyShare} className="rounded-md border border-emerald-300 bg-white px-2 py-1 text-xs hover:bg-emerald-100">Copy</button>
+          <button
+            onClick={toggleGallery}
+            disabled={galleryToggling}
+            className={`rounded-md border px-2 py-1 text-xs ${project.is_public_gallery ? "border-brand/40 bg-brand/10 text-brand" : "border-emerald-300 bg-white hover:bg-emerald-100"}`}
+            title="Show this project in Rocket's public gallery"
+          >
+            {project.is_public_gallery ? "In gallery ✓" : "Add to gallery"}
+          </button>
         </div>
       )}
 

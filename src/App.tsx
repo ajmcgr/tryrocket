@@ -29,6 +29,7 @@ import Insights from "./pages/Insights.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import SharedAsset from "./pages/SharedAsset.tsx";
 import SharedProject from "./pages/SharedProject.tsx";
+import Gallery from "./pages/Gallery.tsx";
 import SettingsLayout, {
   ProfileSettings,
   IntegrationsSettings,
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route path="/share/asset/:token" element={<SharedAsset />} />
             <Route path="/share/project/:token" element={<SharedProject />} />
+            <Route path="/gallery" element={<Gallery />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/projects" element={<Dashboard />} />
               <Route path="/projects/new" element={<ProjectWizard />} />
