@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2, Zap, X } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2, Zap, X, RefreshCw } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 import { Logotype } from "@/components/Logotype";
@@ -43,6 +43,7 @@ const ProjectDetail = () => {
   const [zipping, setZipping] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [completionStatus, setCompletionStatus] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
+  const [completionErrors, setCompletionErrors] = useState<Record<string, string>>({});
   const [completePanelOpen, setCompletePanelOpen] = useState(false);
 
   const CORE_KIT: { type: string; label: string; prompt: (name: string, ctx: any) => string }[] = [
@@ -58,42 +59,72 @@ const ProjectDetail = () => {
     return CORE_KIT.filter(k => !have.has(k.type));
   };
 
-  const completeBrandKit = async () => {
-    if (!project || !user) return;
-    const missing = missingKit();
-    if (!missing.length) {
-      toast({ title: "Brand kit is complete", description: "All core brand assets already exist." });
-      return;
-    }
+  const runKitGeneration = async (targets: { type: string; label: string; prompt: (n: string, c: any) => string }[]) => {
+    if (!project || !user || !targets.length) return;
     setCompleting(true);
     setCompletePanelOpen(true);
-    const init: Record<string, "pending" | "running" | "done" | "error"> = {};
-    missing.forEach(k => (init[k.type] = "pending"));
-    setCompletionStatus(init);
+    setCompletionStatus(prev => {
+      const next = { ...prev };
+      targets.forEach(k => (next[k.type] = "pending"));
+      return next;
+    });
+    setCompletionErrors(prev => {
+      const next = { ...prev };
+      targets.forEach(k => { delete next[k.type]; });
+      return next;
+    });
 
     const name = project.name || "Brand";
     const ctx = project.brand_context || (project.source_url ? { url: project.source_url, productName: name } : null);
 
-    await Promise.all(missing.map(async (k) => {
+    await Promise.all(targets.map(async (k) => {
       setCompletionStatus(prev => ({ ...prev, [k.type]: "running" }));
       try {
-        const { data } = await supabase.functions.invoke("generate-asset", {
+        const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: k.prompt(name, ctx), asset_type: k.type, project_id: project.id, brand_context: ctx || undefined },
         });
+        if (error) throw error;
         const d: any = data;
-        if (d?.error === "no_credits" || d?.error || d?.refused) {
+        if (d?.error === "no_credits") {
           setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
+          setCompletionErrors(prev => ({ ...prev, [k.type]: "Out of credits" }));
+          return;
+        }
+        if (d?.error || d?.refused) {
+          setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
+          setCompletionErrors(prev => ({ ...prev, [k.type]: d?.message || d?.error || "Refused" }));
           return;
         }
         setCompletionStatus(prev => ({ ...prev, [k.type]: "done" }));
-      } catch {
+      } catch (e: any) {
         setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
+        setCompletionErrors(prev => ({ ...prev, [k.type]: e?.message || "Network error" }));
       }
     }));
 
     setCompleting(false);
     await load();
-    toast({ title: "Brand kit updated", description: "Core assets generated. Review in the Brand Kit tab." });
+  };
+
+  const completeBrandKit = async () => {
+    const missing = missingKit();
+    if (!missing.length) {
+      toast({ title: "Brand kit is complete", description: "All core brand assets already exist." });
+      return;
+    }
+    await runKitGeneration(missing);
+    toast({ title: "Brand kit updated", description: "Review results below — retry any that failed." });
+  };
+
+  const retryOne = async (type: string) => {
+    const k = CORE_KIT.find(x => x.type === type);
+    if (k) await runKitGeneration([k]);
+  };
+
+  const retryAllFailed = async () => {
+    const failed = Object.entries(completionStatus).filter(([, s]) => s === "error").map(([t]) => t);
+    const targets = CORE_KIT.filter(k => failed.includes(k.type));
+    if (targets.length) await runKitGeneration(targets);
   };
 
   useEffect(() => { if (id) setCollabs(loadCollaborators(id)); }, [id]);
