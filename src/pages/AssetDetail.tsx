@@ -112,6 +112,7 @@ const AssetDetail = () => {
       const err = handleAiError(data, error, toast);
       if (err?.kind === "no_credits") { setOutOfCredits({ needed: err.needed, remaining: err.remaining }); return; }
       if (err) return;
+      window.dispatchEvent(new Event("credits:refresh"));
       toast({ title: "Rebuilt as structured deliverable" });
       load();
     } catch (e: any) {
