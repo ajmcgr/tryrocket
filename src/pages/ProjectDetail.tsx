@@ -8,6 +8,7 @@ import { AssetGridSkeleton } from "@/components/Skeletons";
 import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 import { Logotype } from "@/components/Logotype";
 import { packAssetsZip } from "@/lib/exporters/zipPack";
+import { handleAiError } from "@/lib/aiErrors";
 const supabase = _sb as any;
 
 type WF = "brand" | "design" | "launch" | "promote" | "other";
