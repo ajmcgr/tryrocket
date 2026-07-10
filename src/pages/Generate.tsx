@@ -10,6 +10,7 @@ import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type B
 import { buildLogotypeVariants, pickLogotypeText } from "@/lib/logotype";
 import BrandContextStrip from "@/components/BrandContextStrip";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
+import { handleAiError } from "@/lib/aiErrors";
 
 const supabase = _sb as any;
 
