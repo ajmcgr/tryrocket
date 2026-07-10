@@ -22,6 +22,7 @@ import { tryJson } from "@/lib/assetSchemas";
 import RegenerateFeedbackBar from "@/components/RegenerateFeedbackBar";
 import { handleAiError } from "@/lib/aiErrors";
 import { track } from "@/lib/analytics";
+import CommentsPanel from "@/components/CommentsPanel";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -195,8 +196,10 @@ const AssetDetail = () => {
 
   const copy = () => { navigator.clipboard.writeText(asset.content || ""); toast({ title: "Copied" }); };
   const del = async () => {
-    if (!confirm("Delete this asset?")) return;
-    await supabase.from("assets").delete().eq("id", asset.id);
+    if (!confirm("Move this asset to Trash?")) return;
+    const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", asset.id);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Moved to Trash", description: "Restore anytime from /trash" });
     nav("/assets");
   };
 
@@ -578,6 +581,9 @@ const AssetDetail = () => {
       <OutOfCreditsModal open={!!outOfCredits} onClose={() => setOutOfCredits(null)} needed={outOfCredits?.needed} remaining={outOfCredits?.remaining} />
       <ShareExportModal open={shareOpen} onOpenChange={setShareOpen} asset={asset} onCreateShareLink={createShareLink} />
       <VersionHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} asset={asset} onRestored={load} />
+      <div className="mt-8">
+        <CommentsPanel assetId={asset.id} />
+      </div>
     </div>
   );
 };

@@ -20,6 +20,7 @@ import Presenter from "./pages/Presenter.tsx";
 import { Navigate } from "react-router-dom";
 import Assets from "./pages/Assets.tsx";
 import AssetDetail from "./pages/AssetDetail.tsx";
+import Trash from "./pages/Trash.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
@@ -95,6 +96,7 @@ const App = () => (
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/assets" element={<Assets />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
+              <Route path="/trash" element={<Trash />} />
               <Route path="/create" element={<Generate />} />
               <Route path="/editor" element={<Editor />} />
               <Route path="/editor/structured" element={<StructuredEditor />} />

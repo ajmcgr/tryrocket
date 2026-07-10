@@ -38,8 +38,8 @@ const Assets = () => {
     if (!user) return;
     setLoading(true);
     const [a, p] = await Promise.all([
-      supabase.from("assets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
-      supabase.from("projects").select("id,name").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+      supabase.from("assets").select("*").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(200),
+      supabase.from("projects").select("id,name").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(100),
     ]);
     const { data, error } = a;
     if (error) toast({ title: "Failed to load assets", description: error.message, variant: "destructive" });
@@ -90,20 +90,20 @@ const Assets = () => {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Delete this asset?")) return;
+    if (!confirm("Move this asset to Trash?")) return;
     setAssets(prev => prev.filter(a => a.id !== id));
-    await supabase.from("assets").delete().eq("id", id);
+    await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", id);
   };
 
   const bulkDelete = async () => {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    if (!confirm(`Delete ${ids.length} assets? This can't be undone.`)) return;
+    if (!confirm(`Move ${ids.length} assets to Trash? Restore anytime from /trash.`)) return;
     setAssets(prev => prev.filter(a => !selected.has(a.id)));
     clearSelection();
-    const { error } = await supabase.from("assets").delete().in("id", ids);
+    const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).in("id", ids);
     if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); load(); return; }
-    toast({ title: `Deleted ${ids.length} assets` });
+    toast({ title: `Moved ${ids.length} to Trash` });
   };
 
   const bulkAssignToProject = async (projectId: string | null) => {
@@ -144,6 +144,9 @@ const Assets = () => {
         <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
           <Plus className="h-4 w-4" /> New Asset
         </Link>
+      </div>
+      <div className="mt-2 text-xs">
+        <Link to="/trash" className="text-neutral-500 hover:text-neutral-800">View Trash →</Link>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">

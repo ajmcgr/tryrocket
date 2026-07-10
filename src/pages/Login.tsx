@@ -31,10 +31,11 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
     setLoading(true);
     try {
       if (isSignup) {
+        const ref = (() => { try { return new URLSearchParams(window.location.search).get("ref") || localStorage.getItem("rocket:ref") || undefined; } catch { return undefined; } })();
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { username: username.trim().replace(/^@/, "") } },
+          options: { data: { username: username.trim().replace(/^@/, ""), ref } },
         });
         if (error) throw error;
         // With Supabase "Confirm email" OFF (we verify ourselves via Resend), signUp returns a session.
