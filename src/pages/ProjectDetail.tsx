@@ -352,18 +352,49 @@ const ProjectDetail = () => {
         <div className="fixed bottom-6 right-6 z-50 w-80 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
             <div className="flex items-center gap-2 text-sm font-medium"><Zap className="h-4 w-4 text-brand" /> Completing brand kit</div>
-            <button onClick={() => setCompletePanelOpen(false)} className="rounded p-1 text-neutral-500 hover:bg-neutral-100"><X className="h-3.5 w-3.5" /></button>
+            <div className="flex items-center gap-1">
+              {!completing && Object.values(completionStatus).some(s => s === "error") && (
+                <button
+                  onClick={retryAllFailed}
+                  className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-[11px] hover:bg-neutral-50"
+                  title="Retry all failed"
+                >
+                  <RefreshCw className="h-3 w-3" /> Retry failed
+                </button>
+              )}
+              <button onClick={() => setCompletePanelOpen(false)} className="rounded p-1 text-neutral-500 hover:bg-neutral-100"><X className="h-3.5 w-3.5" /></button>
+            </div>
           </div>
           <div className="max-h-72 overflow-auto p-2">
             {Object.entries(completionStatus).map(([type, s]) => {
               const label = CORE_KIT.find(k => k.type === type)?.label || type;
               return (
-                <div key={type} className="flex items-center justify-between px-2 py-1.5 text-sm">
-                  <span className="truncate text-neutral-700">{label}</span>
-                  {s === "pending" && <span className="text-xs text-neutral-400">queued</span>}
-                  {s === "running" && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
-                  {s === "done" && <Check className="h-4 w-4 text-emerald-600" />}
-                  {s === "error" && <span className="text-xs text-red-600">failed</span>}
+                <div key={type} className="px-2 py-1.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="truncate text-neutral-700">{label}</span>
+                    <div className="flex items-center gap-1.5">
+                      {s === "pending" && <span className="text-xs text-neutral-400">queued</span>}
+                      {s === "running" && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
+                      {s === "done" && <Check className="h-4 w-4 text-emerald-600" />}
+                      {s === "error" && (
+                        <>
+                          <span className="text-xs text-red-600">failed</span>
+                          <button
+                            onClick={() => retryOne(type)}
+                            disabled={completing}
+                            className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] hover:bg-neutral-50 disabled:opacity-50"
+                          >
+                            <RefreshCw className="h-2.5 w-2.5" /> Retry
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {s === "error" && completionErrors[type] && (
+                    <div className="mt-0.5 truncate pr-2 text-[10px] text-red-500" title={completionErrors[type]}>
+                      {completionErrors[type]}
+                    </div>
+                  )}
                 </div>
               );
             })}
