@@ -6,6 +6,7 @@ import ChatsSidebar from "./ChatsSidebar";
 import ShareExportModal from "./ShareExportModal";
 import OnboardingTour from "./OnboardingTour";
 import NotificationsBell from "./NotificationsBell";
+import CommandPalette from "./CommandPalette";
 import { Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -84,6 +85,7 @@ const AppShell = () => {
         </div>
       </header>
       <OnboardingTour />
+      <CommandPalette />
       <ShareExportModal
         open={shareOpen}
         onOpenChange={setShareOpen}
