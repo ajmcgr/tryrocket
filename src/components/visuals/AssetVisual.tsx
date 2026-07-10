@@ -92,6 +92,8 @@ function ColorSystemView({ data }: { data: ColorSystem }) {
     <div className="space-y-6">
       {data.name && <div className="text-sm text-neutral-500">Palette: <span className="font-medium text-neutral-800">{data.name}</span></div>}
 
+      <ColorExportBar data={data} roleSwatches={roleSwatches} neutrals={neutrals} grads={grads} />
+
       <Page label="Brand Colors" title="Role swatches">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {roleSwatches.map((s) => <SwatchCard key={s.role} name={s.name} hex={s.hex!} role={s.name} />)}
