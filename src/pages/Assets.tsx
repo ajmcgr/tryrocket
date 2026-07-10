@@ -38,8 +38,8 @@ const Assets = () => {
     if (!user) return;
     setLoading(true);
     const [a, p] = await Promise.all([
-      supabase.from("assets").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
-      supabase.from("projects").select("id,name").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+      supabase.from("assets").select("*").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(200),
+      supabase.from("projects").select("id,name").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(100),
     ]);
     const { data, error } = a;
     if (error) toast({ title: "Failed to load assets", description: error.message, variant: "destructive" });
