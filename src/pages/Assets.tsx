@@ -126,7 +126,9 @@ const Assets = () => {
   const createProjectAndAssign = async (assetId: string) => {
     const name = window.prompt("New project name");
     if (!name?.trim() || !user) return;
-    const { data, error } = await supabase.from("projects").insert({ user_id: user.id, name: name.trim() }).select().single();
+    const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+    const workspace_id = await ensureActiveWorkspaceId();
+    const { data, error } = await supabase.from("projects").insert({ user_id: user.id, workspace_id, name: name.trim() } as any).select().single();
     if (error || !data) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); return; }
     setProjects(prev => [data, ...prev]);
     await assignToProject(assetId, data.id);

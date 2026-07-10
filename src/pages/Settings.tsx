@@ -10,6 +10,7 @@ const supabase = _sb as any;
 
 const TABS = [
   { to: "/settings/profile", label: "Profile" },
+  { to: "/settings/team", label: "Team" },
   { to: "/settings/integrations", label: "Integrations" },
   { to: "/settings/notifications", label: "Notifications" },
   { to: "/settings/account", label: "Account" },

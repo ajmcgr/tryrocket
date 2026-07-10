@@ -393,9 +393,11 @@ const Generate = () => {
         newChatId = chatId;
       } else {
         const title = p.length > 60 ? p.slice(0, 57) + "…" : p;
+        const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+        const workspace_id = await ensureActiveWorkspaceId();
         const { data: newChat, error: chatErr } = await supabase
           .from("chats")
-          .insert({ user_id: user!.id, title, prompt: p })
+          .insert({ user_id: user!.id, workspace_id, title, prompt: p } as any)
           .select("id")
           .single();
         if (chatErr) throw new Error(chatErr.message);
@@ -465,8 +467,11 @@ const Generate = () => {
           throw new Error("I need a brand name or URL to create a wordmark.");
         }
         const variants = buildLogotypeVariants(brandText, requestedCount(p, 6), sharedCtx?.colors?.[0], sharedCtx?.fonts || []);
+        const { ensureActiveWorkspaceId: _e2 } = await import("@/lib/workspace");
+        const _wid = await _e2();
         const rows = variants.map((state, i) => ({
           user_id: user!.id,
+          workspace_id: _wid,
           project_id: projectId || null,
           asset_type: "logo",
           title: variants.length > 1 ? `Logotype ${i + 1}` : "Logotype",
@@ -475,7 +480,7 @@ const Generate = () => {
           editor_state: state,
           meta: { brand_context: sharedCtx, kind: "logotype", variant: i + 1, of: variants.length },
         }));
-        const { data, error } = await supabase.from("assets").insert(rows).select("id");
+        const { data, error } = await supabase.from("assets").insert(rows as any).select("id");
         if (error) throw new Error(error.message);
         allIds = (data || []).map((row: any) => row.id);
       } else if (tpl || effective === "auto") {

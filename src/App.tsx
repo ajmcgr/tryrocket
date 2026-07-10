@@ -37,6 +37,8 @@ import SettingsLayout, {
   AccountSettings,
   BillingSettings,
 } from "./pages/Settings.tsx";
+import Team from "./pages/Team.tsx";
+import AcceptInvite from "./pages/AcceptInvite.tsx";
 import About from "./pages/About.tsx";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
@@ -81,6 +83,7 @@ const App = () => (
             <Route path="/share/asset/:token" element={<SharedAsset />} />
             <Route path="/share/project/:token" element={<SharedProject />} />
             <Route path="/gallery" element={<Gallery />} />
+            <Route path="/invite/:token" element={<AcceptInvite />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
               <Route path="/projects" element={<Dashboard />} />
               <Route path="/projects/new" element={<ProjectWizard />} />
@@ -102,6 +105,7 @@ const App = () => (
               <Route path="/settings" element={<SettingsLayout />}>
                 <Route index element={<Navigate to="/settings/profile" replace />} />
                 <Route path="profile" element={<ProfileSettings />} />
+                <Route path="team" element={<Team />} />
                 <Route path="integrations" element={<IntegrationsSettings />} />
                 <Route path="notifications" element={<NotificationsSettings />} />
                 <Route path="account" element={<AccountSettings />} />

@@ -204,8 +204,11 @@ const AssetDetail = () => {
     setDuplicating(true);
     try {
       const { id: _id, created_at: _c, updated_at: _u, share_token: _s, ...rest } = asset;
-      const insertRow = {
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const workspace_id = await ensureActiveWorkspaceId();
+      const insertRow: any = {
         ...rest,
+        workspace_id: workspace_id || (rest as any).workspace_id,
         title: `${asset.title || "Untitled"} (copy)`,
         share_token: null,
       };
