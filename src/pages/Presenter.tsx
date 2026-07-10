@@ -175,7 +175,7 @@ export default function Presenter() {
         `}</style>
         {slides.map((s, i) => (
           <div key={i} className="slide-print-page">
-            <SlideRenderer slide={s} index={i} total={total} brand={brand} />
+            <SlideRenderer slide={s} index={i} total={total} brand={brand} theme={theme} />
           </div>
         ))}
       </div>
