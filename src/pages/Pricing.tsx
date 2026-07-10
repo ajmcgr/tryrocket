@@ -1,8 +1,13 @@
-import { Link } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Check, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase as _sb } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
+const supabase = _sb as any;
 
 const OUTPUT_TYPES = [
   "Brand Guidelines",
@@ -19,6 +24,27 @@ const OUTPUT_TYPES = [
 ];
 
 const Pricing = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const startCheckout = async (product: string) => {
+    if (!user) {
+      navigate(`/signup?next=${encodeURIComponent(`/pricing?buy=${product}`)}`);
+      return;
+    }
+    setLoading(product);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe-checkout", { body: { product } });
+      if (error) throw error;
+      if ((data as any)?.url) window.location.href = (data as any).url;
+    } catch (e: any) {
+      toast({ title: "Checkout failed", description: e.message, variant: "destructive" });
+      setLoading(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-neutral-900 antialiased">
       <SiteHeader />
