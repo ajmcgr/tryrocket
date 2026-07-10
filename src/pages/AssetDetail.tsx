@@ -19,6 +19,8 @@ import BrandContextStrip from "@/components/BrandContextStrip";
 import RelatedVariantsGrid from "@/components/RelatedVariantsGrid";
 import ImageSetGallery from "@/components/visuals/ImageSetGallery";
 import { tryJson } from "@/lib/assetSchemas";
+import RegenerateFeedbackBar from "@/components/RegenerateFeedbackBar";
+import { handleAiError } from "@/lib/aiErrors";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -107,10 +109,9 @@ const AssetDetail = () => {
       const { data, error } = await supabase.functions.invoke("regenerate-asset", {
         body: { asset_id: asset.id, instruction },
       });
-      if (error) throw error;
-      const d: any = data;
-      if (d?.error === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); return; }
-      if (d?.error) { toast({ title: "Rebuild failed", description: d.message || d.error, variant: "destructive" }); return; }
+      const err = handleAiError(data, error, toast);
+      if (err?.kind === "no_credits") { setOutOfCredits({ needed: err.needed, remaining: err.remaining }); return; }
+      if (err) return;
       toast({ title: "Rebuilt as structured deliverable" });
       load();
     } catch (e: any) {
@@ -385,6 +386,14 @@ const AssetDetail = () => {
         ? <RelatedVariantsGrid asset={asset} />
         : <ImageSetGallery asset={asset} />
       )}
+
+      <div className="mb-4">
+        <RegenerateFeedbackBar
+          asset={asset}
+          onDone={load}
+          onNoCredits={(info) => setOutOfCredits(info)}
+        />
+      </div>
 
       {needsRebuild && (
         <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3">

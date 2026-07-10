@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import BrandContextStrip from "@/components/BrandContextStrip";
 import { tryJson } from "@/lib/assetSchemas";
+import { AlertTriangle, Sparkles } from "lucide-react";
+import { handleAiError } from "@/lib/aiErrors";
 const supabase = _sb as any;
 
 /* ------------------------------------------------------------------ */
@@ -269,6 +271,8 @@ export default function StructuredEditor() {
   const [data, setData] = useState<any>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [parseError, setParseError] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
   const initialContent = useRef<string>("");
 
   useEffect(() => {
@@ -286,10 +290,12 @@ export default function StructuredEditor() {
         nav(`/editor?id=${a.id}`, { replace: true });
         return;
       }
-      const parsed = tryJson(a.content) ?? {};
+      const raw = String(a.content || "");
+      const parsed = tryJson(raw);
+      setParseError(!!raw && parsed == null);
       setAsset(a);
-      setData(parsed);
-      initialContent.current = String(a.content || "");
+      setData(parsed ?? {});
+      initialContent.current = raw;
       setLoading(false);
     })();
   }, [assetId, nav, toast]);
@@ -351,6 +357,26 @@ export default function StructuredEditor() {
   if (!asset || !previewAsset) return null;
 
   const groups = groupedFields(asset.asset_type, data);
+  const isEmpty = !data || Object.keys(data || {}).length === 0;
+
+  const rebuildStructured = async () => {
+    setRebuilding(true);
+    try {
+      const instruction = `Regenerate this ${asset.asset_type.replace(/_/g, " ")} and return STRICT JSON ONLY that matches Rocket's schema. No markdown fences, no preamble.`;
+      const { data: res, error } = await supabase.functions.invoke("regenerate-asset", {
+        body: { asset_id: asset.id, instruction },
+      });
+      const err = handleAiError(res, error, toast);
+      if (err) return;
+      const parsed = tryJson((res as any)?.content) ?? {};
+      setParseError(false);
+      setData(parsed);
+      initialContent.current = String((res as any)?.content || "");
+      toast({ title: "Rebuilt", description: "Rocket generated a fresh structured version." });
+    } finally {
+      setRebuilding(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
@@ -397,7 +423,31 @@ export default function StructuredEditor() {
             <div className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] text-neutral-600">{asset.asset_type}</div>
           </div>
           <div className="min-h-[480px]">
-            <AssetVisual asset={previewAsset} />
+            {parseError ? (
+              <div className="flex h-[480px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-amber-300 bg-amber-50/50 p-8 text-center">
+                <AlertTriangle className="h-8 w-8 text-amber-500" />
+                <div className="text-sm font-semibold text-amber-900">This asset couldn't be parsed as structured data.</div>
+                <div className="max-w-sm text-xs text-amber-800/80">
+                  The saved content isn't valid JSON, so Rocket can't render the designed layout or edit its fields. You can rebuild it as a fresh structured version.
+                </div>
+                <button
+                  onClick={rebuildStructured}
+                  disabled={rebuilding}
+                  className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+                >
+                  {rebuilding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} Rebuild as structured
+                </button>
+                <Link to={`/editor?id=${asset.id}`} className="text-[11px] text-neutral-500 underline hover:text-neutral-700">or edit raw content →</Link>
+              </div>
+            ) : isEmpty ? (
+              <div className="flex h-[480px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
+                <Sparkles className="h-8 w-8 text-neutral-400" />
+                <div className="text-sm font-semibold text-neutral-800">Nothing here yet.</div>
+                <div className="max-w-sm text-xs text-neutral-500">Add fields on the right — the preview will update live as you type.</div>
+              </div>
+            ) : (
+              <AssetVisual asset={previewAsset} />
+            )}
           </div>
         </div>
 
@@ -409,7 +459,19 @@ export default function StructuredEditor() {
             <p className="mt-0.5 text-[11px] text-neutral-500">Changes autosave. The preview on the left updates as you type.</p>
           </div>
           <div className="divide-y divide-neutral-100">
-            {groups.map((g, gi) => {
+            {groups.length === 0 ? (
+              <div className="px-4 py-8 text-center text-xs text-neutral-500">
+                No fields to edit yet.
+                <div className="mt-2">
+                  <button
+                    onClick={() => setData({ title: asset.title || "" })}
+                    className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] hover:bg-neutral-50"
+                  >
+                    + Add a starter field
+                  </button>
+                </div>
+              </div>
+            ) : groups.map((g, gi) => {
               const open = openSection === g.title || (openSection === null && gi === 0);
               return (
                 <div key={g.title}>
@@ -421,7 +483,9 @@ export default function StructuredEditor() {
                     <span className="text-sm font-medium text-neutral-900">{g.title}</span>
                     <span className="text-xs text-neutral-400">{open ? "–" : "+"}</span>
                   </button>
-                  {open && (
+                  {open && g.entries.length === 0 ? (
+                    <div className="border-t border-neutral-100 bg-neutral-50/40 px-4 py-4 text-xs text-neutral-500">No fields in this section.</div>
+                  ) : open && (
                     <div className="space-y-4 border-t border-neutral-100 bg-neutral-50/40 px-4 py-4">
                       {g.entries.map(([k, v]) => (
                         <AnyField

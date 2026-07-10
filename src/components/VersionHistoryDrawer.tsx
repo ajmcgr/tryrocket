@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { X, RotateCcw, Save, Trash2, Pencil, Check, Loader2, Clock } from "lucide-react";
+import { diffLines } from "@/lib/aiErrors";
 const supabase = _sb as any;
 
 type Snapshot = { editor_state?: any; content?: string | null; image_url?: string | null; title?: string | null };
@@ -31,12 +32,47 @@ const SnapshotView = ({ snap, fallbackTitle }: { snap: Snapshot; fallbackTitle?:
   </div>
 );
 
+const DiffView = ({ before, after }: { before: string; after: string }) => {
+  const segs = diffLines(before, after);
+  const adds = segs.filter(s => s.type === "add").length;
+  const dels = segs.filter(s => s.type === "del").length;
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white">
+      <div className="flex items-center justify-between border-b border-neutral-100 px-3 py-2 text-xs">
+        <span className="font-medium text-neutral-700">Changes</span>
+        <span className="text-[10px]">
+          <span className="mr-2 text-emerald-600">+{adds}</span>
+          <span className="text-red-600">−{dels}</span>
+        </span>
+      </div>
+      <div className="flex-1 overflow-auto p-3 font-mono text-[11px] leading-relaxed">
+        {segs.length === 0 ? (
+          <div className="text-neutral-400">(no differences)</div>
+        ) : segs.map((s, i) => (
+          <div
+            key={i}
+            className={
+              s.type === "add" ? "bg-emerald-50 text-emerald-800 px-2 border-l-2 border-emerald-400"
+              : s.type === "del" ? "bg-red-50 text-red-800 px-2 border-l-2 border-red-400 line-through decoration-red-300/70"
+              : "text-neutral-600 px-2 border-l-2 border-transparent"
+            }
+          >
+            <span className="mr-1 text-neutral-400 select-none">{s.type === "add" ? "+" : s.type === "del" ? "−" : " "}</span>
+            {s.text || " "}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const VersionHistoryDrawer = ({ open, onClose, asset, onRestored }: Props) => {
   const { toast } = useToast();
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [compare, setCompare] = useState(true);
+  const [showDiff, setShowDiff] = useState(false);
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -122,6 +158,9 @@ const VersionHistoryDrawer = ({ open, onClose, asset, onRestored }: Props) => {
             <label className="flex items-center gap-1.5 text-xs text-neutral-600">
               <input type="checkbox" checked={compare} onChange={e => setCompare(e.target.checked)} /> Compare with current
             </label>
+            <label className="flex items-center gap-1.5 text-xs text-neutral-600">
+              <input type="checkbox" checked={showDiff} onChange={e => setShowDiff(e.target.checked)} disabled={!compare} /> Diff view
+            </label>
             <button onClick={saveCurrent} disabled={busy === "save"} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs hover:bg-neutral-50 disabled:opacity-50">
               {busy === "save" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save current as version
             </button>
@@ -180,6 +219,14 @@ const VersionHistoryDrawer = ({ open, onClose, asset, onRestored }: Props) => {
                   </button>
                 </div>
                 <div className={`flex-1 overflow-hidden grid gap-3 ${compare ? "grid-cols-2" : "grid-cols-1"}`}>
+                  {compare && showDiff && !currentSnap.image_url && !selected.snapshot.image_url ? (
+                    <div className="col-span-2 flex flex-col overflow-hidden">
+                      <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-500">Diff · this version → current</div>
+                      <div className="flex-1 overflow-hidden">
+                        <DiffView before={selected.snapshot.content || ""} after={currentSnap.content || ""} />
+                      </div>
+                    </div>
+                  ) : (<>
                   {compare && (
                     <div className="flex flex-col overflow-hidden">
                       <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-500">Current</div>
@@ -190,6 +237,7 @@ const VersionHistoryDrawer = ({ open, onClose, asset, onRestored }: Props) => {
                     <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-500">{compare ? "This version" : selected.label || "Snapshot"}</div>
                     <div className="flex-1 overflow-hidden"><SnapshotView snap={selected.snapshot} /></div>
                   </div>
+                  </>)}
                 </div>
               </>
             )}
