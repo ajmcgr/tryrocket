@@ -122,8 +122,21 @@ export default function BrandContextStrip({
                 </div>
               )}
               {ctx.competitors?.length ? (
-                <div>
-                  <span className="text-neutral-400">Competitors:</span> {ctx.competitors.slice(0, 4).join(" · ")}
+                <div className="mt-1 rounded-md border border-amber-100 bg-amber-50/60 px-2 py-1.5">
+                  <div className="mb-0.5 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-amber-700">
+                    Don't sound like
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {ctx.competitors.slice(0, 6).map((c: string) => (
+                      <span
+                        key={c}
+                        className="rounded-full border border-amber-200 bg-white px-1.5 py-0.5 text-[9px] text-amber-800"
+                        title="Avoid mirroring this competitor's voice"
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </div>
