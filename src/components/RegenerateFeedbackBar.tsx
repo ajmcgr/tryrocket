@@ -41,6 +41,7 @@ export default function RegenerateFeedbackBar({ asset, onDone, onNoCredits }: Pr
       const err = handleAiError(data, error, toast);
       if (err?.kind === "no_credits") { onNoCredits({ needed: err.needed, remaining: err.remaining }); return; }
       if (err) return;
+      window.dispatchEvent(new Event("credits:refresh"));
       toast({ title: "Regenerated", description: "Rocket applied your feedback. Previous version saved." });
       setFeedback("");
       onDone();
