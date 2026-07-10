@@ -4,6 +4,7 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logotype } from "@/components/Logotype";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 const SharedProject = () => {
   const { token } = useParams();
@@ -30,9 +31,11 @@ const SharedProject = () => {
   if (!data?.project) return <div className="p-10 text-center text-sm text-neutral-500">This share link is invalid or has been disabled.</div>;
 
   const { project, assets = [] } = data;
+  const cover = assets.find((a: any) => a.image_url)?.image_url || project?.brand_context?.logo || project?.brand_context?.screenshot || null;
 
   return (
     <div className="min-h-screen bg-neutral-50">
+      <MetaHead title={`${project.name} · Brand Kit`} description={project.description || "A brand kit built with Rocket."} image={cover} />
       <header className="border-b border-neutral-200 bg-white px-6 py-4">
         <Link to="/" className="text-sm font-semibold tracking-tight">Rocket</Link>
       </header>
@@ -67,3 +70,8 @@ const SharedProject = () => {
 };
 
 export default SharedProject;
+
+function MetaHead({ title, description, image }: { title: string; description: string; image: string | null }) {
+  useDocumentMeta({ title, description, image });
+  return null;
+}
