@@ -528,6 +528,7 @@ const Generate = () => {
       // Link generated assets to this chat
       await supabase.from("assets").update({ chat_id: newChatId, prompt: p }).in("id", allIds);
       window.dispatchEvent(new Event("chats:refresh"));
+      window.dispatchEvent(new Event("credits:refresh"));
       setPrompt("");
       if (chatId) {
         // Already in this chat — refresh assets in place so the new prompt appears in history.
