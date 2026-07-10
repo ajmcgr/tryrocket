@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save, FileCode, Play } from "lucide-react";
+import { ArrowLeft, Copy, Download, Edit3, History, Share2, Trash2, RotateCcw, Check, Wand2, Loader2, Pencil, X, Save, FileCode, Play, Files } from "lucide-react";
 import { imageUrlToSvg, downloadSvg } from "@/lib/vectorize";
 const supabase = _sb as any;
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
@@ -64,6 +64,7 @@ const AssetDetail = () => {
   const [savingEdit, setSavingEdit] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -163,6 +164,24 @@ const AssetDetail = () => {
     if (!confirm("Delete this asset?")) return;
     await supabase.from("assets").delete().eq("id", asset.id);
     nav("/assets");
+  };
+
+  const duplicate = async () => {
+    setDuplicating(true);
+    try {
+      const { id: _id, created_at: _c, updated_at: _u, share_token: _s, ...rest } = asset;
+      const insertRow = {
+        ...rest,
+        title: `${asset.title || "Untitled"} (copy)`,
+        share_token: null,
+      };
+      const { data, error } = await supabase.from("assets").insert(insertRow).select("id").maybeSingle();
+      if (error) { toast({ title: "Duplicate failed", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Duplicated" });
+      if (data?.id) nav(`/assets/${data.id}`);
+    } finally {
+      setDuplicating(false);
+    }
   };
 
   const toggleShare = async () => {
@@ -321,6 +340,9 @@ const AssetDetail = () => {
           )}
           <button onClick={del} className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-3 py-2 text-sm text-red-600 hover:bg-red-50">
             <Trash2 className="h-4 w-4" />
+          </button>
+          <button onClick={duplicate} disabled={duplicating} title="Duplicate as new asset" className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50">
+            {duplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Files className="h-4 w-4" />}
           </button>
         </div>
       </div>
