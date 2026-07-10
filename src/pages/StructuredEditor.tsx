@@ -368,6 +368,7 @@ export default function StructuredEditor() {
       });
       const err = handleAiError(res, error, toast);
       if (err) return;
+      window.dispatchEvent(new Event("credits:refresh"));
       const parsed = tryJson((res as any)?.content) ?? {};
       setParseError(false);
       setData(parsed);
