@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import BrandContextStrip from "@/components/BrandContextStrip";
 import { Maximize2, Minimize2 } from "lucide-react";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 const supabase = _sb as any;
 
 const SharedAsset = () => {
@@ -49,6 +50,13 @@ const SharedAsset = () => {
 
   const visual = hasVisualRenderer(asset);
   const isPresentation = asset.asset_type === "presentation";
+  const ctx = asset?.meta?.brand_context || {};
+  const metaDesc = ctx.oneLiner || ctx.tagline || ctx.positioning || (asset.content ? String(asset.content).slice(0, 160) : "Made with Rocket");
+  useDocumentMeta({
+    title: `${asset.title} · ${ctx.productName || "Rocket"}`,
+    description: metaDesc,
+    image: asset.image_url || ctx.logo || ctx.screenshot || null,
+  });
 
   return (
     <div className="min-h-screen bg-neutral-50">
