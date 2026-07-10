@@ -7,6 +7,7 @@ import SlideRenderer, { SLIDE_THEMES } from "@/components/slides/SlideRenderer";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Grid3x3, Maximize2, Minimize2, X,
   Download, StickyNote, Loader2, GripVertical, Palette, Copy, Trash2, Keyboard,
+  Plus,
 } from "lucide-react";
 import { exportAsset } from "@/lib/exporters";
 import { toast } from "@/hooks/use-toast";
@@ -117,6 +118,22 @@ export default function Presenter() {
     await persistSlides(copy);
     if (at < idx) setSlide(idx - 1);
     else if (at === idx) setSlide(Math.min(idx, copy.length - 1));
+  };
+
+  const addSlide = async (at?: number) => {
+    if (!data) return;
+    const insertAt = typeof at === "number" ? at : slides.length;
+    const blank: any = {
+      title: "Untitled slide",
+      purpose: "",
+      bullets: [],
+      notes: "",
+      layout: "title-bullets",
+    };
+    const copy = slides.slice();
+    copy.splice(insertAt, 0, blank);
+    await persistSlides(copy);
+    setSlide(insertAt);
   };
 
   const doExport = async (format: "pdf" | "pptx") => {
@@ -401,12 +418,20 @@ export default function Presenter() {
               <div className="text-[11px] text-white/50">Drag cards to reorder</div>
               {savingOrder && <Loader2 className="h-3 w-3 animate-spin text-white/50" />}
             </div>
-            <button
-              onClick={() => setGridOpen(false)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
-            >
-              <X className="h-3.5 w-3.5" /> Close
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => addSlide()}
+                className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/15 px-3 py-1.5 text-xs text-white hover:bg-brand/25"
+              >
+                <Plus className="h-3.5 w-3.5" /> New slide
+              </button>
+              <button
+                onClick={() => setGridOpen(false)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+              >
+                <X className="h-3.5 w-3.5" /> Close
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4 p-6 md:grid-cols-3 lg:grid-cols-4">
             {slides.map((s, i) => (
