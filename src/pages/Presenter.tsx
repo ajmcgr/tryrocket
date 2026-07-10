@@ -3,10 +3,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { tryJson, type PresentationData } from "@/lib/assetSchemas";
 import ScaledSlide, { SlideStage } from "@/components/slides/ScaledSlide";
-import SlideRenderer from "@/components/slides/SlideRenderer";
+import SlideRenderer, { SLIDE_THEMES } from "@/components/slides/SlideRenderer";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Grid3x3, Maximize2, Minimize2, X,
-  Download, StickyNote, Loader2, GripVertical,
+  Download, StickyNote, Loader2, GripVertical, Palette,
 } from "lucide-react";
 import { exportAsset } from "@/lib/exporters";
 import { toast } from "@/hooks/use-toast";
@@ -27,6 +27,8 @@ export default function Presenter() {
   const [savingOrder, setSavingOrder] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [exporting, setExporting] = useState<"pdf" | "pptx" | null>(null);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [savingTheme, setSavingTheme] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -49,6 +51,20 @@ export default function Presenter() {
     const ctx = asset?.meta?.brand_context || {};
     return { name: ctx.productName || asset?.title, primary: ctx.colors?.[0] };
   }, [asset]);
+
+  const themeKey: string = asset?.meta?.presentation_theme || "default";
+  const theme = SLIDE_THEMES[themeKey] || SLIDE_THEMES.default;
+
+  const applyTheme = async (key: string) => {
+    if (!asset) return;
+    const nextMeta = { ...(asset.meta || {}), presentation_theme: key };
+    setAsset({ ...asset, meta: nextMeta });
+    setThemeOpen(false);
+    setSavingTheme(true);
+    const { error } = await supabase.from("assets").update({ meta: nextMeta }).eq("id", asset.id);
+    setSavingTheme(false);
+    if (error) toast({ title: "Could not save theme", description: error.message, variant: "destructive" });
+  };
 
   const setSlide = (n: number) => {
     const bounded = Math.max(0, Math.min(total - 1, n));
