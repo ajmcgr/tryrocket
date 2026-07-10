@@ -84,7 +84,7 @@ const Pricing = () => {
                 </div>
               </div>
               <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to="/signup">Sign up free</Link>
+                <Link to={user ? "/projects" : "/signup"}>{user ? "Go to projects" : "Sign up free"}</Link>
               </Button>
             </div>
 
@@ -124,8 +124,12 @@ const Pricing = () => {
                   ))}
                 </div>
               </div>
-              <Button asChild className="mt-8 w-full">
-                <Link to="/signup">Start free trial</Link>
+              <Button
+                onClick={() => startCheckout("growth")}
+                disabled={loading === "growth"}
+                className="mt-8 w-full"
+              >
+                {loading === "growth" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start free trial"}
               </Button>
             </div>
           </div>
@@ -138,17 +142,26 @@ const Pricing = () => {
             </div>
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
               {[
-                { credits: "500", price: "$5", note: "Starter pack" },
-                { credits: "1,500", price: "$10", note: "Most popular", highlight: true },
-                { credits: "5,000", price: "$25", note: "Best value" },
+                { id: "pack_500", credits: "500", price: "$5", note: "Starter pack" },
+                { id: "pack_1500", credits: "1,500", price: "$10", note: "Most popular", highlight: true },
+                { id: "pack_5000", credits: "5,000", price: "$25", note: "Best value" },
               ].map((p) => (
-                <div key={p.credits} className={`rounded-2xl border p-6 ${p.highlight ? "border-brand bg-brand/5" : "border-neutral-200 bg-white"}`}>
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => startCheckout(p.id)}
+                  disabled={loading === p.id}
+                  className={`rounded-2xl border p-6 text-left transition hover:shadow-sm disabled:opacity-60 ${p.highlight ? "border-brand bg-brand/5 hover:bg-brand/10" : "border-neutral-200 bg-white hover:border-neutral-300"}`}
+                >
                   <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">{p.note}</div>
                   <div className="mt-2 flex items-baseline gap-1">
                     <span className="text-4xl font-semibold tracking-tight">{p.price}</span>
                   </div>
-                  <div className="mt-1 text-sm font-medium text-neutral-900">{p.credits} credits</div>
-                </div>
+                  <div className="mt-1 flex items-center gap-2 text-sm font-medium text-neutral-900">
+                    {loading === p.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    {p.credits} credits
+                  </div>
+                </button>
               ))}
             </div>
           </div>
