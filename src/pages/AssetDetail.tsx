@@ -241,12 +241,14 @@ const AssetDetail = () => {
     setVarying(true);
     try {
       const variationPrompt = `${asset.prompt || asset.title} — variation: ${instruction}`;
-      const { data } = await supabase.functions.invoke("generate-asset", {
+      const { data, error } = await supabase.functions.invoke("generate-asset", {
         body: { prompt: variationPrompt, asset_type: asset.asset_type, project_id: asset.project_id || undefined, count: 1 },
       });
       const d: any = data;
-      if (d?.error === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); return; }
-      if (d?.error) { toast({ title: "Failed", description: d.message || d.error, variant: "destructive" }); return; }
+      const aiErr = handleAiError(d, error, toast);
+      if (aiErr?.kind === "no_credits") { setOutOfCredits({ needed: aiErr.needed, remaining: aiErr.remaining }); return; }
+      if (aiErr) return;
+      window.dispatchEvent(new Event("credits:refresh"));
       const newId = d?.asset_ids?.[0];
       if (newId) { toast({ title: "Variation created" }); setVaryOpen(false); setTweak(""); nav(`/assets/${newId}`); }
     } catch (e: any) {
