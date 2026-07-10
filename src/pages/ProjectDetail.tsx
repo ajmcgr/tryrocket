@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2, Zap, X } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 import { Logotype } from "@/components/Logotype";
@@ -41,6 +41,60 @@ const ProjectDetail = () => {
   const [collabOpen, setCollabOpen] = useState(false);
   const [collabs, setCollabs] = useState<Collaborator[]>([]);
   const [zipping, setZipping] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [completionStatus, setCompletionStatus] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
+  const [completePanelOpen, setCompletePanelOpen] = useState(false);
+
+  const CORE_KIT: { type: string; label: string; prompt: (name: string, ctx: any) => string }[] = [
+    { type: "logo", label: "Logotype", prompt: (n, c) => `A polished text-based logotype for ${n}${c?.url ? ` (${c.url})` : ""}. ${c?.tagline || c?.description || ""}` },
+    { type: "color_system", label: "Color system", prompt: (n, c) => `A cohesive color system for ${n}. ${c?.description || c?.tagline || ""}` },
+    { type: "font_system", label: "Font system", prompt: (n, c) => `A font pairing (heading + body) for ${n}. ${c?.tagline || ""}` },
+    { type: "brand_voice", label: "Brand voice", prompt: (n, c) => `Brand voice and tone guidelines for ${n}. ${c?.description || ""}` },
+    { type: "brand_guidelines", label: "Brand guidelines", prompt: (n, c) => `Brand guidelines overview for ${n}. ${c?.description || ""}` },
+  ];
+
+  const missingKit = () => {
+    const have = new Set(assets.map((a: any) => a.asset_type));
+    return CORE_KIT.filter(k => !have.has(k.type));
+  };
+
+  const completeBrandKit = async () => {
+    if (!project || !user) return;
+    const missing = missingKit();
+    if (!missing.length) {
+      toast({ title: "Brand kit is complete", description: "All core brand assets already exist." });
+      return;
+    }
+    setCompleting(true);
+    setCompletePanelOpen(true);
+    const init: Record<string, "pending" | "running" | "done" | "error"> = {};
+    missing.forEach(k => (init[k.type] = "pending"));
+    setCompletionStatus(init);
+
+    const name = project.name || "Brand";
+    const ctx = project.brand_context || (project.source_url ? { url: project.source_url, productName: name } : null);
+
+    await Promise.all(missing.map(async (k) => {
+      setCompletionStatus(prev => ({ ...prev, [k.type]: "running" }));
+      try {
+        const { data } = await supabase.functions.invoke("generate-asset", {
+          body: { prompt: k.prompt(name, ctx), asset_type: k.type, project_id: project.id, brand_context: ctx || undefined },
+        });
+        const d: any = data;
+        if (d?.error === "no_credits" || d?.error || d?.refused) {
+          setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
+          return;
+        }
+        setCompletionStatus(prev => ({ ...prev, [k.type]: "done" }));
+      } catch {
+        setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
+      }
+    }));
+
+    setCompleting(false);
+    await load();
+    toast({ title: "Brand kit updated", description: "Core assets generated. Review in the Brand Kit tab." });
+  };
 
   useEffect(() => { if (id) setCollabs(loadCollaborators(id)); }, [id]);
 
@@ -149,6 +203,18 @@ const ProjectDetail = () => {
           <button onClick={downloadPack} disabled={zipping || assets.length === 0} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50">
             {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download pack
           </button>
+          {missingKit().length > 0 && (
+            <button
+              onClick={completeBrandKit}
+              disabled={completing}
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/15 disabled:opacity-50"
+              title={`Generate ${missingKit().length} missing brand asset${missingKit().length === 1 ? "" : "s"}`}
+            >
+              {completing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+              Complete brand kit
+              <span className="ml-1 rounded-full bg-brand/20 px-1.5 text-[10px]">{missingKit().length}</span>
+            </button>
+          )}
           <div className="relative">
             <button onClick={() => setShowRun(v => !v)} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Plus className="h-4 w-4" /> Run workflow</button>
             {showRun && (
