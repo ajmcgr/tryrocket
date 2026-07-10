@@ -45,6 +45,68 @@ function ParagraphBlock({ text }: { text: string }) {
 }
 
 /* ============================== COLOR SYSTEM ============================== */
+function downloadText(filename: string, text: string, mime = "text/plain") {
+  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function slug(s: string) {
+  return (s || "brand").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function ColorExportBar({
+  data, roleSwatches, neutrals, grads,
+}: {
+  data: ColorSystem;
+  roleSwatches: { name: string; hex?: string; role: string }[];
+  neutrals: [string, string][];
+  grads: NonNullable<ColorSystem["gradients"]>;
+}) {
+  const base = slug(data.name || "brand");
+  const allHex = [
+    ...roleSwatches.filter(s => s.hex).map(s => `${s.role}: ${s.hex!.toUpperCase()}`),
+    ...neutrals.map(([k, hex]) => `neutral-${k}: ${hex.toUpperCase()}`),
+  ].join("\n");
+  const cssVars = [
+    ":root {",
+    ...roleSwatches.filter(s => s.hex).map(s => `  --color-${s.role}: ${s.hex!.toUpperCase()};`),
+    ...neutrals.map(([k, hex]) => `  --color-neutral-${k}: ${hex.toUpperCase()};`),
+    ...grads.map((g, i) => `  --gradient-${slug(g.name || `g${i + 1}`)}: linear-gradient(${g.angle ?? 135}deg, ${g.from}, ${g.to});`),
+    "}",
+  ].join("\n");
+  const tw = [
+    "// tailwind.config.js — extend.colors",
+    "module.exports = {",
+    "  theme: { extend: { colors: {",
+    ...roleSwatches.filter(s => s.hex).map(s => `      ${s.role}: '${s.hex!.toUpperCase()}',`),
+    neutrals.length ? `      neutral: {\n${neutrals.map(([k, hex]) => `        ${k.replace(/[^a-z0-9]/gi, "")}: '${hex.toUpperCase()}',`).join("\n")}\n      },` : "",
+    "  } } }",
+    "};",
+  ].filter(Boolean).join("\n");
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/70 px-3 py-2">
+      <span className="text-[11px] uppercase tracking-wider text-neutral-500">Export</span>
+      <CopyBtn text={allHex} label="Copy all hex" />
+      <button
+        onClick={() => downloadText(`${base}-colors.css`, cssVars, "text/css")}
+        className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] text-neutral-600 hover:bg-neutral-50"
+      >CSS variables</button>
+      <button
+        onClick={() => downloadText(`${base}-tailwind.js`, tw, "text/javascript")}
+        className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] text-neutral-600 hover:bg-neutral-50"
+      >Tailwind config</button>
+      <button
+        onClick={() => downloadText(`${base}-colors.json`, JSON.stringify(data, null, 2), "application/json")}
+        className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] text-neutral-600 hover:bg-neutral-50"
+      >JSON</button>
+    </div>
+  );
+}
+
 function SwatchCard({ name, hex, role }: { name: string; hex: string; role?: string }) {
   const rgb = hexToRgb(hex);
   const hsl = rgb ? rgbToHsl(rgb.r, rgb.g, rgb.b) : null;
