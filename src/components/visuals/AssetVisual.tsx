@@ -267,6 +267,7 @@ function FontSystemView({ data }: { data: FontSystem }) {
 
   return (
     <div className="space-y-6">
+      <FontExportBar data={data} display={display} heading={heading} body={body} mono={mono} />
       <Page label="Specimen" title="Typography system">
         <div className="rounded-xl bg-neutral-50 p-6">
           <div className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">{display} · Display</div>
