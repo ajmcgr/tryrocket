@@ -203,7 +203,7 @@ const Index = () => {
             Make Your Product a Brand
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
-            Create or evolve your brand, plus logos, brand guidelines, graphics, templates, and launch-ready assets.
+            Create or evolve your brand, plus logos, brand guidelines, graphics, templates, and launch-ready creative assets.
           </p>
           <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl">
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
