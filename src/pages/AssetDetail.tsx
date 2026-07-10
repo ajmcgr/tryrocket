@@ -21,6 +21,7 @@ import ImageSetGallery from "@/components/visuals/ImageSetGallery";
 import { tryJson } from "@/lib/assetSchemas";
 import RegenerateFeedbackBar from "@/components/RegenerateFeedbackBar";
 import { handleAiError } from "@/lib/aiErrors";
+import { track } from "@/lib/analytics";
 
 const VARIATION_PRESETS = ["Bolder", "More minimal", "Friendlier tone", "More technical", "Different color direction", "Tighter / shorter"];
 
@@ -225,6 +226,7 @@ const AssetDetail = () => {
     } else {
       const token = crypto.randomUUID();
       await supabase.from("assets").update({ share_token: token }).eq("id", asset.id);
+      track("asset_shared", { asset_id: asset.id, asset_type: asset.asset_type });
     }
     await load();
     setSharing(false);
@@ -236,6 +238,7 @@ const AssetDetail = () => {
     const { error } = await supabase.from("assets").update({ share_token: token }).eq("id", asset.id);
     if (error) return null;
     await load();
+    track("asset_shared", { asset_id: asset.id, asset_type: asset.asset_type });
     return `${window.location.origin}/share/asset/${token}`;
   };
 
