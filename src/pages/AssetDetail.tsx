@@ -12,6 +12,7 @@ import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogotypeEditor } from "@/components/LogotypeEditor";
 import { isLogotype, pickLogotypeText, type LogotypeState } from "@/lib/logotype";
+import LogotypeExportBar from "@/components/LogotypeExportBar";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import BrandContextStrip from "@/components/BrandContextStrip";
 import RelatedVariantsGrid from "@/components/RelatedVariantsGrid";
@@ -377,12 +378,15 @@ const AssetDetail = () => {
 
       <div className="grid gap-6">
         {isLogo ? (
-          <LogotypeEditor
-            initial={logotypeState}
-            defaultText={logotypeState?.text || asset.title || "Brand"}
-            saving={savingEdit}
-            onSave={saveLogotype}
-          />
+          <div className="space-y-3">
+            {logotypeState && <LogotypeExportBar state={logotypeState} name={asset.title} />}
+            <LogotypeEditor
+              initial={logotypeState}
+              defaultText={logotypeState?.text || asset.title || "Brand"}
+              saving={savingEdit}
+              onSave={saveLogotype}
+            />
+          </div>
         ) : (!isImage && !editing && hasVisual) ? null : (
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
           {isImage ? (
