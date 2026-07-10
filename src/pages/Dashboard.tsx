@@ -65,7 +65,9 @@ const Projects = () => {
   const create = async () => {
     const name = newName.trim();
     if (!name) return;
-    const { data, error } = await supabase.from("projects").insert({ user_id: user!.id, name }).select().single();
+    const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+    const workspace_id = await ensureActiveWorkspaceId();
+    const { data, error } = await supabase.from("projects").insert({ user_id: user!.id, workspace_id, name } as any).select().single();
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     setProjects(p => [data, ...p]);
     setCreating(false); setNewName("");

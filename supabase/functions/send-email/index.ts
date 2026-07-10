@@ -50,7 +50,7 @@ function cors(req: Request): Record<string, string> {
   };
 }
 
-type Template = "welcome"|"rocket_generated"|"trial_started"|"payment_succeeded"|"credits_purchased"|"auth_signup"|"auth_magiclink"|"auth_recovery"|"auth_invite"|"auth_email_change"|"auth_reauth";
+type Template = "welcome"|"rocket_generated"|"trial_started"|"payment_succeeded"|"credits_purchased"|"auth_signup"|"auth_magiclink"|"auth_recovery"|"auth_invite"|"auth_email_change"|"auth_reauth"|"workspace_invite";
 function buildEmail(template: Template, data: any): { subject: string; html: string } {
   switch (template) {
     case "welcome": return { subject: "Welcome to Rocket 🚀", html: renderEmail({ preheader: "Make your product a brand.", title: `Welcome to Rocket${data?.name ? `, ${data.name}` : ""}.`, bodyHtml: `<p>You're in. Rocket helps you position, brand, and market your product — drop in a product URL and we'll generate your full brand kit in under 60 seconds.</p><p>You start with <strong>500 free credits</strong>. No card required.</p>`, ctaLabel: "Generate your first Brand", ctaUrl: "https://tryrocket.ai/create", footer: "You're receiving this because you created a Rocket account." }) };
@@ -64,6 +64,7 @@ function buildEmail(template: Template, data: any): { subject: string; html: str
     case "auth_invite": return { subject: "You've been invited to Rocket", html: renderEmail({ preheader: "Accept your invite to join Rocket.", title: "You're invited to Rocket.", bodyHtml: `<p>You've been invited to join Rocket. Click below to accept and set up your account.</p>`, ctaLabel: "Accept invite", ctaUrl: data?.confirmation_url }) };
     case "auth_email_change": return { subject: "Confirm your new email", html: renderEmail({ preheader: "Verify your new Rocket email address.", title: "Confirm your new email address.", bodyHtml: `<p>Click below to confirm <strong>${data?.new_email ?? "your new email"}</strong> as the new email on your Rocket account.</p>`, ctaLabel: "Confirm new email", ctaUrl: data?.confirmation_url }) };
     case "auth_reauth": return { subject: `Your Rocket verification code: ${data?.token ?? ""}`, html: renderEmail({ preheader: "Use this code to verify it's you.", title: "Verify it's you.", bodyHtml: `<p>Enter this code in Rocket to continue:</p><p style="font-size:28px;font-weight:700;letter-spacing:4px;margin:18px 0;">${data?.token ?? ""}</p><p>If you didn't request this, you can ignore this email.</p>` }) };
+    case "workspace_invite": return { subject: `You've been invited to ${data?.workspace_name || "a Rocket workspace"}`, html: renderEmail({ preheader: `Join ${data?.workspace_name || "the workspace"} on Rocket.`, title: `Join ${data?.workspace_name || "the workspace"} on Rocket.`, bodyHtml: `<p><strong>${data?.inviter || "A teammate"}</strong> invited you to collaborate as <strong>${data?.role || "editor"}</strong>.</p><p>Accept the invite to get access to shared projects, assets, and brand kits.</p>`, ctaLabel: "Accept invitation", ctaUrl: data?.confirmation_url, footer: "If you didn't expect this invitation, you can safely ignore it." }) };
   }
 }
 async function sendBranded(resendKey: string, fromEmail: string, to: string, template: Template, data: any): Promise<{ ok: boolean; id?: string; error?: string }> {
@@ -94,8 +95,10 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user?.email) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { template, data } = await req.json() as { template: Template; data?: any };
-    const result = await sendBranded(RESEND_API_KEY, FROM_EMAIL, user.email, template, data || {});
+    const { template, data, to } = await req.json() as { template: Template; data?: any; to?: string };
+    // Allow arbitrary recipient only for the workspace_invite template; all others must go to the caller's email.
+    const recipient = template === "workspace_invite" && to ? to : user.email;
+    const result = await sendBranded(RESEND_API_KEY, FROM_EMAIL, recipient, template, data || {});
     if (!result.ok) throw new Error(result.error);
     return new Response(JSON.stringify({ ok: true, id: result.id }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {

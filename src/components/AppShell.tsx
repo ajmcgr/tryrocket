@@ -7,6 +7,7 @@ import ShareExportModal from "./ShareExportModal";
 import OnboardingTour from "./OnboardingTour";
 import NotificationsBell from "./NotificationsBell";
 import CommandPalette from "./CommandPalette";
+import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import { Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -42,6 +43,7 @@ const AppShell = () => {
             <NavLink data-tour="nav-insights" to="/insights" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Insights</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            <WorkspaceSwitcher />
             <a data-tour="nav-avatar" href="mailto:alex@tryrocket.ai" className="hidden rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex">Support</a>
             <button
               type="button"

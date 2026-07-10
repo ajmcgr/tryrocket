@@ -471,14 +471,17 @@ const Editor = () => {
       try { thumb = stage.toDataURL({ pixelRatio: 0.5, mimeType: "image/png" }); } catch {}
       setSelectedId(prev);
     }
+    const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+    const workspace_id = await ensureActiveWorkspaceId();
     const { data, error } = await supabase.from("assets").insert({
       user_id: uid2,
+      workspace_id,
       project_id: assetMeta?.project_id || null,
       asset_type: "other",
       title,
       editor_state: els as any,
       thumbnail_url: thumb,
-    }).select().single();
+    } as any).select().single();
     if (error || !data) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); return; }
     toast({ title: "Saved as new asset" });
     nav(`/editor?id=${data.id}`);

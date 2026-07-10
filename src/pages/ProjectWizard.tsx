@@ -95,13 +95,16 @@ const ProjectWizard = () => {
     if (!user) return;
     setRunning(true);
     const brandContext = scraped ? { ...scraped, url: normalizeUrl(ctx.url), productName: ctx.name.trim() || scraped.productName } : null;
+    const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+    const workspace_id = await ensureActiveWorkspaceId();
     const { data: project, error } = await supabase.from("projects").insert({
       user_id: user.id,
+      workspace_id,
       name: ctx.name.trim(),
       description: ctx.description.trim() || null,
       source_url: ctx.url.trim() ? normalizeUrl(ctx.url) : null,
       brand_context: brandContext,
-    }).select().single();
+    } as any).select().single();
     if (error || !project) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); setRunning(false); return; }
 
     // Ingest scraped brand artifacts directly as assets (no AI regeneration) when present.
@@ -110,7 +113,7 @@ const ProjectWizard = () => {
       const inserts: any[] = [];
       if (scraped.logo) {
         inserts.push({
-          user_id: user.id, project_id: project.id, asset_type: "logo",
+          user_id: user.id, workspace_id, project_id: project.id, asset_type: "logo",
           title: `${ctx.name.trim()} logo (imported)`,
           image_url: scraped.logo, thumbnail_url: scraped.logo,
           prompt: `Imported from ${normalizeUrl(ctx.url)}`,
@@ -122,7 +125,7 @@ const ProjectWizard = () => {
         const content = `Color system imported from ${normalizeUrl(ctx.url)}\n\n` +
           colors.map((c: string, i: number) => `${i === 0 ? "Primary" : i === 1 ? "Secondary" : "Accent " + (i - 1)}: ${c}`).join("\n");
         inserts.push({
-          user_id: user.id, project_id: project.id, asset_type: "color_system",
+          user_id: user.id, workspace_id, project_id: project.id, asset_type: "color_system",
           title: `${ctx.name.trim()} colors (imported)`, content,
           prompt: `Imported from ${normalizeUrl(ctx.url)}`,
         });
@@ -133,7 +136,7 @@ const ProjectWizard = () => {
         const content = `Font system imported from ${normalizeUrl(ctx.url)}\n\n` +
           fonts.map((f: string, i: number) => `${i === 0 ? "Headings" : i === 1 ? "Body" : "Accent " + (i - 1)}: ${f}`).join("\n");
         inserts.push({
-          user_id: user.id, project_id: project.id, asset_type: "font_system",
+          user_id: user.id, workspace_id, project_id: project.id, asset_type: "font_system",
           title: `${ctx.name.trim()} fonts (imported)`, content,
           prompt: `Imported from ${normalizeUrl(ctx.url)}`,
         });
