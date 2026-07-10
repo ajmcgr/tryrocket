@@ -68,8 +68,19 @@ const Gallery = () => {
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}
           </div>
         ) : entries.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center text-sm text-neutral-500">
-            The gallery is empty. Be the first — enable "Show in public gallery" on one of your shared projects.
+          <div className="mt-10 rounded-3xl border border-dashed border-neutral-300 bg-white p-16 text-center">
+            <div className="mx-auto mb-4 grid grid-cols-2 gap-1">
+              {["#3B82F6", "#F59E0B", "#10B981", "#EF4444"].map((c) => (
+                <span key={c} className="h-8 w-8 rounded-md" style={{ background: c }} />
+              ))}
+            </div>
+            <h2 className="text-lg font-semibold text-neutral-900">No public kits yet</h2>
+            <p className="mx-auto mt-1 max-w-md text-sm text-neutral-500">
+              Be the first to share — open any project, hit <span className="font-medium text-neutral-700">Share</span>, and turn on <span className="font-medium text-neutral-700">Show in public gallery</span>.
+            </p>
+            <Link to="/create" className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+              Start a new brand kit
+            </Link>
           </div>
         ) : (
           <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
