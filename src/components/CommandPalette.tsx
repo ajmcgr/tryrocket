@@ -26,6 +26,9 @@ const CommandPalette = () => {
   const [query, setQuery] = useState("");
   const [assets, setAssets] = useState<AssetRow[]>([]);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
+  const [searchAssets, setSearchAssets] = useState<AssetRow[]>([]);
+  const [searchProjects, setSearchProjects] = useState<ProjectRow[]>([]);
+  const [searching, setSearching] = useState(false);
   const nav = useNavigate();
   const { user, signOut } = useAuth();
 
@@ -57,17 +60,40 @@ const CommandPalette = () => {
     return () => { cancel = true; };
   }, [open, user?.id]);
 
+  // Debounced server-side search across ALL assets/projects for the user.
+  useEffect(() => {
+    if (!open || !user?.id) return;
+    const q = query.trim();
+    if (q.length < 2) { setSearchAssets([]); setSearchProjects([]); setSearching(false); return; }
+    setSearching(true);
+    const handle = setTimeout(async () => {
+      const like = `%${q.replace(/[%_]/g, (m) => "\\" + m)}%`;
+      const [{ data: a }, { data: p }] = await Promise.all([
+        supabase.from("assets").select("id,title,asset_type").ilike("title", like).order("created_at", { ascending: false }).limit(20),
+        supabase.from("projects").select("id,name").ilike("name", like).order("created_at", { ascending: false }).limit(10),
+      ]);
+      setSearchAssets((a || []) as AssetRow[]);
+      setSearchProjects((p || []) as ProjectRow[]);
+      setSearching(false);
+    }, 180);
+    return () => clearTimeout(handle);
+  }, [query, open, user?.id]);
+
   const go = (path: string) => {
     setOpen(false);
     setQuery("");
     nav(path);
   };
 
+  const searching_q = query.trim().length >= 2;
+  const mergedProjects = searching_q ? searchProjects : projects;
+  const mergedAssets = searching_q ? searchAssets : assets;
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput value={query} onValueChange={setQuery} placeholder="Search assets, projects, or jump to…" />
       <CommandList>
-        <CommandEmpty>No matches.</CommandEmpty>
+        <CommandEmpty>{searching ? "Searching…" : "No matches."}</CommandEmpty>
         <CommandGroup heading="Actions">
           <CommandItem onSelect={() => go("/create")}><Sparkles /> Create new asset</CommandItem>
           <CommandItem onSelect={() => go("/projects/new")}><FolderOpen /> New project</CommandItem>
@@ -76,11 +102,11 @@ const CommandPalette = () => {
           <CommandItem onSelect={() => go("/insights")}><LineChart /> Insights</CommandItem>
           <CommandItem onSelect={() => go("/notifications")}><Bell /> Notifications</CommandItem>
         </CommandGroup>
-        {projects.length > 0 && (
+        {mergedProjects.length > 0 && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="Projects">
-              {projects.map((p) => (
+            <CommandGroup heading={searching_q ? "Matching projects" : "Projects"}>
+              {mergedProjects.map((p) => (
                 <CommandItem key={p.id} value={`project ${p.name}`} onSelect={() => go(`/projects/${p.id}`)}>
                   <Palette /> {p.name || "Untitled project"}
                 </CommandItem>
@@ -88,11 +114,11 @@ const CommandPalette = () => {
             </CommandGroup>
           </>
         )}
-        {assets.length > 0 && (
+        {mergedAssets.length > 0 && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="Recent assets">
-              {assets.map((a) => (
+            <CommandGroup heading={searching_q ? "Matching assets" : "Recent assets"}>
+              {mergedAssets.map((a) => (
                 <CommandItem key={a.id} value={`asset ${a.title} ${a.asset_type || ""}`} onSelect={() => go(`/assets/${a.id}`)}>
                   <FileText />
                   <span className="truncate">{a.title || "Untitled"}</span>
