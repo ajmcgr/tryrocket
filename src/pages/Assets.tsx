@@ -145,6 +145,9 @@ const Assets = () => {
           <Plus className="h-4 w-4" /> New Asset
         </Link>
       </div>
+      <div className="mt-2 text-xs">
+        <Link to="/trash" className="text-neutral-500 hover:text-neutral-800">View Trash →</Link>
+      </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <div className="relative">
