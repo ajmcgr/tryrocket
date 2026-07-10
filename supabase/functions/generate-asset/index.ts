@@ -167,11 +167,24 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const prompt = (body.prompt || "").toString().trim();
     const project_id = body.project_id || null;
+    const client_workspace_id = body.workspace_id || null;
     const explicitType = body.asset_type as AssetType | undefined;
     const providedCtx = body.brand_context as BrandContext | undefined;
     if (!prompt) return new Response(JSON.stringify({ error: "prompt required" }), { status: 400, headers: { ...ch, "Content-Type": "application/json" } });
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Resolve workspace_id: prefer project's, then caller-provided, then the user's personal workspace.
+    let workspace_id: string | null = null;
+    if (project_id) {
+      const { data: p } = await admin.from("projects").select("workspace_id").eq("id", project_id).maybeSingle();
+      workspace_id = (p as any)?.workspace_id || null;
+    }
+    if (!workspace_id && client_workspace_id) workspace_id = client_workspace_id;
+    if (!workspace_id) {
+      const { data: ws } = await admin.from("workspaces").select("id").eq("owner_id", user.id).eq("is_personal", true).maybeSingle();
+      workspace_id = (ws as any)?.id || null;
+    }
 
     // Classify
     let cls = explicitType
@@ -188,7 +201,7 @@ Deno.serve(async (req) => {
     // Refuse non-branding
     if (cls.asset_type === "other") {
       const refusalAsset = {
-        user_id: user.id, project_id,
+        user_id: user.id, workspace_id, project_id,
         asset_type: "other" as const,
         title: "Out of scope",
         content: REFUSAL_TEXT,
@@ -252,6 +265,7 @@ Deno.serve(async (req) => {
         const variants = buildLogotypeVariants(brandText, count, brandColor, ctx.fonts || []);
         const rows = variants.map((state, i) => ({
           user_id: user.id,
+          workspace_id,
           project_id,
           asset_type: "logo" as const,
           title: count > 1 ? `Logotype ${i + 1}` : "Logotype",
@@ -350,7 +364,7 @@ Deno.serve(async (req) => {
         if (upErr) throw new Error(`storage: ${upErr.message}`);
         const { data: pub } = admin.storage.from("rocket-images").getPublicUrl(path);
         const { data: asset } = await admin.from("assets").insert({
-          user_id: user.id, project_id,
+          user_id: user.id, workspace_id, project_id,
           asset_type: cls.asset_type,
           title: count > 1 ? `${title} ${i + 1}` : title,
           image_url: pub.publicUrl,
@@ -397,6 +411,7 @@ Deno.serve(async (req) => {
           const variants = buildLogotypeVariants(brandText, count, brandColor, ctx.fonts || []);
           const logotypeRows = variants.map((state, i) => ({
             user_id: user.id,
+            workspace_id,
             project_id,
             asset_type: "logo" as const,
             title: count > 1 ? `Logotype ${i + 1}` : "Logotype",
@@ -416,7 +431,7 @@ Deno.serve(async (req) => {
         const variantPrompt = count > 1 ? `${prompt}\n\nCreate variation ${i + 1} of ${count}. Make it meaningfully distinct in structure, angle, naming, and recommendations while staying on-brand.` : prompt;
         const content = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.7, json: !!spec.json });
         const { data: asset } = await admin.from("assets").insert({
-          user_id: user.id, project_id,
+          user_id: user.id, workspace_id, project_id,
           asset_type: cls.asset_type,
           title: count > 1 ? `${title} ${i + 1}` : title,
           content,
