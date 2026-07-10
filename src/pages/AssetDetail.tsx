@@ -292,9 +292,34 @@ const AssetDetail = () => {
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between gap-4">
-        <Link to="/assets" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900">
-          <ArrowLeft className="h-4 w-4" /> Assets
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link to="/assets" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900">
+            <ArrowLeft className="h-4 w-4" /> Assets
+          </Link>
+          {(prevId || nextId) && (
+            <div className="ml-3 flex items-center gap-1">
+              <button
+                onClick={() => prevId && nav(`/assets/${prevId}`)}
+                disabled={!prevId}
+                title="Previous asset (←)"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => nextId && nav(`/assets/${nextId}`)}
+                disabled={!nextId}
+                title="Next asset (→)"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              {sibIndex >= 0 && (
+                <span className="ml-1 text-[11px] text-neutral-400">{sibIndex + 1} / {siblings.length}</span>
+              )}
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setHistoryOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
             <History className="h-4 w-4" /> Versions {versions.length > 0 && <span className="rounded-full bg-neutral-100 px-1.5 text-[10px]">{versions.length}</span>}
