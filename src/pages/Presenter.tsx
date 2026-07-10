@@ -6,7 +6,8 @@ import ScaledSlide, { SlideStage } from "@/components/slides/ScaledSlide";
 import SlideRenderer, { SLIDE_THEMES } from "@/components/slides/SlideRenderer";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Grid3x3, Maximize2, Minimize2, X,
-  Download, StickyNote, Loader2, GripVertical, Palette,
+  Download, StickyNote, Loader2, GripVertical, Palette, Copy, Trash2, Keyboard,
+  Plus,
 } from "lucide-react";
 import { exportAsset } from "@/lib/exporters";
 import { toast } from "@/hooks/use-toast";
@@ -29,6 +30,7 @@ export default function Presenter() {
   const [exporting, setExporting] = useState<"pdf" | "pptx" | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
   const [savingTheme, setSavingTheme] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -96,6 +98,44 @@ export default function Presenter() {
     else if (from > idx && to <= idx) setSlide(idx + 1);
   };
 
+  const duplicateSlide = async (at: number) => {
+    if (!data) return;
+    const copy = slides.slice();
+    const clone = JSON.parse(JSON.stringify(copy[at]));
+    if (clone?.title) clone.title = `${clone.title} (copy)`;
+    copy.splice(at + 1, 0, clone);
+    await persistSlides(copy);
+    if (at <= idx) setSlide(idx + 1);
+  };
+
+  const deleteSlide = async (at: number) => {
+    if (!data || slides.length <= 1) {
+      toast({ title: "Can't delete", description: "A presentation needs at least one slide.", variant: "destructive" });
+      return;
+    }
+    const copy = slides.slice();
+    copy.splice(at, 1);
+    await persistSlides(copy);
+    if (at < idx) setSlide(idx - 1);
+    else if (at === idx) setSlide(Math.min(idx, copy.length - 1));
+  };
+
+  const addSlide = async (at?: number) => {
+    if (!data) return;
+    const insertAt = typeof at === "number" ? at : slides.length;
+    const blank: any = {
+      title: "Untitled slide",
+      purpose: "",
+      bullets: [],
+      notes: "",
+      layout: "title-bullets",
+    };
+    const copy = slides.slice();
+    copy.splice(insertAt, 0, blank);
+    await persistSlides(copy);
+    setSlide(insertAt);
+  };
+
   const doExport = async (format: "pdf" | "pptx") => {
     if (!asset) return;
     setExporting(format);
@@ -125,12 +165,13 @@ export default function Presenter() {
       else if (e.key === "End") { e.preventDefault(); setSlide(total - 1); }
       else if (e.key.toLowerCase() === "g") { setGridOpen((v) => !v); }
       else if (e.key.toLowerCase() === "n") { setNotesOpen((v) => !v); }
+      else if (e.key === "?" || (e.shiftKey && e.key === "/")) { setHelpOpen((v) => !v); }
       else if (e.key === "f" || e.key === "F5") { e.preventDefault(); toggleFullscreen(); }
-      else if (e.key === "Escape") { if (gridOpen) setGridOpen(false); }
+      else if (e.key === "Escape") { if (helpOpen) setHelpOpen(false); else if (gridOpen) setGridOpen(false); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [idx, total, gridOpen]);
+  }, [idx, total, gridOpen, helpOpen]);
 
   const toggleFullscreen = async () => {
     const el = rootRef.current;
@@ -218,6 +259,13 @@ export default function Presenter() {
               title="Grid overview (G)"
             >
               <Grid3x3 className="h-3.5 w-3.5" /> Grid
+            </button>
+            <button
+              onClick={() => setHelpOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard className="h-3.5 w-3.5" /> Shortcuts
             </button>
             <div className="relative">
               <button
@@ -370,12 +418,20 @@ export default function Presenter() {
               <div className="text-[11px] text-white/50">Drag cards to reorder</div>
               {savingOrder && <Loader2 className="h-3 w-3 animate-spin text-white/50" />}
             </div>
-            <button
-              onClick={() => setGridOpen(false)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
-            >
-              <X className="h-3.5 w-3.5" /> Close
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => addSlide()}
+                className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/15 px-3 py-1.5 text-xs text-white hover:bg-brand/25"
+              >
+                <Plus className="h-3.5 w-3.5" /> New slide
+              </button>
+              <button
+                onClick={() => setGridOpen(false)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+              >
+                <X className="h-3.5 w-3.5" /> Close
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4 p-6 md:grid-cols-3 lg:grid-cols-4">
             {slides.map((s, i) => (
@@ -411,8 +467,65 @@ export default function Presenter() {
                 >
                   <GripVertical className="h-3.5 w-3.5" />
                 </div>
+                <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); duplicateSlide(i); }}
+                    className="rounded-md bg-black/60 p-1 text-white/80 backdrop-blur hover:bg-black/80"
+                    title="Duplicate slide"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Delete slide ${i + 1}?`)) deleteSlide(i);
+                    }}
+                    className="rounded-md bg-black/60 p-1 text-red-300 backdrop-blur hover:bg-red-500/30"
+                    title="Delete slide"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {helpOpen && (
+        <div
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/70 p-4 backdrop-blur"
+          onClick={() => setHelpOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-white/10 bg-neutral-900 p-6 text-sm text-white/85"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-base font-medium text-white">Keyboard shortcuts</div>
+              <button onClick={() => setHelpOpen(false)} className="rounded-md p-1 text-white/60 hover:bg-white/10">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <ul className="space-y-2">
+              {[
+                ["→ / Space", "Next slide"],
+                ["←", "Previous slide"],
+                ["Home / End", "First / last slide"],
+                ["F", "Toggle fullscreen"],
+                ["G", "Grid overview"],
+                ["N", "Presenter notes"],
+                ["?", "This help"],
+                ["Esc", "Close overlay"],
+              ].map(([k, v]) => (
+                <li key={k} className="flex items-center justify-between gap-4">
+                  <span className="text-white/70">{v}</span>
+                  <kbd className="rounded border border-white/15 bg-white/5 px-2 py-0.5 font-mono text-[11px] text-white/80">{k}</kbd>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
