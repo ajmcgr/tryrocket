@@ -409,6 +409,26 @@ export default function StructuredEditor() {
     }
   };
 
+  // Wire per-field rewrite. StringField reads this from RewriteCtx.
+  RewriteCtx.current = async (keyName, value) => {
+    if (!asset) return null;
+    const { data: res, error } = await supabase.functions.invoke("rewrite-field", {
+      body: {
+        field_label: keyName,
+        current: value,
+        instruction: "Rewrite this to be sharper, more distinctive, and on-brand. Keep the same rough length and language.",
+        brand_context: asset?.meta?.brand_context || {},
+        asset_type: asset.asset_type,
+      },
+    });
+    const err = handleAiError(res, error, toast);
+    if (err) return null;
+    window.dispatchEvent(new Event("credits:refresh"));
+    track("field_regenerated", { asset_type: asset.asset_type, field: keyName });
+    const nv = (res as any)?.value;
+    return typeof nv === "string" ? nv : null;
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       {/* header */}
