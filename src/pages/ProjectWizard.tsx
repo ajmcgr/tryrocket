@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { getTemplate } from "@/data/templates";
+import { handleAiError } from "@/lib/aiErrors";
 const supabase = _sb as any;
 
 const TONES = ["Friendly & playful", "Bold & confident", "Minimal & technical", "Warm & human", "Luxe & editorial"];
@@ -151,13 +152,15 @@ const ProjectWizard = () => {
     await Promise.all(toGenerate.map(async (s) => {
       setStatus(prev => ({ ...prev, [s.type]: "running" }));
       try {
-        const { data } = await supabase.functions.invoke("generate-asset", {
+        const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: s.prompt(ctx), asset_type: s.type, project_id: project.id, brand_context: brandContext || undefined },
         });
         const d: any = data;
-        if (d?.error === "no_credits") { setOutOfCredits({ needed: d.needed, remaining: d.remaining }); setStatus(prev => ({ ...prev, [s.type]: "error" })); return; }
-        if (d?.error || d?.refused) { setStatus(prev => ({ ...prev, [s.type]: "error" })); return; }
+        const aiErr = handleAiError(d, error, toast);
+        if (aiErr?.kind === "no_credits") { setOutOfCredits({ needed: aiErr.needed, remaining: aiErr.remaining }); setStatus(prev => ({ ...prev, [s.type]: "error" })); return; }
+        if (aiErr || d?.refused) { setStatus(prev => ({ ...prev, [s.type]: "error" })); return; }
         setStatus(prev => ({ ...prev, [s.type]: "done" }));
+        window.dispatchEvent(new Event("credits:refresh"));
       } catch {
         setStatus(prev => ({ ...prev, [s.type]: "error" }));
       }
