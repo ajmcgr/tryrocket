@@ -11,19 +11,47 @@ type GalleryEntry = { project: any; assets: any[] };
 const Gallery = () => {
   const [entries, setEntries] = useState<GalleryEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [likes, setLikes] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem("rocket:gallery:likes") || "{}"); } catch { return {}; }
-  });
+  const [likes, setLikes] = useState<Record<string, boolean>>({});
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [me, setMe] = useState<string | null>(null);
 
-  const toggleLike = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setLikes((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      if (!next[id]) delete next[id];
-      localStorage.setItem("rocket:gallery:likes", JSON.stringify(next));
-      return next;
-    });
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }: any) => setMe(data?.user?.id || null));
+  }, []);
+
+  // key = first asset id of a project (server likes are per-asset)
+  const keyForProject = (e: GalleryEntry) => e.assets[0]?.id || null;
+
+  useEffect(() => {
+    if (!entries.length) return;
+    const ids = entries.map(keyForProject).filter(Boolean) as string[];
+    if (!ids.length) return;
+    (async () => {
+      const { data: all } = await supabase.from("likes").select("asset_id, user_id").in("asset_id", ids);
+      const c: Record<string, number> = {};
+      const mine: Record<string, boolean> = {};
+      (all || []).forEach((r: any) => {
+        c[r.asset_id] = (c[r.asset_id] || 0) + 1;
+        if (me && r.user_id === me) mine[r.asset_id] = true;
+      });
+      setCounts(c); setLikes(mine);
+    })();
+  }, [entries, me]);
+
+  const toggleLike = async (projectId: string, e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const entry = entries.find(x => x.project.id === projectId);
+    const assetId = entry && keyForProject(entry);
+    if (!assetId) return;
+    if (!me) { window.location.href = "/login"; return; }
+    const already = !!likes[assetId];
+    setLikes((p) => ({ ...p, [assetId]: !already }));
+    setCounts((p) => ({ ...p, [assetId]: Math.max(0, (p[assetId] || 0) + (already ? -1 : 1)) }));
+    if (already) {
+      await supabase.from("likes").delete().eq("asset_id", assetId).eq("user_id", me);
+    } else {
+      await supabase.from("likes").insert({ asset_id: assetId, user_id: me });
+    }
   };
 
   useEffect(() => {
@@ -116,10 +144,13 @@ const Gallery = () => {
                   <div className="flex shrink-0 items-center gap-1">
                     <button
                       onClick={(e) => toggleLike(project.id, e)}
-                      title={likes[project.id] ? "Unlike" : "Like"}
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${likes[project.id] ? "border-brand bg-brand/10 text-brand" : "border-neutral-200 text-neutral-500 hover:border-neutral-400"}`}
+                      title={(() => { const k = assets[0]?.id; return k && likes[k] ? "Unlike" : "Like"; })()}
+                      className={`inline-flex h-8 items-center gap-1 rounded-full border px-2 text-xs transition ${(() => { const k = assets[0]?.id; return k && likes[k] ? "border-brand bg-brand/10 text-brand" : "border-neutral-200 text-neutral-500 hover:border-neutral-400"; })()}`}
                     >
-                      <Heart className="h-3.5 w-3.5" fill={likes[project.id] ? "currentColor" : "none"} />
+                      {(() => { const k = assets[0]?.id; const liked = k && likes[k]; const n = k ? (counts[k] || 0) : 0; return (<>
+                        <Heart className="h-3.5 w-3.5" fill={liked ? "currentColor" : "none"} />
+                        {n > 0 && <span>{n}</span>}
+                      </>); })()}
                     </button>
                     <button
                       onClick={(e) => {
