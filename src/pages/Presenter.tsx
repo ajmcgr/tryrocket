@@ -442,8 +442,65 @@ export default function Presenter() {
                 >
                   <GripVertical className="h-3.5 w-3.5" />
                 </div>
+                <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); duplicateSlide(i); }}
+                    className="rounded-md bg-black/60 p-1 text-white/80 backdrop-blur hover:bg-black/80"
+                    title="Duplicate slide"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Delete slide ${i + 1}?`)) deleteSlide(i);
+                    }}
+                    className="rounded-md bg-black/60 p-1 text-red-300 backdrop-blur hover:bg-red-500/30"
+                    title="Delete slide"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {helpOpen && (
+        <div
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/70 p-4 backdrop-blur"
+          onClick={() => setHelpOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-white/10 bg-neutral-900 p-6 text-sm text-white/85"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-base font-medium text-white">Keyboard shortcuts</div>
+              <button onClick={() => setHelpOpen(false)} className="rounded-md p-1 text-white/60 hover:bg-white/10">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <ul className="space-y-2">
+              {[
+                ["→ / Space", "Next slide"],
+                ["←", "Previous slide"],
+                ["Home / End", "First / last slide"],
+                ["F", "Toggle fullscreen"],
+                ["G", "Grid overview"],
+                ["N", "Presenter notes"],
+                ["?", "This help"],
+                ["Esc", "Close overlay"],
+              ].map(([k, v]) => (
+                <li key={k} className="flex items-center justify-between gap-4">
+                  <span className="text-white/70">{v}</span>
+                  <kbd className="rounded border border-white/15 bg-white/5 px-2 py-0.5 font-mono text-[11px] text-white/80">{k}</kbd>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
