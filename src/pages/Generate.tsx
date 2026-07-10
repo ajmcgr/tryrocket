@@ -481,16 +481,13 @@ const Generate = () => {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: effectiveAssetType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined },
         });
-        if (error) throw new Error("Rocket is busy. Please try again.");
         const d: any = data;
-        if (d?.error) {
-          if (d.code === "no_credits") {
-            setOutOfCredits({ needed: d.needed, remaining: d.remaining });
-            return;
-          }
-          if (d.error === "ai_provider_unavailable") throw new Error(d.message);
-          throw new Error(d.message || d.error);
+        const aiErr = handleAiError(d, error, toast);
+        if (aiErr?.kind === "no_credits") {
+          setOutOfCredits({ needed: aiErr.needed, remaining: aiErr.remaining });
+          return;
         }
+        if (aiErr) return;
         if (d?.refused) { toast({ title: "Out of scope", description: d.message }); return; }
         allIds = d.asset_ids || [];
       } else {
@@ -504,6 +501,10 @@ const Generate = () => {
         for (const r of results) {
           const d: any = r.data;
           if (d?.error === "no_credits") { creditsErr = d; continue; }
+          if (d?.error === "rate_limit" || d?.error === "ai_provider_unavailable") {
+            handleAiError(d, null, toast);
+            continue;
+          }
           if (d?.asset_ids?.length) allIds.push(...d.asset_ids);
         }
       }
