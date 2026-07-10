@@ -90,20 +90,20 @@ const Assets = () => {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Delete this asset?")) return;
+    if (!confirm("Move this asset to Trash?")) return;
     setAssets(prev => prev.filter(a => a.id !== id));
-    await supabase.from("assets").delete().eq("id", id);
+    await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", id);
   };
 
   const bulkDelete = async () => {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    if (!confirm(`Delete ${ids.length} assets? This can't be undone.`)) return;
+    if (!confirm(`Move ${ids.length} assets to Trash? Restore anytime from /trash.`)) return;
     setAssets(prev => prev.filter(a => !selected.has(a.id)));
     clearSelection();
-    const { error } = await supabase.from("assets").delete().in("id", ids);
+    const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).in("id", ids);
     if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); load(); return; }
-    toast({ title: `Deleted ${ids.length} assets` });
+    toast({ title: `Moved ${ids.length} to Trash` });
   };
 
   const bulkAssignToProject = async (projectId: string | null) => {
