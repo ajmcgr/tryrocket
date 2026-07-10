@@ -340,6 +340,13 @@ const ProjectDetail = () => {
               <button onClick={completeBrandKit} disabled={completing} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/15 disabled:opacity-50">
                 {completing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />} Complete brand kit
               </button>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("rocket:start-tour"))}
+                className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50"
+                title="Take a 60-second tour"
+              >
+                Take the tour
+              </button>
             </div>
           </div>
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-6">
