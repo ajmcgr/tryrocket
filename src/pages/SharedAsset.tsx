@@ -4,7 +4,7 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import BrandContextStrip from "@/components/BrandContextStrip";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, Lock } from "lucide-react";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 const supabase = _sb as any;
 
@@ -14,6 +14,10 @@ const SharedAsset = () => {
   const [loading, setLoading] = useState(true);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const [isFs, setIsFs] = useState(false);
+  const [meta, setMeta] = useState<any>(null);
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
 
   useEffect(() => {
     const onChange = () => setIsFs(!!document.fullscreenElement);
@@ -28,14 +32,41 @@ const SharedAsset = () => {
     else await document.exitFullscreen?.();
   };
 
+  const fetchAsset = async (pw?: string) => {
+    const { data } = await supabase.rpc("get_shared_asset", { _token: token, _password: pw ?? null });
+    return data;
+  };
+
   useEffect(() => {
     (async () => {
       if (!token) return;
-      const { data } = await supabase.rpc("get_shared_asset", { _token: token });
+      // First check meta to see if password is required (falls back gracefully if RPC missing).
+      const { data: metaData } = await supabase.rpc("get_share_meta", { _token: token });
+      setMeta(metaData || null);
+      if (metaData?.requires_password) {
+        setLoading(false);
+        return;
+      }
+      const data = await fetchAsset();
       setAsset(data);
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  const submitPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password) return;
+    setSubmitting(true);
+    setPwError(null);
+    const data = await fetchAsset(password);
+    setSubmitting(false);
+    if (!data) {
+      setPwError("Incorrect password. Try again.");
+      return;
+    }
+    setAsset(data);
+  };
 
   if (loading)
     return (
@@ -45,6 +76,49 @@ const SharedAsset = () => {
         <Skeleton className="h-4 w-3/4" />
       </div>
     );
+
+  if (!asset && meta?.requires_password) {
+    return (
+      <div className="min-h-screen bg-neutral-50">
+        <header className="border-b border-neutral-200 bg-white px-6 py-4">
+          <Link to="/" className="text-sm font-semibold tracking-tight">Rocket</Link>
+        </header>
+        <main className="mx-auto grid max-w-md place-items-center px-6 py-24">
+          <form onSubmit={submitPassword} className="w-full space-y-5 rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-neutral-900 text-white">
+                <Lock className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-neutral-900">Password required</div>
+                <div className="text-xs text-neutral-500">{meta?.title || "This share link"} is protected.</div>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-neutral-600">Password</label>
+              <input
+                type="password"
+                autoFocus
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+                placeholder="Enter password"
+              />
+              {pwError && <div className="text-xs text-red-600">{pwError}</div>}
+            </div>
+            <button
+              type="submit"
+              disabled={submitting || !password}
+              className="w-full rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
+            >
+              {submitting ? "Unlocking…" : "Unlock"}
+            </button>
+          </form>
+        </main>
+      </div>
+    );
+  }
+
   if (!asset)
     return <div className="p-10 text-center text-sm text-neutral-500">This share link is invalid or has been disabled.</div>;
 
