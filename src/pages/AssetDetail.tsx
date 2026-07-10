@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LogotypeEditor } from "@/components/LogotypeEditor";
 import { isLogotype, pickLogotypeText, type LogotypeState } from "@/lib/logotype";
 import LogotypeExportBar from "@/components/LogotypeExportBar";
+import TextAssetExportBar, { hasMarkdownExport } from "@/components/TextAssetExportBar";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import BrandContextStrip from "@/components/BrandContextStrip";
 import RelatedVariantsGrid from "@/components/RelatedVariantsGrid";
@@ -349,6 +350,12 @@ const AssetDetail = () => {
       {brandCtx && (
         <div className="mb-4">
           <BrandContextStrip ctx={brandCtx} />
+        </div>
+      )}
+
+      {hasMarkdownExport(asset) && (
+        <div className="mb-4">
+          <TextAssetExportBar asset={asset} />
         </div>
       )}
 
