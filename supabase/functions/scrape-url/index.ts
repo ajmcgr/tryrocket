@@ -23,7 +23,16 @@ Schema:
   "positioning": string,        // 1 sentence — how it differentiates
   "competitors": string[],      // up to 5 real named competitors (best guess if not stated)
   "keywords": string[],         // 5-10 brand/product keywords
-  "voice": { "tone": string, "traits": string[], "notToBe": string[] },
+  "voice": {
+    "tone": string,              // e.g. "confident, warm, plain-spoken"
+    "traits": string[],          // 3-6 tone traits: "direct", "playful", "technical" ...
+    "notToBe": string[],         // 2-5 anti-patterns: "salesy", "buzzwordy" ...
+    "signaturePhrases": string[],// 3-6 short phrases/idioms observed on the page
+    "doNotSay": string[],        // 2-5 forbidden words/phrases (e.g. "revolutionary", "synergy")
+    "readingLevel": string,      // "5th grade" | "high school" | "college" | "expert"
+    "formality": string,         // "casual" | "conversational" | "professional" | "formal"
+    "sampleSentence": string     // one representative on-brand sentence rewritten in the brand's voice
+  },
   "valueProps": string[]        // 3-5 short bullets
 }
 
