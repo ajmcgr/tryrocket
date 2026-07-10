@@ -204,10 +204,14 @@ function CreditsPopover({ compact = false }: { compact?: boolean }) {
   const [loading, setLoading] = useState<string | null>(null);
   useEffect(() => {
     if (!user) return;
-    supabase.from("user_usage").select("*").eq("user_id", user.id).maybeSingle().then(({ data }: any) => {
+    const load = () => supabase.from("user_usage").select("*").eq("user_id", user.id).maybeSingle().then(({ data }: any) => {
       if (!data) return;
       setCredits((data.monthly_limit || 0) + (data.credits_extra || 0) - (data.credits_used || 0));
     });
+    load();
+    const onRefresh = () => load();
+    window.addEventListener("credits:refresh", onRefresh);
+    return () => window.removeEventListener("credits:refresh", onRefresh);
   }, [user]);
   const packs = [
     { id: "pack_500", label: "500 credits", price: "$5" },
