@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { Download, Mail, MessageCircle, MessageSquare, Facebook, Send, Copy, Link as LinkIcon, FileText, Image as ImageIcon, Cloud, Lock } from "lucide-react";
 import { exportAsset, formatsForAsset, FORMAT_LABEL, type ExportFormat } from "@/lib/exporters";
+import { supabase as _sb } from "@/integrations/supabase/client";
+const supabase = _sb as any;
 
 const XLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
@@ -103,6 +105,25 @@ export default function ShareExportModal({
     toast({ title: `${name} export coming soon`, description: "Needs per-user OAuth connection." });
   };
 
+  const [password, setPassword] = useState("");
+  const [savingPw, setSavingPw] = useState(false);
+  const savePassword = async (clear = false) => {
+    setSavingPw(true);
+    try {
+      const { error } = await supabase.rpc("set_asset_share_password", {
+        _asset_id: asset.id,
+        _password: clear ? null : password,
+      });
+      if (error) throw error;
+      toast({ title: clear ? "Password removed" : "Password set" });
+      if (clear) setPassword("");
+    } catch (e: any) {
+      toast({ title: "Couldn't update password", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setSavingPw(false);
+    }
+  };
+
   const Tile = ({ Icon, label, onClick, disabled, iconClass }: any) => (
     <button
       onClick={onClick}
@@ -166,6 +187,36 @@ export default function ShareExportModal({
           </div>
           <p className="mt-2 flex items-center gap-1 text-[11px] text-neutral-500"><Lock className="h-3 w-3" /> Cloud destinations need per-user OAuth — coming soon. SVG exports embed the raster image; true vectorization is a separate pipeline.</p>
         </div>
+
+        {existingUrl && (
+          <div className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+            <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-neutral-800"><Lock className="h-3.5 w-3.5" /> Link password (optional)</h3>
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Set a password to protect this link"
+                className="flex-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+              />
+              <button
+                disabled={!password || savingPw}
+                onClick={() => savePassword(false)}
+                className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
+              >
+                {savingPw ? "Saving…" : "Set"}
+              </button>
+              <button
+                disabled={savingPw}
+                onClick={() => savePassword(true)}
+                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-100 disabled:opacity-50"
+              >
+                Remove
+              </button>
+            </div>
+            <p className="mt-1.5 text-[11px] text-neutral-500">Viewers will be prompted to enter this password before the shared asset loads.</p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
