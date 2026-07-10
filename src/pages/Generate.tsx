@@ -485,7 +485,7 @@ const Generate = () => {
         allIds = (data || []).map((row: any) => row.id);
       } else if (tpl || effective === "auto") {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: effectiveAssetType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined, workspace_id: (await import("@/lib/workspace")).getActiveWorkspaceIdSync() || undefined },
+          body: { prompt: effectivePrompt, asset_type: effectiveAssetType, count: effectiveAssetType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined, workspace_id: (await import("@/lib/workspace")).getActiveWorkspaceIdSync() ?? undefined },
         });
         const d: any = data;
         const aiErr = handleAiError(d, error, toast);
@@ -499,9 +499,11 @@ const Generate = () => {
       } else {
         // Workflow fan-out: parallel generate-asset calls
         const plan = WORKFLOW_PLAN[effective as Exclude<WF, "auto">];
+        const { getActiveWorkspaceIdSync } = await import("@/lib/workspace");
+        const _wsid = getActiveWorkspaceIdSync() || undefined;
         const results = await Promise.all(plan.map(step =>
           supabase.functions.invoke("generate-asset", {
-            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined, brand_context: sharedCtx || undefined, workspace_id: (await import("@/lib/workspace")).getActiveWorkspaceIdSync() || undefined },
+            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined, brand_context: sharedCtx || undefined, workspace_id: _wsid },
           })
         ));
         for (const r of results) {
