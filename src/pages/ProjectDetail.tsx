@@ -8,6 +8,7 @@ import { AssetGridSkeleton } from "@/components/Skeletons";
 import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 import { Logotype } from "@/components/Logotype";
 import { packAssetsZip } from "@/lib/exporters/zipPack";
+import { handleAiError } from "@/lib/aiErrors";
 const supabase = _sb as any;
 
 type WF = "brand" | "design" | "launch" | "promote" | "other";
@@ -96,19 +97,20 @@ const ProjectDetail = () => {
         const { data, error } = await supabase.functions.invoke("generate-asset", {
           body: { prompt: k.prompt(name, ctx), asset_type: k.type, project_id: project.id, brand_context: ctx || undefined },
         });
-        if (error) throw error;
         const d: any = data;
-        if (d?.error === "no_credits") {
+        const aiErr = handleAiError(d, error, toast);
+        if (aiErr) {
           setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
-          setCompletionErrors(prev => ({ ...prev, [k.type]: "Out of credits" }));
+          setCompletionErrors(prev => ({ ...prev, [k.type]: aiErr.kind === "no_credits" ? "Out of credits" : aiErr.message }));
           return;
         }
-        if (d?.error || d?.refused) {
+        if (d?.refused) {
           setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
-          setCompletionErrors(prev => ({ ...prev, [k.type]: d?.message || d?.error || "Refused" }));
+          setCompletionErrors(prev => ({ ...prev, [k.type]: d?.message || "Refused" }));
           return;
         }
         setCompletionStatus(prev => ({ ...prev, [k.type]: "done" }));
+        window.dispatchEvent(new Event("credits:refresh"));
       } catch (e: any) {
         setCompletionStatus(prev => ({ ...prev, [k.type]: "error" }));
         setCompletionErrors(prev => ({ ...prev, [k.type]: e?.message || "Network error" }));
