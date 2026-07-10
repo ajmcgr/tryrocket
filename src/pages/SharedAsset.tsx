@@ -1,15 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import BrandContextStrip from "@/components/BrandContextStrip";
+import { Maximize2, Minimize2 } from "lucide-react";
 const supabase = _sb as any;
 
 const SharedAsset = () => {
   const { token } = useParams();
   const [asset, setAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [isFs, setIsFs] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const togglePresent = async () => {
+    const el = stageRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) await el.requestFullscreen?.();
+    else await document.exitFullscreen?.();
+  };
 
   useEffect(() => {
     (async () => {
@@ -32,6 +48,7 @@ const SharedAsset = () => {
     return <div className="p-10 text-center text-sm text-neutral-500">This share link is invalid or has been disabled.</div>;
 
   const visual = hasVisualRenderer(asset);
+  const isPresentation = asset.asset_type === "presentation";
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -48,7 +65,19 @@ const SharedAsset = () => {
           </div>
         )}
 
-        <div className="mt-8">
+        {isPresentation && (
+          <div className="mt-6">
+            <button
+              onClick={togglePresent}
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"
+            >
+              {isFs ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              {isFs ? "Exit present" : "Present fullscreen"}
+            </button>
+          </div>
+        )}
+
+        <div ref={stageRef} className={`mt-8 ${isFs ? "grid h-screen w-screen place-items-center bg-black p-6" : ""}`}>
           {visual ? (
             <AssetVisual asset={asset} />
           ) : asset.image_url ? (
