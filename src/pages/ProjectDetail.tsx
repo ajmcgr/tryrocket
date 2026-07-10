@@ -290,8 +290,41 @@ const ProjectDetail = () => {
       )}
 
       {assets.length === 0 ? (
-        <div className="mt-12 rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
-          <p className="text-sm text-neutral-500">No assets in this project yet.</p>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+            <div className="text-xs uppercase tracking-wider text-neutral-500">Get started</div>
+            <h2 className="mt-1 text-lg font-semibold">Your first brand kit in 4 steps</h2>
+            <ol className="mt-4 space-y-3 text-sm">
+              {[
+                { n: 1, title: "Add brand context", desc: project.source_url ? "URL analyzed ✓" : "Set a source URL in project settings so Rocket knows your brand.", done: !!project.source_url },
+                { n: 2, title: "Generate your logotype", desc: "Start with a wordmark — everything else builds from it." },
+                { n: 3, title: "Complete the core kit", desc: "One click generates colors, fonts, voice, and guidelines." },
+                { n: 4, title: "Share or download", desc: "Public link for stakeholders, or ZIP the whole pack." },
+              ].map((s) => (
+                <li key={s.n} className="flex gap-3">
+                  <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${s.done ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
+                    {s.done ? <Check className="h-3.5 w-3.5" /> : s.n}
+                  </div>
+                  <div>
+                    <div className="font-medium text-neutral-900">{s.title}</div>
+                    <div className="text-xs text-neutral-500">{s.desc}</div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to={`/create?project=${id}&workflow=brand&prompt=${encodeURIComponent(`Logotype for ${project.name}`)}`} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Sparkles className="h-4 w-4" /> Generate logotype</Link>
+              <button onClick={completeBrandKit} disabled={completing} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/15 disabled:opacity-50">
+                {completing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />} Complete brand kit
+              </button>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-6">
+            <div className="text-xs uppercase tracking-wider text-neutral-500">Or</div>
+            <h2 className="mt-1 text-lg font-semibold">Bring in existing work</h2>
+            <p className="mt-1 text-sm text-neutral-500">Attach assets you've already generated in Rocket to this project.</p>
+            <button onClick={openPicker} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add existing asset</button>
+          </div>
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
