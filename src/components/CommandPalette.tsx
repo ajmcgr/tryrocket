@@ -137,6 +137,14 @@ const CommandPalette = () => {
           </CommandItem>
         </CommandGroup>
       </CommandList>
+      <div className="flex items-center justify-between border-t border-neutral-100 bg-neutral-50/70 px-3 py-1.5 text-[10px] text-neutral-500">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1"><kbd className="rounded border border-neutral-200 bg-white px-1 font-mono">↑↓</kbd> navigate</span>
+          <span className="inline-flex items-center gap-1"><kbd className="rounded border border-neutral-200 bg-white px-1 font-mono">↵</kbd> open</span>
+          <span className="inline-flex items-center gap-1"><kbd className="rounded border border-neutral-200 bg-white px-1 font-mono">esc</kbd> close</span>
+        </div>
+        <span className="inline-flex items-center gap-1"><kbd className="rounded border border-neutral-200 bg-white px-1 font-mono">⌘K</kbd> anywhere</span>
+      </div>
     </CommandDialog>
   );
 };

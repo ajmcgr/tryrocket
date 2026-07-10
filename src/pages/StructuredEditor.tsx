@@ -8,7 +8,13 @@ import BrandContextStrip from "@/components/BrandContextStrip";
 import { tryJson } from "@/lib/assetSchemas";
 import { AlertTriangle, Sparkles } from "lucide-react";
 import { handleAiError } from "@/lib/aiErrors";
+import { track } from "@/lib/analytics";
+import { Wand2 } from "lucide-react";
 const supabase = _sb as any;
+
+// Context passed down to string fields so they can call rewrite-field.
+type RewriteFn = (keyName: string, value: string) => Promise<string | null>;
+const RewriteCtx = { current: null as RewriteFn | null };
 
 /* ------------------------------------------------------------------ */
 /*                       Generic JSON field inspector                  */
@@ -36,9 +42,33 @@ function StringField({
 }: { keyName: string; value: string; onChange: (v: string) => void; big?: boolean }) {
   const showColor = isHex(value) || COLOR_KEY_RE.test(keyName);
   const isLong = big || (typeof value === "string" && value.length > 80) || LONG_KEY_RE.test(keyName);
+  const [busy, setBusy] = useState(false);
+  const canRewrite = !!RewriteCtx.current && !isHex(value) && !COLOR_KEY_RE.test(keyName) && !!keyName;
+  const runRewrite = async () => {
+    if (!RewriteCtx.current) return;
+    setBusy(true);
+    try {
+      const next = await RewriteCtx.current(keyName, value ?? "");
+      if (typeof next === "string") onChange(next);
+    } finally { setBusy(false); }
+  };
   return (
     <div className="space-y-1">
-      <label className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">{labelFor(keyName)}</label>
+      <div className="flex items-center justify-between gap-2">
+        <label className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">{labelFor(keyName)}</label>
+        {canRewrite && (
+          <button
+            type="button"
+            onClick={runRewrite}
+            disabled={busy}
+            title="Rewrite with Rocket (1 credit)"
+            className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] text-neutral-500 hover:border-brand hover:text-brand disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Wand2 className="h-2.5 w-2.5" />}
+            {busy ? "Rewriting" : "Rewrite"}
+          </button>
+        )}
+      </div>
       <div className="flex items-start gap-2">
         {showColor && isHex(value) && (
           <input
@@ -377,6 +407,26 @@ export default function StructuredEditor() {
     } finally {
       setRebuilding(false);
     }
+  };
+
+  // Wire per-field rewrite. StringField reads this from RewriteCtx.
+  RewriteCtx.current = async (keyName, value) => {
+    if (!asset) return null;
+    const { data: res, error } = await supabase.functions.invoke("rewrite-field", {
+      body: {
+        field_label: keyName,
+        current: value,
+        instruction: "Rewrite this to be sharper, more distinctive, and on-brand. Keep the same rough length and language.",
+        brand_context: asset?.meta?.brand_context || {},
+        asset_type: asset.asset_type,
+      },
+    });
+    const err = handleAiError(res, error, toast);
+    if (err) return null;
+    window.dispatchEvent(new Event("credits:refresh"));
+    track("field_regenerated", { asset_type: asset.asset_type, field: keyName });
+    const nv = (res as any)?.value;
+    return typeof nv === "string" ? nv : null;
   };
 
   return (

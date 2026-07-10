@@ -11,6 +11,9 @@ import {
 } from "lucide-react";
 import { exportAsset } from "@/lib/exporters";
 import { toast } from "@/hooks/use-toast";
+import { track } from "@/lib/analytics";
+import { handleAiError } from "@/lib/aiErrors";
+import { Wand2 } from "lucide-react";
 
 const supabase = _sb as any;
 
@@ -31,6 +34,7 @@ export default function Presenter() {
   const [themeOpen, setThemeOpen] = useState(false);
   const [savingTheme, setSavingTheme] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [regeneratingSlide, setRegeneratingSlide] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -134,6 +138,40 @@ export default function Presenter() {
     copy.splice(insertAt, 0, blank);
     await persistSlides(copy);
     setSlide(insertAt);
+  };
+
+  const regenerateSlide = async () => {
+    if (!asset || !data || !slides[idx]) return;
+    setRegeneratingSlide(true);
+    try {
+      const target = slides[idx];
+      const { data: res, error } = await supabase.functions.invoke("rewrite-field", {
+        body: {
+          field_label: `slide_${idx + 1}`,
+          current: target,
+          as_json: true,
+          asset_type: "presentation",
+          brand_context: asset?.meta?.brand_context || {},
+          instruction:
+            "Rewrite this one slide. Return STRICT JSON with the same shape (keys: title, purpose, layout, bullets, notes, and any other keys already present). Sharpen the title, tighten bullets to <=8 words each, and improve the visual guidance / speaker notes. Do not add new top-level keys.",
+        },
+      });
+      const err = handleAiError(res, error, toast);
+      if (err) return;
+      const next = (res as any)?.value;
+      if (!next || typeof next !== "object") {
+        toast({ title: "Regen failed", description: "Rocket didn't return a valid slide.", variant: "destructive" });
+        return;
+      }
+      const copy = slides.slice();
+      copy[idx] = { ...target, ...next };
+      await persistSlides(copy);
+      window.dispatchEvent(new Event("credits:refresh"));
+      track("slide_regenerated", { asset_id: asset.id, slide_index: idx });
+      toast({ title: "Slide regenerated" });
+    } finally {
+      setRegeneratingSlide(false);
+    }
   };
 
   const doExport = async (format: "pdf" | "pptx") => {
@@ -329,6 +367,15 @@ export default function Presenter() {
             >
               {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               {isFullscreen ? "Exit" : "Present"}
+            </button>
+            <button
+              onClick={regenerateSlide}
+              disabled={regeneratingSlide}
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/10 px-3 py-1.5 text-xs text-white/90 hover:bg-brand/20 disabled:opacity-40"
+              title="Rewrite this slide with Rocket (1 credit)"
+            >
+              {regeneratingSlide ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+              Regen slide
             </button>
           </div>
         </div>

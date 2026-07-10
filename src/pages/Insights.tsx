@@ -88,30 +88,44 @@ const Insights = () => {
   const recent = assets.slice(0, 8);
   const recentProjects = projects.slice(0, 5);
 
-  const exportCsv = () => {
-    const rows = [["id", "title", "asset_type", "project_id", "project_name", "created_at", "image_url"]];
-    const projById = new Map(projects.map((p) => [p.id, p.name]));
-    inRange.forEach((a) => {
-      rows.push([
-        a.id,
-        (a.title || "").replace(/"/g, '""'),
-        a.asset_type || "",
-        a.project_id || "",
-        (projById.get(a.project_id || "") || "").replace(/"/g, '""'),
-        a.created_at,
-        a.image_url || "",
-      ]);
-    });
-    const csv = rows.map((r) => r.map((c) => `"${String(c)}"`).join(",")).join("\n");
+  const [csvOpen, setCsvOpen] = useState(false);
+
+  const downloadCsv = (name: string, rows: (string | number)[][]) => {
+    const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `rocket-usage-last-${range}d.csv`;
+    link.download = name;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const exportCsv = () => {
+    setCsvOpen(false);
+    const rows: (string | number)[][] = [["id", "title", "asset_type", "project_id", "project_name", "created_at", "image_url"]];
+    const projById = new Map(projects.map((p) => [p.id, p.name]));
+    inRange.forEach((a) => {
+      rows.push([
+        a.id,
+        a.title || "",
+        a.asset_type || "",
+        a.project_id || "",
+        projById.get(a.project_id || "") || "",
+        a.created_at,
+        a.image_url || "",
+      ]);
+    });
+    downloadCsv(`rocket-assets-last-${range}d.csv`, rows);
+  };
+
+  const exportDailyCsv = () => {
+    setCsvOpen(false);
+    const rows: (string | number)[][] = [["date", "assets_generated"]];
+    daily.forEach((d) => rows.push([d.key, d.count]));
+    downloadCsv(`rocket-daily-last-${range}d.csv`, rows);
   };
 
   return (
@@ -122,14 +136,28 @@ const Insights = () => {
           <p className="mt-1 text-sm text-neutral-500">Your generation activity, credits, and library at a glance.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={exportCsv}
-            disabled={loading || inRange.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 hover:border-neutral-400 disabled:opacity-40"
-            title="Export as CSV"
-          >
-            <Download className="h-3.5 w-3.5" /> Export CSV
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setCsvOpen((v) => !v)}
+              disabled={loading || inRange.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 hover:border-neutral-400 disabled:opacity-40"
+              title="Export as CSV"
+            >
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </button>
+            {csvOpen && (
+              <div className="absolute right-0 z-20 mt-1 w-56 rounded-xl border border-neutral-200 bg-white p-1 text-sm shadow-lg">
+                <button onClick={exportCsv} className="flex w-full flex-col items-start rounded-lg px-3 py-2 text-left hover:bg-neutral-50">
+                  <span className="font-medium">Per-asset breakdown</span>
+                  <span className="text-[11px] text-neutral-500">One row per asset with type, project, timestamp.</span>
+                </button>
+                <button onClick={exportDailyCsv} className="flex w-full flex-col items-start rounded-lg px-3 py-2 text-left hover:bg-neutral-50">
+                  <span className="font-medium">Daily totals</span>
+                  <span className="text-[11px] text-neutral-500">One row per day with generation count.</span>
+                </button>
+              </div>
+            )}
+          </div>
           <div className="inline-flex rounded-xl border border-neutral-200 bg-white p-1 text-sm">
             {[7, 30, 90].map(n => (
               <button key={n} onClick={() => setRange(n as 7 | 30 | 90)} className={`rounded-lg px-3 py-1.5 transition ${range === n ? "bg-neutral-900 text-white" : "text-neutral-600 hover:text-neutral-900"}`}>
