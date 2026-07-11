@@ -407,19 +407,18 @@ const Generate = () => {
     setLoading(true);
     const nowIso = new Date().toISOString();
     setPendingPrompt({ text: p, at: nowIso });
-    if (chatId) setPendingPrompts((prev) => [...prev, { text: p, at: nowIso }]);
+    if (chatId) {
+      setPendingPrompts((prev) => [...prev, { text: p, at: nowIso }]);
+    }
+    setMsgIdx(0);
     try {
-      // Reuse the current chat when inside one; otherwise create a new chat row.
-      let newChatId: string;
-      if (chatId) {
-        newChatId = chatId;
-      } else {
-        const title = p.length > 60 ? p.slice(0, 57) + "…" : p;
-        const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
-        const workspace_id = await ensureActiveWorkspaceId();
-        const { data: newChat, error: chatErr } = await supabase
-          .from("chats")
-          .insert({ user_id: user!.id, workspace_id, title, prompt: p } as any)
+      let newChatId = chatId;
+      if (!newChatId) {
+        const { data: newChat, error: chatErr } = await supabase.from("chats").insert({
+          user_id: user.id,
+          project_id: projectId || null,
+          prompt: p,
+        } as any)
           .select("id")
           .single();
         if (chatErr) throw new Error(chatErr.message);
@@ -700,7 +699,7 @@ const Generate = () => {
                 <div className="mb-5">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Latest deliverable</div>
-                    <Link to={`/assets/${latest.id}`} className="text-[11px] text-neutral-500 hover:text-neutral-900">
+                    <Link to={`/editor?id=${latest.id}`} className="text-[11px] text-neutral-500 hover:text-neutral-900">
                       Open →
                     </Link>
                   </div>
@@ -718,7 +717,7 @@ const Generate = () => {
               {chatAssets.map((a) => (
                 <Link
                   key={a.id}
-                  to={`/assets/${a.id}`}
+                  to={`/editor?id=${a.id}`}
                   className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm"
                 >
                   {a.image_url ? (
