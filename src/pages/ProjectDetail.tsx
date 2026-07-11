@@ -360,7 +360,7 @@ const ProjectDetail = () => {
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {visible.map(a => (
             <div key={a.id} className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-              <Link to={`/assets/${a.id}`}>
+              <Link to={`/editor?id=${a.id}`}>
                 <div className="aspect-square w-full bg-neutral-50">
                   {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
                     a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
