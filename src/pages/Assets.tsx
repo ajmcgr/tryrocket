@@ -7,6 +7,8 @@ import { Plus, Search, Trash2, MoreHorizontal, Edit3, FolderPlus, Download, Chec
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
+import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import { isCanvasAsset } from "@/lib/canvasAsset";
 import { packAssetsZip } from "@/lib/exporters/zipPack";
 const supabase = _sb as any;
 
@@ -250,6 +252,7 @@ const Assets = () => {
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map(a => {
             const isLogotype = a?.editor_state?.kind === "logotype";
+            const isCanvas = isCanvasAsset(a);
             const isImage = a.image_url && !isLogotype;
             const isHighlighted = highlight.includes(a.id);
             const isSelected = selected.has(a.id);
@@ -271,6 +274,8 @@ const Assets = () => {
                         <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
                       ) : isLogotype ? (
                         <Logotype state={a.editor_state} fit="contain" />
+                      ) : isCanvas ? (
+                        <CanvasAssetPreview elements={a.editor_state} className="h-full w-full" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
                           <div className="line-clamp-6 whitespace-pre-wrap">{(a.content || a.prompt || "").slice(0, 200)}</div>
@@ -292,6 +297,8 @@ const Assets = () => {
                       <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
                     ) : isLogotype ? (
                       <Logotype state={a.editor_state} fit="contain" />
+                    ) : isCanvas ? (
+                      <CanvasAssetPreview elements={a.editor_state} className="h-full w-full" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
                         <div className="line-clamp-6 whitespace-pre-wrap">{(a.content || a.prompt || "").slice(0, 200)}</div>
