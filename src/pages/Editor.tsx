@@ -528,7 +528,7 @@ const Editor = () => {
     const { writePsd } = await import("ag-psd");
     const stage = stageRef.current;
     if (!stage) return;
-    const base = new OffscreenCanvas ? new OffscreenCanvas(STAGE_W, STAGE_H) : document.createElement("canvas");
+    const base: any = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(STAGE_W, STAGE_H) : document.createElement("canvas");
     (base as any).width = STAGE_W; (base as any).height = STAGE_H;
     const ctx: any = (base as any).getContext("2d");
     ctx.fillStyle = bg; ctx.fillRect(0, 0, STAGE_W, STAGE_H);
@@ -603,7 +603,7 @@ const Editor = () => {
       const bytes = await canvasToPngBytes(c);
       layers.push({ name: `${e.kind}-${e.id}`, canvas: c, imageData: cctx.getImageData(0, 0, STAGE_W, STAGE_H), opacity: 1, hidden: false });
     }
-    const psd: Psd = { width: STAGE_W, height: STAGE_H, children: layers } as any;
+    const psd: any = { width: STAGE_W, height: STAGE_H, children: layers };
     const buf = writePsd(psd);
     const blob = new Blob([buf], { type: "image/vnd.adobe.photoshop" });
     const url = URL.createObjectURL(blob);
