@@ -869,7 +869,7 @@ export default function AssetVisual({ asset }: { asset: any }) {
       <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
         <header className="border-b border-neutral-100 bg-neutral-50/60 px-6 py-4">
           <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Logo Lockup</div>
-          <h2 className="mt-0.5 text-xl font-semibold text-neutral-900">{asset?.title || "Logo Lockup"}</h2>
+          <h2 className="mt-0.5 text-xl font-semibold text-neutral-900">{(asset as any)?.title || "Logo Lockup"}</h2>
         </header>
         <div className="aspect-[4/3] bg-white p-4">
           <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" />
