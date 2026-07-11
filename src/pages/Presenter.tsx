@@ -229,7 +229,7 @@ export default function Presenter() {
   if (!data) return (
     <div className="grid min-h-screen place-items-center bg-neutral-950 p-10 text-center text-sm text-neutral-400">
       This asset didn't parse as a presentation.
-      <Link to={`/assets/${asset.id}`} className="ml-2 text-brand underline">Back to asset</Link>
+      <Link to={`/editor?id=${asset.id}`} className="ml-2 text-brand underline">Back to asset</Link>
     </div>
   );
 
@@ -271,7 +271,7 @@ export default function Presenter() {
       {!isFullscreen && (
         <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 py-3">
           <Link
-            to={`/assets/${asset.id}`}
+            to={`/editor?id=${asset.id}`}
             className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back
