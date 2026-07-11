@@ -525,7 +525,7 @@ const Editor = () => {
   };
 
   const exportPsd = async () => {
-    const { writePsd, type Psd } = await import("ag-psd");
+    const { writePsd } = await import("ag-psd");
     const stage = stageRef.current;
     if (!stage) return;
     const base = new OffscreenCanvas ? new OffscreenCanvas(STAGE_W, STAGE_H) : document.createElement("canvas");
