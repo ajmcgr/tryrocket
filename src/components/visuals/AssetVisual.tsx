@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Copy, Check, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { Logotype } from "@/components/Logotype";
+import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import { isCanvasAsset } from "@/lib/canvasAsset";
 import { isLogotype } from "@/lib/logotype";
 import {
   tryJson, hexToRgb, rgbToHsl, contrastRatio,
@@ -430,63 +432,69 @@ function BrandGuidelinesView({ data }: { data: BrandGuidelinesData }) {
   if (data.messaging) pages.push({ label: "10", title: "Messaging", render: () => (
     <div className="space-y-4">
       {data.messaging!.core_message && <ParagraphBlock text={data.messaging!.core_message} />}
-      {data.messaging!.value_prop && <blockquote className="border-l-4 border-brand pl-4 text-lg italic text-neutral-800">{data.messaging!.value_prop}</blockquote>}
+      {data.messaging!.value_prop && <div className="rounded-xl border border-brand/30 bg-brand/5 p-4 text-base font-medium text-neutral-900">{data.messaging!.value_prop}</div>}
       {data.messaging!.pillars?.length && (
         <div className="grid gap-3 md:grid-cols-3">
-          {data.messaging!.pillars.map((p, i) => (
-            <div key={i} className="rounded-xl border border-neutral-200 bg-white p-4"><div className="font-semibold text-neutral-900">{p.name}</div><div className="mt-1 text-sm text-neutral-600">{p.proof}</div></div>
+          {data.messaging!.pillars.map((pl, i) => (
+            <div key={i} className="rounded-xl border border-neutral-200 bg-white p-4">
+              <div className="text-[10px] uppercase tracking-wider text-brand">Pillar {i + 1}</div>
+              <h4 className="mt-1 font-semibold text-neutral-900">{pl.name}</h4>
+              <p className="mt-1 text-xs text-neutral-600">{pl.proof}</p>
+            </div>
           ))}
         </div>
       )}
       {data.messaging!.reasons_to_believe?.length && (
-        <ul className="list-disc space-y-1 pl-5 text-sm text-neutral-700">{data.messaging!.reasons_to_believe.map((r, i) => <li key={i}>{r}</li>)}</ul>
+        <div><div className="text-xs uppercase tracking-wider text-neutral-500">Reasons to believe</div><ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-neutral-800">{data.messaging!.reasons_to_believe.map((r, i) => <li key={i}>{r}</li>)}</ul></div>
       )}
     </div>
   )});
   if (data.taglines?.length) pages.push({ label: "11", title: "Taglines", render: () => (
-    <div className="grid gap-3 md:grid-cols-2">
-      {data.taglines!.map((t, i) => <div key={i} className="rounded-xl border border-neutral-200 bg-white p-4 text-lg font-medium text-neutral-900">{t}</div>)}
-    </div>
-  )});
-  if (data.elevator_pitch) pages.push({ label: "12", title: "Elevator Pitch", render: () => (
-    <div className="space-y-4">
-      {data.elevator_pitch!.one_sentence && <div><div className="text-[10px] uppercase tracking-wider text-brand">One sentence</div><blockquote className="mt-1 border-l-4 border-brand pl-4 text-lg italic text-neutral-800">{data.elevator_pitch!.one_sentence}</blockquote></div>}
-      {data.elevator_pitch!.thirty_second && <div><div className="text-[10px] uppercase tracking-wider text-brand">30 seconds</div><ParagraphBlock text={data.elevator_pitch!.thirty_second} /></div>}
-      {data.elevator_pitch!.two_minute && <div><div className="text-[10px] uppercase tracking-wider text-brand">2 minutes</div><ParagraphBlock text={data.elevator_pitch!.two_minute} /></div>}
-    </div>
-  )});
-  if (data.do?.length || data.dont?.length) pages.push({ label: "13", title: "Do / Don't", render: () => (
-    <div className="grid gap-4 md:grid-cols-2">
-      <div>
-        <div className="text-[10px] uppercase tracking-wider text-emerald-700">Do</div>
-        <ul className="mt-2 space-y-2">{data.do?.map((x, i) => <li key={i} className="rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900">✓ {x}</li>)}</ul>
-      </div>
-      <div>
-        <div className="text-[10px] uppercase tracking-wider text-rose-700">Don't</div>
-        <ul className="mt-2 space-y-2">{data.dont?.map((x, i) => <li key={i} className="rounded-lg border border-rose-100 bg-rose-50/60 px-3 py-2 text-sm text-rose-900">✗ {x}</li>)}</ul>
-      </div>
-    </div>
-  )});
-  if (data.website_examples) pages.push({ label: "14", title: "Website Examples", render: () => (
-    <div className="grid gap-3 md:grid-cols-3">
-      {Object.entries(data.website_examples!).map(([k, v], i) => (
-        <div key={i} className="rounded-xl border border-neutral-200 bg-white p-4"><div className="text-[10px] uppercase tracking-wider text-brand">{k}</div><div className="mt-2"><div className="font-semibold text-neutral-900">{(v as any).headline}</div><div className="mt-1 text-sm text-neutral-700">{(v as any).subheadline || (v as any).body}</div></div></div>
+    <div className="grid gap-2 md:grid-cols-2">
+      {data.taglines!.map((t, i) => (
+        <div key={i} className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base font-medium text-neutral-900">"{t}"<CopyBtn text={t} /></div>
       ))}
     </div>
   )});
-  if (data.social_examples?.length) pages.push({ label: "15", title: "Social Examples", render: () => <SocialPostsGrid posts={data.social_examples!.map(s => ({ platform: s.platform, copy: s.copy }))} /> });
-  if (data.launch_examples?.length) pages.push({ label: "16", title: "Launch Examples", render: () => (
-    <div className="grid gap-3">{data.launch_examples!.map((l, i) => <div key={i} className="rounded-xl border border-neutral-200 bg-white p-4"><div className="text-[10px] uppercase tracking-wider text-brand">{l.label}</div><ParagraphBlock text={l.copy} /></div>)}</div>
+  if (data.elevator_pitch) pages.push({ label: "12", title: "Elevator pitch", render: () => (
+    <div className="grid gap-3">
+      {(["one_sentence","thirty_second","two_minute"] as const).map((k) => data.elevator_pitch![k] ? (
+        <div key={k} className="rounded-xl border border-neutral-200 bg-white p-4">
+          <div className="flex items-center justify-between"><div className="text-[10px] uppercase tracking-wider text-brand">{k.replace(/_/g, " ")}</div><CopyBtn text={data.elevator_pitch![k]!} /></div>
+          <ParagraphBlock text={data.elevator_pitch![k]!} />
+        </div>
+      ) : null)}
+    </div>
+  )});
+  if (data.do?.length || data.dont?.length) pages.push({ label: "13", title: "Do & don't", render: () => (
+    <div className="grid gap-3 md:grid-cols-2">
+      <div><h4 className="mb-2 text-sm font-semibold text-emerald-700">Do</h4><ul className="space-y-1.5 text-sm">{(data.do || []).map((d, i) => <li key={i} className="rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-emerald-900">✓ {d}</li>)}</ul></div>
+      <div><h4 className="mb-2 text-sm font-semibold text-rose-700">Don't</h4><ul className="space-y-1.5 text-sm">{(data.dont || []).map((d, i) => <li key={i} className="rounded-lg border border-rose-100 bg-rose-50/60 px-3 py-2 text-rose-900">✗ {d}</li>)}</ul></div>
+    </div>
+  )});
+  if (data.website_examples) pages.push({ label: "14", title: "Website examples", render: () => (
+    <div className="space-y-3">
+      {data.website_examples!.hero && <div className="rounded-2xl bg-gradient-to-br from-neutral-50 to-white p-8 text-center"><h2 className="text-3xl font-semibold text-neutral-900">{data.website_examples!.hero.headline}</h2><p className="mt-2 text-neutral-600">{data.website_examples!.hero.subheadline}</p></div>}
+      {data.website_examples!.feature && <div className="rounded-2xl border border-neutral-200 bg-white p-6"><h3 className="text-xl font-semibold text-neutral-900">{data.website_examples!.feature.headline}</h3><p className="mt-2 text-neutral-700">{data.website_examples!.feature.body}</p></div>}
+      {data.website_examples!.cta && <div className="rounded-2xl bg-brand p-6 text-brand-foreground"><h3 className="text-xl font-semibold">{data.website_examples!.cta.headline}</h3><p className="mt-2 opacity-90">{data.website_examples!.cta.body}</p></div>}
+    </div>
+  )});
+  if (data.social_examples?.length) pages.push({ label: "15", title: "Social examples", render: () => <SocialPostsGrid posts={data.social_examples!} /> });
+  if (data.launch_examples?.length) pages.push({ label: "16", title: "Launch examples", render: () => (
+    <div className="grid gap-3">{data.launch_examples!.map((l, i) => (
+      <div key={i} className="rounded-2xl border border-neutral-200 bg-white p-5"><div className="flex items-center justify-between"><div className="text-[10px] uppercase tracking-wider text-brand">{l.label}</div><CopyBtn text={l.copy} /></div><ParagraphBlock text={l.copy} /></div>
+    ))}</div>
   )});
 
   const [idx, setIdx] = useState(0);
-  if (!pages.length) return <ParseFallback raw={JSON.stringify(data)} message="No guideline pages found." />;
+  if (!pages.length) return <ParseFallback raw="" message="No brand guidelines content." />;
   const page = pages[idx];
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex gap-2 overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-50 p-2">
         {pages.map((p, i) => (
-          <button key={i} onClick={() => setIdx(i)} className={`flex h-20 w-36 shrink-0 flex-col justify-between rounded-lg border p-2 text-left transition ${idx === i ? "border-brand bg-white shadow-sm" : "border-neutral-200 bg-white hover:border-neutral-300"}`}>
+          <button key={i} onClick={() => setIdx(i)} className={`flex h-20 w-32 shrink-0 flex-col justify-between rounded-lg border p-2 text-left text-[10px] transition ${idx === i ? "border-brand bg-white shadow-sm" : "border-neutral-200 bg-white hover:border-neutral-300"}`}>
             <span className="text-neutral-400">{p.label}</span>
             <span className="line-clamp-2 font-medium text-neutral-800">{p.title}</span>
           </button>
@@ -840,6 +848,7 @@ export default function AssetVisual({ asset }: { asset: any }) {
   const content: string = asset?.content || "";
   const json = useMemo(() => tryJson(content), [content]);
   const logotypeAsset = isLogotype(asset);
+  const canvasAsset = isCanvasAsset(asset);
 
   if (logotypeAsset) {
     return (
@@ -850,6 +859,20 @@ export default function AssetVisual({ asset }: { asset: any }) {
         </header>
         <div className="h-[280px] bg-white px-6 py-6">
           <Logotype state={asset.editor_state} fit="contain" />
+        </div>
+      </section>
+    );
+  }
+
+  if (canvasAsset) {
+    return (
+      <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+        <header className="border-b border-neutral-100 bg-neutral-50/60 px-6 py-4">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Logo Lockup</div>
+          <h2 className="mt-0.5 text-xl font-semibold text-neutral-900">{asset?.title || "Logo Lockup"}</h2>
+        </header>
+        <div className="aspect-[4/3] bg-white p-4">
+          <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" />
         </div>
       </section>
     );
@@ -870,6 +893,7 @@ export default function AssetVisual({ asset }: { asset: any }) {
 }
 
 export function hasVisualRenderer(asset: any): boolean {
+  if (isCanvasAsset(asset)) return true;
   if (isLogotype(asset)) return true;
   const t = asset?.asset_type;
   return [
