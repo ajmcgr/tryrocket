@@ -2,7 +2,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
 import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, IMAGE_ASSET_TYPES, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
-import { buildLogotypeVariants, pickLogotypeText } from "../_shared/logotype.ts";
+import { buildLogoLockupEditorState, buildLogotypeVariants, pickLogotypeText } from "../_shared/logotype.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -174,6 +174,7 @@ Deno.serve(async (req) => {
       typeof body.count === "number" && Number.isFinite(body.count)
         ? Math.max(1, Math.min(24, body.count))
         : null;
+    const requestedLockup = !!body.requested_lockup;
     const explicitType = body.asset_type as AssetType | undefined;
     const providedCtx = body.brand_context as BrandContext | undefined;
     if (!prompt) return new Response(JSON.stringify({ error: "prompt required" }), { status: 400, headers: { ...ch, "Content-Type": "application/json" } });
@@ -382,7 +383,7 @@ Deno.serve(async (req) => {
           source_url: detectedUrl,
           meta: { brand_context: ctx, image_prompt: imgPrompt, variant: i + 1, of: count, used_logo_ref: !!logoRefs },
         }).select().single();
-        return asset?.id;
+        return asset?.id ? { id: asset.id, image_url: pub.publicUrl, variant: i + 1 } : undefined;
       };
       // Per-variant failures must NOT abort the whole batch — users asked for many
       // variants and one Gemini hiccup shouldn't throw away the rest. We also retry
@@ -404,7 +405,8 @@ Deno.serve(async (req) => {
       // Lower concurrency (2) — Gemini image rate-limits aggressively above this,
       // which is why users were getting ~6/10 instead of the full count.
       const results = await mapLimit(count, 2, safeVariant);
-      for (const id of results) if (id) ids.push(id);
+      const createdImages = results.filter((result): result is { id: string; image_url: string; variant: number } => !!result);
+      for (const result of createdImages) ids.push(result.id);
       // If literally every variant failed AND it was a provider outage, surface that.
       if (ids.length === 0 && lastUnavailable) {
         return new Response(JSON.stringify({ error: "ai_provider_unavailable", message: "Rocket is busy right now. Please try again in a moment." }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
@@ -418,18 +420,32 @@ Deno.serve(async (req) => {
           if (!brandText) throw new Error("brand name missing for logotype add-on");
           const brandColor = ctx.colors?.[0];
           const variants = buildLogotypeVariants(brandText, count, brandColor, ctx.fonts || []);
-          const logotypeRows = variants.map((state, i) => ({
-            user_id: user.id,
-            workspace_id,
-            project_id,
-            asset_type: "logo" as const,
-            title: count > 1 ? `Logotype ${i + 1}` : "Logotype",
-            prompt,
-            source_url: detectedUrl,
-            editor_state: state,
-            meta: { brand_context: ctx, kind: "logotype", variant: i + 1, of: count },
-          }));
-          const { data: inserted } = await admin.from("assets").insert(logotypeRows).select("id");
+          const successfulCount = createdImages.length;
+          const rows = createdImages.map((image, i) => {
+            const state = variants[i % variants.length];
+            return requestedLockup ? {
+              user_id: user.id,
+              workspace_id,
+              project_id,
+              asset_type: "logo" as const,
+              title: successfulCount > 1 ? `Logo Lockup ${image.variant}` : "Logo Lockup",
+              prompt,
+              source_url: detectedUrl,
+              editor_state: buildLogoLockupEditorState(image.image_url, state),
+              meta: { brand_context: ctx, kind: "logo_lockup", variant: image.variant, of: successfulCount, source_logo_url: image.image_url },
+            } : {
+              user_id: user.id,
+              workspace_id,
+              project_id,
+              asset_type: "logo" as const,
+              title: count > 1 ? `Logotype ${image.variant}` : "Logotype",
+              prompt,
+              source_url: detectedUrl,
+              editor_state: state,
+              meta: { brand_context: ctx, kind: "logotype", variant: image.variant, of: successfulCount || count },
+            };
+          });
+          const { data: inserted } = await admin.from("assets").insert(rows).select("id");
           if (inserted) for (const row of inserted) ids.push(row.id);
         } catch (e) {
           console.error("logotype gen failed", e);
@@ -456,7 +472,7 @@ Deno.serve(async (req) => {
     // Charge credits — only for what actually generated (excludes free logotypes
     // and any variants that failed mid-batch).
     const billableCount = spec.kind === "image"
-      ? ids.filter((_id, idx) => idx < count).length // only the image variants, not logotypes appended after
+      ? Math.min(count, ids.length) // only the image variants, not free rows appended after
       : ids.length;
     const actualCost = costPer * billableCount;
     if (actualCost > 0) {
