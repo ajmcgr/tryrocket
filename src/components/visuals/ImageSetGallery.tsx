@@ -174,7 +174,7 @@ export default function ImageSetGallery({ asset }: { asset: any }) {
               {/* Bottom bar */}
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition group-hover:opacity-100">
                 <Link
-                  to={`/assets/${r.id}`}
+                  to={`/editor?id=${r.id}`}
                   className="truncate rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium text-neutral-800 hover:bg-white"
                   title="Open asset"
                 >
@@ -252,7 +252,7 @@ export default function ImageSetGallery({ asset }: { asset: any }) {
                 </a>
               )}
               <Link
-                to={`/assets/${active.id}`}
+                to={`/editor?id=${active.id}`}
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20"
               >
                 Open
