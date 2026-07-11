@@ -193,7 +193,6 @@ function AssetCardThumb({ asset }: { asset: any }) {
       </div>
     );
   }
-  // Generic text-asset fallback with a snippet from content
   const snippet = (asset.content || "").replace(/[{}\[\]"`#*_]/g, " ").replace(/\s+/g, " ").trim().slice(0, 140);
   if (snippet) {
     return (
@@ -253,8 +252,10 @@ function isLogotypeOnlyPrompt(text: string) {
   const wantsTextLogo = /\b(logotype|logotypes|wordmark|word\s*mark|word-mark|text[- ]?based\s+logo|text\s+logo|type[- ]?based\s+logo|typographic\s+logo|typography\s+logo|lettering|letters\s+only|name\s+only)\b/.test(lower);
   const saysTextNotLogo = /\b(text|type|typographic|typography|lettering|wordmark|logotype)\b[\s\S]{0,40}\b(not\s+(a\s+)?logo|no\s+(logo|icon|symbol|mark)|not\s+(an\s+)?icon|not\s+(a\s+)?symbol)\b/.test(lower)
     || /\b(not\s+(a\s+)?logo|no\s+(logo|icon|symbol|mark)|not\s+(an\s+)?icon|not\s+(a\s+)?symbol)\b[\s\S]{0,40}\b(text|type|typographic|typography|lettering|wordmark|logotype)\b/.test(lower);
+  const wantsLogoMark = /\b(logo|logos|logo mark|logomark|brandmark|mark|symbol)\b/.test(lower);
   const wantsPictorial = /\b(icon|symbol|emblem|pictorial|illustration|graphic|mascot|badge|app\s*icon|favicon)\b/.test(lower);
-  return (wantsTextLogo || saysTextNotLogo) && !wantsPictorial;
+  const wantsBothLogoAndLogotype = wantsTextLogo && wantsLogoMark && /\b(and|plus|with|along with|as well as|also)\b/.test(lower);
+  return (wantsTextLogo || saysTextNotLogo) && !wantsPictorial && !wantsBothLogoAndLogotype;
 }
 
 function requestedCount(text: string, fallback = 6) {
@@ -265,9 +266,6 @@ function requestedCount(text: string, fallback = 6) {
   return digit ? Math.max(1, Math.min(24, Number(digit[1]))) : fallback;
 }
 
-// Specialized Design templates: pre-canned visual prompt scaffolds.
-// Each chip prepends a vivid format-specific style header to the user's prompt
-// and forces asset_type=graphic so the generator goes through image generation.
 type DesignTemplate = {
   id: string;
   label: string;
@@ -346,7 +344,6 @@ const Generate = () => {
     return () => clearInterval(t);
   }, [loading]);
 
-  // Load chat + its assets when viewing an existing chat
   useEffect(() => {
     if (!chatId || !user) { setChatData(null); setChatAssets([]); return; }
     (async () => {
@@ -360,8 +357,6 @@ const Generate = () => {
     })();
   }, [chatId, user]);
 
-  // Brand Intelligence: derive the active brand context so the user can see what
-  // Rocket knows about their brand before generating more assets.
   const [projectBrandCtx, setProjectBrandCtx] = useState<any>(null);
   useEffect(() => {
     if (!projectId) { setProjectBrandCtx(null); return; }
@@ -376,8 +371,6 @@ const Generate = () => {
     return withCtx?.meta?.brand_context || null;
   })();
 
-  // (brand-context "analyzed" badge is now handled inside <BrandContextStrip />)
-
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const p = prompt.trim();
@@ -387,7 +380,6 @@ const Generate = () => {
     setPendingPrompt({ text: p, at: nowIso });
     if (chatId) setPendingPrompts((prev) => [...prev, { text: p, at: nowIso }]);
     try {
-      // Reuse the current chat when inside one; otherwise create a new chat row.
       let newChatId: string;
       if (chatId) {
         newChatId = chatId;
@@ -405,14 +397,10 @@ const Generate = () => {
       }
 
       let effective: WF = workflow;
-      // Auto-detect (client-side keyword classifier — fast, no extra round trip)
       if (workflow === "auto" && !assetType) {
         const t = p.toLowerCase();
-        // URL-only (bare URL pasted) => full brand kit (Brand Analysis Mode, Canva-style)
         const urlOnly = /^\s*(https?:\/\/)?[\w-]+(\.[\w-]+)+\/?\s*$/i.test(p);
         if (urlOnly) effective = "brand";
-        // URL + intent => hybrid: keep single-asset auto so the classifier picks (logo/graphic/etc)
-        // but we'll still pre-scrape for context below.
         else if (/\b(brand it|full brand|brand kit|complete brand|whole brand)\b/.test(t)) effective = "brand";
         else if (/\b(design it|logo concepts?|brand visuals?|visual identity)\b/.test(t)) effective = "design";
         else if (/\b(launch it|launch kit|launch (copy|assets?|plan|checklist)|product hunt)\b/.test(t)) effective = "launch";
@@ -420,14 +408,11 @@ const Generate = () => {
       }
       let allIds: string[] = [];
       let creditsErr: any = null;
-      // Apply Design template scaffold if one was picked.
       const tpl = template ? DESIGN_TEMPLATES.find(t => t.id === template) : null;
       const selectedChip = assetType ? ASSET_CHIPS.find(c => c.id === assetType) : null;
       const chipPrompt = selectedChip?.promptPrefix ? `${selectedChip.promptPrefix}${p}` : p;
       const effectivePrompt = tpl ? tpl.scaffold(p) : chipPrompt;
       const effectiveAssetType = tpl ? "graphic" : (selectedChip?.assetType || assetType || undefined);
-      // Brand Analysis Mode: any URL in the prompt triggers a pre-scrape so EVERY downstream
-      // asset (workflow fan-out or single auto) shares the same real brand context.
       let sharedCtx: any = null;
       const urlMatch = p.match(/(https?:\/\/[^\s]+|[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
       if (urlMatch) {
@@ -438,11 +423,10 @@ const Generate = () => {
           else sharedCtx = { url: u };
         } catch { sharedCtx = { url: u }; }
       } else if (projectId) {
-        // Reuse stored project brand context if no new URL was given
         try {
           const { data: proj } = await supabase.from("projects").select("brand_context,source_url").eq("id", projectId).maybeSingle();
           if (proj?.brand_context) sharedCtx = proj.brand_context;
-        } catch { /* noop */ }
+        } catch { }
       }
       if (!sharedCtx && chatAssets.length) {
         const recentWithContext = [...chatAssets].reverse().find((asset) => {
@@ -497,7 +481,6 @@ const Generate = () => {
         if (d?.refused) { toast({ title: "Out of scope", description: d.message }); return; }
         allIds = d.asset_ids || [];
       } else {
-        // Workflow fan-out: parallel generate-asset calls
         const plan = WORKFLOW_PLAN[effective as Exclude<WF, "auto">];
         const { getActiveWorkspaceIdSync } = await import("@/lib/workspace");
         const _wsid = getActiveWorkspaceIdSync() || undefined;
@@ -516,14 +499,13 @@ const Generate = () => {
           if (d?.asset_ids?.length) allIds.push(...d.asset_ids);
         }
       }
-      // If we scraped a real brand and have a project, persist context to project for reuse
       if (sharedCtx && projectId && (sharedCtx.productName || sharedCtx.colors?.length)) {
         try {
           const { data: proj } = await supabase.from("projects").select("brand_context").eq("id", projectId).maybeSingle();
           if (!proj?.brand_context) {
             await supabase.from("projects").update({ brand_context: sharedCtx, source_url: sharedCtx.url || null }).eq("id", projectId);
           }
-        } catch { /* noop */ }
+        } catch { }
       }
       if (allIds.length === 0 && creditsErr) {
         setOutOfCredits({ needed: creditsErr.needed, remaining: creditsErr.remaining });
@@ -533,7 +515,6 @@ const Generate = () => {
         throw new Error("No assets generated");
       }
       if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
-      // Link generated assets to this chat
       await supabase.from("assets").update({ chat_id: newChatId, prompt: p }).in("id", allIds);
       window.dispatchEvent(new Event("chats:refresh"));
       window.dispatchEvent(new Event("credits:refresh"));
@@ -545,7 +526,6 @@ const Generate = () => {
       });
       setPrompt("");
       if (chatId) {
-        // Already in this chat — refresh assets in place so the new prompt appears in history.
         const { data: a } = await supabase
           .from("assets")
             .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,meta,source_url,created_at")
@@ -567,13 +547,9 @@ const Generate = () => {
   useEffect(() => {
     if (autoRan.current) return;
     if (params.get("prompt") && user) { autoRan.current = true; submit(); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const isChatView = !!(chatId && chatData) || (loading && !!pendingPrompt);
-  // Build the ordered list of user prompts in this chat: start with chat.prompt,
-  // then append unique prompts from assets in creation order, then any pending prompts
-  // currently being generated. Falls back to the live pendingPrompt if there's no chat yet.
   const promptHistory: { text: string; at: string | null }[] = (() => {
     const list: { text: string; at: string | null }[] = [];
     const push = (s?: string | null, at?: string | null) => {
@@ -592,9 +568,7 @@ const Generate = () => {
     <div className={`flex min-h-[calc(100vh-4rem)] w-full flex-col ${isChatView ? "px-6 py-6" : "mx-auto max-w-3xl items-center px-6 py-12"}`}>
       {isChatView ? (
         <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-          {/* Left: chat panel */}
           <div className="flex h-[calc(100vh-8rem)] flex-col lg:sticky lg:top-20">
-            {/* Messages */}
             <div className="flex-1 space-y-3 overflow-y-auto">
               {promptHistory.map((p, i) => {
                 const isLast = i === promptHistory.length - 1;
@@ -609,7 +583,6 @@ const Generate = () => {
                       : "Done. See the results panel.";
                 return (
                   <div key={i} className="space-y-3">
-                    {/* User bubble — right */}
                     <div className="flex w-full flex-col items-end gap-1">
                       <div className="max-w-[85%] rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
                         {p.text}
@@ -620,7 +593,6 @@ const Generate = () => {
                         </span>
                       )}
                     </div>
-                    {/* Assistant bubble — left */}
                     <div className="flex w-full flex-col items-start gap-1">
                       <div className="flex max-w-[85%] items-center gap-2 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
                         {showLoading && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-neutral-500" />}
@@ -631,7 +603,6 @@ const Generate = () => {
                 );
               })}
             </div>
-            {/* Composer pinned to bottom */}
             <form onSubmit={submit} className="mt-3">
               <div className="rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
                 <textarea
@@ -657,7 +628,6 @@ const Generate = () => {
             </form>
           </div>
 
-          {/* Right: results panel */}
           <div className="rounded-2xl border border-neutral-200 bg-white p-4">
             {activeBrandCtx && (
               <div className="mb-4">
