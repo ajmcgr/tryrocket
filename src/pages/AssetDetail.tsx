@@ -123,6 +123,7 @@ const AssetDetail = () => {
   const isLogo = isLogotype(asset);
   const isImage = !!asset.image_url && !isLogo;
   const hasVisual = hasVisualRenderer(asset);
+  const editorHref = `/editor?id=${asset.id}`;
   const logotypeState = isLogo ? withResolvedLogotypeText(asset) : null;
   const brandCtx = asset?.meta?.brand_context || null;
   // JSON asset types that SHOULD parse into a structured visual but currently don't
@@ -366,7 +367,7 @@ const AssetDetail = () => {
             </button>
           )}
           <Link
-            to={`${hasVisualRenderer(asset) ? "/editor/structured" : "/editor"}?id=${asset.id}`}
+            to={editorHref}
             className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"
           >
             <Edit3 className="h-4 w-4" /> Open in Editor
