@@ -9,6 +9,34 @@ export interface LogotypeState {
   transform: "none" | "uppercase" | "lowercase" | "capitalize";
 }
 
+type CanvasBase = {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rotation?: number;
+  visible: boolean;
+  locked: boolean;
+};
+
+type CanvasImageEl = CanvasBase & {
+  kind: "image";
+  src: string;
+};
+
+type CanvasTextEl = CanvasBase & {
+  kind: "text";
+  text: string;
+  color: string;
+  fontSize: number;
+  fontWeight: number;
+  fontFamily: string;
+  align?: "left" | "center" | "right";
+};
+
+export type CanvasElement = CanvasImageEl | CanvasTextEl;
+
 const GENERIC_BRAND_NAMES = new Set([
   "brand",
   "logo",
@@ -28,6 +56,17 @@ function titleCase(value: string): string {
     .split(/([\s-]+)/)
     .map((part) => (/^[a-z]/i.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part))
     .join("");
+}
+
+function uid(): string {
+  return Math.random().toString(36).slice(2, 9);
+}
+
+function applyTransform(text: string, transform: LogotypeState["transform"]): string {
+  if (transform === "uppercase") return text.toUpperCase();
+  if (transform === "lowercase") return text.toLowerCase();
+  if (transform === "capitalize") return titleCase(text);
+  return text;
 }
 
 function cleanDomainLabel(label: string): string | undefined {
@@ -143,4 +182,38 @@ export function extractNameFromUrl(url?: string): string | undefined {
     const host = u.hostname.replace(/^www\./, "").split(".")[0];
     return host ? cleanDomainLabel(host) : undefined;
   } catch { return undefined; }
+}
+
+export function buildLogoLockupEditorState(imageUrl: string, state: LogotypeState): CanvasElement[] {
+  const lockupText = applyTransform(state.text, state.transform);
+  const textWidth = Math.max(280, Math.min(420, Math.round(lockupText.length * 42)));
+  return [
+    {
+      id: uid(),
+      kind: "image",
+      x: 110,
+      y: 200,
+      w: 150,
+      h: 150,
+      visible: true,
+      locked: false,
+      src: imageUrl,
+    },
+    {
+      id: uid(),
+      kind: "text",
+      x: 305,
+      y: 190,
+      w: textWidth,
+      h: 170,
+      visible: true,
+      locked: false,
+      text: lockupText,
+      color: state.color,
+      fontSize: 86,
+      fontWeight: state.weight,
+      fontFamily: state.font,
+      align: "left",
+    },
+  ];
 }
