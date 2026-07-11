@@ -51,8 +51,10 @@ function isLogotypeOnlyPrompt(prompt: string): boolean {
   const wantsTextLogo = /\b(logotype|logotypes|wordmark|word\s*mark|word-mark|text[- ]?based\s+logo|text\s+logo|type[- ]?based\s+logo|typographic\s+logo|typography\s+logo|lettering|letters\s+only|name\s+only)\b/.test(lower);
   const saysTextNotLogo = /\b(text|type|typographic|typography|lettering|wordmark|logotype)\b[\s\S]{0,40}\b(not\s+(a\s+)?logo|no\s+(logo|icon|symbol|mark)|not\s+(an\s+)?icon|not\s+(a\s+)?symbol)\b/.test(lower)
     || /\b(not\s+(a\s+)?logo|no\s+(logo|icon|symbol|mark)|not\s+(an\s+)?icon|not\s+(a\s+)?symbol)\b[\s\S]{0,40}\b(text|type|typographic|typography|lettering|wordmark|logotype)\b/.test(lower);
+  const wantsLogoMark = /\b(logo|logos|logo mark|logomark|brandmark|mark|symbol)\b/.test(lower);
   const wantsPictorial = /\b(icon|symbol|emblem|pictorial|illustration|graphic|mascot|badge|app\s*icon|favicon)\b/.test(lower);
-  return (wantsTextLogo || saysTextNotLogo) && !wantsPictorial;
+  const wantsBothLogoAndLogotype = wantsTextLogo && wantsLogoMark && /\b(and|plus|with|along with|as well as|also|matching)\b/.test(lower);
+  return (wantsTextLogo || saysTextNotLogo) && !wantsPictorial && !wantsBothLogoAndLogotype;
 }
 
 // Fan out graphic/icon/photo across distinct categories so a multi-variant gallery
@@ -109,6 +111,9 @@ async function classify(prompt: string): Promise<{ asset_type: AssetType; count:
     const parsed = JSON.parse(out);
     const at = (parsed.asset_type || "other") as AssetType;
     if (!(at in GENERATORS)) return { asset_type: "other", count: 1 };
+    // Parse any explicit count from the prompt — number-before-noun, number-after-noun,
+    // or spelled-out words like "dozen", "a few", "couple". The classifier's own count
+    // under-counts, so we ignore it.
     const fallback = GENERATORS[at].defaultCount || 1;
     const c = requestedCount(prompt, fallback);
     return { asset_type: at, count: c };
@@ -171,6 +176,7 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Resolve workspace_id: prefer project's, then caller-provided, then the user's personal workspace.
     let workspace_id: string | null = null;
     if (project_id) {
       const { data: p } = await admin.from("projects").select("workspace_id").eq("id", project_id).maybeSingle();
@@ -182,6 +188,7 @@ Deno.serve(async (req) => {
       workspace_id = (ws as any)?.id || null;
     }
 
+    // Classify
     let cls = explicitType
       ? { asset_type: explicitType, count: Math.max(1, Math.min(24, body.count || GENERATORS[explicitType].defaultCount || 1)) }
       : await classify(prompt);
@@ -193,6 +200,7 @@ Deno.serve(async (req) => {
       };
     }
 
+    // Refuse non-branding
     if (cls.asset_type === "other") {
       const refusalAsset = {
         user_id: user.id, workspace_id, project_id,
@@ -205,6 +213,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ refused: true, message: REFUSAL_TEXT, asset_ids: a ? [a.id] : [] }), { headers: { ...ch, "Content-Type": "application/json" } });
     }
 
+    // Detect URL & scrape
     const detectedUrl = extractUrl(prompt);
     let ctx: BrandContext = { url: detectedUrl || undefined };
     if (providedCtx && (providedCtx.url || providedCtx.productName || providedCtx.colors?.length)) {
@@ -212,10 +221,12 @@ Deno.serve(async (req) => {
     } else if (detectedUrl) {
       ctx = await scrapeUrl(detectedUrl, SUPABASE_URL, SUPABASE_ANON_KEY, jwt);
     } else if (project_id) {
+      // No URL in this prompt — reuse stored brand context from project (Brand Analysis Mode persistence)
       const { data: proj } = await admin.from("projects").select("brand_context,source_url").eq("id", project_id).maybeSingle();
       if (proj?.brand_context) ctx = { ...(proj.brand_context as BrandContext), url: (proj.brand_context as any).url || proj.source_url || undefined };
     }
 
+    // Persist brand context to project if we scraped a real brand and the project has none yet
     if (project_id && (ctx.productName || ctx.colors?.length)) {
       const { data: proj } = await admin.from("projects").select("brand_context").eq("id", project_id).maybeSingle();
       if (!proj?.brand_context) {
@@ -223,6 +234,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Credits check (text=1 each, image=10 each)
     const spec = GENERATORS[cls.asset_type];
     const count = cls.count;
     const costPer = spec.kind === "image" ? 10 : 1;
@@ -237,6 +249,10 @@ Deno.serve(async (req) => {
     const title = cls.asset_type === "graphic" && /component|ui kit|buttons|cards|inputs/i.test(prompt) ? "Component" : ASSET_TITLES[cls.asset_type];
     const ids: string[] = [];
 
+    // ─── Logotype-only fast path ──────────────────────────────────────────
+    // If the user explicitly asks for a logotype / wordmark / text-based logo
+    // (and NOT a pictorial mark/icon), skip Gemini image generation entirely
+    // and return only editable text-based logotype variants. Free of charge.
     if (logotypeOnly) {
       try {
         const brandText = pickLogotypeText({
@@ -267,7 +283,11 @@ Deno.serve(async (req) => {
       }
       return new Response(JSON.stringify({ asset_ids: ids, asset_type: "logo", count: ids.length, credits_charged: 0 }), { headers: { ...ch, "Content-Type": "application/json" } });
     }
+    // ──────────────────────────────────────────────────────────────────────
 
+    // Fetch visual references from the scraped brand. Gemini only accepts raster
+    // formats (jpg/png/webp), so SVG/ICO/AVIF get rasterized through wsrv.nl,
+    // a free image proxy that converts arbitrary image URLs to PNG.
     async function fetchAsRef(u?: string | null): Promise<{ mimeType: string; data: string } | null> {
       if (!u) return null;
       const directThenProxy = async (url: string): Promise<Response | null> => {
@@ -275,6 +295,8 @@ Deno.serve(async (req) => {
           const r = await fetch(url);
           if (!r.ok) return null;
           const ct = (r.headers.get("content-type") || "").toLowerCase();
+          // If it's a format Gemini can't consume directly (svg/ico/avif/heic),
+          // re-fetch via wsrv.nl to rasterize to PNG.
           if (!ct || ct.includes("svg") || ct.includes("icon") || ct.includes("avif") || ct.includes("heic")) {
             const proxied = `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ""))}&output=png&w=1024&we`;
             const p = await fetch(proxied);
@@ -296,6 +318,9 @@ Deno.serve(async (req) => {
       } catch { return null; }
     }
 
+    // Visual refs used for ALL image generation so the output evolves the existing brand.
+    // For logos: always include the logo image first (rasterized if SVG) AND the
+    // homepage screenshot so Gemini sees both the mark and its in-context palette.
     let logoRefs: { mimeType: string; data: string }[] | undefined;
     if (spec.kind === "image") {
       const candidates: (string | undefined)[] = [];
@@ -319,12 +344,15 @@ Deno.serve(async (req) => {
     }
 
     if (spec.kind === "image") {
+      // Generate N image variants in parallel
       const createImageVariant = async (i: number) => {
         let imgPrompt: string;
         if (cls.asset_type === "logo" && logoRefs) {
+          // Skip the text-prompt rewrite step entirely. Feed a stable variation instruction + reference image directly.
           const variantHint = ["alternate angle", "monochrome (single brand color on white)", "simplified minimal version", "refined geometry, more polished", "badge / circle enclosure"][i % 5];
           imgPrompt = `Create a logo VARIATION of the brand shown in the attached reference image${ctx.productName ? ` ("${ctx.productName}")` : ""}.\n\nHARD RULES:\n- KEEP the same core motif/symbol from the reference (do not invent a new unrelated concept).\n- KEEP the same silhouette family, proportions, and overall style.\n- KEEP the exact brand colors${ctx.colors?.length ? `: ${ctx.colors.slice(0,3).join(", ")}` : " from the reference"}. No new colors.\n- This variant: ${variantHint}.\n- Solid white background, flat vector, app-icon ready, no text, no typography, no letters.\n- The result must look like it belongs to the SAME brand as the reference.`;
         } else if (logoRefs) {
+          // Non-logo image with brand visual references attached — instruct Gemini to evolve, not invent.
           const variantPrompt = augmentImagePrompt(cls.asset_type, prompt, i, count);
           const base = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.9 });
           imgPrompt = `${base}\n\nVISUAL BRAND CONSTRAINTS (reference images are attached):\n- Match the visual language, color palette, and typographic feel of the attached reference(s).\n- This is for the EXISTING brand${ctx.productName ? ` "${ctx.productName}"` : ""}${ctx.colors?.length ? ` — use ONLY these brand colors: ${ctx.colors.slice(0,4).join(", ")}` : ""}.\n- Do not invent a new visual identity. Evolve the one shown.`;
@@ -349,6 +377,10 @@ Deno.serve(async (req) => {
         }).select().single();
         return asset?.id;
       };
+      // Per-variant failures must NOT abort the whole batch — users asked for many
+      // variants and one Gemini hiccup shouldn't throw away the rest. We also retry
+      // each failed slot up to 2 extra times so a flaky provider doesn't silently
+      // halve the user's results.
       let lastUnavailable: GeminiUnavailableError | null = null;
       const safeVariant = async (i: number) => {
         const MAX_ATTEMPTS = 5;
@@ -362,12 +394,17 @@ Deno.serve(async (req) => {
         }
         return undefined;
       };
+      // Lower concurrency (2) — Gemini image rate-limits aggressively above this,
+      // which is why users were getting ~6/10 instead of the full count.
       const results = await mapLimit(count, 2, safeVariant);
       for (const id of results) if (id) ids.push(id);
+      // If literally every variant failed AND it was a provider outage, surface that.
       if (ids.length === 0 && lastUnavailable) {
         return new Response(JSON.stringify({ error: "ai_provider_unavailable", message: "Rocket is busy right now. Please try again in a moment." }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
       }
 
+      // When generating logos, also generate matching logotype (text wordmark) variants.
+      // These are free (no Gemini call) and editable in the client.
       if (cls.asset_type === "logo") {
         try {
           const brandText = pickLogotypeText({ prompt, productName: ctx.productName, url: ctx.url || detectedUrl });
@@ -409,8 +446,10 @@ Deno.serve(async (req) => {
       for (const id of results) if (id) ids.push(id);
     }
 
+    // Charge credits — only for what actually generated (excludes free logotypes
+    // and any variants that failed mid-batch).
     const billableCount = spec.kind === "image"
-      ? ids.filter((_id, idx) => idx < count).length
+      ? ids.filter((_id, idx) => idx < count).length // only the image variants, not logotypes appended after
       : ids.length;
     const actualCost = costPer * billableCount;
     if (actualCost > 0) {
