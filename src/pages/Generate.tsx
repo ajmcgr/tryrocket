@@ -743,7 +743,7 @@ const Generate = () => {
                   <div className="mb-2 flex items-center justify-between">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Latest deliverable</div>
                     <Link to={`/editor?id=${latest.id}`} className="text-[11px] text-neutral-500 hover:text-neutral-900">
-                      Open ->
+                        Open →
                     </Link>
                   </div>
                   <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white p-4">
