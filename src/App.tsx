@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,9 +16,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Generate from "./pages/Generate.tsx";
 import Editor from "./pages/Editor.tsx";
 import Presenter from "./pages/Presenter.tsx";
-import { Navigate } from "react-router-dom";
 import Assets from "./pages/Assets.tsx";
-import AssetDetail from "./pages/AssetDetail.tsx";
 import Trash from "./pages/Trash.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
@@ -53,6 +51,11 @@ import { AuthProvider } from "./contexts/AuthContext.tsx";
 import { NotificationsProvider } from "./contexts/NotificationsContext.tsx";
 
 const queryClient = new QueryClient();
+
+const AssetRouteRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={id ? `/editor?id=${id}` : "/assets"} replace />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -94,14 +97,14 @@ const App = () => (
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/assets" element={<Assets />} />
-              <Route path="/assets/:id" element={<AssetDetail />} />
+              <Route path="/assets/:id" element={<AssetRouteRedirect />} />
               <Route path="/trash" element={<Trash />} />
               <Route path="/create" element={<Generate />} />
               <Route path="/editor" element={<Editor />} />
               <Route path="/present" element={<Presenter />} />
               <Route path="/dashboard" element={<Navigate to="/projects" replace />} />
               <Route path="/generate" element={<Navigate to="/create" replace />} />
-              <Route path="/rocket/:id" element={<Navigate to="/assets" replace />} />
+              <Route path="/rocket/:id" element={<AssetRouteRedirect />} />
               <Route path="/settings" element={<SettingsLayout />}>
                 <Route index element={<Navigate to="/settings/profile" replace />} />
                 <Route path="profile" element={<ProfileSettings />} />
