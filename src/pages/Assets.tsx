@@ -291,7 +291,7 @@ const Assets = () => {
                     </div>
                   </button>
                 ) : (
-                <Link to={`/assets/${a.id}`} className="block">
+                <Link to={`/editor?id=${a.id}`} className="block">
                   <div className="aspect-square w-full overflow-hidden bg-neutral-50">
                     {isImage ? (
                       <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
