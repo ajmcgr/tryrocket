@@ -63,7 +63,7 @@ function AssetCardThumb({ asset }: { asset: any }) {
       <div className="flex aspect-square w-full flex-col justify-center gap-2 bg-gradient-to-br from-neutral-50 to-neutral-100 p-5">
         <div className="text-[10px] uppercase tracking-wider text-neutral-400">Aa</div>
         <div className="text-3xl leading-tight text-neutral-900" style={{ fontFamily: `'${heading}', serif` }}>{heading}</div>
-        <div className="mt-1 text-xs text-neutral-600" style={{ fontFamily: `'${body}', system-ui, sans-serif` }}>The quick brown fox · {body}</div>
+        <div className="mt-1 text-xs text-neutral-600" style={{ fontFamily: `'${body}', system-ui, sans-serif` }}>The quick brown fox ¬∑ {body}</div>
       </div>
     );
   }
@@ -82,7 +82,7 @@ function AssetCardThumb({ asset }: { asset: any }) {
         ) : (
           <div className="text-sm italic text-neutral-600 line-clamp-4">{v?.overview || "Brand voice"}</div>
         )}
-        <div className="text-[9px] uppercase tracking-wider text-neutral-400">Tone · Pillars · Do/Don't</div>
+        <div className="text-[9px] uppercase tracking-wider text-neutral-400">Tone ¬∑ Pillars ¬∑ Do/Don't</div>
       </div>
     );
   }
@@ -98,8 +98,8 @@ function AssetCardThumb({ asset }: { asset: any }) {
         </div>
         <div className="flex gap-1 text-[9px] uppercase tracking-wider text-white/50">
           {g?.mission && <span>Mission</span>}
-          {g?.vision && <span>· Vision</span>}
-          {g?.values?.length ? <span>· Values</span> : null}
+          {g?.vision && <span>¬∑ Vision</span>}
+          {g?.values?.length ? <span>¬∑ Values</span> : null}
         </div>
       </div>
     );
@@ -130,7 +130,7 @@ function AssetCardThumb({ asset }: { asset: any }) {
           {p?.tagline && <div className="text-sm font-semibold leading-tight text-neutral-900 line-clamp-2">{p.tagline}</div>}
           {p?.short_description && <div className="text-[11px] text-neutral-600 line-clamp-3">{p.short_description}</div>}
         </div>
-        <div className="text-[9px] uppercase tracking-wider text-neutral-400">Tagline · Comment · FAQ</div>
+        <div className="text-[9px] uppercase tracking-wider text-neutral-400">Tagline ¬∑ Comment ¬∑ FAQ</div>
       </div>
     );
   }
@@ -160,7 +160,7 @@ function AssetCardThumb({ asset }: { asset: any }) {
           <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gradient-to-br from-brand to-brand/60" />
           <div className="text-[11px] leading-snug text-neutral-700 line-clamp-5">{sample || "Bio"}</div>
         </div>
-        <div className="text-[9px] uppercase tracking-wider text-neutral-400">X · LinkedIn · Press</div>
+        <div className="text-[9px] uppercase tracking-wider text-neutral-400">X ¬∑ LinkedIn ¬∑ Press</div>
       </div>
     );
   }
@@ -169,7 +169,7 @@ function AssetCardThumb({ asset }: { asset: any }) {
     const slides = d?.slides?.slice(0, 3) || [];
     return (
       <div className="flex aspect-square w-full flex-col justify-center gap-2 bg-neutral-100 p-4">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Deck · {d?.slides?.length || 0} slides</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Deck ¬∑ {d?.slides?.length || 0} slides</div>
         <div className="space-y-1.5">
           {slides.map((s, i) => (
             <div key={i} className="flex aspect-[16/9] w-full items-center justify-center rounded border border-neutral-200 bg-white px-2 text-center">
@@ -218,7 +218,7 @@ function AssetCardThumb({ asset }: { asset: any }) {
 const ASSET_CHIPS: { id: string; label: string; Icon: any; example: string; assetType?: string; promptPrefix?: string }[] = [
   { id: "brand_guidelines", label: "Brand Guidelines", Icon: FileText, example: "Brand guidelines for TryLaunch" },
   { id: "template", label: "Brand Templates", Icon: LayoutTemplate, example: "Brand templates for a developer-tools startup" },
-  { id: "logo", label: "Logos", Icon: Sparkles, example: "A logo for TryLaunch — clean SaaS, blue accent" },
+  { id: "logo", label: "Logos", Icon: Sparkles, example: "A logo for TryLaunch ‚Äî clean SaaS, blue accent" },
   { id: "color_system", label: "Colors", Icon: Palette, example: "Color system for a developer-tools brand" },
   { id: "font_system", label: "Fonts", Icon: Type, example: "Font pairing for a modern fintech brand" },
   { id: "brand_voice", label: "Brand Voice", Icon: Wand2, example: "Brand voice for a friendly indie dev tool" },
@@ -305,7 +305,7 @@ const DESIGN_TEMPLATES: DesignTemplate[] = [
   },
   {
     id: "og",
-    label: "OG image (1200×630)",
+    label: "OG image (1200√ó630)",
     ratio: "1200x630",
     scaffold: (p) => `Open Graph social share image, 1200x630, eye-catching, brand-forward, centered composition optimized for link previews. Subject: ${p}. Crisp, no text overlay (text added separately).`,
   },
@@ -318,11 +318,11 @@ const DESIGN_TEMPLATES: DesignTemplate[] = [
 ];
 
 const MESSAGES = [
-  "Understanding your brand…",
-  "Scraping context…",
-  "Creating your assets…",
-  "Generating…",
-  "Saving asset…",
+  "Understanding your brand‚Ä¶",
+  "Scraping context‚Ä¶",
+  "Creating your assets‚Ä¶",
+  "Generating‚Ä¶",
+  "Saving asset‚Ä¶",
 ];
 
 function formatPromptTime(iso: string): string {
@@ -335,10 +335,51 @@ function formatPromptTime(iso: string): string {
   const isYesterday = d.toDateString() === yesterday.toDateString();
   const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   if (sameDay) return time;
-  if (isYesterday) return `Yesterday · ${time}`;
+  if (isYesterday) return `Yesterday ¬∑ ${time}`;
   const sameYear = d.getFullYear() === now.getFullYear();
   const date = d.toLocaleDateString([], sameYear ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
-  return `${date} · ${time}`;
+  return `${date} ¬∑ ${time}`;
+}
+
+async function createChatRecord({
+  supabase,
+  userId,
+  title,
+  prompt,
+  workspaceId,
+  projectId,
+}: {
+  supabase: any;
+  userId: string;
+  title: string;
+  prompt: string;
+  workspaceId?: string | null;
+  projectId?: string | null;
+}) {
+  const payloads = [
+    { user_id: userId, workspace_id: workspaceId ?? undefined, project_id: projectId ?? undefined, title, prompt },
+    { user_id: userId, workspace_id: workspaceId ?? undefined, title, prompt },
+    { user_id: userId, project_id: projectId ?? undefined, title, prompt },
+    { user_id: userId, title, prompt },
+  ];
+  const attempted = new Set<string>();
+  let lastError: any = null;
+
+  for (const payload of payloads) {
+    const cleaned = Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined));
+    const key = Object.keys(cleaned).sort().join(",");
+    if (attempted.has(key)) continue;
+    attempted.add(key);
+
+    const { data, error } = await supabase.from("chats").insert(cleaned as any).select("id").single();
+    if (!error && data?.id) return data.id as string;
+
+    lastError = error;
+    const message = String(error?.message || "");
+    if (!/Could not find .* column .* schema cache/i.test(message)) break;
+  }
+
+  throw new Error(lastError?.message || "Failed to create chat");
 }
 
 const Generate = () => {
@@ -407,26 +448,28 @@ const Generate = () => {
     setLoading(true);
     const nowIso = new Date().toISOString();
     setPendingPrompt({ text: p, at: nowIso });
-    if (chatId) {
-      setPendingPrompts((prev) => [...prev, { text: p, at: nowIso }]);
-    }
-    setMsgIdx(0);
+    if (chatId) setPendingPrompts((prev) => [...prev, { text: p, at: nowIso }]);
     try {
-      let newChatId = chatId;
-      if (!newChatId) {
-        const { data: newChat, error: chatErr } = await supabase.from("chats").insert({
-          user_id: user.id,
-          project_id: projectId || null,
+      // Reuse the current chat when inside one; otherwise create a new chat row.
+      let newChatId: string;
+      if (chatId) {
+        newChatId = chatId;
+      } else {
+        const title = p.length > 60 ? p.slice(0, 57) + "‚Ä¶" : p;
+        const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+        const workspace_id = await ensureActiveWorkspaceId();
+        newChatId = await createChatRecord({
+          supabase,
+          userId: user!.id,
+          workspaceId: workspace_id,
+          projectId,
+          title,
           prompt: p,
-        } as any)
-          .select("id")
-          .single();
-        if (chatErr) throw new Error(chatErr.message);
-        newChatId = newChat.id;
+        });
       }
 
       let effective: WF = workflow;
-      // Auto-detect (client-side keyword classifier — fast, no extra round trip)
+      // Auto-detect (client-side keyword classifier ‚Äî fast, no extra round trip)
       if (workflow === "auto" && !assetType) {
         const t = p.toLowerCase();
         // URL-only (bare URL pasted) => full brand kit (Brand Analysis Mode, Canva-style)
@@ -571,7 +614,7 @@ const Generate = () => {
       });
       setPrompt("");
       if (chatId) {
-        // Already in this chat — refresh assets in place so the new prompt appears in history.
+        // Already in this chat ‚Äî refresh assets in place so the new prompt appears in history.
         const { data: a } = await supabase
           .from("assets")
             .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,meta,source_url,created_at")
@@ -635,7 +678,7 @@ const Generate = () => {
                       : "Done. See the results panel.";
                 return (
                   <div key={i} className="space-y-3">
-                    {/* User bubble — right */}
+                    {/* User bubble ‚Äî right */}
                     <div className="flex w-full flex-col items-end gap-1">
                       <div className="max-w-[85%] rounded-2xl bg-brand px-4 py-3 text-sm text-brand-foreground">
                         {p.text}
@@ -646,7 +689,7 @@ const Generate = () => {
                         </span>
                       )}
                     </div>
-                    {/* Assistant bubble — left */}
+                    {/* Assistant bubble ‚Äî left */}
                     <div className="flex w-full flex-col items-start gap-1">
                       <div className="flex max-w-[85%] items-center gap-2 rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-800">
                         {showLoading && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-neutral-500" />}
@@ -679,7 +722,7 @@ const Generate = () => {
                   </button>
                 </div>
               </div>
-              <p className="mt-1.5 text-center text-[11px] text-neutral-400">Enter to send · Shift+Enter for newline</p>
+              <p className="mt-1.5 text-center text-[11px] text-neutral-400">Enter to send ¬∑ Shift+Enter for newline</p>
             </form>
           </div>
 
@@ -700,7 +743,7 @@ const Generate = () => {
                   <div className="mb-2 flex items-center justify-between">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Latest deliverable</div>
                     <Link to={`/editor?id=${latest.id}`} className="text-[11px] text-neutral-500 hover:text-neutral-900">
-                      Open →
+                      Open ‚Üí
                     </Link>
                   </div>
                   <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white p-4">
@@ -833,7 +876,7 @@ const Generate = () => {
                   type="button"
                   key={t.id}
                   onClick={() => setTemplate(template === t.id ? null : t.id)}
-                  title={`${t.label} — ${t.ratio}`}
+                  title={`${t.label} ‚Äî ${t.ratio}`}
                   className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${template === t.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
                 >
                   <ImageIcon className="h-3 w-3" /> {t.label}
