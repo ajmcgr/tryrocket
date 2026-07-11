@@ -198,7 +198,7 @@ const BrandKitHub = () => {
                   </div>
                   <div className="flex gap-1">
                     {done && preview && (
-                      <Link to={`/assets/${preview.id}`} className="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] hover:bg-neutral-50">Open</Link>
+                      <Link to={`/editor?id=${preview.id}`} className="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] hover:bg-neutral-50">Open</Link>
                     )}
                     <Link to={generateHref(it)} className="inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[11px] font-medium text-brand-foreground hover:bg-brand-hover">
                       <Plus className="h-3 w-3" /> {done ? "More" : "Generate"}
