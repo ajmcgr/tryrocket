@@ -430,9 +430,9 @@ const Index = () => {
                 <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {[
+                    "Logos",
                     "Brand Guidelines",
                     "Brand Templates",
-                    "Logos",
                     "Colors",
                     "Fonts",
                     "Brand voice",
@@ -483,9 +483,9 @@ const Index = () => {
                 <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {[
+                    "Logos",
                     "Brand Guidelines",
                     "Brand Templates",
-                    "Logos",
                     "Colors",
                     "Fonts",
                     "Brand voice",
