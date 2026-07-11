@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const FAQS = [
-  { q: "What does Rocket actually generate?", a: "A complete brand kit from a single URL: positioning, taglines, value props, audience analysis, founder bio, social posts, Product Hunt copy, directory submissions, launch strategy, email templates, messaging framework, and a full launch checklist." },
-  { q: "What types of brand assets can I create?", a: "Choose from 11 asset types: Brand Guidelines, Brand Templates, Logos, Colors, Fonts, Brand Voice, Photos, Components, Graphics, Icons, and Launch Copy. Every Rocket generates a full kit across all categories, organized and ready to export." },
+  { q: "What does Rocket actually generate?", a: "A complete brand kit from a single URL: logos, positioning, taglines, value props, audience analysis, founder bio, social posts, Product Hunt copy, directory submissions, launch strategy, email templates, messaging framework, and a full launch checklist." },
+  { q: "What types of brand assets can I create?", a: "Choose from 11 asset types: Logos, Brand Guidelines, Brand Templates, Colors, Fonts, Brand Voice, Photos, Components, Graphics, Icons, and Launch Copy. Every Rocket generates a full kit across all categories, organized and ready to export." },
   { q: "How long does it take?", a: "About 30–60 seconds. You'll see a live progress UI, then land on your editable Rocket." },
   { q: "Can I edit and regenerate sections?", a: "Yes. Every section has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit." },
   { q: "What's a credit?", a: "Credits power every generation. Text assets cost 1 credit; images cost more. Free plan gets 100 credits/month, Pro gets 3,000. Top up anytime with credit packs." },
@@ -147,9 +147,9 @@ const Index = () => {
   };
 
   const CATEGORIES = [
+    { label: "Logos", slug: "logos", Icon: Shapes },
     { label: "Brand Guidelines", slug: "brand-guidelines", Icon: BookMarked },
     { label: "Brand Templates", slug: "brand-templates", Icon: LayoutTemplate },
-    { label: "Logos", slug: "logos", Icon: Shapes },
     { label: "Colors", slug: "colors", Icon: Palette },
     { label: "Fonts", slug: "fonts", Icon: TypeIcon },
     { label: "Brand voice", slug: "brand-voice", Icon: Mic },
@@ -203,7 +203,7 @@ const Index = () => {
             Make Your Product a Brand
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
-            Create or evolve your brand, plus logos, brand guidelines, graphics, templates, and launch-ready creative assets.
+            Create logos, brand guidelines, graphics, templates, and launch-ready creative assets — or evolve your entire brand.
           </p>
           <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl">
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
@@ -430,9 +430,9 @@ const Index = () => {
                 <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {[
+                    "Logos",
                     "Brand Guidelines",
                     "Brand Templates",
-                    "Logos",
                     "Colors",
                     "Fonts",
                     "Brand voice",
@@ -483,9 +483,9 @@ const Index = () => {
                 <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {[
+                    "Logos",
                     "Brand Guidelines",
                     "Brand Templates",
-                    "Logos",
                     "Colors",
                     "Fonts",
                     "Brand voice",

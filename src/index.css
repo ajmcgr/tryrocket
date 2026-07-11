@@ -17,12 +17,12 @@
     --popover: 30 10% 8%;
     --popover-foreground: 40 30% 95%;
 
-    /* Brand blue (#00A0DC) */
-    --brand: 197 100% 43%;
+    /* Brand blue (#1676e3) */
+    --brand: 212 82% 49%;
     --brand-foreground: 0 0% 100%;
-    --brand-hover: 197 100% 38%;
+    --brand-hover: 212 82% 42%;
 
-    --primary: 197 100% 43%;
+    --primary: 212 82% 49%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 30 10% 12%;
