@@ -450,12 +450,12 @@ const ChartsContent = () => {
 
 /* Ordered card definitions */
 const CARDS: { id: string; minH: string; mobileH: string; render: () => React.ReactNode }[] = [
+  { id: "logo", minH: "min-h-[320px]", mobileH: "min-h-[340px]", render: LogoContent },
   { id: "positioning", minH: "min-h-[380px]", mobileH: "min-h-[360px]", render: PositioningContent },
   { id: "tagline", minH: "min-h-[280px]", mobileH: "min-h-[300px]", render: TaglineContent },
-  { id: "ph", minH: "min-h-[320px]", mobileH: "min-h-[320px]", render: ProductHuntContent },
-  { id: "logo", minH: "min-h-[320px]", mobileH: "min-h-[340px]", render: LogoContent },
   { id: "guidelines", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: GuidelinesContent },
   { id: "templates", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: TemplatesContent },
+  { id: "ph", minH: "min-h-[320px]", mobileH: "min-h-[320px]", render: ProductHuntContent },
   { id: "graphics", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: GraphicsContent },
   { id: "founder", minH: "min-h-[300px]", mobileH: "min-h-[320px]", render: FounderContent },
   { id: "photos", minH: "min-h-[340px]", mobileH: "min-h-[360px]", render: PhotosContent },
