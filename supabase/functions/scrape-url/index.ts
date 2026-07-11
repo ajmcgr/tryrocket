@@ -87,9 +87,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: ch });
   try {
     const key = Deno.env.get("FIRECRAWL_API_KEY");
-    if (!key) return new Response(JSON.stringify({ error: "FIRECRAWL_API_KEY not set" }), { status: 500, headers: { ...ch, "Content-Type": "application/json" } });
+    if (!key) return new Response(JSON.stringify({ error: "FIRECRAWL_API_KEY not set" }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
     const { url } = await req.json();
-    if (!url) return new Response(JSON.stringify({ error: "url required" }), { status: 400, headers: { ...ch, "Content-Type": "application/json" } });
+    if (!url) return new Response(JSON.stringify({ error: "url required" }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
 
     const res = await fetch(`${FIRECRAWL}/scrape`, {
       method: "POST",
