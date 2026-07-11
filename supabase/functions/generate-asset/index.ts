@@ -1,7 +1,7 @@
 // redeploy: 2026-07-01
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
-import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
+import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, IMAGE_ASSET_TYPES, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
 import { buildLogotypeVariants, pickLogotypeText } from "../_shared/logotype.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -170,6 +170,10 @@ Deno.serve(async (req) => {
     const prompt = (body.prompt || "").toString().trim();
     const project_id = body.project_id || null;
     const client_workspace_id = body.workspace_id || null;
+    const requestedVariantCount =
+      typeof body.count === "number" && Number.isFinite(body.count)
+        ? Math.max(1, Math.min(24, body.count))
+        : null;
     const explicitType = body.asset_type as AssetType | undefined;
     const providedCtx = body.brand_context as BrandContext | undefined;
     if (!prompt) return new Response(JSON.stringify({ error: "prompt required" }), { status: 400, headers: { ...ch, "Content-Type": "application/json" } });
@@ -190,13 +194,16 @@ Deno.serve(async (req) => {
 
     // Classify
     let cls = explicitType
-      ? { asset_type: explicitType, count: Math.max(1, Math.min(24, body.count || GENERATORS[explicitType].defaultCount || 1)) }
+      ? { asset_type: explicitType, count: requestedVariantCount || GENERATORS[explicitType].defaultCount || 1 }
       : await classify(prompt);
+    if (requestedVariantCount == null && IMAGE_ASSET_TYPES.has(cls.asset_type)) {
+      cls = { ...cls, count: Math.min(cls.count, 6) };
+    }
     const logotypeOnly = isLogotypeOnlyPrompt(prompt);
     if (logotypeOnly) {
       cls = {
         asset_type: "logo",
-        count: Math.max(1, Math.min(24, body.count || requestedCount(prompt, GENERATORS.logo.defaultCount || 24))),
+        count: requestedVariantCount || requestedCount(prompt, 6),
       };
     }
 
