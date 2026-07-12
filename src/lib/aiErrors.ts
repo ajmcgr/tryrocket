@@ -21,6 +21,9 @@ export function parseAiError(data: any, error: any): AiError | null {
     if (/429|rate.?limit/i.test(msg)) {
       return { kind: "rate_limit", message: "Rocket is being rate-limited — try again in a moment." };
     }
+    if (/504|timeout|timed out|non-2xx|FunctionsFetchError|gateway/i.test(msg)) {
+      return { kind: "unavailable", message: "Rocket took too long on that run. We've fallen back to smaller batches where possible — please try again." };
+    }
     return { kind: "generic", message: msg || "Something went wrong." };
   }
   if (!data) return null;
