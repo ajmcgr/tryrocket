@@ -71,6 +71,14 @@ export const comparisons: Comparison[] = [
       "Figma is a collaborative design platform used to create everything from logos and brand identities to websites and product interfaces. With AI features and a large plugin ecosystem, it’s ideal for teams and designers who want complete creative control rather than fully automated results.",
     bestFor: "Professional logo design and collaborative branding workflows",
   },
+  {
+    slug: "brandforce",
+    tool: "BrandForce",
+    rank: 9,
+    description:
+      "BrandForce is a creative growth agency. It analyzes the visual landscape of your category to ensure distinctiveness, develops 3 distinct visual directions based on the brand strategy, extends the chosen direction into a comprehensive design system, and creates final assets ready for global deployment across all channels.",
+    bestFor: "Brands that want strategic identity development and agency-led rollout",
+  },
 ];
 
 export const getComparison = (slug: string) =>
