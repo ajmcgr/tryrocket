@@ -1,12 +1,13 @@
 // redeploy: 2026-07-01
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 import { cors, geminiText, geminiImage, GeminiUnavailableError, hasGeminiKey } from "../_shared/gemini.ts";
-import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, IMAGE_ASSET_TYPES, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
+import { GENERATORS, ASSET_TITLES, CLASSIFIER_SYSTEM, REFUSAL_TEXT, type AssetType, type BrandContext } from "../_shared/generators.ts";
 import { buildLogoLockupEditorState, buildLogotypeVariants, pickLogotypeText } from "../_shared/logotype.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const MIN_PROMPT_RESULTS = 12;
 
 function extractUrl(text: string): string | null {
   const m = text.match(/(https?:\/\/[^\s]+|[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
@@ -114,7 +115,7 @@ async function classify(prompt: string): Promise<{ asset_type: AssetType; count:
     // Parse any explicit count from the prompt — number-before-noun, number-after-noun,
     // or spelled-out words like "dozen", "a few", "couple". The classifier's own count
     // under-counts, so we ignore it.
-    const fallback = GENERATORS[at].defaultCount || 1;
+    const fallback = Math.max(GENERATORS[at].defaultCount || 1, MIN_PROMPT_RESULTS);
     const c = requestedCount(prompt, fallback);
     return { asset_type: at, count: c };
   } catch {
@@ -197,14 +198,14 @@ Deno.serve(async (req) => {
     let cls = explicitType
       ? { asset_type: explicitType, count: requestedVariantCount || GENERATORS[explicitType].defaultCount || 1 }
       : await classify(prompt);
-    if (requestedVariantCount == null && IMAGE_ASSET_TYPES.has(cls.asset_type)) {
-      cls = { ...cls, count: Math.min(cls.count, 6) };
+    if (requestedVariantCount == null && cls.asset_type !== "other") {
+      cls = { ...cls, count: Math.max(cls.count, MIN_PROMPT_RESULTS) };
     }
     const logotypeOnly = isLogotypeOnlyPrompt(prompt);
     if (logotypeOnly) {
       cls = {
         asset_type: "logo",
-        count: requestedVariantCount || requestedCount(prompt, 6),
+        count: requestedVariantCount || Math.max(requestedCount(prompt, MIN_PROMPT_RESULTS), MIN_PROMPT_RESULTS),
       };
     }
 
