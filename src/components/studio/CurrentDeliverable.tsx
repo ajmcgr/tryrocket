@@ -1,0 +1,99 @@
+import { Link } from "react-router-dom";
+import { Download, Copy, GitBranch, History, Wand2, ExternalLink } from "lucide-react";
+import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
+
+export default function CurrentDeliverable({
+  asset,
+  onDuplicate,
+  onVariation,
+  onHistory,
+  onExport,
+}: {
+  asset: any | null;
+  onDuplicate?: () => void;
+  onVariation?: () => void;
+  onHistory?: () => void;
+  onExport?: () => void;
+}) {
+  if (!asset) {
+    return (
+      <section className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center">
+        <Wand2 className="h-8 w-8 text-neutral-300" />
+        <div className="mt-3 text-sm font-medium text-neutral-700">No deliverable selected</div>
+        <p className="mt-1 max-w-sm text-xs text-neutral-500">
+          Use the prompt on the left to create your first asset, or pick one from the rail below.
+        </p>
+      </section>
+    );
+  }
+
+  const title = asset.title || asset.asset_type || "Deliverable";
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+            Current Deliverable
+          </div>
+          <h2 className="mt-0.5 truncate text-xl font-semibold text-neutral-900">{title}</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Link
+            to={`/editor?id=${asset.id}`}
+            className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> Open in Editor
+          </Link>
+          {onVariation && (
+            <button
+              onClick={onVariation}
+              className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              <GitBranch className="h-3.5 w-3.5" /> Create Variation
+            </button>
+          )}
+          {onDuplicate && (
+            <button
+              onClick={onDuplicate}
+              className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50"
+            >
+              <Copy className="h-3.5 w-3.5" /> Duplicate
+            </button>
+          )}
+          {onHistory && (
+            <button
+              onClick={onHistory}
+              className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50"
+            >
+              <History className="h-3.5 w-3.5" /> History
+            </button>
+          )}
+          {onExport && (
+            <button
+              onClick={onExport}
+              className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-brand-foreground hover:bg-brand-hover"
+            >
+              <Download className="h-3.5 w-3.5" /> Export
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
+        {hasVisualRenderer(asset) ? (
+          <div className="min-h-[420px]">
+            <AssetVisual asset={asset} />
+          </div>
+        ) : asset.image_url ? (
+          <img
+            src={asset.image_url}
+            alt={title}
+            className="mx-auto max-h-[520px] w-auto rounded-xl object-contain"
+          />
+        ) : (
+          <div className="p-10 text-center text-sm text-neutral-500">No preview available.</div>
+        )}
+      </div>
+    </section>
+  );
+}
