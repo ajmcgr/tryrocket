@@ -59,13 +59,34 @@ const WorkspaceSwitcher = () => {
     if (!name) return;
     setCreating(true);
     try {
-      const { data, error } = await sb.from("workspaces").insert({ name, is_personal: false }).select("id").single();
-      if (error) throw error;
-      // Owner membership is created by trigger, but insert defensively in case not.
-      await sb.from("workspace_members").insert({ workspace_id: data.id, user_id: user!.id, role: "owner" }).select();
+      let workspaceId: string | null = null;
+
+      const { data: rpcData, error: rpcError } = await sb.rpc("create_workspace", { _name: name });
+      if (!rpcError) {
+        workspaceId = Array.isArray(rpcData) ? rpcData[0]?.id : rpcData?.id;
+      }
+
+      if (!workspaceId) {
+        const { data, error } = await sb
+          .from("workspaces")
+          .insert({ name, owner_id: user!.id, is_personal: false })
+          .select("id")
+          .single();
+        if (error) throw error;
+        workspaceId = data.id;
+
+        const { error: memberError } = await sb
+          .from("workspace_members")
+          .insert({ workspace_id: workspaceId, user_id: user!.id, role: "owner" })
+          .select();
+        if (memberError && !/duplicate key|already exists/i.test(memberError.message || "")) {
+          throw memberError;
+        }
+      }
+
       invalidateWorkspacesCache();
       await refresh();
-      pick(data.id);
+      pick(workspaceId);
     } catch (e: any) {
       toast({ title: "Failed to create workspace", description: e.message, variant: "destructive" });
     } finally {
