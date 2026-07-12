@@ -283,8 +283,17 @@ const AssetDetail = () => {
     setVarying(true);
     try {
       const variationPrompt = `${asset.prompt || asset.title} — variation: ${instruction}`;
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const workspace_id = asset.workspace_id || await ensureActiveWorkspaceId();
       const { data, error } = await supabase.functions.invoke("generate-asset", {
-        body: { prompt: variationPrompt, asset_type: asset.asset_type, project_id: asset.project_id || undefined, count: 1 },
+        body: {
+          prompt: variationPrompt,
+          asset_type: asset.asset_type,
+          project_id: asset.project_id || undefined,
+          workspace_id: workspace_id || undefined,
+          brand_context: asset.meta?.brand_context || undefined,
+          count: 1,
+        },
       });
       const d: any = data;
       const aiErr = handleAiError(d, error, toast);
