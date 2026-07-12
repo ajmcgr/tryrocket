@@ -8,10 +8,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
+  createWorkspace,
   ensureActiveWorkspaceId,
   getActiveWorkspaceIdSync,
   invalidateWorkspacesCache,
@@ -20,20 +20,24 @@ import {
   type Workspace,
 } from "@/lib/workspace";
 
-const sb = supabase as any;
-
 const WorkspaceSwitcher = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeId, setActiveId] = useState<string | null>(getActiveWorkspaceIdSync());
   const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const refresh = async () => {
-    const list = await listWorkspaces(true);
-    setWorkspaces(list);
-    const id = await ensureActiveWorkspaceId();
-    setActiveId(id);
+    setLoading(true);
+    try {
+      const list = await listWorkspaces(true);
+      setWorkspaces(list);
+      const id = await ensureActiveWorkspaceId();
+      setActiveId(id);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -59,52 +63,32 @@ const WorkspaceSwitcher = () => {
     if (!name) return;
     setCreating(true);
     try {
-      let workspaceId: string | null = null;
-
-      const { data: rpcData, error: rpcError } = await sb.rpc("create_workspace", { _name: name });
-      if (!rpcError) {
-        workspaceId = Array.isArray(rpcData) ? rpcData[0]?.id : rpcData?.id;
-      }
-
-      if (!workspaceId) {
-        const { data, error } = await sb
-          .from("workspaces")
-          .insert({ name, owner_id: user!.id, is_personal: false })
-          .select("id")
-          .single();
-        if (error) throw error;
-        workspaceId = data.id;
-
-        const { error: memberError } = await sb
-          .from("workspace_members")
-          .insert({ workspace_id: workspaceId, user_id: user!.id, role: "owner" })
-          .select();
-        if (memberError && !/duplicate key|already exists/i.test(memberError.message || "")) {
-          throw memberError;
-        }
-      }
-
+      const created = await createWorkspace(name, { userId: user!.id });
       invalidateWorkspacesCache();
       await refresh();
-      pick(workspaceId);
-    } catch (e: any) {
-      toast({ title: "Failed to create workspace", description: e.message, variant: "destructive" });
+      pick(created.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Something went wrong.";
+      toast({ title: "Failed to create workspace", description: message, variant: "destructive" });
     } finally {
       setCreating(false);
     }
   };
 
-  if (!user || workspaces.length === 0) return null;
+  if (!user) return null;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="inline-flex max-w-[180px] items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-sm text-neutral-700 outline-none hover:bg-neutral-50 focus:ring-2 focus:ring-neutral-300">
         <Users className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
-        <span className="truncate font-medium">{active?.name || "Workspace"}</span>
+        <span className="truncate font-medium">{loading ? "Loading…" : active?.name || "Workspace"}</span>
         <ChevronDown className="h-3 w-3 shrink-0 text-neutral-500" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-64 rounded-xl border border-neutral-200 bg-white p-2 shadow-lg">
         <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">Workspaces</div>
+        {workspaces.length === 0 && !loading ? (
+          <div className="px-2 py-2 text-sm text-neutral-500">No workspaces yet.</div>
+        ) : null}
         {workspaces.map(w => (
           <DropdownMenuItem
             key={w.id}
