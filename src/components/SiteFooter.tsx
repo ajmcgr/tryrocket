@@ -66,6 +66,7 @@ const SiteFooter = () => (
                 </Link>
               </li>
             ))}
+            <li><Link to="/compare" className="font-semibold hover:text-neutral-900">View All →</Link></li>
           </ul>
         </div>
         <div>
