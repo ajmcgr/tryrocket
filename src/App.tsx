@@ -19,6 +19,7 @@ import Presenter from "./pages/Presenter.tsx";
 import Assets from "./pages/Assets.tsx";
 import Trash from "./pages/Trash.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
+import Studio from "./pages/Studio.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="/insights" element={<Insights />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/studio/:id" element={<Studio />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/assets" element={<Assets />} />

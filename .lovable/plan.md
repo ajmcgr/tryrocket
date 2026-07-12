@@ -1,72 +1,104 @@
-# Backend migrations pass
 
-Six migrations, sequenced smallest → largest so each ships independently and you can stop at any point. Every new `public` table gets explicit GRANTs + RLS + policies. All role checks use the existing `has_role()` security-definer pattern.
+# Rocket V4 — UX & Product Architecture Upgrade
 
-## Recommended order
+Additive evolution on top of the current codebase. No routes removed, no DB tables changed destructively, no API contract broken. Everything below layers on existing surfaces.
 
-1. Trash & restore (low risk, high user value)
-2. Server-side gallery likes (replaces localStorage — cheap win)
-3. Share-link password protection
-4. Comments on assets (+ realtime)
-5. Referral credits
-6. Workspaces / multi-seat (biggest — ship last, own PR)
-
-I'll do 1–5 in one pass. Workspaces gets its own pass afterward because it touches nearly every existing table (project ownership moves from `user_id` → `workspace_id`).
+## Guiding rules (applied to every change)
+- Preserve: auth, billing, credits, projects, assets, editor, URL analysis, logo gen, asset gen, sharing, export, existing routes, existing schemas.
+- Language shift only in UI copy: "Results" → "Current Deliverable", "Generated Assets" → "Deliverables", "AI Output" → "Creative Direction".
+- Left prompt panel stays. Chat stays attached to the active project.
+- LLM keeps returning structured data; Rocket renders the visual (already true — extend, don't rewrite).
 
 ---
 
-## 1. Trash & restore
+## Phase 1 — Studio Layout (biggest visible change, lowest risk)
 
-- Add `deleted_at timestamptz` to `assets` and `projects`.
-- Update RLS `SELECT` policies to filter `deleted_at IS NULL` by default; add a separate policy allowing owners to read their own trashed rows.
-- Frontend: soft-delete instead of hard-delete in `Assets.tsx` / `ProjectDetail.tsx`, new `/trash` route with Restore + Delete forever, 30-day auto-purge via a scheduled edge function (`purge-trash`, runs daily).
+New three-pane layout used by `/create` and a new `/studio/:projectId` view. Old `/create` behavior kept as default when no project is active.
 
-## 2. Server-side gallery likes
+```text
+┌────────────┬──────────────────────────────┬────────────┐
+│ Left       │ Center                       │ Right      │
+│ Conversat. │ BrandContextStrip            │ Properties │
+│ History    │ ─────────────────            │ Layers     │
+│ Pinned     │ CurrentDeliverable (large)   │ Export     │
+│ Uploads    │ VariationStrip (filmstrip)   │ Settings   │
+│ Prompt     │ RelatedAssets (family)       │            │
+└────────────┴──────────────────────────────┴────────────┘
+```
 
-- New `public.gallery_likes (id, asset_id, user_id, created_at)` with unique `(asset_id, user_id)`.
-- GRANTs: `SELECT` to anon (public counts), `INSERT/DELETE` to authenticated (own rows only).
-- RLS: anyone reads, users write/delete their own.
-- `like_count` computed via view or `count()` on read; migrate `Gallery.tsx` off localStorage.
+Files (new):
+- `src/components/studio/StudioLayout.tsx` — 3-pane shell, responsive collapse to current single-column on mobile.
+- `src/components/studio/CurrentDeliverable.tsx` — wraps existing `AssetVisual` at large size + action bar (Open in Editor, Download, Export, Duplicate, Version History, Create Variation, Save).
+- `src/components/studio/VariationStrip.tsx` — horizontal filmstrip of sibling assets (reuses sibling query already in `AssetDetail.tsx`). Click swaps `CurrentDeliverable`.
+- `src/components/studio/RelatedAssetsRail.tsx` — grouped by category (Brand / Social / Launch / Marketing / Presentations / Website).
+- `src/components/studio/RightInspector.tsx` — thin wrapper that shows Properties/Layers/Export tabs; when the asset is a canvas asset, delegates to existing editor panels.
 
-## 3. Share-link password protection
+Files (touched, additively):
+- `src/pages/Generate.tsx` — mount inside `StudioLayout` when `?project=<id>` is present; unchanged otherwise.
+- `src/components/AppShell.tsx` — no structural change; sidebar routes list already includes `/create`.
 
-- New `public.share_tokens (id, asset_id, token, password_hash nullable, expires_at nullable, created_by, created_at)`.
-- GRANTs: `SELECT` to anon (token lookup by exact match), full CRUD to owner via RLS.
-- New edge function `verify-share-token` checks password (bcrypt) and returns a short-lived signed cookie/JWT. Public share route requires it when `password_hash` is set.
+## Phase 2 — Persistent Brand Context
 
-## 4. Comments on assets
+Brand Context already exists per-asset (`asset.meta.brand_context`) and is rendered by `BrandContextStrip`. Promote it to project scope.
 
-- New `public.asset_comments (id, asset_id, user_id, body, parent_id nullable, created_at, updated_at, deleted_at)`.
-- GRANTs standard authenticated; RLS: read if you can read the parent asset (via `has_asset_access()` security-definer), write your own.
-- Enable Realtime on the table; frontend adds a comments panel on `AssetDetail.tsx`.
+- Add `src/lib/brandContext.ts`: `getProjectBrandContext(projectId)` and `setProjectBrandContext(projectId, ctx)` that read/write `projects.meta.brand_context` (json column already present — additive key).
+- On any new generation inside a project, merge project context into the request payload (already partially wired; make it authoritative).
+- `BrandContextStrip` gets a `scope="project"` variant pinned above `CurrentDeliverable`.
+- Refresh button reuses the existing `scrape-url` edge function.
 
-## 5. Referral credits
+No migration required — uses the existing `meta jsonb` column.
 
-- New `public.referral_codes (code PK, owner_user_id, created_at)` and `public.referral_events (id, code, referred_user_id, credited_amount, created_at)`.
-- Trigger on `auth.users` insert: if `raw_user_meta_data->>'ref'` matches an active code, insert a `referral_events` row and add credits to both users via existing credit-ledger insert.
-- Frontend: settings page shows the user's code + share link + count of successful referrals.
+## Phase 3 — Conversational refinement bound to project
 
-## 6. Workspaces / multi-seat (SEPARATE PASS)
+Chat already persists per session in `Generate.tsx`. Bind it to project.
 
-Large. Rough shape:
-- `workspaces`, `workspace_members (workspace_id, user_id, role)`, `workspace_invites`.
-- Add `workspace_id` to `projects`, `assets`, `credits_ledger`; backfill each user's rows into a personal workspace.
-- New `has_workspace_role()` security-definer; rewrite every project/asset RLS policy against it.
-- Invite flow via edge function + email.
-- UI: workspace switcher in header, members page, seat billing on Pricing.
+- Persist chat turns in `localStorage` keyed by `rocket:chat:<projectId>` (fallback to `rocket:chat:global`).
+- Left panel gets: New Chat, Pinned toggle per thread, Uploads (existing upload path), Prompt (existing composer).
+- Refinement prompts ("make icon smaller", "generate favicon", "dark version") route to the existing `regenerate-asset` / `rewrite-field` edge functions with the currently-selected `CurrentDeliverable` as target.
+- No new backend.
 
-I'll present a follow-up plan for this once 1–5 are merged.
+## Phase 4 — Asset Family & Variation semantics
+
+Assets already have `parent_id` / `family_id` fields in meta. Formalize:
+
+- `src/lib/assetFamily.ts`: `getSiblings(assetId)`, `getFamily(rootId)`, `createVariation(assetId, overrides)`.
+- "Create Variation" in `CurrentDeliverable` calls `regenerate-asset` with `mode: "variation"` and links `parent_id`.
+- `VariationStrip` queries siblings; selecting one updates the URL `?asset=<id>` so refresh restores state.
+
+## Phase 5 — Category grouping in Projects
+
+- `src/pages/ProjectDetail.tsx`: group asset list by `meta.category` (Brand / Social / Launch / Marketing / Presentations / Website / Press). Fallback bucket "Other" for legacy assets. Ordering by category, not creation date.
+- Add lightweight category chip picker on each asset card (updates `meta.category` inline via existing update path).
+
+## Phase 6 — Copy & chrome polish
+
+- Replace strings across `Generate.tsx`, `ProjectDetail.tsx`, `AssetDetail.tsx`, `Assets.tsx`: "Results"→"Current Deliverable", "Generated"→"Deliverable", "AI Output"→"Creative Direction".
+- Increase preview sizes in center pane; reduce surrounding chrome padding.
+- Keep existing motion; no new animation library.
+
+## Phase 7 — "Create complete brand" macro (stretch)
+
+- Add one button in Studio: "Generate full brand system" → sequentially triggers existing edge functions in this order: logo → logotype → color system → typography → icons → brand guidelines → social kit → launch kit → press kit → pitch deck.
+- Uses `generate-asset` with the project's Brand Context. Each result appears in `RelatedAssetsRail` under its category as it completes.
+- Progress shown in the left panel's "Generation progress" area.
 
 ---
 
-## Technical notes
+## What is explicitly NOT changing
+- No DB migrations (all new data goes into existing `meta jsonb` columns).
+- No edge function contract changes (only new call sites).
+- No route removals. `/create`, `/editor`, `/projects`, `/assets`, share/export routes all remain.
+- No visual identity change (brand blue `#1676e3` stays).
+- No auth/billing/credits touch.
 
-- All migrations follow the required order: `CREATE TABLE` → `GRANT` → `ENABLE RLS` → `CREATE POLICY`.
-- No policy references its own table (avoids infinite recursion); cross-table checks go through `SECURITY DEFINER` functions like the existing `has_role`.
-- Passwords for share tokens hashed with `crypt()` / `pgcrypto` (already enabled by Supabase) so verification can happen in an edge function without exposing hashes to clients.
-- Referral credit grants use the same ledger insert path Stripe webhooks use, so balances stay consistent.
+## Rollout order (each shippable independently)
+1. Studio layout scaffold + mount inside `/create` when `?project=` present.
+2. Persistent project Brand Context + strip.
+3. Current Deliverable + Variation Strip wired to existing sibling logic.
+4. Project-scoped chat history.
+5. Category grouping in ProjectDetail.
+6. Copy polish pass.
+7. Full-brand macro (stretch, only if credits allow).
 
-## What I need from you
-
-- OK to proceed with steps 1–5 in this pass.
-- Confirm the referral bonus amount (default I'll use: **100 credits to referred user on signup, 100 to referrer on referred user's first paid purchase**). Tell me if you want different numbers.
+## Credit-awareness note
+User has ~58 credits remaining. Phases 1–5 are pure frontend refactor (no AI calls). Phase 7 is the only credit-consuming addition and is guarded behind explicit user click.

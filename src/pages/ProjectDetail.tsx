@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2, Zap, X, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2, Zap, X, RefreshCw, Rocket as RocketIcon } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 import { Logotype } from "@/components/Logotype";
@@ -232,6 +232,7 @@ const ProjectDetail = () => {
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{project.name}</h1>
         <div className="flex flex-wrap gap-2">
           <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><LayoutGrid className="h-4 w-4" /> Brand Kit Hub</Link>
+          <Link to={`/studio/${id}`} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/5 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/10"><RocketIcon className="h-4 w-4" /> Open Studio</Link>
           <Link to={`/projects/${id}/brand-kit`} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Sparkles className="h-4 w-4" /> Brand Kit</Link>
           <button onClick={toggleShare} disabled={sharing} className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm ${project.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}><Share2 className="h-4 w-4" /> {project.share_token ? "Shared" : "Share"}</button>
           <button onClick={() => setCollabOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
