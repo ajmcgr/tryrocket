@@ -280,6 +280,8 @@ function normalizeMixedLogoPrompt(text: string, brandText?: string, url?: string
 }
 
 const MIN_PROMPT_RESULTS = 12;
+const IMAGE_ASSET_TYPES = new Set(["logo", "graphic", "icon", "photo"]);
+const SAFE_IMAGE_BATCH_SIZE = 12;
 
 function requestedCount(text: string, fallback = MIN_PROMPT_RESULTS) {
   const lower = text.toLowerCase();
@@ -287,6 +289,17 @@ function requestedCount(text: string, fallback = MIN_PROMPT_RESULTS) {
   for (const [word, n] of Object.entries(words)) if (lower.includes(word)) return n;
   const digit = text.match(/\b(\d{1,2})\b/);
   return digit ? Math.max(1, Math.min(24, Number(digit[1]))) : fallback;
+}
+
+function splitBatchCounts(total: number, maxBatchSize: number) {
+  const batches: number[] = [];
+  let remaining = total;
+  while (remaining > 0) {
+    const next = Math.min(remaining, maxBatchSize);
+    batches.push(next);
+    remaining -= next;
+  }
+  return batches;
 }
 
 // Specialized Design templates: pre-canned visual prompt scaffolds.
@@ -390,7 +403,7 @@ const Generate = () => {
   const [assetType, setAssetType] = useState<string | null>(params.get("asset_type"));
   const [workflow, setWorkflow] = useState<WF>((params.get("workflow") as WF) || "auto");
   const [template, setTemplate] = useState<string | null>(null);
-  const [count, setCount] = useState<number>(24);
+  const [count, setCount] = useState<number>(MIN_PROMPT_RESULTS);
   const projectId = params.get("project");
   const chatId = params.get("chat");
   const [loading, setLoading] = useState(false);
@@ -555,18 +568,73 @@ const Generate = () => {
           pickLogotypeText({ prompt: p, productName: sharedCtx?.productName, url: sharedCtx?.url }),
           sharedCtx?.url,
         );
-        const { data, error } = await supabase.functions.invoke("generate-asset", {
-          body: { prompt: backendPrompt, asset_type: effectiveAssetType, count: effectiveAssetType && !tpl ? count : undefined, project_id: projectId || undefined, brand_context: sharedCtx || undefined, workspace_id: (await import("@/lib/workspace")).getActiveWorkspaceIdSync() ?? undefined, requested_lockup: isMixedLogoAndLogotypePrompt(p) },
-        });
-        const d: any = data;
-        const aiErr = handleAiError(d, error, toast);
-        if (aiErr?.kind === "no_credits") {
-          setOutOfCredits({ needed: aiErr.needed, remaining: aiErr.remaining });
-          return;
+        const workspace_id = (await import("@/lib/workspace")).getActiveWorkspaceIdSync() ?? undefined;
+        const requestBodyBase = {
+          prompt: backendPrompt,
+          asset_type: effectiveAssetType,
+          project_id: projectId || undefined,
+          brand_context: sharedCtx || undefined,
+          workspace_id,
+          requested_lockup: isMixedLogoAndLogotypePrompt(p),
+        };
+        const requestedImageCount = effectiveAssetType && !tpl ? count : undefined;
+        const shouldBatchImageRequest =
+          !!requestedImageCount &&
+          !!effectiveAssetType &&
+          IMAGE_ASSET_TYPES.has(effectiveAssetType) &&
+          requestedImageCount > SAFE_IMAGE_BATCH_SIZE;
+
+        if (shouldBatchImageRequest) {
+          let partialErrorMessage: string | null = null;
+          for (const batchCount of splitBatchCounts(requestedImageCount, SAFE_IMAGE_BATCH_SIZE)) {
+            const { data, error } = await supabase.functions.invoke("generate-asset", {
+              body: { ...requestBodyBase, count: batchCount },
+            });
+            const d: any = data;
+            const aiErr = handleAiError(d, error, toast);
+            if (aiErr?.kind === "no_credits") {
+              if (allIds.length === 0) {
+                setOutOfCredits({ needed: aiErr.needed, remaining: aiErr.remaining });
+                return;
+              }
+              partialErrorMessage = aiErr.message;
+              break;
+            }
+            if (aiErr) {
+              if (allIds.length === 0) return;
+              partialErrorMessage = aiErr.message;
+              break;
+            }
+            if (d?.refused) {
+              if (allIds.length === 0) {
+                toast({ title: "Out of scope", description: d.message });
+                return;
+              }
+              partialErrorMessage = d.message || "Rocket stopped before finishing every batch.";
+              break;
+            }
+            if (d?.asset_ids?.length) allIds.push(...d.asset_ids);
+          }
+          if (partialErrorMessage && allIds.length) {
+            toast({
+              title: "Partial result",
+              description: `Created ${allIds.length} assets before Rocket hit an error. ${partialErrorMessage}`,
+            });
+          }
+        } else {
+          const { data, error } = await supabase.functions.invoke("generate-asset", {
+            body: { ...requestBodyBase, count: requestedImageCount },
+          });
+          const d: any = data;
+          const aiErr = handleAiError(d, error, toast);
+          if (aiErr?.kind === "no_credits") {
+            setOutOfCredits({ needed: aiErr.needed, remaining: aiErr.remaining });
+            return;
+          }
+          if (aiErr) return;
+          if (d?.refused) { toast({ title: "Out of scope", description: d.message }); return; }
+          allIds = d.asset_ids || [];
         }
-        if (aiErr) return;
-        if (d?.refused) { toast({ title: "Out of scope", description: d.message }); return; }
-        allIds = d.asset_ids || [];
       } else {
         // Workflow fan-out: parallel generate-asset calls
         const plan = WORKFLOW_PLAN[effective as Exclude<WF, "auto">];
