@@ -41,6 +41,7 @@ import AcceptInvite from "./pages/AcceptInvite.tsx";
 import About from "./pages/About.tsx";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
+import ComparisonDetail from "./pages/ComparisonDetail.tsx";
 import MediaKit from "./pages/MediaKit.tsx";
 import Tools from "./pages/Tools.tsx";
 import ToolDetail from "./pages/ToolDetail.tsx";
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/compare/:slug" element={<ComparisonDetail />} />
             <Route path="/media-kit" element={<MediaKit />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/tools/:slug" element={<ToolDetail />} />
