@@ -84,7 +84,7 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
 
   if (collapsed) {
     return (
-      <aside className="flex h-[calc(100vh-4rem)] w-12 flex-col items-center border-r border-neutral-200 bg-white py-3">
+      <aside className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-12 shrink-0 flex-col items-center border-r border-neutral-200 bg-white py-3">
         <button onClick={onToggle} title="Expand chats" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
           <PanelLeft className="h-4 w-4" />
         </button>
@@ -102,7 +102,7 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
   const recent = chats.filter(c => !c.pinned);
 
   return (
-    <aside className="flex h-[calc(100vh-4rem)] w-64 flex-col border-r border-neutral-200 bg-white">
+    <aside className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
       <div className="flex items-center justify-between px-3 py-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Chats</span>
         <button onClick={onToggle} title="Collapse" className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-100">
