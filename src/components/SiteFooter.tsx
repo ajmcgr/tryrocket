@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { tools } from "@/content/tools";
 import { articles } from "@/content/articles";
+import { comparisons } from "@/content/comparisons";
 import { Instagram } from "lucide-react";
 
 const HEADER = "text-base font-semibold text-neutral-900";
@@ -20,7 +21,7 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const SiteFooter = () => (
   <footer className="bg-neutral-50">
     <div className="mx-auto max-w-6xl px-6 py-16">
-      <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-5">
+      <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-6">
         <div>
           <div className={HEADER}>Company</div>
             <ul className="mt-4 space-y-2.5 text-sm font-normal text-neutral-600">
@@ -43,7 +44,7 @@ const SiteFooter = () => (
             {articles.slice(0, 10).map((a) => (
               <li key={a.slug}><Link to={`/blog/${a.slug}`} className="hover:text-neutral-900">{a.title}</Link></li>
             ))}
-            <li><Link to="/blog" className="hover:text-neutral-900">View All Resources →</Link></li>
+            <li><Link to="/blog" className="font-semibold hover:text-neutral-900">View All Resources →</Link></li>
           </ul>
         </div>
         <div>
@@ -52,7 +53,19 @@ const SiteFooter = () => (
             {tools.slice(0, 10).map((t) => (
               <li key={t.slug}><Link to={`/tools/${t.slug}`} className="hover:text-neutral-900">{t.name}</Link></li>
             ))}
-            <li><Link to="/tools" className="hover:text-neutral-900">All tools →</Link></li>
+            <li><Link to="/tools" className="font-semibold hover:text-neutral-900">All tools →</Link></li>
+          </ul>
+        </div>
+        <div>
+          <div className={HEADER}>Compare</div>
+          <ul className="mt-4 space-y-2.5 text-sm font-normal text-neutral-600">
+            {comparisons.map((comparison) => (
+              <li key={comparison.slug}>
+                <Link to={`/compare/${comparison.slug}`} className="hover:text-neutral-900">
+                  {`Rocket vs ${comparison.tool}`}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
