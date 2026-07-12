@@ -281,7 +281,7 @@ function normalizeMixedLogoPrompt(text: string, brandText?: string, url?: string
 
 const MIN_PROMPT_RESULTS = 12;
 const IMAGE_ASSET_TYPES = new Set(["logo", "graphic", "icon", "photo"]);
-const SAFE_IMAGE_BATCH_SIZE = 12;
+const SAFE_IMAGE_BATCH_SIZE = 4;
 
 function requestedCount(text: string, fallback = MIN_PROMPT_RESULTS) {
   const lower = text.toLowerCase();
@@ -384,6 +384,7 @@ async function createChatRecord({
     const cleaned = Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined));
     const key = Object.keys(cleaned).sort().join(",");
     if (attempted.has(key)) continue;
+
     attempted.add(key);
 
     const { data, error } = await supabase.from("chats").insert(cleaned as any).select("id").single();
@@ -428,87 +429,75 @@ const Generate = () => {
   useEffect(() => {
     if (!chatId || !user) { setChatData(null); setChatAssets([]); return; }
     (async () => {
-      const [{ data: c }, { data: a }] = await Promise.all([
-        supabase.from("chats").select("*").eq("id", chatId).maybeSingle(),
-        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,meta,source_url,created_at").eq("chat_id", chatId).order("created_at", { ascending: true }),
-      ]);
-      setChatData(c);
+      const { data: c } = await supabase.from("chats").select("*").eq("id", chatId).maybeSingle();
+      setChatData(c || null);
+      const { data: a } = await supabase
+        .from("assets")
+        .select("id,title,asset_type,image_url,thumbnail_url,content,prompt,editor_state,meta,source_url,created_at")
+        .eq("chat_id", chatId)
+        .order("created_at", { ascending: true });
       setChatAssets(a || []);
-      setPendingPrompts([]);
     })();
   }, [chatId, user]);
 
-  // Brand Intelligence: derive the active brand context so the user can see what
-  // Rocket knows about their brand before generating more assets.
-  const [projectBrandCtx, setProjectBrandCtx] = useState<any>(null);
-  useEffect(() => {
-    if (!projectId) { setProjectBrandCtx(null); return; }
-    (async () => {
-      const { data: proj } = await supabase.from("projects").select("brand_context,source_url,name").eq("id", projectId).maybeSingle();
-      setProjectBrandCtx(proj?.brand_context || (proj?.source_url ? { url: proj.source_url, productName: proj.name } : null));
-    })();
-  }, [projectId]);
-  const activeBrandCtx: any = (() => {
-    if (projectBrandCtx) return projectBrandCtx;
-    const withCtx = [...chatAssets].reverse().find((a) => a?.meta?.brand_context && (a.meta.brand_context.productName || a.meta.brand_context.url));
-    return withCtx?.meta?.brand_context || null;
+  const activeBrandCtx = (() => {
+    const direct = chatData?.brand_context;
+    if (direct && (direct.productName || direct.url || direct.colors?.length || direct.logo)) return direct;
+    const recent = [...chatAssets].reverse().find((a) => {
+      const ctx = a?.meta?.brand_context;
+      return ctx && (ctx.productName || ctx.url || ctx.colors?.length || ctx.logo || a.source_url);
+    });
+    return recent ? { ...(recent.meta?.brand_context || {}), url: recent.meta?.brand_context?.url || recent.source_url || undefined } : null;
   })();
-
-  // (brand-context "analyzed" badge is now handled inside <BrandContextStrip />)
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const p = prompt.trim();
-    if (!p || loading) return;
+    if (!p || !user) return;
     setLoading(true);
-    const nowIso = new Date().toISOString();
-    setPendingPrompt({ text: p, at: nowIso });
-    if (chatId) setPendingPrompts((prev) => [...prev, { text: p, at: nowIso }]);
+    setMsgIdx(0);
+    const submittedAt = new Date().toISOString();
+    if (chatId) setPendingPrompts((prev) => [...prev, { text: p, at: submittedAt }]);
+    else setPendingPrompt({ text: p, at: submittedAt });
     try {
-      // Reuse the current chat when inside one; otherwise create a new chat row.
-      let newChatId: string;
-      if (chatId) {
-        newChatId = chatId;
-      } else {
-        const title = p.length > 60 ? p.slice(0, 57) + "…" : p;
+      // When generating into an existing chat, still create a new chat row if needed? No — reuse the same chat.
+      let newChatId = chatId || null;
+      // Selected chip can override raw asset type and optionally prepend a stronger prompt scaffold
+      const selectedChip = ASSET_CHIPS.find(c => c.id === assetType) || null;
+      const tpl = DESIGN_TEMPLATES.find(t => t.id === template) || null;
+      const effectiveAssetType = tpl ? "graphic" : (selectedChip?.assetType || assetType || undefined);
+      const effectivePrompt = tpl
+        ? tpl.scaffold(p)
+        : selectedChip?.promptPrefix
+          ? `${selectedChip.promptPrefix}${p}`
+          : p;
+      const effective = workflow;
+      let allIds: string[] = [];
+      let creditsErr: any = null;
+      if (!newChatId) {
+        const title = (() => {
+          const explicitUrl = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b)/i)?.[1];
+          if (explicitUrl) {
+            const cleaned = explicitUrl.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
+            return `A ${effectiveAssetType || "brand asset"} for ${cleaned}`;
+          }
+          if (effectiveAssetType === "logo") return p.length > 72 ? `${p.slice(0, 72).trim()}…` : p;
+          return p.length > 72 ? `${p.slice(0, 72).trim()}…` : p;
+        })();
         const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
         const workspace_id = await ensureActiveWorkspaceId();
         newChatId = await createChatRecord({
           supabase,
-          userId: user!.id,
+          userId: user.id,
           workspaceId: workspace_id,
           projectId,
           title,
           prompt: p,
         });
       }
-
-      let effective: WF = workflow;
-      // Auto-detect (client-side keyword classifier — fast, no extra round trip)
-      if (workflow === "auto" && !assetType) {
-        const t = p.toLowerCase();
-        // URL-only (bare URL pasted) => full brand kit (Brand Analysis Mode, Canva-style)
-        const urlOnly = /^\s*(https?:\/\/)?[\w-]+(\.[\w-]+)+\/?\s*$/i.test(p);
-        if (urlOnly) effective = "brand";
-        // URL + intent => hybrid: keep single-asset auto so the classifier picks (logo/graphic/etc)
-        // but we'll still pre-scrape for context below.
-        else if (/\b(brand it|full brand|brand kit|complete brand|whole brand)\b/.test(t)) effective = "brand";
-        else if (/\b(design it|logo concepts?|brand visuals?|visual identity)\b/.test(t)) effective = "design";
-        else if (/\b(launch it|launch kit|launch (copy|assets?|plan|checklist)|product hunt)\b/.test(t)) effective = "launch";
-        else if (/\b(promote it|growth kit|social (kit|bundle)|x thread|distribution)\b/.test(t)) effective = "promote";
-      }
-      let allIds: string[] = [];
-      let creditsErr: any = null;
-      // Apply Design template scaffold if one was picked.
-      const tpl = template ? DESIGN_TEMPLATES.find(t => t.id === template) : null;
-      const selectedChip = assetType ? ASSET_CHIPS.find(c => c.id === assetType) : null;
-      const chipPrompt = selectedChip?.promptPrefix ? `${selectedChip.promptPrefix}${p}` : p;
-      const effectivePrompt = tpl ? tpl.scaffold(p) : chipPrompt;
-      const effectiveAssetType = tpl ? "graphic" : (selectedChip?.assetType || assetType || undefined);
-      // Brand Analysis Mode: any URL in the prompt triggers a pre-scrape so EVERY downstream
-      // asset (workflow fan-out or single auto) shares the same real brand context.
-      let sharedCtx: any = null;
-      const urlMatch = p.match(/(https?:\/\/[^\s]+|[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
+      // Best-effort brand context: URL in prompt → scrape-url, else project.brand_context, else most recent asset context
+      let sharedCtx: any = activeBrandCtx || null;
+      const urlMatch = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
       if (urlMatch) {
         const u = /^https?:\/\//i.test(urlMatch[1]) ? urlMatch[1] : "https://" + urlMatch[1];
         try {
