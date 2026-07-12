@@ -40,7 +40,6 @@ const AppShell = () => {
             <NavLink data-tour="nav-assets" to="/assets" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Assets</NavLink>
             <NavLink data-tour="nav-editor" to="/editor" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Editor</NavLink>
             <NavLink data-tour="nav-projects" to="/projects" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
-            <NavLink data-tour="nav-insights" to="/insights" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Insights</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <WorkspaceSwitcher />
@@ -95,7 +94,7 @@ const AppShell = () => {
         onCreateShareLink={async () => (typeof window !== "undefined" ? window.location.origin : "https://tryrocket.ai")}
       />
       {showSidebar ? (
-        <div className="flex w-full">
+        <div className="flex w-full items-start">
           <ChatsSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(c => !c)} />
           <main className="min-w-0 flex-1">
             <Outlet />
