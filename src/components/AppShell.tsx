@@ -8,7 +8,7 @@ import OnboardingTour from "./OnboardingTour";
 import NotificationsBell from "./NotificationsBell";
 import CommandPalette from "./CommandPalette";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
-import { HelpCircle, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
