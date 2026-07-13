@@ -41,7 +41,7 @@ const AppShell = () => {
         <div className="relative flex h-14 w-full items-center px-4">
           <Logo to="/create" className="shrink-0" />
           <nav className="ml-8 hidden items-center gap-2 text-sm font-medium text-neutral-700 md:flex">
-            <NavLink data-tour="nav-create" to="/create" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Create</NavLink>
+            <NavLink data-tour="nav-create" to="/create" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition hover:bg-neutral-100 ${isActive ? "text-neutral-900" : ""}`}>Create</NavLink>
             <NavLink data-tour="nav-assets" to="/assets" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Designs</NavLink>
             <NavLink to="/templates" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Templates</NavLink>
             <NavLink data-tour="nav-editor" to="/editor" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Editor</NavLink>
