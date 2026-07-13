@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
     if (!usage) throw new Error("usage row missing");
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
     if (remaining < totalCost) {
-      return new Response(JSON.stringify({ error: "no_credits", code: "no_credits", needed: totalCost, remaining }), { status: 402, headers: { ...ch, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "no_credits", code: "no_credits", needed: totalCost, remaining }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
     }
 
     const title = cls.asset_type === "graphic" && /component|ui kit|buttons|cards|inputs/i.test(prompt) ? "Component" : ASSET_TITLES[cls.asset_type];
@@ -270,7 +270,7 @@ Deno.serve(async (req) => {
           url: ctx.url || detectedUrl,
         });
         if (!brandText) {
-          return new Response(JSON.stringify({ error: "brand_name_required", message: "I need a brand name or URL to create a wordmark." }), { status: 400, headers: { ...ch, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "brand_name_required", message: "I need a brand name or URL to create a wordmark." }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
         }
         const brandColor = ctx.colors?.[0];
         const variants = buildLogotypeVariants(brandText, count, brandColor, ctx.fonts || []);
