@@ -3,22 +3,61 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Trash2, MoreHorizontal, Edit3, FolderPlus, Download, CheckSquare, Square, X } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
+import {
+  Plus,
+  Search,
+  Trash2,
+  MoreHorizontal,
+  Edit3,
+  FolderPlus,
+  Download,
+  CheckSquare,
+  Square,
+  X,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
+} from "@/components/ui/dropdown-menu";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { packAssetsZip } from "@/lib/exporters/zipPack";
+import { getDesignFolderId, withDesignFolderId } from "@/lib/designFolders";
+import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
+
 const supabase = _sb as any;
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
-  logo: "Logo", brand_guidelines: "Brand Guidelines", color_system: "Color System",
-  font_system: "Font System", brand_voice: "Brand Voice", graphic: "Graphic",
-  icon: "Icon", photo: "Photo", template: "Template", launch_copy: "Launch Copy",
-  product_hunt_copy: "PH Copy", social_post: "Social Post", founder_bio: "Founder Bio",
-  presentation: "Presentation", other: "Other",
+  logo: "Logo",
+  brand_guidelines: "Brand Guidelines",
+  color_system: "Color System",
+  font_system: "Font System",
+  brand_voice: "Brand Voice",
+  graphic: "Graphic",
+  icon: "Icon",
+  photo: "Photo",
+  template: "Template",
+  launch_copy: "Launch Copy",
+  product_hunt_copy: "PH Copy",
+  social_post: "Social Post",
+  founder_bio: "Founder Bio",
+  presentation: "Presentation",
+  other: "Other",
 };
+
 const ALL_TYPES = Object.keys(ASSET_TYPE_LABELS);
 
 const Assets = () => {
@@ -26,11 +65,16 @@ const Assets = () => {
   const { toast } = useToast();
   const [params] = useSearchParams();
   const highlight = (params.get("highlight") || "").split(",").filter(Boolean);
+  const folderParam = params.get("folder") || "";
+
   const [assets, setAssets] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [folders, setFolders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [q, setQ] = useState("");
+  const [view, setView] = useState<CollectionView>("card");
+  const [sort, setSort] = useState<DesignSort>("date");
   const searchRef = useRef<HTMLInputElement>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -39,16 +83,19 @@ const Assets = () => {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const [a, p] = await Promise.all([
+    const [a, p, f] = await Promise.all([
       supabase.from("assets").select("*").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(200),
       supabase.from("projects").select("id,name").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(100),
+      supabase.from("folders").select("id,name").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
     ]);
     const { data, error } = a;
-    if (error) toast({ title: "Failed to load assets", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Failed to load designs", description: error.message, variant: "destructive" });
     setAssets(data || []);
     setProjects(p.data || []);
+    setFolders(f.data || []);
     setLoading(false);
   };
+
   useEffect(() => { load(); }, [user]);
 
   useEffect(() => {
@@ -63,66 +110,110 @@ const Assets = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    return assets.filter(a => {
-      if (filter !== "all" && a.asset_type !== filter) return false;
-      if (q && !((a.title || "").toLowerCase().includes(q.toLowerCase()) || (a.prompt || "").toLowerCase().includes(q.toLowerCase()))) return false;
+    const visible = assets.filter((asset) => {
+      if (filter !== "all" && asset.asset_type !== filter) return false;
+      if (folderParam && getDesignFolderId(asset) !== folderParam) return false;
+      if (q && !((asset.title || "").toLowerCase().includes(q.toLowerCase()) || (asset.prompt || "").toLowerCase().includes(q.toLowerCase()))) return false;
       return true;
     });
-  }, [assets, filter, q]);
+    return sortByOption(visible, sort, (asset) => asset.title, (asset) => asset.created_at);
+  }, [assets, filter, q, folderParam, sort]);
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
-  const selectAllVisible = () => setSelected(new Set(filtered.map((a) => a.id)));
+
+  const selectAllVisible = () => setSelected(new Set(filtered.map((asset) => asset.id)));
   const clearSelection = () => setSelected(new Set());
+
   const downloadZip = async () => {
-    const items = assets.filter((a) => selected.has(a.id));
+    const items = assets.filter((asset) => selected.has(asset.id));
     if (!items.length) return;
     setZipping(true);
     try {
       await packAssetsZip(items, `rocket-pack-${items.length}-assets.zip`);
-      toast({ title: `Packed ${items.length} assets` });
+      toast({ title: `Packed ${items.length} designs` });
     } catch (e: any) {
       toast({ title: "Pack failed", description: e?.message, variant: "destructive" });
-    } finally { setZipping(false); }
+    } finally {
+      setZipping(false);
+    }
   };
 
   const del = async (id: string) => {
-    if (!confirm("Move this asset to Trash?")) return;
-    setAssets(prev => prev.filter(a => a.id !== id));
+    if (!confirm("Move this design to Trash?")) return;
+    setAssets((prev) => prev.filter((asset) => asset.id !== id));
     await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", id);
   };
 
   const bulkDelete = async () => {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    if (!confirm(`Move ${ids.length} assets to Trash? Restore anytime from /trash.`)) return;
-    setAssets(prev => prev.filter(a => !selected.has(a.id)));
+    if (!confirm(`Move ${ids.length} designs to Trash? Restore anytime from /trash.`)) return;
+    setAssets((prev) => prev.filter((asset) => !selected.has(asset.id)));
     clearSelection();
     const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).in("id", ids);
-    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); load(); return; }
-    toast({ title: `Moved ${ids.length} to Trash` });
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      load();
+      return;
+    }
+    toast({ title: `Moved ${ids.length} designs to Trash` });
   };
 
   const bulkAssignToProject = async (projectId: string | null) => {
     const ids = Array.from(selected);
     if (!ids.length) return;
     const { error } = await supabase.from("assets").update({ project_id: projectId }).in("id", ids);
-    if (error) { toast({ title: "Move failed", description: error.message, variant: "destructive" }); return; }
-    setAssets(prev => prev.map(a => selected.has(a.id) ? { ...a, project_id: projectId } : a));
-    toast({ title: projectId ? `Moved ${ids.length} assets to project` : `Removed ${ids.length} from project` });
+    if (error) {
+      toast({ title: "Move failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssets((prev) => prev.map((asset) => selected.has(asset.id) ? { ...asset, project_id: projectId } : asset));
+    toast({ title: projectId ? `Moved ${ids.length} designs to project` : `Removed ${ids.length} designs from project` });
+    clearSelection();
+  };
+
+  const bulkAssignToFolder = async (folderId: string | null) => {
+    const rows = assets.filter((asset) => selected.has(asset.id));
+    if (!rows.length) return;
+    const results = await Promise.all(
+      rows.map((asset) => supabase.from("assets").update({ meta: withDesignFolderId(asset.meta, folderId) }).eq("id", asset.id)),
+    );
+    const firstError = results.find((r: any) => r.error)?.error;
+    if (firstError) {
+      toast({ title: "Move failed", description: firstError.message, variant: "destructive" });
+      return;
+    }
+    setAssets((prev) => prev.map((asset) => selected.has(asset.id) ? { ...asset, meta: withDesignFolderId(asset.meta, folderId) } : asset));
+    toast({ title: folderId ? `Moved ${rows.length} designs to folder` : `Removed ${rows.length} designs from folder` });
     clearSelection();
   };
 
   const assignToProject = async (assetId: string, projectId: string | null) => {
     const { error } = await supabase.from("assets").update({ project_id: projectId }).eq("id", assetId);
-    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
-    setAssets(prev => prev.map(a => a.id === assetId ? { ...a, project_id: projectId } : a));
-    toast({ title: projectId ? "Added to project" : "Removed from project" });
+    if (error) {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssets((prev) => prev.map((asset) => asset.id === assetId ? { ...asset, project_id: projectId } : asset));
+    toast({ title: projectId ? "Added design to project" : "Removed design from project" });
+  };
+
+  const assignToFolder = async (asset: any, folderId: string | null) => {
+    const nextMeta = withDesignFolderId(asset.meta, folderId);
+    const { error } = await supabase.from("assets").update({ meta: nextMeta }).eq("id", asset.id);
+    if (error) {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssets((prev) => prev.map((row) => row.id === asset.id ? { ...row, meta: nextMeta } : row));
+    toast({ title: folderId ? "Moved design to folder" : "Removed design from folder" });
   };
 
   const createProjectAndAssign = async (assetId: string) => {
@@ -131,47 +222,107 @@ const Assets = () => {
     const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
     const workspace_id = await ensureActiveWorkspaceId();
     const { data, error } = await supabase.from("projects").insert({ user_id: user.id, workspace_id, name: name.trim() } as any).select().single();
-    if (error || !data) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); return; }
-    setProjects(prev => [data, ...prev]);
+    if (error || !data) {
+      toast({ title: "Failed", description: error?.message, variant: "destructive" });
+      return;
+    }
+    setProjects((prev) => [data, ...prev]);
     await assignToProject(assetId, data.id);
+  };
+
+  const createFolderAndAssign = async (asset: any) => {
+    const name = window.prompt("New folder name");
+    if (!name?.trim() || !user) return;
+    const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+    const workspace_id = await ensureActiveWorkspaceId();
+    const { data, error } = await supabase.from("folders").insert({ user_id: user.id, workspace_id, name: name.trim() } as any).select().single();
+    if (error || !data) {
+      toast({ title: "Failed", description: error?.message, variant: "destructive" });
+      return;
+    }
+    setFolders((prev) => [data, ...prev]);
+    await assignToFolder(asset, data.id);
+  };
+
+  const activeFolderName = folders.find((folder) => folder.id === folderParam)?.name;
+
+  const DesignPreview = ({ asset }: { asset: any }) => {
+    const isLogotype = asset?.editor_state?.kind === "logotype";
+    const isCanvas = isCanvasAsset(asset);
+    const isImage = asset.image_url && !isLogotype;
+    return (
+      <>
+        {isImage ? <img src={asset.image_url} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : isLogotype ? <Logotype state={asset.editor_state} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" /> : (
+          <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
+            <div className="line-clamp-6 whitespace-pre-wrap">{(asset.content || asset.prompt || "").slice(0, 200)}</div>
+          </div>
+        )}
+      </>
+    );
   };
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Assets</h1>
-          <p className="mt-1 text-sm text-neutral-500">{assets.length} total · every generated asset is saved here.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Designs</h1>
+          <p className="mt-1 text-sm text-neutral-500">{assets.length} total · every generated design is saved here.</p>
         </div>
         <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
-          <Plus className="h-4 w-4" /> New Asset
+          <Plus className="h-4 w-4" /> New Design
         </Link>
       </div>
+
       <div className="mt-2 text-xs">
         <Link to="/trash" className="text-neutral-500 hover:text-neutral-800">View Trash →</Link>
       </div>
+
+      {folderParam && (
+        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600">
+          <span>Folder:</span>
+          <span className="font-medium text-neutral-900">{activeFolderName || "Unknown folder"}</span>
+          <Link to="/assets" className="text-neutral-500 hover:text-neutral-900">Clear</Link>
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
           <input
             ref={searchRef}
-            value={q} onChange={e => setQ(e.target.value)}
-            placeholder="Search assets…  ( / )"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search designs…  ( / )"
             className="h-9 w-full min-w-0 rounded-lg border border-neutral-200 bg-white pl-8 pr-3 text-sm outline-none focus:border-neutral-400 sm:w-64"
           />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <button onClick={() => setFilter("all")} className={`rounded-full border px-3 py-1 text-xs transition ${filter === "all" ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}>All</button>
-          {ALL_TYPES.map(t => (
-            <button key={t} onClick={() => setFilter(t)} className={`rounded-full border px-3 py-1 text-xs transition ${filter === t ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}>
-              {ASSET_TYPE_LABELS[t]}
+          {ALL_TYPES.map((type) => (
+            <button key={type} onClick={() => setFilter(type)} className={`rounded-full border px-3 py-1 text-xs transition ${filter === type ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}>
+              {ASSET_TYPE_LABELS[type]}
             </button>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
+            <button onClick={() => setView("card")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "card" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <LayoutGrid className="h-3.5 w-3.5" /> Card
+            </button>
+            <button onClick={() => setView("list")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "list" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <List className="h-3.5 w-3.5" /> List
+            </button>
+          </div>
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
+            <button onClick={() => setSort("name")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${sort === "name" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <ArrowUpDown className="h-3.5 w-3.5" /> Name (A–Z)
+            </button>
+            <button onClick={() => setSort("date")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${sort === "date" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              Date created
+            </button>
+          </div>
           <button
-            onClick={() => { setSelectMode((v) => !v); clearSelection(); }}
+            onClick={() => { setSelectMode((value) => !value); clearSelection(); }}
             className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition ${selectMode ? "border-brand bg-brand/10 text-brand" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}
           >
             {selectMode ? <X className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />} {selectMode ? "Cancel" : "Select"}
@@ -194,24 +345,42 @@ const Assets = () => {
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
-                disabled={!selected.size}
-                className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
-              >
+              <button disabled={!selected.size} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-700 hover:bg-neutral-50 disabled:opacity-50">
                 <FolderPlus className="h-3.5 w-3.5" /> Move
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-white">
-              <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Move {selected.size} to…</DropdownMenuLabel>
-              {projects.length === 0 ? (
-                <div className="px-2 py-2 text-xs text-neutral-500">No projects yet.</div>
-              ) : projects.map(p => (
-                <DropdownMenuItem key={p.id} onClick={() => bulkAssignToProject(p.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
-                  {p.name}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => bulkAssignToProject(null)} className="cursor-pointer text-neutral-600 focus:bg-neutral-100 focus:text-neutral-900">Remove from project</DropdownMenuItem>
+              <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Move {selected.size} designs to…</DropdownMenuLabel>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">Project</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent className="w-56 bg-white">
+                    <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Projects</DropdownMenuLabel>
+                    {projects.length === 0 ? <div className="px-2 py-2 text-xs text-neutral-500">No projects yet.</div> : projects.map((project) => (
+                      <DropdownMenuItem key={project.id} onClick={() => bulkAssignToProject(project.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
+                        {project.name}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => bulkAssignToProject(null)} className="cursor-pointer text-neutral-600 focus:bg-neutral-100 focus:text-neutral-900">Remove from project</DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">Folder</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent className="w-56 bg-white">
+                    <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Folders</DropdownMenuLabel>
+                    {folders.length === 0 ? <div className="px-2 py-2 text-xs text-neutral-500">No folders yet.</div> : folders.map((folder) => (
+                      <DropdownMenuItem key={folder.id} onClick={() => bulkAssignToFolder(folder.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
+                        {folder.name}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => bulkAssignToFolder(null)} className="cursor-pointer text-neutral-600 focus:bg-neutral-100 focus:text-neutral-900">Remove from folder</DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
             </DropdownMenuContent>
           </DropdownMenu>
           <button
@@ -233,120 +402,144 @@ const Assets = () => {
           </div>
           {assets.length === 0 ? (
             <>
-              <h2 className="text-lg font-semibold text-neutral-900">Your library is empty</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">No designs yet.</h2>
               <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
-                Every logotype, palette, brand voice, and deck you make with Rocket lands here — searchable, exportable, and re-editable.
+                Your designs will appear here. Start with a logo, brand kit, social graphic, presentation, or launch asset.
               </p>
               <Link to="/create" className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
-                <Plus className="h-3.5 w-3.5" /> Create your first asset
+                <Plus className="h-3.5 w-3.5" /> Create your first design
               </Link>
             </>
           ) : (
             <>
               <h2 className="text-lg font-semibold text-neutral-900">No matches</h2>
-              <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">Try a different type, project, or clear the search to see everything.</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">Try a different type, folder, or clear the search to see everything.</p>
             </>
           )}
         </div>
-      ) : (
+      ) : view === "card" ? (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {filtered.map(a => {
-            const isLogotype = a?.editor_state?.kind === "logotype";
-            const isCanvas = isCanvasAsset(a);
-            const isImage = a.image_url && !isLogotype;
-            const isHighlighted = highlight.includes(a.id);
-            const isSelected = selected.has(a.id);
+          {filtered.map((asset) => {
+            const isHighlighted = highlight.includes(asset.id);
+            const isSelected = selected.has(asset.id);
+            const currentFolderId = getDesignFolderId(asset);
+
             return (
-              <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${isSelected ? "border-brand ring-2 ring-brand/40" : isHighlighted ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
+              <div key={asset.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${isSelected ? "border-brand ring-2 ring-brand/40" : isHighlighted ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
                 {selectMode && (
                   <button
-                    onClick={(e) => { e.preventDefault(); toggleSelect(a.id); }}
+                    onClick={(e) => { e.preventDefault(); toggleSelect(asset.id); }}
                     className="absolute left-2 top-2 z-10 rounded-md bg-white/95 p-1 shadow-sm"
                     aria-label="Select"
                   >
                     {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
                   </button>
                 )}
+
                 {selectMode ? (
-                  <button onClick={() => toggleSelect(a.id)} className="block w-full text-left">
+                  <button onClick={() => toggleSelect(asset.id)} className="block w-full text-left">
                     <div className="aspect-square w-full overflow-hidden bg-neutral-50">
-                      {isImage ? (
-                        <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
-                      ) : isLogotype ? (
-                        <Logotype state={a.editor_state} fit="contain" />
-                      ) : isCanvas ? (
-                        <CanvasAssetPreview elements={a.editor_state} className="h-full w-full" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
-                          <div className="line-clamp-6 whitespace-pre-wrap">{(a.content || a.prompt || "").slice(0, 200)}</div>
-                        </div>
-                      )}
+                      <DesignPreview asset={asset} />
                     </div>
                     <div className="border-t border-neutral-100 p-3">
-                      <div className="truncate text-sm font-medium text-neutral-900">{a.title}</div>
+                      <div className="truncate text-sm font-medium text-neutral-900">{asset.title}</div>
                       <div className="mt-0.5 flex items-center justify-between gap-2">
-                        <span className="truncate text-[11px] text-neutral-500">{ASSET_TYPE_LABELS[a.asset_type] || a.asset_type}</span>
-                        <span className="shrink-0 text-[10px] text-neutral-400">{new Date(a.created_at).toLocaleDateString()}</span>
+                        <span className="truncate text-[11px] text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type] || asset.asset_type}</span>
+                        <span className="shrink-0 text-[10px] text-neutral-400">{new Date(asset.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </button>
                 ) : (
-                <Link to={`/editor?id=${a.id}`} className="block">
-                  <div className="aspect-square w-full overflow-hidden bg-neutral-50">
-                    {isImage ? (
-                      <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
-                    ) : isLogotype ? (
-                      <Logotype state={a.editor_state} fit="contain" />
-                    ) : isCanvas ? (
-                      <CanvasAssetPreview elements={a.editor_state} className="h-full w-full" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
-                        <div className="line-clamp-6 whitespace-pre-wrap">{(a.content || a.prompt || "").slice(0, 200)}</div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="border-t border-neutral-100 p-3">
-                    <div className="truncate text-sm font-medium text-neutral-900">{a.title}</div>
-                    <div className="mt-0.5 flex items-center justify-between gap-2">
-                      <span className="truncate text-[11px] text-neutral-500">{ASSET_TYPE_LABELS[a.asset_type] || a.asset_type}</span>
-                      <span className="shrink-0 text-[10px] text-neutral-400">{new Date(a.created_at).toLocaleDateString()}</span>
+                  <Link to={`/editor?id=${asset.id}`} className="block">
+                    <div className="aspect-square w-full overflow-hidden bg-neutral-50">
+                      <DesignPreview asset={asset} />
                     </div>
-                  </div>
-                </Link>
+                    <div className="border-t border-neutral-100 p-3">
+                      <div className="truncate text-sm font-medium text-neutral-900">{asset.title}</div>
+                      <div className="mt-0.5 flex items-center justify-between gap-2">
+                        <span className="truncate text-[11px] text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type] || asset.asset_type}</span>
+                        <span className="shrink-0 text-[10px] text-neutral-400">{new Date(asset.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </Link>
                 )}
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="absolute right-2 top-2 rounded-md bg-white/90 p-1 opacity-0 transition group-hover:opacity-100" aria-label="Actions">
                       <MoreHorizontal className="h-4 w-4 text-neutral-700" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-white">
-                    <DropdownMenuItem asChild className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"><Link to={`/editor?id=${a.id}`}><Edit3 className="mr-2 h-4 w-4" /> Open in Editor</Link></DropdownMenuItem>
+                  <DropdownMenuContent align="end" className="w-56 bg-white">
+                    <DropdownMenuItem asChild className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
+                      <Link to={`/editor?id=${asset.id}`}><Edit3 className="mr-2 h-4 w-4" /> Open design</Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900"><FolderPlus className="mr-2 h-4 w-4" /> {a.project_id ? "Move to project" : "Add to project"}</DropdownMenuSubTrigger>
+                      <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900">
+                        <FolderPlus className="mr-2 h-4 w-4" /> {asset.project_id ? "Move design to project" : "Add design to project"}
+                      </DropdownMenuSubTrigger>
                       <DropdownMenuPortal>
                         <DropdownMenuSubContent className="w-56 bg-white">
                           <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Projects</DropdownMenuLabel>
-                          {projects.length === 0 ? (
-                            <div className="px-2 py-2 text-xs text-neutral-500">No projects yet.</div>
-                          ) : projects.map(p => (
-                            <DropdownMenuItem key={p.id} onClick={() => assignToProject(a.id, p.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
-                              {p.name}{a.project_id === p.id ? " ✓" : ""}
+                          {projects.length === 0 ? <div className="px-2 py-2 text-xs text-neutral-500">No projects yet.</div> : projects.map((project) => (
+                            <DropdownMenuItem key={project.id} onClick={() => assignToProject(asset.id, project.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
+                              {project.name}{asset.project_id === project.id ? " ✓" : ""}
                             </DropdownMenuItem>
                           ))}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => createProjectAndAssign(a.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">+ New project…</DropdownMenuItem>
-                          {a.project_id && (
-                            <DropdownMenuItem onClick={() => assignToProject(a.id, null)} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Remove from project</DropdownMenuItem>
-                          )}
+                          <DropdownMenuItem onClick={() => createProjectAndAssign(asset.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">+ New project…</DropdownMenuItem>
+                          {asset.project_id && <DropdownMenuItem onClick={() => assignToProject(asset.id, null)} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Remove design from project</DropdownMenuItem>}
                         </DropdownMenuSubContent>
                       </DropdownMenuPortal>
                     </DropdownMenuSub>
-                    <DropdownMenuItem className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700" onClick={() => del(a.id)}>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900">
+                        <FolderPlus className="mr-2 h-4 w-4" /> {currentFolderId ? "Move design to folder" : "Add design to folder"}
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="w-56 bg-white">
+                          <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Folders</DropdownMenuLabel>
+                          {folders.length === 0 ? <div className="px-2 py-2 text-xs text-neutral-500">No folders yet.</div> : folders.map((folder) => (
+                            <DropdownMenuItem key={folder.id} onClick={() => assignToFolder(asset, folder.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
+                              {folder.name}{currentFolderId === folder.id ? " ✓" : ""}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => createFolderAndAssign(asset)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">+ New folder…</DropdownMenuItem>
+                          {currentFolderId && <DropdownMenuItem onClick={() => assignToFolder(asset, null)} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Remove design from folder</DropdownMenuItem>}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    <DropdownMenuItem className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700" onClick={() => del(asset.id)}>
                       <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+          {filtered.map((asset) => {
+            const isSelected = selected.has(asset.id);
+            return (
+              <div key={asset.id} className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0">
+                {selectMode && (
+                  <button onClick={() => toggleSelect(asset.id)}>
+                    {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
+                  </button>
+                )}
+                <Link to={`/editor?id=${asset.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="h-14 w-14 overflow-hidden rounded-lg bg-neutral-50">
+                    <DesignPreview asset={asset} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-neutral-900">{asset.title}</div>
+                    <div className="text-xs text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type] || asset.asset_type}</div>
+                  </div>
+                  <div className="shrink-0 text-xs text-neutral-400">{new Date(asset.created_at).toLocaleDateString()}</div>
+                </Link>
               </div>
             );
           })}
