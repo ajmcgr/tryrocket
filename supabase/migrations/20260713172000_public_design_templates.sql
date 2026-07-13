@@ -34,7 +34,7 @@ as $$
     a.created_at,
     a.updated_at,
     a.share_token,
-    coalesce(nullif(p.username, ''), '@' || left(a.user_id::text, 8)) as creator_username
+    coalesce(nullif(p.handle, ''), nullif(p.full_name, ''), '@' || left(a.user_id::text, 8)) as creator_username
   from public.assets a
   left join public.profiles p on p.user_id = a.user_id
   where a.share_token is not null
