@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   Stage, Layer, Rect, Circle as KCircle, Text as KText, Image as KImage,
@@ -13,7 +13,7 @@ import {
   Type, Square, Circle as CircleIcon, Image as ImageIcon, Trash2,
   Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
   Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
-  Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, ArrowLeft, Check, Loader2,
+  Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, Check, Loader2, Upload,
   History, FilePlus,
 } from "lucide-react";
 import {
@@ -835,9 +835,22 @@ const Editor = () => {
       </div>
       <div className="relative flex flex-1">
       {/* Left */}
-      <aside className="pointer-events-auto absolute left-4 top-4 z-20 hidden w-[18.5rem] max-h-[calc(100vh-6rem)] flex-col gap-3 overflow-hidden rounded-[32px] border border-white/70 bg-white/90 p-3 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl md:flex">
-        <div className="rounded-2xl border border-neutral-200/80 bg-white/80 p-3">
+      <aside className="pointer-events-auto absolute left-4 top-4 z-20 hidden w-[15rem] max-h-[calc(100vh-6rem)] flex-col gap-2.5 overflow-hidden rounded-[30px] border border-white/80 bg-white/88 p-2.5 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl md:flex">
+        <div className="rounded-[22px] border border-neutral-200/80 bg-white/85 p-3">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Add</p>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="mb-2.5 flex w-full items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-left transition hover:border-neutral-300 hover:bg-white"
+          >
+            <span>
+              <span className="block text-sm font-medium text-neutral-900">Upload asset</span>
+              <span className="block text-[11px] text-neutral-500">PNG, JPG, WebP, SVG</span>
+            </span>
+            <span className="grid h-8 w-8 place-items-center rounded-xl border border-neutral-200 bg-white text-neutral-700">
+              <Upload className="h-4 w-4" />
+            </span>
+          </button>
           <div className="grid grid-cols-4 gap-1.5">
             <ToolBtn onClick={addText} label="Text"><Type className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addRect} label="Rect"><Square className="h-4 w-4" /></ToolBtn>
@@ -847,12 +860,12 @@ const Editor = () => {
             <ToolBtn onClick={addLine} label="Line"><Minus className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addSticky} label="Sticky"><StickyNote className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addTable} label="Table"><TableIcon className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={() => fileRef.current?.click()} label="Image"><ImageIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={() => fileRef.current?.click()} label="Upload"><ImageIcon className="h-4 w-4" /></ToolBtn>
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
         </div>
-        <div className="rounded-2xl border border-neutral-200/80 bg-white/80 p-3">
+        <div className="rounded-[22px] border border-neutral-200/80 bg-white/85 p-3">
           <label className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-neutral-500">
             Canvas background
             <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-6 w-8 cursor-pointer rounded border border-neutral-200" />
@@ -861,7 +874,7 @@ const Editor = () => {
 
         {/* Brand Kit */}
         {(brandKit.colors.length + brandKit.fonts.length + brandKit.logos.length) > 0 && (
-          <div className="rounded-2xl border border-neutral-200/80 bg-white/80 p-3">
+          <div className="rounded-[22px] border border-neutral-200/80 bg-white/85 p-3">
             <p className="mb-2 flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
               <Sparkles className="h-3 w-3" /> Brand Kit
             </p>
@@ -905,7 +918,7 @@ const Editor = () => {
           </div>
         )}
 
-        <div className="rounded-2xl border border-neutral-200/80 bg-white/80 p-3">
+        <div className="rounded-[22px] border border-neutral-200/80 bg-white/85 p-3">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Layers</p>
           <div className="max-h-[18rem] overflow-y-auto pr-1">
             {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
@@ -932,27 +945,8 @@ const Editor = () => {
       </aside>
 
       {/* Center */}
-      <main className="flex min-w-0 flex-1 flex-col md:pl-[20.75rem]">
-        <div className="flex items-center gap-2 border-b border-neutral-200 bg-white px-4 py-2">
-          {assetMeta?.project_id ? (
-            <Link to={`/projects/${assetMeta.project_id}`} className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">
-              <ArrowLeft className="h-3 w-3" /> Project
-            </Link>
-          ) : assetId ? (
-            <Link to={`/editor?id=${assetId}`} className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">
-              <ArrowLeft className="h-3 w-3" /> Asset
-            </Link>
-          ) : null}
-          <span className="text-sm font-medium text-neutral-700">{assetMeta?.title || "Untitled design"}</span>
-          <span className="ml-2 text-xs text-neutral-400">{STAGE_W} × {STAGE_H}</span>
-          {assetId && (
-            <span className="ml-2 inline-flex items-center gap-1 text-[11px] text-neutral-400">
-              {saveStatus === "saving" && (<><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>)}
-              {saveStatus === "saved" && (<><Check className="h-3 w-3 text-green-600" /> Saved</>)}
-            </span>
-          )}
-        </div>
-        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto p-8">
+      <main className="flex min-w-0 flex-1 md:pl-[17.25rem]">
+        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 py-6">
           <div className="relative shadow-xl" style={{ width: STAGE_W, height: STAGE_H }}>
             <Stage
               ref={stageRef}
@@ -1013,21 +1007,23 @@ const Editor = () => {
       </main>
 
       {/* Right */}
-      <aside className="w-[22rem] overflow-y-auto border-l border-neutral-200 bg-neutral-50/80 p-3">
-        <div className="sticky top-3 z-10 mb-3 rounded-[28px] border border-white/80 bg-white/90 p-3 shadow-sm backdrop-blur-xl">
+      <aside className="w-[15.5rem] min-w-[15.5rem] max-w-[15.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
+        <div className="sticky top-3 z-10 mb-3 rounded-[24px] border border-white/80 bg-white/92 p-2.5 shadow-sm backdrop-blur-xl">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Tools</p>
               <p className="text-sm font-semibold text-neutral-900">Canvas actions</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" size="sm" onClick={undo} className="justify-start rounded-2xl"><Undo2 className="h-3.5 w-3.5" /> Undo</Button>
-            <Button variant="outline" size="sm" onClick={redo} className="justify-start rounded-2xl"><Redo2 className="h-3.5 w-3.5" /> Redo</Button>
-            <div className="col-span-2">
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={undo} className="justify-start rounded-2xl px-3"><Undo2 className="h-3.5 w-3.5" /> Undo</Button>
+              <Button variant="outline" size="sm" onClick={redo} className="justify-start rounded-2xl px-3"><Redo2 className="h-3.5 w-3.5" /> Redo</Button>
+            </div>
+            <div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full justify-start rounded-2xl"><LayoutTemplate className="h-3.5 w-3.5" /> Templates</Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start rounded-2xl px-3"><LayoutTemplate className="h-3.5 w-3.5" /> Templates</Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {TEMPLATES.map((t) => (
@@ -1040,7 +1036,7 @@ const Editor = () => {
               </DropdownMenu>
             </div>
             {assetId && (
-              <div className="col-span-2">
+              <div>
                 <AddToProjectMenu
                   assetId={assetId}
                   currentProjectId={assetMeta?.project_id || null}
@@ -1050,15 +1046,15 @@ const Editor = () => {
               </div>
             )}
             {assetId && (
-              <Button variant="outline" size="sm" onClick={saveVersion} className="justify-start rounded-2xl"><History className="h-3.5 w-3.5" /> Version</Button>
+              <Button variant="outline" size="sm" onClick={saveVersion} className="w-full justify-start rounded-2xl px-3"><History className="h-3.5 w-3.5" /> Version</Button>
             )}
-            <Button variant="outline" size="sm" onClick={saveAsNew} className="justify-start rounded-2xl"><FilePlus className="h-3.5 w-3.5" /> Save as new</Button>
-            <Button variant="outline" size="sm" onClick={save} className="justify-start rounded-2xl"><Save className="h-3.5 w-3.5" /> Save</Button>
-            <Button variant="outline" size="sm" onClick={() => setShowShortcuts(true)} className="justify-start rounded-2xl"><Keyboard className="h-3.5 w-3.5" /> Shortcuts</Button>
-            <div className="col-span-2">
+            <Button variant="outline" size="sm" onClick={saveAsNew} className="w-full justify-start rounded-2xl px-3"><FilePlus className="h-3.5 w-3.5" /> Save as new</Button>
+            <Button variant="outline" size="sm" onClick={save} className="w-full justify-start rounded-2xl px-3"><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowShortcuts(true)} className="w-full justify-start rounded-2xl px-3"><Keyboard className="h-3.5 w-3.5" /> Shortcuts</Button>
+            <div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="w-full justify-start rounded-2xl"><Download className="h-3.5 w-3.5" /> Export</Button>
+                  <Button size="sm" className="w-full justify-start rounded-2xl px-3"><Download className="h-3.5 w-3.5" /> Export</Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem onClick={() => exportImage("png")}>PNG image</DropdownMenuItem>
@@ -1070,16 +1066,23 @@ const Editor = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            {assetId && (
+              <div className="rounded-2xl border border-dashed border-neutral-200 px-3 py-2 text-[11px] text-neutral-500">
+                {saveStatus === "saving" && (<span className="inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Saving…</span>)}
+                {saveStatus === "saved" && (<span className="inline-flex items-center gap-1"><Check className="h-3 w-3 text-green-600" /> Saved</span>)}
+                {saveStatus === "idle" && <span>Changes save to this asset.</span>}
+              </div>
+            )}
           </div>
         </div>
         <div className="space-y-3">
           {!selected && (
-            <div className="rounded-[28px] border border-neutral-200 bg-white/90 p-4 text-xs text-neutral-400 shadow-sm">
+            <div className="rounded-[24px] border border-neutral-200 bg-white/90 p-4 text-xs text-neutral-400 shadow-sm">
               Select a layer to edit its properties.
             </div>
           )}
           {selected && (
-            <div className="space-y-3 rounded-[28px] border border-white/80 bg-white/90 p-4 shadow-sm">
+            <div className="space-y-3 rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Selected</p>
