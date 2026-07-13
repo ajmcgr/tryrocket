@@ -34,6 +34,7 @@ const AppShell = () => {
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
   const sidebarRoutes = ["/create", "/assets", "/editor", "/projects", "/templates"];
   const showSidebar = sidebarRoutes.some(r => location.pathname === r || location.pathname.startsWith(r + "/"));
+  const isEditorPage = location.pathname === "/editor";
 
   return (
     <div className="app-shell min-h-screen bg-neutral-50 text-neutral-900">
@@ -41,7 +42,8 @@ const AppShell = () => {
         <div className="relative flex h-14 w-full items-center px-4">
           <Logo to="/create" className="shrink-0" />
           <nav className="ml-8 hidden items-center gap-2 text-sm font-medium text-neutral-700 md:flex">
-            <NavLink data-tour="nav-create" to="/create" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition hover:bg-neutral-100 ${isActive ? "text-neutral-900" : ""}`}>Create</NavLink>
+            {isEditorPage ? headerActions : null}
+            <NavLink data-tour="nav-create" to="/create" className="inline-flex items-center rounded-lg bg-brand px-3 py-2.5 text-brand-foreground shadow-sm transition hover:bg-brand-hover">Create</NavLink>
             <NavLink data-tour="nav-assets" to="/assets" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Designs</NavLink>
             <NavLink to="/templates" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Templates</NavLink>
             <NavLink data-tour="nav-editor" to="/editor" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Editor</NavLink>
@@ -56,8 +58,9 @@ const AppShell = () => {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            {headerActions}
+            {isEditorPage ? null : headerActions}
             <WorkspaceSwitcher />
+            <a data-tour="nav-avatar" href="mailto:alex@tryrocket.ai" className="hidden rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex">Support</a>
             <button
               type="button"
               onClick={() => setShareOpen(true)}
