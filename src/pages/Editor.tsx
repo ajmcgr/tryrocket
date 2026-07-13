@@ -1219,8 +1219,8 @@ const Editor = () => {
       <div className="relative flex flex-1">
       <div className="flex min-w-0 flex-1 flex-col">
       {/* Top pill */}
-      <aside className="pointer-events-auto ml-4 mr-auto mt-4 hidden max-w-[calc(100%-2rem)] items-start gap-1.5 overflow-x-auto rounded-[22px] border border-white/80 bg-white/88 p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl md:flex">
-        <div className="min-w-[17rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
+      <aside className="pointer-events-auto mx-auto mt-4 hidden w-fit max-w-[calc(100%-2rem)] flex-nowrap items-stretch justify-center gap-2 overflow-x-auto rounded-[22px] border border-white/80 bg-white/88 p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl md:flex">
+        <div className="min-w-[15.5rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Add</p>
             <button
@@ -1247,7 +1247,7 @@ const Editor = () => {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
         </div>
 
-        <div className="min-w-[8.5rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
+        <div className="min-w-[7.5rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
           <label className="flex items-center justify-between gap-3 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
             Canvas
             <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-8 w-10 cursor-pointer rounded-lg border border-neutral-200 bg-white" />
@@ -1255,7 +1255,7 @@ const Editor = () => {
         </div>
 
         {(brandKit.colors.length + brandKit.fonts.length + brandKit.logos.length) > 0 && (
-          <div className="min-w-[12rem] max-w-[14rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
+          <div className="min-w-[10.5rem] max-w-[12rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
             <p className="mb-2 flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
               <Sparkles className="h-3 w-3" /> Brand Kit
             </p>
@@ -1299,7 +1299,7 @@ const Editor = () => {
           </div>
         )}
 
-        <div className="min-w-[13rem] max-w-[15rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
+        <div className="min-w-[11rem] max-w-[12.5rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
           <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Layers</p>
           <div className="max-h-[7.5rem] overflow-y-auto pr-1">
             {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
