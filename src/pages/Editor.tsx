@@ -309,7 +309,6 @@ const Editor = () => {
   const [brandKit, setBrandKit] = useState<{ colors: string[]; fonts: string[]; logos: { id: string; url: string; title: string }[] }>({ colors: [], fonts: [], logos: [] });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
 
   /* fonts */
   useEffect(() => {
@@ -543,7 +542,6 @@ const Editor = () => {
     setBg(t.bg);
     setEls(t.build());
     setSelectedId(null);
-    setShowTemplates(false);
   };
 
   const addImageFromUrl = (src: string) => {
@@ -828,17 +826,17 @@ const Editor = () => {
   };
 
   return (
-    <div className="relative flex h-[calc(100vh-4rem)] w-full bg-neutral-100">
+    <div className="relative flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-neutral-100">
       {/* Mobile warning */}
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white p-8 text-center md:hidden">
         <LayoutTemplate className="mb-3 h-8 w-8 text-neutral-400" />
         <p className="text-sm font-medium text-neutral-900">Editor is desktop-only</p>
         <p className="mt-1 text-xs text-neutral-500">Open Rocket on a larger screen to design.</p>
       </div>
-      <div className="flex flex-1">
+      <div className="relative flex flex-1">
       {/* Left */}
-      <aside className="flex w-64 flex-col border-r border-neutral-200 bg-white">
-        <div className="border-b border-neutral-200 p-3">
+      <aside className="pointer-events-auto absolute left-4 top-4 z-20 hidden w-[18.5rem] max-h-[calc(100vh-6rem)] flex-col gap-3 overflow-hidden rounded-[32px] border border-white/70 bg-white/90 p-3 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl md:flex">
+        <div className="rounded-2xl border border-neutral-200/80 bg-white/80 p-3">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Add</p>
           <div className="grid grid-cols-4 gap-1.5">
             <ToolBtn onClick={addText} label="Text"><Type className="h-4 w-4" /></ToolBtn>
@@ -854,7 +852,7 @@ const Editor = () => {
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
         </div>
-        <div className="border-b border-neutral-200 p-3">
+        <div className="rounded-2xl border border-neutral-200/80 bg-white/80 p-3">
           <label className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-neutral-500">
             Canvas background
             <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-6 w-8 cursor-pointer rounded border border-neutral-200" />
@@ -863,7 +861,7 @@ const Editor = () => {
 
         {/* Brand Kit */}
         {(brandKit.colors.length + brandKit.fonts.length + brandKit.logos.length) > 0 && (
-          <div className="border-b border-neutral-200 p-3">
+          <div className="rounded-2xl border border-neutral-200/80 bg-white/80 p-3">
             <p className="mb-2 flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
               <Sparkles className="h-3 w-3" /> Brand Kit
             </p>
@@ -907,10 +905,11 @@ const Editor = () => {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-3">
+        <div className="rounded-2xl border border-neutral-200/80 bg-white/80 p-3">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Layers</p>
-          {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
-          <ul className="space-y-1">
+          <div className="max-h-[18rem] overflow-y-auto pr-1">
+            {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
+            <ul className="space-y-1">
             {[...els].reverse().map((e) => (
               <li key={e.id}>
                 <button
@@ -927,12 +926,13 @@ const Editor = () => {
                 </button>
               </li>
             ))}
-          </ul>
+            </ul>
+          </div>
         </div>
       </aside>
 
       {/* Center */}
-      <main className="flex flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col md:pl-[20.75rem]">
         <div className="flex items-center gap-2 border-b border-neutral-200 bg-white px-4 py-2">
           {assetMeta?.project_id ? (
             <Link to={`/projects/${assetMeta.project_id}`} className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900">
@@ -951,54 +951,6 @@ const Editor = () => {
               {saveStatus === "saved" && (<><Check className="h-3 w-3 text-green-600" /> Saved</>)}
             </span>
           )}
-          <div className="ml-3 flex items-center gap-1">
-            <IconAction onClick={undo} label="Undo"><Undo2 className="h-3.5 w-3.5" /></IconAction>
-            <IconAction onClick={redo} label="Redo"><Redo2 className="h-3.5 w-3.5" /></IconAction>
-            <div className="relative">
-              <IconAction onClick={() => setShowTemplates((v) => !v)} label="Templates"><LayoutTemplate className="h-3.5 w-3.5" /></IconAction>
-              {showTemplates && (
-                <div className="absolute left-0 top-9 z-30 w-56 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg">
-                  <p className="px-2 py-1 text-[10px] uppercase tracking-wider text-neutral-400">Replace canvas</p>
-                  {TEMPLATES.map((t) => (
-                    <button key={t.id} onClick={() => applyTemplate(t.id)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutral-100">
-                      <span className="h-4 w-4 rounded border border-neutral-200" style={{ background: t.bg }} />
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <IconAction onClick={() => setShowShortcuts(true)} label="Shortcuts"><Keyboard className="h-3.5 w-3.5" /></IconAction>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            {assetId && (
-              <AddToProjectMenu
-                assetId={assetId}
-                currentProjectId={assetMeta?.project_id || null}
-                onChanged={(pid) => setAssetMeta((m) => m ? { ...m, project_id: pid } : m)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50"
-              />
-            )}
-            {assetId && (
-              <Button variant="outline" size="sm" onClick={saveVersion}><History className="h-3.5 w-3.5" /> Version</Button>
-            )}
-            <Button variant="outline" size="sm" onClick={saveAsNew}><FilePlus className="h-3.5 w-3.5" /> Save as new</Button>
-            <Button variant="outline" size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm"><Download className="h-3.5 w-3.5" /> Export</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => exportImage("png")}>PNG image</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportImage("jpeg")}>JPG image</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportPsd}>Photoshop (.psd)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportSvg("Figma")}>Figma (SVG)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportSvg("Sketch")}>Sketch (SVG)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportSvg("Canva")}>Canva (SVG)</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
         <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto p-8">
           <div className="relative shadow-xl" style={{ width: STAGE_W, height: STAGE_H }}>
@@ -1061,32 +1013,99 @@ const Editor = () => {
       </main>
 
       {/* Right */}
-      <aside className="w-72 border-l border-neutral-200 bg-white p-4 overflow-y-auto">
-        {!selected && <p className="text-xs text-neutral-400">Select a layer to edit its properties.</p>}
-        {selected && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold capitalize text-neutral-900">{selected.kind}</p>
-              <div className="flex items-center gap-1">
-                <IconAction onClick={() => reorder(selected.id, 1)} label="Up"><ArrowUp className="h-3.5 w-3.5" /></IconAction>
-                <IconAction onClick={() => reorder(selected.id, -1)} label="Down"><ArrowDown className="h-3.5 w-3.5" /></IconAction>
-                <IconAction onClick={() => duplicate(selected.id)} label="Duplicate"><Copy className="h-3.5 w-3.5" /></IconAction>
-                <IconAction onClick={() => remove(selected.id)} label="Delete"><Trash2 className="h-3.5 w-3.5" /></IconAction>
-              </div>
-            </div>
-            <Inspector el={selected} onChange={(patch) => update(selected.id, patch as any)} />
-            <div className="border-t border-neutral-200 pt-3">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Position</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Field label="X"><NumberInput value={Math.round(selected.x)} onChange={(e: any) => update(selected.id, { x: +e.target.value } as any)} /></Field>
-                <Field label="Y"><NumberInput value={Math.round(selected.y)} onChange={(e: any) => update(selected.id, { y: +e.target.value } as any)} /></Field>
-                <Field label="W"><NumberInput value={Math.round(selected.w)} onChange={(e: any) => update(selected.id, { w: +e.target.value } as any)} /></Field>
-                <Field label="H"><NumberInput value={Math.round(selected.h)} onChange={(e: any) => update(selected.id, { h: +e.target.value } as any)} /></Field>
-                <Field label="Rot°"><NumberInput value={Math.round(selected.rotation || 0)} onChange={(e: any) => update(selected.id, { rotation: +e.target.value } as any)} /></Field>
-              </div>
+      <aside className="w-[22rem] overflow-y-auto border-l border-neutral-200 bg-neutral-50/80 p-3">
+        <div className="sticky top-3 z-10 mb-3 rounded-[28px] border border-white/80 bg-white/90 p-3 shadow-sm backdrop-blur-xl">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Tools</p>
+              <p className="text-sm font-semibold text-neutral-900">Canvas actions</p>
             </div>
           </div>
-        )}
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="sm" onClick={undo} className="justify-start rounded-2xl"><Undo2 className="h-3.5 w-3.5" /> Undo</Button>
+            <Button variant="outline" size="sm" onClick={redo} className="justify-start rounded-2xl"><Redo2 className="h-3.5 w-3.5" /> Redo</Button>
+            <div className="col-span-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-start rounded-2xl"><LayoutTemplate className="h-3.5 w-3.5" /> Templates</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {TEMPLATES.map((t) => (
+                    <DropdownMenuItem key={t.id} onClick={() => applyTemplate(t.id)}>
+                      <span className="mr-2 h-4 w-4 rounded border border-neutral-200" style={{ background: t.bg }} />
+                      {t.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            {assetId && (
+              <div className="col-span-2">
+                <AddToProjectMenu
+                  assetId={assetId}
+                  currentProjectId={assetMeta?.project_id || null}
+                  onChanged={(pid) => setAssetMeta((m) => m ? { ...m, project_id: pid } : m)}
+                  className="inline-flex w-full items-center justify-start gap-1.5 rounded-2xl border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50"
+                />
+              </div>
+            )}
+            {assetId && (
+              <Button variant="outline" size="sm" onClick={saveVersion} className="justify-start rounded-2xl"><History className="h-3.5 w-3.5" /> Version</Button>
+            )}
+            <Button variant="outline" size="sm" onClick={saveAsNew} className="justify-start rounded-2xl"><FilePlus className="h-3.5 w-3.5" /> Save as new</Button>
+            <Button variant="outline" size="sm" onClick={save} className="justify-start rounded-2xl"><Save className="h-3.5 w-3.5" /> Save</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowShortcuts(true)} className="justify-start rounded-2xl"><Keyboard className="h-3.5 w-3.5" /> Shortcuts</Button>
+            <div className="col-span-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" className="w-full justify-start rounded-2xl"><Download className="h-3.5 w-3.5" /> Export</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => exportImage("png")}>PNG image</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportImage("jpeg")}>JPG image</DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportPsd}>Photoshop (.psd)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportSvg("Figma")}>Figma (SVG)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportSvg("Sketch")}>Sketch (SVG)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportSvg("Canva")}>Canva (SVG)</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {!selected && (
+            <div className="rounded-[28px] border border-neutral-200 bg-white/90 p-4 text-xs text-neutral-400 shadow-sm">
+              Select a layer to edit its properties.
+            </div>
+          )}
+          {selected && (
+            <div className="space-y-3 rounded-[28px] border border-white/80 bg-white/90 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Selected</p>
+                  <p className="text-sm font-semibold capitalize text-neutral-900">{selected.kind}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <IconAction onClick={() => reorder(selected.id, 1)} label="Up"><ArrowUp className="h-3.5 w-3.5" /></IconAction>
+                  <IconAction onClick={() => reorder(selected.id, -1)} label="Down"><ArrowDown className="h-3.5 w-3.5" /></IconAction>
+                  <IconAction onClick={() => duplicate(selected.id)} label="Duplicate"><Copy className="h-3.5 w-3.5" /></IconAction>
+                  <IconAction onClick={() => remove(selected.id)} label="Delete"><Trash2 className="h-3.5 w-3.5" /></IconAction>
+                </div>
+              </div>
+              <Inspector el={selected} onChange={(patch) => update(selected.id, patch as any)} />
+              <div className="border-t border-neutral-200 pt-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Position</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="X"><NumberInput value={Math.round(selected.x)} onChange={(e: any) => update(selected.id, { x: +e.target.value } as any)} /></Field>
+                  <Field label="Y"><NumberInput value={Math.round(selected.y)} onChange={(e: any) => update(selected.id, { y: +e.target.value } as any)} /></Field>
+                  <Field label="W"><NumberInput value={Math.round(selected.w)} onChange={(e: any) => update(selected.id, { w: +e.target.value } as any)} /></Field>
+                  <Field label="H"><NumberInput value={Math.round(selected.h)} onChange={(e: any) => update(selected.id, { h: +e.target.value } as any)} /></Field>
+                  <Field label="Rot°"><NumberInput value={Math.round(selected.rotation || 0)} onChange={(e: any) => update(selected.id, { rotation: +e.target.value } as any)} /></Field>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </aside>
       </div>
       {showShortcuts && (
