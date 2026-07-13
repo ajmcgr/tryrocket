@@ -1,69 +1,199 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { TEMPLATES } from "@/data/templates";
-import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { supabase as _sb } from "@/integrations/supabase/client";
+import {
+  Search,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
+  ExternalLink,
+} from "lucide-react";
+import { AssetGridSkeleton } from "@/components/Skeletons";
+import { Logotype } from "@/components/Logotype";
+import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import { ASSET_TYPE_LABELS, ALL_TYPES, isCanvasAsset } from "@/lib/assetSchemas";
+import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
 
-const Templates = () => (
-  <div className="mx-auto max-w-6xl px-6 py-10">
-    <Link to="/projects" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900">
-      <ArrowLeft className="h-4 w-4" /> Projects
-    </Link>
-    <div className="mt-4 flex items-end justify-between gap-4">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Start from a template</h1>
-        <p className="mt-2 max-w-2xl text-sm text-neutral-500">Hand-tuned brand starters with palette, fonts, audience, and voice already set. Fork one to skip the blank page.</p>
+const supabase = _sb as any;
+
+const Templates = () => {
+  const [designs, setDesigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<string>("all");
+  const [view, setView] = useState<CollectionView>("card");
+  const [sort, setSort] = useState<DesignSort>("date");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.rpc("get_public_designs", { _limit: 240 });
+
+      if (!cancelled) {
+        if (error) {
+          console.error(error);
+          setDesigns([]);
+        } else {
+          setDesigns(data || []);
+        }
+        setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const visible = designs.filter((design) => {
+      if (filter !== "all" && design.asset_type !== filter) return false;
+      if (!q) return true;
+      return [design.title, design.prompt, design.creator_username]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q));
+    });
+
+    return sortByOption(visible, sort, (design) => design.title, (design) => design.created_at);
+  }, [designs, filter, query, sort]);
+
+  const DesignPreview = ({ design }: { design: any }) => {
+    const isLogotype = design?.editor_state?.kind === "logotype";
+    const isCanvas = isCanvasAsset(design);
+    const isImage = design.image_url && !isLogotype;
+
+    return (
+      <>
+        {isImage ? (
+          <img src={design.image_url} alt={design.title} className="h-full w-full object-cover" loading="lazy" />
+        ) : isLogotype ? (
+          <Logotype state={design.editor_state} fit="contain" />
+        ) : isCanvas ? (
+          <CanvasAssetPreview elements={design.editor_state} className="h-full w-full" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
+            <div className="line-clamp-6 whitespace-pre-wrap">{(design.content || design.prompt || "").slice(0, 220)}</div>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl px-6 py-10">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Templates</h1>
+          <p className="mt-1 text-sm text-neutral-500">Public designs shared by the Rocket community.</p>
+        </div>
       </div>
-      <Link to="/projects/new" className="hidden text-sm text-neutral-600 hover:text-neutral-900 sm:inline">Start blank instead →</Link>
-    </div>
 
-    <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {TEMPLATES.map(t => (
-        <Link
-          key={t.id}
-          to={`/projects/new?template=${t.id}`}
-          className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm"
-        >
-          <div className="relative h-40 w-full overflow-hidden" style={{ background: t.colors[0] }}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div
-                className="text-2xl font-semibold tracking-tight"
-                style={{ color: t.colors[3] || "#fff", fontFamily: `${t.fonts[0]}, ui-sans-serif, system-ui` }}
-              >
-                {t.sampleName}
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search templates…"
+            className="h-9 w-full min-w-0 rounded-lg border border-neutral-200 bg-white pl-8 pr-3 text-sm outline-none focus:border-neutral-400 sm:w-72"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button onClick={() => setFilter("all")} className={`rounded-full border px-3 py-1 text-xs transition ${filter === "all" ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}>All</button>
+          {ALL_TYPES.map((type) => (
+            <button key={type} onClick={() => setFilter(type)} className={`rounded-full border px-3 py-1 text-xs transition ${filter === type ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}>
+              {ASSET_TYPE_LABELS[type]}
+            </button>
+          ))}
+        </div>
+
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
+            <button onClick={() => setView("card")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "card" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <LayoutGrid className="h-3.5 w-3.5" /> Card
+            </button>
+            <button onClick={() => setView("list")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "list" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <List className="h-3.5 w-3.5" /> List
+            </button>
+          </div>
+
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
+            <button onClick={() => setSort("name")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${sort === "name" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <ArrowUpDown className="h-3.5 w-3.5" /> Name (A–Z)
+            </button>
+            <button onClick={() => setSort("date")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${sort === "date" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              Date created
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <AssetGridSkeleton />
+      ) : filtered.length === 0 ? (
+        <div className="mt-12 rounded-3xl border border-dashed border-neutral-300 bg-gradient-to-b from-white to-neutral-50 p-16 text-center">
+          <h2 className="text-lg font-semibold text-neutral-900">No templates yet.</h2>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+            Public designs will appear here once people share them.
+          </p>
+        </div>
+      ) : view === "card" ? (
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {filtered.map((design) => (
+            <Link
+              key={design.id}
+              to={design.share_token ? `/share/asset/${design.share_token}` : "#"}
+              className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
+            >
+              <div className="aspect-square w-full overflow-hidden bg-neutral-50">
+                <DesignPreview design={design} />
               </div>
-            </div>
-            <div className="absolute bottom-3 left-3 flex gap-1.5">
-              {t.colors.slice(0, 5).map(c => (
-                <span key={c} className="h-5 w-5 rounded-full border border-white/30" style={{ background: c }} />
-              ))}
-            </div>
-            <div className="absolute right-3 top-3 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur">
-              {t.category}
-            </div>
-          </div>
-          <div className="p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-base font-semibold tracking-tight">{t.name}</h3>
-              <ArrowRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-900" />
-            </div>
-            <p className="mt-1 text-xs text-neutral-500">{t.tagline}</p>
-            <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] text-neutral-500">
-              <span className="rounded-full bg-neutral-100 px-2 py-0.5">{t.audience}</span>
-              <span className="rounded-full bg-neutral-100 px-2 py-0.5">{t.tone}</span>
-              <span className="rounded-full bg-neutral-100 px-2 py-0.5">{t.fonts[0]} / {t.fonts[1]}</span>
-            </div>
-          </div>
-        </Link>
-      ))}
+              <div className="border-t border-neutral-100 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-neutral-900">{design.title}</div>
+                    <div className="mt-0.5 truncate text-[11px] text-neutral-500">by {design.creator_username || "Rocket creator"}</div>
+                  </div>
+                  <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 transition group-hover:text-neutral-700" />
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="truncate text-[11px] text-neutral-500">{ASSET_TYPE_LABELS[design.asset_type] || design.asset_type}</span>
+                  <span className="shrink-0 text-[10px] text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+          {filtered.map((design) => (
+            <Link
+              key={design.id}
+              to={design.share_token ? `/share/asset/${design.share_token}` : "#"}
+              className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 last:border-b-0"
+            >
+              <div className="h-14 w-14 overflow-hidden rounded-lg bg-neutral-50">
+                <DesignPreview design={design} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-neutral-900">{design.title}</div>
+                <div className="truncate text-xs text-neutral-500">
+                  {(ASSET_TYPE_LABELS[design.asset_type] || design.asset_type)} · by {design.creator_username || "Rocket creator"}
+                </div>
+              </div>
+              <div className="shrink-0 text-xs text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</div>
+              <ExternalLink className="h-4 w-4 shrink-0 text-neutral-400" />
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
-
-    <div className="mt-12 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/50 p-8 text-center">
-      <Sparkles className="mx-auto h-5 w-5 text-neutral-400" />
-      <p className="mt-2 text-sm text-neutral-600">Want a custom template for your industry?</p>
-      <Link to="/projects/new" className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
-        Start from scratch <ArrowRight className="h-4 w-4" />
-      </Link>
-    </div>
-  </div>
-);
+  );
+};
 
 export default Templates;
