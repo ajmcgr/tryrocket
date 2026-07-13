@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   Stage, Layer, Rect, Circle as KCircle, Text as KText, Image as KImage,
@@ -14,12 +14,13 @@ import {
   Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Download, Save,
   Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
   Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, Check, Loader2, Upload,
-  History, FilePlus,
+  History, FilePlus, Pencil, ChevronDown, Settings2, Grid3X3, Printer, FolderPlus,
 } from "lucide-react";
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
+  DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuShortcut, DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import AddToProjectMenu from "@/components/AddToProjectMenu";
+import type { AppShellOutletContext } from "@/components/AppShell";
 import { defaultLogotypeState, LOGOTYPE_FONTS, pickLogotypeText, type LogotypeState } from "@/lib/logotype";
 const supabase = _sb as any;
 
@@ -298,9 +299,11 @@ const KonvaImage = ({ el, ...rest }: { el: ImgEl; [k: string]: any }) => {
 const Editor = () => {
   const { toast } = useToast();
   const nav = useNavigate();
+  const { setHeaderCenter, setHeaderActions } = useOutletContext<AppShellOutletContext>();
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const nodeRefs = useRef<Record<string, Konva.Node | null>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
@@ -309,6 +312,11 @@ const Editor = () => {
   const [brandKit, setBrandKit] = useState<{ colors: string[]; fonts: string[]; logos: { id: string; url: string; title: string }[] }>({ colors: [], fonts: [], logos: [] });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [isRenamingTitle, setIsRenamingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [showGrid, setShowGrid] = useState(false);
+  const [projectOptions, setProjectOptions] = useState<{ id: string; name: string }[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
 
   /* fonts */
   useEffect(() => {
@@ -430,6 +438,202 @@ const Editor = () => {
   }, [els, assetId]);
 
   const selected = els.find((e) => e.id === selectedId) || null;
+  const displayTitle = assetMeta?.title?.trim() || "Untitled design";
+
+  const withSelectionHidden = useCallback(async <T,>(work: () => T | Promise<T>) => {
+    const prevSelectedId = selectedId;
+    setSelectedId(null);
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    try {
+      return await work();
+    } finally {
+      setSelectedId(prevSelectedId);
+    }
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (!isRenamingTitle) setTitleDraft(displayTitle);
+  }, [displayTitle, isRenamingTitle]);
+
+  useEffect(() => {
+    if (!isRenamingTitle) return;
+    titleInputRef.current?.focus();
+    titleInputRef.current?.select();
+  }, [isRenamingTitle]);
+
+  const persistTitle = useCallback(async (nextTitleRaw: string) => {
+    const nextTitle = nextTitleRaw.trim() || "Untitled design";
+    const previousTitle = assetMeta?.title?.trim() || "Untitled design";
+
+    setIsRenamingTitle(false);
+    setTitleDraft(nextTitle);
+
+    if (nextTitle === previousTitle && assetMeta) return;
+
+    setAssetMeta((prev) => ({ title: nextTitle, project_id: prev?.project_id || null }));
+    if (!assetId) return;
+
+    setSaveStatus("saving");
+    const { error } = await supabase.from("assets").update({ title: nextTitle }).eq("id", assetId);
+    if (error) {
+      setAssetMeta((prev) => ({ title: previousTitle, project_id: prev?.project_id || null }));
+      setTitleDraft(previousTitle);
+      setSaveStatus("idle");
+      toast({ title: "Rename failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setSaveStatus("saved");
+    setTimeout(() => setSaveStatus((s) => (s === "saved" ? "idle" : s)), 1500);
+  }, [assetId, assetMeta, toast]);
+
+  useEffect(() => {
+    setHeaderCenter(
+      <div className="mx-auto flex justify-center">
+        {isRenamingTitle ? (
+          <input
+            ref={titleInputRef}
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onBlur={() => { void persistTitle(titleDraft); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void persistTitle(titleDraft);
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setTitleDraft(displayTitle);
+                setIsRenamingTitle(false);
+              }
+            }}
+            className="h-10 w-full rounded-full border border-neutral-200 bg-white px-4 text-center text-sm font-semibold text-neutral-900 outline-none ring-0 transition focus:border-neutral-300 focus:bg-neutral-50"
+            aria-label="Design name"
+            placeholder="Untitled design"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsRenamingTitle(true)}
+            className="inline-flex max-w-full items-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:border-neutral-200 hover:bg-neutral-50"
+            aria-label="Rename design"
+          >
+            <span className="truncate">{displayTitle}</span>
+            <Pencil className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+          </button>
+        )}
+      </div>
+    );
+    return () => setHeaderCenter(null);
+  }, [displayTitle, isRenamingTitle, persistTitle, setHeaderCenter, titleDraft]);
+
+  const fetchProjectsForMenu = useCallback(async () => {
+    if (!assetId) return;
+    setLoadingProjects(true);
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData?.user?.id;
+    if (!uid) {
+      setProjectOptions([]);
+      setLoadingProjects(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("projects")
+      .select("id,name")
+      .eq("user_id", uid)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setProjectOptions((data || []) as { id: string; name: string }[]);
+    setLoadingProjects(false);
+  }, [assetId]);
+
+  const assignProject = useCallback(async (projectId: string | null) => {
+    if (!assetId) return;
+    const { error } = await supabase.from("assets").update({ project_id: projectId }).eq("id", assetId);
+    if (error) {
+      toast({ title: "Move failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssetMeta((prev) => (prev ? { ...prev, project_id: projectId } : prev));
+    toast({ title: projectId ? "Moved design to project" : "Removed design from project" });
+  }, [assetId, toast]);
+
+  const createProjectAndAssign = useCallback(async () => {
+    if (!assetId) return;
+    const name = window.prompt("New project name");
+    if (!name?.trim()) return;
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData?.user?.id;
+    if (!uid) {
+      toast({ title: "Sign in required", variant: "destructive" });
+      return;
+    }
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({ user_id: uid, name: name.trim() })
+      .select("id,name")
+      .single();
+    if (error || !data) {
+      toast({ title: "Project creation failed", description: error?.message, variant: "destructive" });
+      return;
+    }
+    setProjectOptions((prev) => [data as { id: string; name: string }, ...prev]);
+    await assignProject(data.id);
+  }, [assetId, assignProject, toast]);
+
+  const startNewDesign = useCallback(() => {
+    history.current = { past: [], future: [] };
+    setSelectedId(null);
+    setAssetMeta(null);
+    _setEls([]);
+    setBg("#ffffff");
+    firstSave.current = true;
+    nav("/editor");
+  }, [nav]);
+
+  const printCanvas = useCallback(async () => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const dataUrl = await withSelectionHidden(() => stage.toDataURL({ pixelRatio: 2, mimeType: "image/png" }));
+    const win = window.open("", "_blank", "noopener,noreferrer,width=1100,height=900");
+    if (!win) {
+      toast({ title: "Popup blocked", description: "Allow popups to print this design.", variant: "destructive" });
+      return;
+    }
+    win.document.write(`
+      <html>
+        <head>
+          <title>${displayTitle}</title>
+          <style>
+            body { margin: 0; display: grid; place-items: center; min-height: 100vh; background: white; }
+            img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+          </style>
+        </head>
+        <body>
+          <img src="${dataUrl}" alt="${displayTitle}" />
+          <script>
+            window.onload = () => { window.print(); };
+          </script>
+        </body>
+      </html>
+    `);
+    win.document.close();
+  }, [displayTitle, toast, withSelectionHidden]);
+
+  const moveToTrash = useCallback(async () => {
+    if (!assetId) {
+      toast({ title: "Save this design first", description: "Only saved designs can be moved to Trash.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm("Move this design to Trash? Restore anytime from /trash.")) return;
+    const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", assetId);
+    if (error) {
+      toast({ title: "Trash failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Moved to Trash", description: "You can restore it from Trash anytime." });
+    nav("/assets");
+  }, [assetId, nav, toast]);
 
   /* attach transformer */
   useEffect(() => {
@@ -488,15 +692,18 @@ const Editor = () => {
   /* save / export */
   const save = async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(els));
+    setSaveStatus("saving");
     if (assetId) {
       const { error } = await supabase.from("assets").update({ editor_state: els as any }).eq("id", assetId);
-      if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+      if (error) { setSaveStatus("idle"); toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
     }
-    toast({ title: "Saved", description: assetId ? "Design saved to asset." : "Design saved locally." });
+    setSaveStatus("saved");
+    setTimeout(() => setSaveStatus((s) => (s === "saved" ? "idle" : s)), 1500);
+    toast({ title: "Saved", description: assetId ? "Design saved." : "Design saved locally." });
   };
 
   const saveVersion = async () => {
-    if (!assetId) { toast({ title: "Open this design from an asset to save versions.", variant: "destructive" }); return; }
+    if (!assetId) { toast({ title: "Open this saved design to keep versions.", variant: "destructive" }); return; }
     const { data: a } = await supabase.from("assets").select("user_id, title, content, image_url").eq("id", assetId).maybeSingle();
     if (!a) return;
     const label = prompt("Label this version (optional):") ?? "";
@@ -511,8 +718,8 @@ const Editor = () => {
   const saveAsNew = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const uid2 = userData?.user?.id;
-    if (!uid2) { toast({ title: "Sign in to save assets", variant: "destructive" }); return; }
-    const title = prompt("Name for the new asset:", assetMeta?.title ? `${assetMeta.title} (copy)` : "Untitled design") || "Untitled design";
+    if (!uid2) { toast({ title: "Sign in to save designs", variant: "destructive" }); return; }
+    const title = prompt("Name for the new design:", assetMeta?.title ? `${assetMeta.title} (copy)` : "Untitled design") || "Untitled design";
     const stage = stageRef.current;
     let thumb: string | null = null;
     if (stage) {
@@ -533,7 +740,7 @@ const Editor = () => {
       thumbnail_url: thumb,
     } as any).select().single();
     if (error || !data) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); return; }
-    toast({ title: "Saved as new asset" });
+    toast({ title: "Saved as new design" });
     nav(`/editor?id=${data.id}`);
   };
 
@@ -692,6 +899,182 @@ const Editor = () => {
     }
   };
 
+  useEffect(() => {
+    setHeaderActions(
+      <DropdownMenu onOpenChange={(open) => { if (open) void fetchProjectsForMenu(); }}>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="hidden items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex"
+          >
+            File
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-72">
+          <DropdownMenuItem onClick={startNewDesign}>
+            <FilePlus className="mr-2 h-4 w-4" />
+            Create new design
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => fileRef.current?.click()}>
+            <Upload className="mr-2 h-4 w-4" />
+            Upload files
+          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <LayoutTemplate className="mr-2 h-4 w-4" />
+              Templates
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-56">
+              {TEMPLATES.map((template) => (
+                <DropdownMenuItem key={template.id} onClick={() => applyTemplate(template.id)}>
+                  <span className="mr-2 h-4 w-4 rounded border border-neutral-200" style={{ background: template.bg }} />
+                  {template.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSeparator />
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Settings2 className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-64">
+              <DropdownMenuCheckboxItem checked={showGrid} onCheckedChange={(checked) => setShowGrid(!!checked)}>
+                <Grid3X3 className="mr-2 h-4 w-4" />
+                Show guides
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuItem onClick={() => setShowShortcuts(true)}>
+                <Keyboard className="mr-2 h-4 w-4" />
+                Keyboard shortcuts
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => nav("/settings/profile")}>
+                <Settings2 className="mr-2 h-4 w-4" />
+                Open settings
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={undo}>
+            <Undo2 className="mr-2 h-4 w-4" />
+            Undo
+            <DropdownMenuShortcut>⌘Z</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={redo}>
+            <Redo2 className="mr-2 h-4 w-4" />
+            Redo
+            <DropdownMenuShortcut>⇧⌘Z</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={save}>
+            <Save className="mr-2 h-4 w-4" />
+            Save
+            {assetId && saveStatus !== "idle" && (
+              <DropdownMenuShortcut>{saveStatus === "saved" ? "Saved" : "Saving…"}</DropdownMenuShortcut>
+            )}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={saveAsNew}>
+            <Copy className="mr-2 h-4 w-4" />
+            Make a copy
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={saveVersion} disabled={!assetId}>
+            <History className="mr-2 h-4 w-4" />
+            Save version
+          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger disabled={!assetId}>
+              <FolderPlus className="mr-2 h-4 w-4" />
+              Move
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-64">
+              <DropdownMenuItem onClick={() => void createProjectAndAssign()}>
+                <FolderPlus className="mr-2 h-4 w-4" />
+                New project…
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {loadingProjects ? (
+                <DropdownMenuItem disabled>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading projects…
+                </DropdownMenuItem>
+              ) : projectOptions.length > 0 ? (
+                projectOptions.map((project) => (
+                  <DropdownMenuItem key={project.id} onClick={() => void assignProject(project.id)}>
+                    <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">
+                      {project.id === assetMeta?.project_id ? <Check className="h-4 w-4 text-emerald-600" /> : null}
+                    </span>
+                    <span className="truncate">{project.name}</span>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>No projects yet</DropdownMenuItem>
+              )}
+              {assetMeta?.project_id && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => void assignProject(null)}>
+                    Remove from project
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-56">
+              <DropdownMenuItem onClick={() => exportImage("png")}>PNG image</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportImage("jpeg")}>JPG image</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportPsd}>Photoshop (.psd)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportSvg("Figma")}>Figma (SVG)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportSvg("Sketch")}>Sketch (SVG)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportSvg("Canva")}>Canva (SVG)</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuItem onClick={() => void printCanvas()}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => nav("/trash")}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Open Trash
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => void moveToTrash()} disabled={!assetId} className="text-red-600 focus:text-red-600">
+            <Trash2 className="mr-2 h-4 w-4" />
+            Move to Trash
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+    return () => setHeaderActions(null);
+  }, [
+    assetId,
+    assetMeta?.project_id,
+    applyTemplate,
+    assignProject,
+    createProjectAndAssign,
+    exportPsd,
+    exportSvg,
+    fetchProjectsForMenu,
+    loadingProjects,
+    moveToTrash,
+    nav,
+    printCanvas,
+    projectOptions,
+    redo,
+    save,
+    saveAsNew,
+    saveStatus,
+    saveVersion,
+    setHeaderActions,
+    showGrid,
+    startNewDesign,
+    undo,
+  ]);
+
   /* keyboard */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -834,24 +1217,22 @@ const Editor = () => {
         <p className="mt-1 text-xs text-neutral-500">Open Rocket on a larger screen to design.</p>
       </div>
       <div className="relative flex flex-1">
-      {/* Left */}
-      <aside className="pointer-events-auto absolute left-4 top-4 z-20 hidden w-[15rem] max-h-[calc(100vh-6rem)] flex-col gap-2.5 overflow-hidden rounded-[30px] border border-white/80 bg-white/88 p-2.5 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl md:flex">
-        <div className="rounded-[22px] border border-neutral-200/80 bg-white/85 p-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Add</p>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="mb-2.5 flex w-full items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-left transition hover:border-neutral-300 hover:bg-white"
-          >
-            <span>
-              <span className="block text-sm font-medium text-neutral-900">Upload asset</span>
-              <span className="block text-[11px] text-neutral-500">PNG, JPG, WebP, SVG</span>
-            </span>
-            <span className="grid h-8 w-8 place-items-center rounded-xl border border-neutral-200 bg-white text-neutral-700">
-              <Upload className="h-4 w-4" />
-            </span>
-          </button>
-          <div className="grid grid-cols-4 gap-1.5">
+      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Top pill */}
+      <aside className="pointer-events-auto ml-4 mr-auto mt-4 hidden max-w-[calc(100%-2rem)] items-start gap-1.5 overflow-x-auto rounded-[22px] border border-white/80 bg-white/88 p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl md:flex">
+        <div className="min-w-[17rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Add</p>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-[11px] font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-white"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Upload
+            </button>
+          </div>
+          <div className="grid grid-cols-5 gap-1.5">
             <ToolBtn onClick={addText} label="Text"><Type className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addRect} label="Rect"><Square className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addCircle} label="Circle"><CircleIcon className="h-4 w-4" /></ToolBtn>
@@ -860,43 +1241,43 @@ const Editor = () => {
             <ToolBtn onClick={addLine} label="Line"><Minus className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addSticky} label="Sticky"><StickyNote className="h-4 w-4" /></ToolBtn>
             <ToolBtn onClick={addTable} label="Table"><TableIcon className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={() => fileRef.current?.click()} label="Upload"><ImageIcon className="h-4 w-4" /></ToolBtn>
+            <ToolBtn onClick={() => fileRef.current?.click()} label="Image"><ImageIcon className="h-4 w-4" /></ToolBtn>
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
         </div>
-        <div className="rounded-[22px] border border-neutral-200/80 bg-white/85 p-3">
-          <label className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Canvas background
-            <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-6 w-8 cursor-pointer rounded border border-neutral-200" />
+
+        <div className="min-w-[8.5rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
+          <label className="flex items-center justify-between gap-3 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
+            Canvas
+            <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-8 w-10 cursor-pointer rounded-lg border border-neutral-200 bg-white" />
           </label>
         </div>
 
-        {/* Brand Kit */}
         {(brandKit.colors.length + brandKit.fonts.length + brandKit.logos.length) > 0 && (
-          <div className="rounded-[22px] border border-neutral-200/80 bg-white/85 p-3">
-            <p className="mb-2 flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
+          <div className="min-w-[12rem] max-w-[14rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
+            <p className="mb-2 flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
               <Sparkles className="h-3 w-3" /> Brand Kit
             </p>
             {brandKit.colors.length > 0 && (
-              <div className="mb-3">
+              <div className="mb-2.5">
                 <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Colors</p>
                 <div className="flex flex-wrap gap-1.5">
                   {brandKit.colors.map((c) => (
                     <button key={c} title={c} onClick={() => applyColorToSelected(c)}
-                      className="h-6 w-6 rounded border border-neutral-200 transition hover:scale-110"
+                      className="h-5 w-5 rounded-md border border-neutral-200 transition hover:scale-110"
                       style={{ background: c }} />
                   ))}
                 </div>
               </div>
             )}
             {brandKit.fonts.length > 0 && (
-              <div className="mb-3">
+              <div className="mb-2.5">
                 <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Fonts</p>
                 <div className="space-y-1">
-                  {brandKit.fonts.map((f) => (
+                  {brandKit.fonts.slice(0, 3).map((f) => (
                     <button key={f} onClick={() => applyFontToSelected(f)}
-                      className="w-full rounded border border-neutral-200 px-2 py-1 text-left text-xs hover:bg-neutral-50"
+                      className="w-full rounded-lg border border-neutral-200 px-2 py-1 text-left text-[11px] hover:bg-neutral-50"
                       style={{ fontFamily: `'${f}', sans-serif` }}>{f}</button>
                   ))}
                 </div>
@@ -905,10 +1286,10 @@ const Editor = () => {
             {brandKit.logos.length > 0 && (
               <div>
                 <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Logos</p>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {brandKit.logos.map((l) => (
+                <div className="grid grid-cols-4 gap-1.5">
+                  {brandKit.logos.slice(0, 4).map((l) => (
                     <button key={l.id} onClick={() => addImageFromUrl(l.url)} title={l.title}
-                      className="aspect-square overflow-hidden rounded border border-neutral-200 bg-neutral-50 hover:border-brand">
+                      className="aspect-square overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 hover:border-brand">
                       <img src={l.url} alt={l.title} className="h-full w-full object-contain" />
                     </button>
                   ))}
@@ -918,16 +1299,16 @@ const Editor = () => {
           </div>
         )}
 
-        <div className="rounded-[22px] border border-neutral-200/80 bg-white/85 p-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Layers</p>
-          <div className="max-h-[18rem] overflow-y-auto pr-1">
+        <div className="min-w-[13rem] max-w-[15rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Layers</p>
+          <div className="max-h-[7.5rem] overflow-y-auto pr-1">
             {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
             <ul className="space-y-1">
             {[...els].reverse().map((e) => (
               <li key={e.id}>
                 <button
                   onClick={() => setSelectedId(e.id)}
-                  className={`group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
+                  className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
                 >
                   <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
                   <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
@@ -945,8 +1326,8 @@ const Editor = () => {
       </aside>
 
       {/* Center */}
-      <main className="flex min-w-0 flex-1 md:pl-[17.25rem]">
-        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 py-6">
+      <main className="flex min-w-0 flex-1">
+        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 pb-6 pt-4">
           <div className="relative shadow-xl" style={{ width: STAGE_W, height: STAGE_H }}>
             <Stage
               ref={stageRef}
@@ -957,6 +1338,24 @@ const Editor = () => {
             >
               <Layer listening={false}>
                 <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={bg} />
+                {showGrid && Array.from({ length: Math.floor(STAGE_W / 40) - 1 }, (_, i) => (
+                  <KLine
+                    key={`grid-v-${i}`}
+                    points={[(i + 1) * 40, 0, (i + 1) * 40, STAGE_H]}
+                    stroke="#E5E7EB"
+                    strokeWidth={1}
+                    listening={false}
+                  />
+                ))}
+                {showGrid && Array.from({ length: Math.floor(STAGE_H / 40) - 1 }, (_, i) => (
+                  <KLine
+                    key={`grid-h-${i}`}
+                    points={[0, (i + 1) * 40, STAGE_W, (i + 1) * 40]}
+                    stroke="#E5E7EB"
+                    strokeWidth={1}
+                    listening={false}
+                  />
+                ))}
               </Layer>
               <Layer>
                 {els.map(renderNode)}
@@ -1005,76 +1404,10 @@ const Editor = () => {
           </div>
         </div>
       </main>
+      </div>
 
       {/* Right */}
       <aside className="w-[15.5rem] min-w-[15.5rem] max-w-[15.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
-        <div className="sticky top-3 z-10 mb-3 rounded-[24px] border border-white/80 bg-white/92 p-2.5 shadow-sm backdrop-blur-xl">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Tools</p>
-              <p className="text-sm font-semibold text-neutral-900">Canvas actions</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" onClick={undo} className="justify-start rounded-2xl px-3"><Undo2 className="h-3.5 w-3.5" /> Undo</Button>
-              <Button variant="outline" size="sm" onClick={redo} className="justify-start rounded-2xl px-3"><Redo2 className="h-3.5 w-3.5" /> Redo</Button>
-            </div>
-            <div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full justify-start rounded-2xl px-3"><LayoutTemplate className="h-3.5 w-3.5" /> Templates</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {TEMPLATES.map((t) => (
-                    <DropdownMenuItem key={t.id} onClick={() => applyTemplate(t.id)}>
-                      <span className="mr-2 h-4 w-4 rounded border border-neutral-200" style={{ background: t.bg }} />
-                      {t.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {assetId && (
-              <div>
-                <AddToProjectMenu
-                  assetId={assetId}
-                  currentProjectId={assetMeta?.project_id || null}
-                  onChanged={(pid) => setAssetMeta((m) => m ? { ...m, project_id: pid } : m)}
-                  className="inline-flex w-full items-center justify-start gap-1.5 rounded-2xl border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50"
-                />
-              </div>
-            )}
-            {assetId && (
-              <Button variant="outline" size="sm" onClick={saveVersion} className="w-full justify-start rounded-2xl px-3"><History className="h-3.5 w-3.5" /> Version</Button>
-            )}
-            <Button variant="outline" size="sm" onClick={saveAsNew} className="w-full justify-start rounded-2xl px-3"><FilePlus className="h-3.5 w-3.5" /> Save as new</Button>
-            <Button variant="outline" size="sm" onClick={save} className="w-full justify-start rounded-2xl px-3"><Save className="h-3.5 w-3.5" /> Save</Button>
-            <Button variant="outline" size="sm" onClick={() => setShowShortcuts(true)} className="w-full justify-start rounded-2xl px-3"><Keyboard className="h-3.5 w-3.5" /> Shortcuts</Button>
-            <div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="w-full justify-start rounded-2xl px-3"><Download className="h-3.5 w-3.5" /> Export</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => exportImage("png")}>PNG image</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportImage("jpeg")}>JPG image</DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportPsd}>Photoshop (.psd)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportSvg("Figma")}>Figma (SVG)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportSvg("Sketch")}>Sketch (SVG)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportSvg("Canva")}>Canva (SVG)</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {assetId && (
-              <div className="rounded-2xl border border-dashed border-neutral-200 px-3 py-2 text-[11px] text-neutral-500">
-                {saveStatus === "saving" && (<span className="inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Saving…</span>)}
-                {saveStatus === "saved" && (<span className="inline-flex items-center gap-1"><Check className="h-3 w-3 text-green-600" /> Saved</span>)}
-                {saveStatus === "idle" && <span>Changes save to this asset.</span>}
-              </div>
-            )}
-          </div>
-        </div>
         <div className="space-y-3">
           {!selected && (
             <div className="rounded-[24px] border border-neutral-200 bg-white/90 p-4 text-xs text-neutral-400 shadow-sm">
@@ -1141,7 +1474,7 @@ const Editor = () => {
 };
 
 const ToolBtn = ({ onClick, label, children }: any) => (
-  <button onClick={onClick} title={label} className="grid h-9 place-items-center rounded-md border border-neutral-200 text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-900">{children}</button>
+  <button onClick={onClick} title={label} className="grid h-8 w-8 place-items-center rounded-xl border border-neutral-200/90 bg-white/75 text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900">{children}</button>
 );
 const IconAction = ({ onClick, label, children }: any) => (
   <button onClick={onClick} title={label} className="grid h-7 w-7 place-items-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900">{children}</button>
