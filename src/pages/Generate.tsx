@@ -198,7 +198,7 @@ function AssetCardThumb({ asset }: { asset: any }) {
       </div>
     );
   }
-  // Generic text-asset fallback with a snippet from content
+  // Generic text-design fallback with a snippet from content
   const snippet = (asset.content || "").replace(/[{}\[\]"`#*_]/g, " ").replace(/\s+/g, " ").trim().slice(0, 140);
   if (snippet) {
     return (
@@ -335,9 +335,9 @@ const DESIGN_TEMPLATES: DesignTemplate[] = [
 const MESSAGES = [
   "Understanding your brand…",
   "Scraping context…",
-  "Creating your assets…",
+  "Creating your designs…",
   "Generating…",
-  "Saving asset…",
+  "Saving design…",
 ];
 
 function formatPromptTime(iso: string): string {
@@ -479,7 +479,7 @@ const Generate = () => {
           const explicitUrl = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b)/i)?.[1];
           if (explicitUrl) {
             const cleaned = explicitUrl.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
-            return `A ${effectiveAssetType || "brand asset"} for ${cleaned}`;
+            return `A ${effectiveAssetType || "brand design"} for ${cleaned}`;
           }
           if (effectiveAssetType === "logo") return p.length > 72 ? `${p.slice(0, 72).trim()}…` : p;
           return p.length > 72 ? `${p.slice(0, 72).trim()}…` : p;
@@ -607,7 +607,7 @@ const Generate = () => {
           if (partialErrorMessage && allIds.length) {
             toast({
               title: "Partial result",
-              description: `Created ${allIds.length} assets before Rocket hit an error. ${partialErrorMessage}`,
+              description: `Created ${allIds.length} designs before Rocket hit an error. ${partialErrorMessage}`,
             });
           }
         } else {
@@ -658,7 +658,7 @@ const Generate = () => {
         return;
       }
       if (allIds.length === 0) {
-        throw new Error("No assets generated");
+        throw new Error("No designs generated");
       }
       if (creditsErr) toast({ title: "Partial result", description: "Ran out of credits before finishing the workflow." });
       // Link generated assets to this chat
@@ -733,7 +733,7 @@ const Generate = () => {
                   : matchCount > 0
                     ? `Found ${matchCount} result${matchCount === 1 ? "" : "s"}. See the results panel.`
                     : isLast && chatAssets.length === 0
-                      ? "No assets yet."
+                      ? "No designs yet."
                       : "Done. See the results panel.";
                 return (
                   <div key={i} className="space-y-3">
@@ -765,7 +765,7 @@ const Generate = () => {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Ask Rocket to create another asset..."
+                  placeholder="Ask Rocket to create another design..."
                   rows={2}
                   disabled={loading}
                   className="w-full resize-none rounded-xl px-3 py-2 text-sm outline-none placeholder:text-neutral-400 disabled:opacity-60"
@@ -800,7 +800,7 @@ const Generate = () => {
               return (
                 <div className="mb-5">
                   <div className="mb-2 flex items-center justify-between">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Latest deliverable</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Latest design</div>
                     <Link to={`/editor?id=${latest.id}`} className="text-[11px] text-neutral-500 hover:text-neutral-900">
                       Open →
                     </Link>
@@ -813,7 +813,7 @@ const Generate = () => {
             })()}
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-sans text-sm font-semibold text-neutral-900">Results</h2>
-              <span className="text-xs text-neutral-500">{chatAssets.length} asset{chatAssets.length === 1 ? "" : "s"}</span>
+              <span className="text-xs text-neutral-500">{chatAssets.length} design{chatAssets.length === 1 ? "" : "s"}</span>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {chatAssets.map((a) => (
@@ -836,7 +836,7 @@ const Generate = () => {
                 </Link>
               ))}
               {chatAssets.length === 0 && (
-                <p className="col-span-full text-sm text-neutral-500">No assets in this chat.</p>
+                <p className="col-span-full text-sm text-neutral-500">No designs in this chat.</p>
               )}
             </div>
           </div>
@@ -844,9 +844,9 @@ const Generate = () => {
       ) : (
         <div className="flex w-full flex-1 flex-col items-center justify-center">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-semibold tracking-tight text-neutral-900">Create an asset</h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-neutral-900">Create a design</h1>
         <p className="mt-2 text-sm text-neutral-500">
-          Describe what you need. Rocket routes to the right specialist and saves it as an asset.
+          Describe what you need. Rocket routes to our AI and saves it as a design.
         </p>
       </div>
 
