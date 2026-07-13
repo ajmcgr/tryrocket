@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     if (!usage) return json({ error: "usage row missing" }, 500);
     const cost = 1;
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
-    if (remaining < cost) return json({ error: "no_credits", code: "no_credits", needed: cost, remaining }, 402);
+    if (remaining < cost) return json({ error: "no_credits", code: "no_credits", needed: cost, remaining });
 
     const ctx = brand_context || {};
     const ctxSummary = [
