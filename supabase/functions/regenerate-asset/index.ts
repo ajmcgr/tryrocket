@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     if (!usage) throw new Error("usage row missing");
     const cost = spec.kind === "image" ? 10 : 1;
     const remaining = (usage.monthly_limit + (usage.credits_extra || 0)) - usage.credits_used;
-    if (remaining < cost) return new Response(JSON.stringify({ error: "no_credits", code: "no_credits", needed: cost, remaining }), { status: 402, headers: { ...ch, "Content-Type": "application/json" } });
+    if (remaining < cost) return new Response(JSON.stringify({ error: "no_credits", code: "no_credits", needed: cost, remaining }), { status: 200, headers: { ...ch, "Content-Type": "application/json" } });
 
     try {
       if (spec.kind === "image") {
