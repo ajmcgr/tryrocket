@@ -262,6 +262,9 @@ function CreditsPopover({ compact = false }: { compact?: boolean }) {
         <Link to="/pricing" className="block border-t border-neutral-100 px-4 py-2.5 text-sm text-neutral-600 transition hover:bg-neutral-50">
           Or upgrade your plan →
         </Link>
+        <a href="mailto:alex@tryrocket.ai" className="flex items-center gap-2 border-t border-neutral-100 px-4 py-2.5 text-sm text-neutral-600 transition hover:bg-neutral-50">
+          <HelpCircle className="h-4 w-4" /> Support
+        </a>
       </PopoverContent>
     </Popover>
   );
