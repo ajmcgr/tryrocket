@@ -1346,6 +1346,30 @@ const Editor = () => {
       {/* Right */}
       <aside className="w-[15.5rem] min-w-[15.5rem] max-w-[15.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
         <div className="space-y-3">
+          <div className="rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-sm">
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Layers</p>
+            <div className="max-h-[14rem] overflow-y-auto pr-1">
+              {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
+              <ul className="space-y-1">
+                {[...els].reverse().map((e) => (
+                  <li key={e.id}>
+                    <button
+                      onClick={() => setSelectedId(e.id)}
+                      className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
+                    >
+                      <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
+                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
+                        {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                      </span>
+                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
+                        {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
           {!selected && (
             <div className="rounded-[24px] border border-neutral-200 bg-white/90 p-4 text-xs text-neutral-400 shadow-sm">
               Select a layer to edit its properties.
