@@ -753,7 +753,24 @@ const Editor = () => {
 
   const moveToTrash = useCallback(async () => {
     if (!assetId) {
-      toast({ title: "Save this design first", description: "Only saved designs can be moved to Trash.", variant: "destructive" });
+      if (!els.length && bg === "#ffffff") {
+        toast({ title: "Nothing to move", description: "This blank draft has no design content yet." });
+        return;
+      }
+      if (!window.confirm("Discard this unsaved draft? Unsaved drafts cannot be restored from Trash.")) return;
+      history.current = { past: [], future: [] };
+      setSelectedId(null);
+      setAssetMeta(null);
+      _setEls([]);
+      setBg("#ffffff");
+      setAutosaveTick(0);
+      lastPersistedStateRef.current = "[]";
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("rocket.editor.bg.v1");
+      } catch {}
+      toast({ title: "Draft discarded", description: "Your unsaved design draft was cleared." });
+      nav("/assets");
       return;
     }
     if (!window.confirm("Move this design to Trash? Restore anytime from /trash.")) return;
@@ -764,7 +781,7 @@ const Editor = () => {
     }
     toast({ title: "Moved to Trash", description: "You can restore it from Trash anytime." });
     nav("/assets");
-  }, [assetId, nav, toast]);
+  }, [assetId, bg, els.length, nav, toast]);
 
   /* attach transformer */
   useEffect(() => {
@@ -1257,7 +1274,7 @@ const Editor = () => {
             <Trash2 className="mr-2 h-4 w-4" />
             Open Trash
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => void moveToTrash()} disabled={!assetId} className="text-red-600 focus:text-red-600">
+          <DropdownMenuItem onClick={() => void moveToTrash()} className="text-red-600 focus:text-red-600">
             <Trash2 className="mr-2 h-4 w-4" />
             Move to Trash
           </DropdownMenuItem>
