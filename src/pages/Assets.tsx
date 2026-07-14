@@ -18,6 +18,7 @@ import {
   List,
   ArrowUpDown,
   Share2,
+  Lock,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -237,6 +238,16 @@ const Assets = () => {
     } catch {
       toast({ title: "Public link ready", description: publicUrl });
     }
+  };
+
+  const makePrivate = async (asset: any) => {
+    const { error } = await supabase.from("assets").update({ share_token: null }).eq("id", asset.id);
+    if (error) {
+      toast({ title: "Make private failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssets((prev) => prev.map((row) => row.id === asset.id ? { ...row, share_token: null } : row));
+    toast({ title: "Removed from Templates", description: "This design is now private." });
   };
 
   const createProjectAndAssign = async (assetId: string) => {
@@ -504,6 +515,14 @@ const Assets = () => {
                     >
                       <Share2 className="mr-2 h-4 w-4" /> {asset.share_token ? "Public link" : "Make Public"}
                     </DropdownMenuItem>
+                    {asset.share_token && (
+                      <DropdownMenuItem
+                        onClick={() => makePrivate(asset)}
+                        className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"
+                      >
+                        <Lock className="mr-2 h-4 w-4" /> Make Private
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900">
                         <FolderPlus className="mr-2 h-4 w-4" /> {asset.project_id ? "Move design to project" : "Add design to project"}
