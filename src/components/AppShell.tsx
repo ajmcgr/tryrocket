@@ -60,7 +60,6 @@ const AppShell = () => {
           <div className="ml-auto flex items-center gap-2">
             {isEditorPage ? null : headerActions}
             <WorkspaceSwitcher />
-            <a data-tour="nav-avatar" href="mailto:alex@tryrocket.ai" className="hidden rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 md:inline-flex">Support</a>
             <button
               type="button"
               onClick={() => setShareOpen(true)}
