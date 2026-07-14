@@ -284,10 +284,10 @@ const Assets = () => {
     const isLogotype = asset?.editor_state?.kind === "logotype";
     const isCanvas = isCanvasAsset(asset);
     const rasterPreview = asset.thumbnail_url || asset.image_url;
-    const isImage = rasterPreview && !isLogotype;
+    const isImage = rasterPreview && !isLogotype && !isCanvas;
     return (
       <>
-        {isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : isLogotype ? <Logotype state={asset.editor_state} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" /> : (
+        {isLogotype ? <Logotype state={asset.editor_state} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : (
           <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
             <div className="line-clamp-6 whitespace-pre-wrap">{(asset.content || asset.prompt || "").slice(0, 200)}</div>
           </div>
