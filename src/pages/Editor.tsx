@@ -598,15 +598,6 @@ const Editor = () => {
   useEffect(() => {
     setHeaderCenter(
       <div className="mx-auto flex items-center justify-center gap-2">
-        <button
-          type="button"
-          onClick={undo}
-          className="grid h-8 w-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-          aria-label="Undo"
-          title="Undo"
-        >
-          <Undo2 className="h-4 w-4" />
-        </button>
         {isRenamingTitle ? (
           <input
             ref={titleInputRef}
@@ -639,19 +630,10 @@ const Editor = () => {
             <Pencil className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
           </button>
         )}
-        <button
-          type="button"
-          onClick={redo}
-          className="grid h-8 w-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-          aria-label="Redo"
-          title="Redo"
-        >
-          <Redo2 className="h-4 w-4" />
-        </button>
       </div>
     );
     return () => setHeaderCenter(null);
-  }, [displayTitle, isRenamingTitle, persistTitle, redo, setHeaderCenter, titleDraft, undo]);
+  }, [displayTitle, isRenamingTitle, persistTitle, setHeaderCenter, titleDraft]);
 
   const fetchProjectsForMenu = useCallback(async () => {
     if (!assetId) return;
@@ -1480,6 +1462,12 @@ const Editor = () => {
           onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
 
         <span className="mx-1 h-6 w-px bg-neutral-200" />
+        <div className="flex items-center gap-1 rounded-full bg-neutral-100/70 p-0.5">
+          <ToolBtn onClick={undo} label="Undo"><Undo2 className="h-4 w-4" /></ToolBtn>
+          <ToolBtn onClick={redo} label="Redo"><Redo2 className="h-4 w-4" /></ToolBtn>
+        </div>
+
+        <span className="mx-1 h-6 w-px bg-neutral-200" />
 
         <label title="Canvas background" className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-xl border border-neutral-200/90 bg-white/75 hover:border-neutral-300">
           <span className="pointer-events-none h-4 w-4 rounded-sm border border-neutral-300" style={{ background: bg }} />
@@ -1511,9 +1499,9 @@ const Editor = () => {
 
       {/* Center */}
       <main className="flex min-w-0 flex-1">
-        <ContextMenu>
-          <ContextMenuTrigger asChild>
-            <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 pb-6 pt-4">
+        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 pb-6 pt-4">
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
               <div
                 className="relative shadow-xl"
                 style={{
@@ -1604,46 +1592,46 @@ const Editor = () => {
                 </div>
 
               </div>
-              <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-neutral-200/70 bg-white/80 px-3 py-2 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-md">
-                <button
-                  type="button"
-                  onClick={() => setZoom((value) => Math.max(50, value - 10))}
-                  className="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
-                  aria-label="Zoom out"
-                >
-                  −
-                </button>
-                <Slider
-                  value={[zoom]}
-                  min={50}
-                  max={200}
-                  step={5}
-                  onValueChange={([value]) => setZoom(value ?? 100)}
-                  className="w-28 [&_.bg-primary]:bg-neutral-400 [&_.bg-secondary]:bg-neutral-200 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-neutral-300 [&_[role=slider]]:bg-white [&_[role=slider]]:shadow-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setZoom((value) => Math.min(200, value + 10))}
-                  className="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
-                  aria-label="Zoom in"
-                >
-                  +
-                </button>
-                <div className="mx-0.5 h-5 w-px bg-neutral-200" />
-                <button
-                  type="button"
-                  onClick={() => void toggleFullscreen()}
-                  className="grid h-7 w-7 place-items-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-800"
-                  aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
-                  title={isFullscreen ? "Exit full screen" : "Enter full screen"}
-                >
-                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-          </ContextMenuTrigger>
-          <SelectionContextMenuContent />
-        </ContextMenu>
+            </ContextMenuTrigger>
+            <SelectionContextMenuContent />
+          </ContextMenu>
+          <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-neutral-200/70 bg-white/80 px-3 py-2 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => setZoom((value) => Math.max(50, value - 10))}
+              className="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <Slider
+              value={[zoom]}
+              min={50}
+              max={200}
+              step={5}
+              onValueChange={([value]) => setZoom(value ?? 100)}
+              className="w-28 [&_.bg-primary]:bg-neutral-400 [&_.bg-secondary]:bg-neutral-200 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-neutral-300 [&_[role=slider]]:bg-white [&_[role=slider]]:shadow-sm"
+            />
+            <button
+              type="button"
+              onClick={() => setZoom((value) => Math.min(200, value + 10))}
+              className="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <div className="mx-0.5 h-5 w-px bg-neutral-200" />
+            <button
+              type="button"
+              onClick={() => void toggleFullscreen()}
+              className="grid h-7 w-7 place-items-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-800"
+              aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
+              title={isFullscreen ? "Exit full screen" : "Enter full screen"}
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
       </main>
       </div>
 
@@ -1657,25 +1645,18 @@ const Editor = () => {
               <ul className="space-y-1">
                 {[...els].reverse().map((e) => (
                   <li key={e.id}>
-                    <ContextMenu>
-                      <ContextMenuTrigger asChild>
-                        <button
-                          onClick={() => setSelectedId(e.id)}
-                          onMouseDown={(ev) => { if (ev.button === 2) setSelectedId(e.id); }}
-                          onContextMenu={() => setSelectedId(e.id)}
-                          className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
-                        >
-                          <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
-                          <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
-                            {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                          </span>
-                          <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
-                            {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                          </span>
-                        </button>
-                      </ContextMenuTrigger>
-                      <SelectionContextMenuContent />
-                    </ContextMenu>
+                    <button
+                      onClick={() => setSelectedId(e.id)}
+                      className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
+                    >
+                      <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
+                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
+                        {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                      </span>
+                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
+                        {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                      </span>
+                    </button>
                   </li>
                 ))}
               </ul>
