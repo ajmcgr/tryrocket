@@ -1505,8 +1505,8 @@ const Editor = () => {
         <p className="text-sm font-medium text-neutral-900">Editor is desktop-only</p>
         <p className="mt-1 text-xs text-neutral-500">Open Rocket on a larger screen to design.</p>
       </div>
-      <div className="relative flex flex-1">
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative flex min-w-0 flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
       {/* Top pill */}
       <aside className="pointer-events-auto mx-auto mt-4 hidden w-fit max-w-[calc(100%-2rem)] flex-nowrap items-center justify-center gap-1.5 overflow-x-auto rounded-full border border-white/80 bg-white/88 px-2 py-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl md:flex">
         <ToolBtn onClick={addText} label="Text"><Type className="h-4 w-4" /></ToolBtn>
@@ -1558,102 +1558,110 @@ const Editor = () => {
       </aside>
 
       {/* Center */}
-      <main className="flex min-w-0 flex-1">
-        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 pb-6 pt-4">
+      <main className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div ref={containerRef} className="relative min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain px-8 pb-28 pt-4">
+          <div
+            className="flex min-h-full min-w-full items-center justify-center py-10"
+            style={{
+              minWidth: STAGE_W * (zoom / 100) + 96,
+              minHeight: STAGE_H * (zoom / 100) + 160,
+            }}
+          >
+            <div
+              className="relative shrink-0 shadow-xl"
+              style={{
+                width: STAGE_W * (zoom / 100),
+                height: STAGE_H * (zoom / 100),
+              }}
+            >
               <div
-                className="relative shadow-xl"
+                className="relative origin-top-left"
                 style={{
-                  width: STAGE_W * (zoom / 100),
-                  height: STAGE_H * (zoom / 100),
+                  width: STAGE_W,
+                  height: STAGE_H,
+                  transform: `scale(${zoom / 100})`,
                 }}
               >
-                <div
-                  className="relative origin-top-left"
-                  style={{
-                    width: STAGE_W,
-                    height: STAGE_H,
-                    transform: `scale(${zoom / 100})`,
+                <Stage
+                  ref={stageRef}
+                  width={STAGE_W}
+                  height={STAGE_H}
+                  onContextMenu={(e) => {
+                    if (e.target === e.target.getStage()) setSelectedId(null);
+                    openCanvasMenu(e.evt);
                   }}
+                  onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
+                  onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
                 >
-                  <Stage
-                    ref={stageRef}
-                    width={STAGE_W}
-                    height={STAGE_H}
-                    onContextMenu={(e) => {
-                      if (e.target === e.target.getStage()) setSelectedId(null);
-                      openCanvasMenu(e.evt);
-                    }}
-                    onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
-                    onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
-                  >
-                    <Layer listening={false}>
-                      <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={bg} />
-                      {showGrid && Array.from({ length: Math.floor(STAGE_W / 40) - 1 }, (_, i) => (
-                        <KLine
-                          key={`grid-v-${i}`}
-                          points={[(i + 1) * 40, 0, (i + 1) * 40, STAGE_H]}
-                          stroke="#E5E7EB"
-                          strokeWidth={1}
-                          listening={false}
-                        />
-                      ))}
-                      {showGrid && Array.from({ length: Math.floor(STAGE_H / 40) - 1 }, (_, i) => (
-                        <KLine
-                          key={`grid-h-${i}`}
-                          points={[0, (i + 1) * 40, STAGE_W, (i + 1) * 40]}
-                          stroke="#E5E7EB"
-                          strokeWidth={1}
-                          listening={false}
-                        />
-                      ))}
-                    </Layer>
-                    <Layer>
-                      {els.map(renderNode)}
-                      <Transformer
-                        ref={trRef}
-                        rotateEnabled
-                        anchorSize={8}
-                        borderStroke="#3b82f6"
-                        anchorStroke="#3b82f6"
-                        anchorFill="#ffffff"
-                        boundBoxFunc={(_oldBox, newBox) => newBox.width < 8 || newBox.height < 8 ? _oldBox : newBox}
+                  <Layer listening={false}>
+                    <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={bg} />
+                    {showGrid && Array.from({ length: Math.floor(STAGE_W / 40) - 1 }, (_, i) => (
+                      <KLine
+                        key={`grid-v-${i}`}
+                        points={[(i + 1) * 40, 0, (i + 1) * 40, STAGE_H]}
+                        stroke="#E5E7EB"
+                        strokeWidth={1}
+                        listening={false}
                       />
-                    </Layer>
-                  </Stage>
-
-                  {/* Inline text editor overlay */}
-                  {editingEl && (
-                    <textarea
-                      autoFocus
-                      defaultValue={(editingEl as any).text}
-                      onBlur={(e) => {
-                        update(editingEl.id, { text: e.target.value } as any);
-                        setEditingTextId(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape") { setEditingTextId(null); }
-                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) (e.target as HTMLTextAreaElement).blur();
-                      }}
-                      style={{
-                        position: "absolute",
-                        left: editingEl.x, top: editingEl.y,
-                        width: editingEl.w, minHeight: editingEl.h,
-                        fontFamily: (editingEl as any).fontFamily || "Inter",
-                        fontSize: (editingEl as any).fontSize || 16,
-                        fontWeight: (editingEl as any).fontWeight || 400,
-                        color: (editingEl as any).color || "#111",
-                        background: editingEl.kind === "sticky" ? (editingEl as StickyEl).fill : "transparent",
-                        border: "2px dashed #3b82f6",
-                        padding: editingEl.kind === "sticky" ? 8 : 0,
-                        resize: "none", outline: "none", lineHeight: 1.2,
-                        transform: `rotate(${editingEl.rotation || 0}deg)`,
-                        transformOrigin: "top left",
-                      }}
+                    ))}
+                    {showGrid && Array.from({ length: Math.floor(STAGE_H / 40) - 1 }, (_, i) => (
+                      <KLine
+                        key={`grid-h-${i}`}
+                        points={[0, (i + 1) * 40, STAGE_W, (i + 1) * 40]}
+                        stroke="#E5E7EB"
+                        strokeWidth={1}
+                        listening={false}
+                      />
+                    ))}
+                  </Layer>
+                  <Layer>
+                    {els.map(renderNode)}
+                    <Transformer
+                      ref={trRef}
+                      rotateEnabled
+                      anchorSize={8}
+                      borderStroke="#3b82f6"
+                      anchorStroke="#3b82f6"
+                      anchorFill="#ffffff"
+                      boundBoxFunc={(_oldBox, newBox) => newBox.width < 8 || newBox.height < 8 ? _oldBox : newBox}
                     />
-                  )}
-                </div>
+                  </Layer>
+                </Stage>
 
+                {/* Inline text editor overlay */}
+                {editingEl && (
+                  <textarea
+                    autoFocus
+                    defaultValue={(editingEl as any).text}
+                    onBlur={(e) => {
+                      update(editingEl.id, { text: e.target.value } as any);
+                      setEditingTextId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") { setEditingTextId(null); }
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) (e.target as HTMLTextAreaElement).blur();
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: editingEl.x, top: editingEl.y,
+                      width: editingEl.w, minHeight: editingEl.h,
+                      fontFamily: (editingEl as any).fontFamily || "Inter",
+                      fontSize: (editingEl as any).fontSize || 16,
+                      fontWeight: (editingEl as any).fontWeight || 400,
+                      color: (editingEl as any).color || "#111",
+                      background: editingEl.kind === "sticky" ? (editingEl as StickyEl).fill : "transparent",
+                      border: "2px dashed #3b82f6",
+                      padding: editingEl.kind === "sticky" ? 8 : 0,
+                      resize: "none", outline: "none", lineHeight: 1.2,
+                      transform: `rotate(${editingEl.rotation || 0}deg)`,
+                      transformOrigin: "top left",
+                    }}
+                  />
+                )}
               </div>
+            </div>
+          </div>
+        </div>
           <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-neutral-200/70 bg-white/80 px-3 py-2 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-md">
             <button
               type="button"
