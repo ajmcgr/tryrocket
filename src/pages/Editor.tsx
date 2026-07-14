@@ -288,7 +288,7 @@ const TEMPLATES: { id: string; name: string; bg: string; build: () => El[] }[] =
 ];
 
 /* ------------------------- Image node with loader ------------------------- */
-const KonvaImage = React.forwardRef<any, { el: ImgEl; [k: string]: any }>(({ el, ...rest }, ref) => {
+const KonvaImage = forwardRef<any, { el: ImgEl; [k: string]: any }>(({ el, ...rest }, ref) => {
   const [img] = useImage(el.src, "anonymous");
   return (
     <KImage ref={ref as any} image={img as any} x={el.x} y={el.y} width={el.w} height={el.h} rotation={el.rotation || 0} {...rest} />
