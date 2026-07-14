@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
+  Share2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -216,6 +217,28 @@ const Assets = () => {
     toast({ title: folderId ? "Moved design to folder" : "Removed design from folder" });
   };
 
+  const makePublic = async (asset: any) => {
+    const publicUrl = asset.share_token ? `${window.location.origin}/share/asset/${asset.share_token}` : "";
+    if (!asset.share_token) {
+      const token = crypto.randomUUID();
+      const { error } = await supabase.from("assets").update({ share_token: token }).eq("id", asset.id);
+      if (error) {
+        toast({ title: "Make public failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      setAssets((prev) => prev.map((row) => row.id === asset.id ? { ...row, share_token: token } : row));
+      toast({ title: "Added to Templates", description: "This design is now public." });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast({ title: "Public link copied" });
+    } catch {
+      toast({ title: "Public link ready", description: publicUrl });
+    }
+  };
+
   const createProjectAndAssign = async (assetId: string) => {
     const name = window.prompt("New project name");
     if (!name?.trim() || !user) return;
@@ -249,10 +272,11 @@ const Assets = () => {
   const DesignPreview = ({ asset }: { asset: any }) => {
     const isLogotype = asset?.editor_state?.kind === "logotype";
     const isCanvas = isCanvasAsset(asset);
-    const isImage = asset.image_url && !isLogotype;
+    const rasterPreview = asset.thumbnail_url || asset.image_url;
+    const isImage = rasterPreview && !isLogotype;
     return (
       <>
-        {isImage ? <img src={asset.image_url} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : isLogotype ? <Logotype state={asset.editor_state} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" /> : (
+        {isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : isLogotype ? <Logotype state={asset.editor_state} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" /> : (
           <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
             <div className="line-clamp-6 whitespace-pre-wrap">{(asset.content || asset.prompt || "").slice(0, 200)}</div>
           </div>
@@ -473,6 +497,12 @@ const Assets = () => {
                   <DropdownMenuContent align="end" className="w-56 bg-white">
                     <DropdownMenuItem asChild className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
                       <Link to={`/editor?id=${asset.id}`}><Edit3 className="mr-2 h-4 w-4" /> Open design</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => makePublic(asset)}
+                      className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"
+                    >
+                      <Share2 className="mr-2 h-4 w-4" /> {asset.share_token ? "Public link" : "Make Public"}
                     </DropdownMenuItem>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900">
