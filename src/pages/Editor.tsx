@@ -8,6 +8,7 @@ import {
 import useImage from "use-image";
 import type Konva from "konva";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import {
   Type, Square, Circle as CircleIcon, Image as ImageIcon, Trash2,
@@ -15,13 +16,18 @@ import {
   Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
   Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, Check, Loader2, Upload,
   History, FilePlus, Pencil, ChevronDown, Settings2, Grid3X3, Printer, FolderPlus,
+  Maximize2, Minimize2, Paintbrush, ClipboardPaste,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
   DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuShortcut, DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
+  ContextMenuShortcut,
+} from "@/components/ui/context-menu";
 import type { AppShellOutletContext } from "@/components/AppShell";
-import { defaultLogotypeState, LOGOTYPE_FONTS, pickLogotypeText, type LogotypeState } from "@/lib/logotype";
+import { defaultLogotypeState, LOGOTYPE_FONTS, pickLogotypeText, type LogotypeState, loadGoogleFont } from "@/lib/logotype";
 const supabase = _sb as any;
 
 type Base = {
@@ -51,7 +57,25 @@ const BASE_FONTS: string[] = [
   "Space Grotesk", "JetBrains Mono", "IBM Plex Sans", "IBM Plex Serif",
   "Quicksand", "Karla", "Manrope", "Rubik", "Mulish", "Source Sans 3",
 ];
-const FONTS: string[] = Array.from(new Set([...BASE_FONTS, ...LOGOTYPE_FONTS.map((font) => font.family)]));
+const DEFAULT_FONTS: string[] = Array.from(new Set([...BASE_FONTS, ...LOGOTYPE_FONTS.map((font) => font.family)]));
+const GOOGLE_FONTS_API_KEY = "AIzaSyBDTmEcqcga0Mme3z8RGkbv6woncJYqHfw";
+const GOOGLE_FONTS_CACHE_KEY = "rocket.editor.google-fonts.v1";
+const FONT_DATALIST_ID = "rocket-editor-font-options";
+const TEMPLATE_MENU_LABELS = [
+  "Brand Guidelines",
+  "Brand Templates",
+  "Logos",
+  "Colors",
+  "Fonts",
+  "Brand Voice",
+  "Photos",
+  "Components",
+  "Graphics",
+  "Icons",
+  "Launch Copy",
+  "PH Copy",
+  "Social Post",
+];
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const STORAGE_KEY = "rocket.editor.v2";
@@ -317,16 +341,56 @@ const Editor = () => {
   const [showGrid, setShowGrid] = useState(false);
   const [projectOptions, setProjectOptions] = useState<{ id: string; name: string }[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [fontFamilies, setFontFamilies] = useState<string[]>(DEFAULT_FONTS);
+  const [zoom, setZoom] = useState(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const editorShellRef = useRef<HTMLDivElement>(null);
+  const copiedElementRef = useRef<El | null>(null);
+  const copiedStyleRef = useRef<Partial<El> | null>(null);
+  const [clipboardTick, setClipboardTick] = useState(0);
 
   /* fonts */
   useEffect(() => {
     if (document.getElementById("rocket-editor-fonts")) return;
-    const families = FONTS.map((f) => `family=${encodeURIComponent(f)}:wght@400;600;700;800`).join("&");
+    const families = DEFAULT_FONTS.map((f) => `family=${encodeURIComponent(f)}:wght@400;500;600;700;800`).join("&");
     const link = document.createElement("link");
     link.id = "rocket-editor-fonts";
     link.rel = "stylesheet";
     link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
     document.head.appendChild(link);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    try {
+      const cached = localStorage.getItem(GOOGLE_FONTS_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length) {
+          setFontFamilies((prev) => Array.from(new Set([...prev, ...parsed])));
+        }
+      }
+    } catch {}
+    (async () => {
+      try {
+        const response = await fetch(`https://www.googleapis.com/webfonts/v1/webfonts?key=${GOOGLE_FONTS_API_KEY}&sort=alpha`);
+        if (!response.ok) return;
+        const data = await response.json();
+        const fetched = Array.isArray(data?.items) ? data.items.map((item: any) => item?.family).filter(Boolean) : [];
+        if (!alive || !fetched.length) return;
+        setFontFamilies((prev) => Array.from(new Set([...prev, ...fetched])));
+        try { localStorage.setItem(GOOGLE_FONTS_CACHE_KEY, JSON.stringify(fetched)); } catch {}
+      } catch {}
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    const onFullScreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFullScreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullScreenChange);
   }, []);
 
   /* state + history */
@@ -338,9 +402,12 @@ const Editor = () => {
     try { return localStorage.getItem("rocket.editor.bg.v1") || "#ffffff"; } catch { return "#ffffff"; }
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [autosaveTick, setAutosaveTick] = useState(0);
+  const skipAutosaveRef = useRef(false);
+  const lastPersistedStateRef = useRef<string>("[]");
   const history = useRef<{ past: El[][]; future: El[][] }>({ past: [], future: [] });
 
-  const setEls = useCallback((updater: El[] | ((prev: El[]) => El[]), opts?: { history?: boolean }) => {
+  const setEls = useCallback((updater: El[] | ((prev: El[]) => El[]), opts?: { history?: boolean; autosave?: boolean }) => {
     _setEls((prev) => {
       const next = typeof updater === "function" ? (updater as any)(prev) : updater;
       if (opts?.history !== false) {
@@ -350,6 +417,9 @@ const Editor = () => {
       }
       return next;
     });
+    if (opts?.autosave !== false) {
+      setAutosaveTick((tick) => tick + 1);
+    }
   }, []);
 
   const undo = useCallback(() => {
@@ -367,25 +437,34 @@ const Editor = () => {
   useEffect(() => {
     if (!assetId) return;
     (async () => {
+      skipAutosaveRef.current = true;
+      setAutosaveTick(0);
       const { data: a } = await supabase.from("assets").select("*").eq("id", assetId).maybeSingle();
       if (!a) return;
       setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null });
       if (a.editor_state && Array.isArray(a.editor_state)) {
+        lastPersistedStateRef.current = JSON.stringify(a.editor_state);
         _setEls(a.editor_state); return;
       }
       const logotypeState = deriveLogotypeState(a);
       if (logotypeState) {
-        _setEls([logotypeStateToCanvasText(logotypeState)]); return;
+        const next = [logotypeStateToCanvasText(logotypeState)];
+        lastPersistedStateRef.current = JSON.stringify(next);
+        _setEls(next); return;
       }
       if (a.image_url) {
-        _setEls([{ id: uid(), kind: "image", x: 150, y: 100, w: 500, h: 400, visible: true, locked: false, src: a.image_url } as ImgEl]);
+        const next = [{ id: uid(), kind: "image", x: 150, y: 100, w: 500, h: 400, visible: true, locked: false, src: a.image_url } as ImgEl];
+        lastPersistedStateRef.current = JSON.stringify(next);
+        _setEls(next);
       } else if (a.content) {
-        _setEls([{
+        const next = [{
           id: uid(), kind: "text", x: 80, y: 200, w: 640, h: 280,
           visible: true, locked: false,
           text: String(a.content).slice(0, 800),
           color: "#0A0A0A", fontSize: 32, fontWeight: 600, fontFamily: "Inter",
-        } as TextEl]);
+        } as TextEl];
+        lastPersistedStateRef.current = JSON.stringify(next);
+        _setEls(next);
       }
     })();
   }, [assetId]);
@@ -406,13 +485,13 @@ const Editor = () => {
           const text = String(a.content);
           for (const m of text.matchAll(/#([0-9A-Fa-f]{6})\b/g)) colors.add("#" + m[1].toUpperCase());
           if (a.asset_type === "font_system") {
-            for (const f of FONTS) if (text.includes(f)) fonts.add(f);
+            for (const f of fontFamilies) if (text.includes(f)) fonts.add(f);
           }
         }
       }
       setBrandKit({ colors: Array.from(colors).slice(0, 24), fonts: Array.from(fonts).slice(0, 12), logos });
     })();
-  }, [assetMeta?.project_id]);
+  }, [assetMeta?.project_id, fontFamilies]);
 
   /* persist */
   useEffect(() => {
@@ -422,23 +501,9 @@ const Editor = () => {
     try { localStorage.setItem("rocket.editor.bg.v1", bg); } catch {}
   }, [bg]);
 
-  /* auto-save to asset (debounced) */
-  const firstSave = useRef(true);
-  useEffect(() => {
-    if (!assetId) return;
-    if (firstSave.current) { firstSave.current = false; return; }
-    setSaveStatus("saving");
-    const t = setTimeout(async () => {
-      const { error } = await supabase.from("assets").update({ editor_state: els as any }).eq("id", assetId);
-      if (error) { setSaveStatus("idle"); return; }
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus((s) => s === "saved" ? "idle" : s), 1500);
-    }, 800);
-    return () => clearTimeout(t);
-  }, [els, assetId]);
-
   const selected = els.find((e) => e.id === selectedId) || null;
   const displayTitle = assetMeta?.title?.trim() || "Untitled design";
+  const canPaste = useMemo(() => Boolean(copiedElementRef.current || copiedStyleRef.current), [clipboardTick]);
 
   const withSelectionHidden = useCallback(async <T,>(work: () => T | Promise<T>) => {
     const prevSelectedId = selectedId;
@@ -450,6 +515,50 @@ const Editor = () => {
       setSelectedId(prevSelectedId);
     }
   }, [selectedId]);
+
+  const toggleFullscreen = useCallback(async () => {
+    const target = editorShellRef.current;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if (target?.requestFullscreen) {
+        await target.requestFullscreen();
+      }
+    } catch {}
+  }, []);
+
+  const captureThumbnail = useCallback(async () => {
+    const stage = stageRef.current;
+    if (!stage) return null;
+    return withSelectionHidden(async () => {
+      try {
+        return stage.toDataURL({ pixelRatio: 0.5, mimeType: "image/png" });
+      } catch {
+        return null;
+      }
+    });
+  }, [withSelectionHidden]);
+
+  /* auto-save to asset (debounced) */
+  useEffect(() => {
+    if (!assetId || autosaveTick === 0) return;
+    if (skipAutosaveRef.current) {
+      skipAutosaveRef.current = false;
+      return;
+    }
+    const serializedState = JSON.stringify(els);
+    if (serializedState === lastPersistedStateRef.current) return;
+    setSaveStatus("saving");
+    const t = setTimeout(async () => {
+      const thumbnail_url = await captureThumbnail();
+      const { error } = await supabase.from("assets").update({ editor_state: els as any, thumbnail_url }).eq("id", assetId);
+      if (error) { setSaveStatus("idle"); return; }
+      lastPersistedStateRef.current = serializedState;
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus((s) => s === "saved" ? "idle" : s), 1500);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [assetId, autosaveTick, captureThumbnail, els]);
 
   useEffect(() => {
     if (!isRenamingTitle) setTitleDraft(displayTitle);
@@ -587,7 +696,8 @@ const Editor = () => {
     setAssetMeta(null);
     _setEls([]);
     setBg("#ffffff");
-    firstSave.current = true;
+    setAutosaveTick(0);
+    lastPersistedStateRef.current = "[]";
     nav("/editor");
   }, [nav]);
 
@@ -656,6 +766,74 @@ const Editor = () => {
     const copy = { ...e, id: uid(), x: e.x + 20, y: e.y + 20 } as El;
     setEls((p) => [...p, copy]); setSelectedId(copy.id);
   };
+  const copySelectedElement = () => {
+    if (!selected) return;
+    copiedElementRef.current = JSON.parse(JSON.stringify(selected));
+    copiedStyleRef.current = null;
+    setClipboardTick((tick) => tick + 1);
+  };
+  const copySelectedStyle = () => {
+    if (!selected) return;
+    const style: Record<string, any> = selected.kind === "text"
+      ? {
+          color: selected.color,
+          fontFamily: selected.fontFamily,
+          fontSize: selected.fontSize,
+          fontWeight: selected.fontWeight,
+          align: selected.align,
+        }
+      : selected.kind === "sticky"
+        ? { fill: selected.fill, color: selected.color }
+        : selected.kind === "rect"
+          ? { fill: selected.fill, radius: selected.radius }
+          : selected.kind === "circle" || selected.kind === "triangle" || selected.kind === "star"
+            ? { fill: (selected as any).fill }
+            : selected.kind === "line"
+              ? { color: selected.color, thickness: selected.thickness }
+              : null;
+    if (!style) return;
+    copiedStyleRef.current = style as Partial<El>;
+    copiedElementRef.current = null;
+    setClipboardTick((tick) => tick + 1);
+  };
+  const pasteClipboard = () => {
+    const copied = copiedElementRef.current;
+    if (copied) {
+      const next = { ...JSON.parse(JSON.stringify(copied)), id: uid(), x: copied.x + 20, y: copied.y + 20 } as El;
+      setEls((prev) => [...prev, next]);
+      setSelectedId(next.id);
+      return;
+    }
+    const style = copiedStyleRef.current;
+    if (style && selected) {
+      if (selected.kind === "text") {
+        update(selected.id, {
+          color: style.color ?? (selected as TextEl).color,
+          fontFamily: style.fontFamily ?? (selected as TextEl).fontFamily,
+          fontSize: style.fontSize ?? (selected as TextEl).fontSize,
+          fontWeight: style.fontWeight ?? (selected as TextEl).fontWeight,
+          align: style.align ?? (selected as TextEl).align,
+        } as any);
+      } else if (selected.kind === "sticky") {
+        update(selected.id, {
+          fill: style.fill ?? (selected as StickyEl).fill,
+          color: style.color ?? (selected as StickyEl).color,
+        } as any);
+      } else if (selected.kind === "rect") {
+        update(selected.id, {
+          fill: style.fill ?? (selected as RectEl).fill,
+          radius: style.radius ?? (selected as RectEl).radius,
+        } as any);
+      } else if (selected.kind === "circle" || selected.kind === "triangle" || selected.kind === "star") {
+        update(selected.id, { fill: style.fill ?? (selected as any).fill } as any);
+      } else if (selected.kind === "line") {
+        update(selected.id, {
+          color: style.color ?? (selected as LineEl).color,
+          thickness: style.thickness ?? (selected as LineEl).thickness,
+        } as any);
+      }
+    }
+  };
   const reorder = (id: string, dir: 1 | -1) => setEls((prev) => {
     const i = prev.findIndex((e) => e.id === id); if (i < 0) return prev;
     const j = i + dir; if (j < 0 || j >= prev.length) return prev;
@@ -713,8 +891,11 @@ const Editor = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(els));
     setSaveStatus("saving");
     if (assetId) {
-      const { error } = await supabase.from("assets").update({ editor_state: els as any }).eq("id", assetId);
+      const serializedState = JSON.stringify(els);
+      const thumbnail_url = await captureThumbnail();
+      const { error } = await supabase.from("assets").update({ editor_state: els as any, thumbnail_url }).eq("id", assetId);
       if (error) { setSaveStatus("idle"); toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+      lastPersistedStateRef.current = serializedState;
     }
     setSaveStatus("saved");
     setTimeout(() => setSaveStatus((s) => (s === "saved" ? "idle" : s)), 1500);
@@ -739,14 +920,7 @@ const Editor = () => {
     const uid2 = userData?.user?.id;
     if (!uid2) { toast({ title: "Sign in to save designs", variant: "destructive" }); return; }
     const title = prompt("Name for the new design:", assetMeta?.title ? `${assetMeta.title} (copy)` : "Untitled design") || "Untitled design";
-    const stage = stageRef.current;
-    let thumb: string | null = null;
-    if (stage) {
-      const prev = selectedId; setSelectedId(null);
-      await new Promise(r => setTimeout(r, 60));
-      try { thumb = stage.toDataURL({ pixelRatio: 0.5, mimeType: "image/png" }); } catch {}
-      setSelectedId(prev);
-    }
+    const thumb = await captureThumbnail();
     const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
     const workspace_id = await ensureActiveWorkspaceId();
     const { data, error } = await supabase.from("assets").insert({
@@ -783,6 +957,7 @@ const Editor = () => {
   };
 
   const applyFontToSelected = (fontFamily: string) => {
+    void loadGoogleFont(fontFamily, [400, 500, 600, 700, 800]);
     if (selected?.kind === "text") update(selected.id, { fontFamily } as any);
   };
 
@@ -945,10 +1120,10 @@ const Editor = () => {
               Templates
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-56">
-              {TEMPLATES.map((template) => (
+              {TEMPLATES.map((template, index) => (
                 <DropdownMenuItem key={template.id} onClick={() => applyTemplate(template.id)}>
                   <span className="mr-2 h-4 w-4 rounded border border-neutral-200" style={{ background: template.bg }} />
-                  {template.name}
+                  {TEMPLATE_MENU_LABELS[index] || template.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuSubContent>
@@ -1102,9 +1277,12 @@ const Editor = () => {
       const meta = e.metaKey || e.ctrlKey;
       if (meta && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
       if (meta && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) { e.preventDefault(); redo(); return; }
+      if (meta && e.key.toLowerCase() === "c" && e.shiftKey) { e.preventDefault(); copySelectedStyle(); return; }
+      if (meta && e.key.toLowerCase() === "c") { e.preventDefault(); copySelectedElement(); return; }
+      if (meta && e.key.toLowerCase() === "v") { e.preventDefault(); pasteClipboard(); return; }
+      if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); if (selectedId) duplicate(selectedId); return; }
       if (!selectedId) return;
       if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); remove(selectedId); return; }
-      if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); duplicate(selectedId); return; }
       const step = e.shiftKey ? 10 : 1;
       if (e.key === "ArrowLeft")  { e.preventDefault(); update(selectedId, { x: (selected!.x - step) } as any); }
       if (e.key === "ArrowRight") { e.preventDefault(); update(selectedId, { x: (selected!.x + step) } as any); }
@@ -1113,7 +1291,7 @@ const Editor = () => {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedId, selected, undo, redo]);
+  }, [copySelectedElement, copySelectedStyle, pasteClipboard, redo, selected, selectedId, undo]);
 
   /* inline text editor overlay */
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
@@ -1146,6 +1324,7 @@ const Editor = () => {
       draggable: !el.locked,
       onClick: () => setSelectedId(el.id),
       onTap: () => setSelectedId(el.id),
+      onContextMenu: (e: any) => { e.evt.preventDefault(); setSelectedId(el.id); },
       onDragEnd: (e: any) => update(el.id, { x: e.target.x(), y: e.target.y() } as any),
       onTransformEnd: () => onTransformEnd(el.id),
     };
@@ -1228,7 +1407,7 @@ const Editor = () => {
   };
 
   return (
-    <div className="relative flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-neutral-100">
+    <div ref={editorShellRef} className="relative flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-neutral-100">
       {/* Mobile warning */}
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white p-8 text-center md:hidden">
         <LayoutTemplate className="mb-3 h-8 w-8 text-neutral-400" />
@@ -1283,82 +1462,164 @@ const Editor = () => {
 
       {/* Center */}
       <main className="flex min-w-0 flex-1">
-        <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 pb-6 pt-4">
-          <div className="relative shadow-xl" style={{ width: STAGE_W, height: STAGE_H }}>
-            <Stage
-              ref={stageRef}
-              width={STAGE_W}
-              height={STAGE_H}
-              onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
-              onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
-            >
-              <Layer listening={false}>
-                <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={bg} />
-                {showGrid && Array.from({ length: Math.floor(STAGE_W / 40) - 1 }, (_, i) => (
-                  <KLine
-                    key={`grid-v-${i}`}
-                    points={[(i + 1) * 40, 0, (i + 1) * 40, STAGE_H]}
-                    stroke="#E5E7EB"
-                    strokeWidth={1}
-                    listening={false}
-                  />
-                ))}
-                {showGrid && Array.from({ length: Math.floor(STAGE_H / 40) - 1 }, (_, i) => (
-                  <KLine
-                    key={`grid-h-${i}`}
-                    points={[0, (i + 1) * 40, STAGE_W, (i + 1) * 40]}
-                    stroke="#E5E7EB"
-                    strokeWidth={1}
-                    listening={false}
-                  />
-                ))}
-              </Layer>
-              <Layer>
-                {els.map(renderNode)}
-                <Transformer
-                  ref={trRef}
-                  rotateEnabled
-                  anchorSize={8}
-                  borderStroke="#3b82f6"
-                  anchorStroke="#3b82f6"
-                  anchorFill="#ffffff"
-                  boundBoxFunc={(_oldBox, newBox) => newBox.width < 8 || newBox.height < 8 ? _oldBox : newBox}
-                />
-              </Layer>
-            </Stage>
-
-            {/* Inline text editor overlay */}
-            {editingEl && (
-              <textarea
-                autoFocus
-                defaultValue={(editingEl as any).text}
-                onBlur={(e) => {
-                  update(editingEl.id, { text: e.target.value } as any);
-                  setEditingTextId(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") { setEditingTextId(null); }
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) (e.target as HTMLTextAreaElement).blur();
-                }}
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 pb-6 pt-4">
+              <div
+                className="relative shadow-xl"
                 style={{
-                  position: "absolute",
-                  left: editingEl.x, top: editingEl.y,
-                  width: editingEl.w, minHeight: editingEl.h,
-                  fontFamily: (editingEl as any).fontFamily || "Inter",
-                  fontSize: (editingEl as any).fontSize || 16,
-                  fontWeight: (editingEl as any).fontWeight || 400,
-                  color: (editingEl as any).color || "#111",
-                  background: editingEl.kind === "sticky" ? (editingEl as StickyEl).fill : "transparent",
-                  border: "2px dashed #3b82f6",
-                  padding: editingEl.kind === "sticky" ? 8 : 0,
-                  resize: "none", outline: "none", lineHeight: 1.2,
-                  transform: `rotate(${editingEl.rotation || 0}deg)`,
-                  transformOrigin: "top left",
+                  width: STAGE_W * (zoom / 100),
+                  height: STAGE_H * (zoom / 100),
                 }}
-              />
-            )}
-          </div>
-        </div>
+              >
+                <div
+                  className="relative origin-top-left"
+                  style={{
+                    width: STAGE_W,
+                    height: STAGE_H,
+                    transform: `scale(${zoom / 100})`,
+                  }}
+                >
+                  <Stage
+                    ref={stageRef}
+                    width={STAGE_W}
+                    height={STAGE_H}
+                    onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
+                    onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
+                  >
+                    <Layer listening={false}>
+                      <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={bg} />
+                      {showGrid && Array.from({ length: Math.floor(STAGE_W / 40) - 1 }, (_, i) => (
+                        <KLine
+                          key={`grid-v-${i}`}
+                          points={[(i + 1) * 40, 0, (i + 1) * 40, STAGE_H]}
+                          stroke="#E5E7EB"
+                          strokeWidth={1}
+                          listening={false}
+                        />
+                      ))}
+                      {showGrid && Array.from({ length: Math.floor(STAGE_H / 40) - 1 }, (_, i) => (
+                        <KLine
+                          key={`grid-h-${i}`}
+                          points={[0, (i + 1) * 40, STAGE_W, (i + 1) * 40]}
+                          stroke="#E5E7EB"
+                          strokeWidth={1}
+                          listening={false}
+                        />
+                      ))}
+                    </Layer>
+                    <Layer>
+                      {els.map(renderNode)}
+                      <Transformer
+                        ref={trRef}
+                        rotateEnabled
+                        anchorSize={8}
+                        borderStroke="#3b82f6"
+                        anchorStroke="#3b82f6"
+                        anchorFill="#ffffff"
+                        boundBoxFunc={(_oldBox, newBox) => newBox.width < 8 || newBox.height < 8 ? _oldBox : newBox}
+                      />
+                    </Layer>
+                  </Stage>
+
+                  {/* Inline text editor overlay */}
+                  {editingEl && (
+                    <textarea
+                      autoFocus
+                      defaultValue={(editingEl as any).text}
+                      onBlur={(e) => {
+                        update(editingEl.id, { text: e.target.value } as any);
+                        setEditingTextId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") { setEditingTextId(null); }
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) (e.target as HTMLTextAreaElement).blur();
+                      }}
+                      style={{
+                        position: "absolute",
+                        left: editingEl.x, top: editingEl.y,
+                        width: editingEl.w, minHeight: editingEl.h,
+                        fontFamily: (editingEl as any).fontFamily || "Inter",
+                        fontSize: (editingEl as any).fontSize || 16,
+                        fontWeight: (editingEl as any).fontWeight || 400,
+                        color: (editingEl as any).color || "#111",
+                        background: editingEl.kind === "sticky" ? (editingEl as StickyEl).fill : "transparent",
+                        border: "2px dashed #3b82f6",
+                        padding: editingEl.kind === "sticky" ? 8 : 0,
+                        resize: "none", outline: "none", lineHeight: 1.2,
+                        transform: `rotate(${editingEl.rotation || 0}deg)`,
+                        transformOrigin: "top left",
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div className="absolute right-4 top-4 z-20 flex items-center gap-2 rounded-full border border-white/80 bg-white/90 px-3 py-2 shadow-[0_18px_35px_rgba(15,23,42,0.10)] backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() => setZoom((value) => Math.max(50, value - 10))}
+                    className="rounded-full px-2 py-1 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+                  >
+                    −
+                  </button>
+                  <Slider
+                    value={[zoom]}
+                    min={50}
+                    max={200}
+                    step={5}
+                    onValueChange={([value]) => setZoom(value ?? 100)}
+                    className="w-32"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setZoom((value) => Math.min(200, value + 10))}
+                    className="rounded-full px-2 py-1 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+                  >
+                    +
+                  </button>
+                  <div className="h-5 w-px bg-neutral-200" />
+                  <button
+                    type="button"
+                    onClick={() => void toggleFullscreen()}
+                    className="grid h-8 w-8 place-items-center rounded-full text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
+                    aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
+                    title={isFullscreen ? "Exit full screen" : "Enter full screen"}
+                  >
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </ContextMenuTrigger>
+          <ContextMenuContent className="w-56">
+            <ContextMenuItem onClick={copySelectedElement} disabled={!selected}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy
+              <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={copySelectedStyle} disabled={!selected}>
+              <Paintbrush className="mr-2 h-4 w-4" />
+              Copy style
+              <ContextMenuShortcut>⇧⌘C</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={pasteClipboard} disabled={!canPaste}>
+              <ClipboardPaste className="mr-2 h-4 w-4" />
+              Paste
+              <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={() => selected && duplicate(selected.id)} disabled={!selected}>
+              <Copy className="mr-2 h-4 w-4" />
+              Duplicate
+              <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => selected && remove(selected.id)} disabled={!selected} className="text-red-600 focus:text-red-600">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+              <ContextMenuShortcut>DELETE</ContextMenuShortcut>
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       </main>
       </div>
 
@@ -1408,7 +1669,7 @@ const Editor = () => {
                   <IconAction onClick={() => remove(selected.id)} label="Delete"><Trash2 className="h-3.5 w-3.5" /></IconAction>
                 </div>
               </div>
-              <Inspector el={selected} onChange={(patch) => update(selected.id, patch as any)} />
+              <Inspector el={selected} fonts={fontFamilies} onChange={(patch) => update(selected.id, patch as any)} />
               <div className="border-t border-neutral-200 pt-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Position</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -1469,7 +1730,7 @@ const Field = ({ label, children }: any) => (
 const NumberInput = (p: any) => <input type="number" {...p} className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-neutral-300" />;
 const ColorInput = (p: any) => <input type="color" {...p} className="h-9 w-full cursor-pointer rounded-md border border-neutral-200" />;
 
-const Inspector = ({ el, onChange }: { el: El; onChange: (p: Partial<El>) => void }) => {
+const Inspector = ({ el, fonts, onChange }: { el: El; fonts: string[]; onChange: (p: Partial<El>) => void }) => {
   if (el.kind === "text") return (
     <div className="space-y-3">
       <Field label="Text"><textarea value={el.text} onChange={(e) => onChange({ text: e.target.value } as any)} rows={3} className="w-full resize-y rounded-md border border-neutral-200 px-2 py-1.5 text-sm" /></Field>
@@ -1485,10 +1746,22 @@ const Inspector = ({ el, onChange }: { el: El; onChange: (p: Partial<El>) => voi
         </select>
       </Field>
       <Field label="Font">
-        <select value={el.fontFamily} onChange={(e) => onChange({ fontFamily: e.target.value } as any)}
-          className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm">
-          {FONTS.map((f) => (<option key={f} value={f} style={{ fontFamily: `'${f}', sans-serif` }}>{f}</option>))}
-        </select>
+        <input
+          list={FONT_DATALIST_ID}
+          value={el.fontFamily}
+          onChange={(e) => {
+            const nextFont = e.target.value;
+            if (fonts.includes(nextFont) || DEFAULT_FONTS.includes(nextFont)) {
+              loadGoogleFont(nextFont, [400, 500, 600, 700, 800]);
+            }
+            onChange({ fontFamily: nextFont } as any);
+          }}
+          className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm"
+          placeholder="Search fonts"
+        />
+        <datalist id={FONT_DATALIST_ID}>
+          {fonts.map((f) => (<option key={f} value={f} />))}
+        </datalist>
       </Field>
     </div>
   );
