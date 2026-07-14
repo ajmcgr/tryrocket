@@ -35,7 +35,8 @@ import {
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
-import { isCanvasAsset } from "@/lib/canvasAsset";
+import { type CanvasElement } from "@/lib/canvasAsset";
+import { defaultLogotypeState, pickLogotypeText } from "@/lib/logotype";
 import { packAssetsZip } from "@/lib/exporters/zipPack";
 import { getDesignFolderId, withDesignFolderId } from "@/lib/designFolders";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
@@ -61,6 +62,83 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
 };
 
 const ALL_TYPES = Object.keys(ASSET_TYPE_LABELS);
+
+const GENERIC_LOGOTYPE_TITLE = /^logotype(?:\s+\d+)?$/i;
+
+type DesignPreviewAsset = {
+  title?: string | null;
+  content?: string | null;
+  prompt?: string | null;
+  asset_type?: string | null;
+  editor_state?: unknown;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
+  source_url?: string | null;
+  meta?: {
+    kind?: string | null;
+    asset_kind?: string | null;
+    brand_context?: { productName?: string | null; name?: string | null; url?: string | null; colors?: string[] | null } | null;
+    brandContext?: { productName?: string | null; name?: string | null; url?: string | null; colors?: string[] | null } | null;
+  } | null;
+};
+
+const hasRenderableCanvasElements = (value: unknown): value is CanvasElement[] => {
+  if (!Array.isArray(value)) return false;
+  return value.some((item) => {
+    if (!item || typeof item !== "object") return false;
+    const el = item as { kind?: string; visible?: boolean; text?: unknown; src?: unknown; w?: unknown; h?: unknown };
+    if (el.visible === false || typeof el.kind !== "string") return false;
+    if ((el.kind === "text" || el.kind === "sticky") && String(el.text || "").trim()) return true;
+    if (el.kind === "image" && String(el.src || "").trim()) return true;
+    if (el.kind === "line") return Boolean(Number(el.w) || Number(el.h));
+    return ["rect", "circle", "triangle", "star", "table"].includes(el.kind);
+  });
+};
+
+const firstCanvasText = (value: unknown) => {
+  if (!Array.isArray(value)) return "";
+  const textElement = value.find((item) => {
+    if (!item || typeof item !== "object") return false;
+    const el = item as { kind?: string; visible?: boolean; text?: unknown };
+    return el.visible !== false && (el.kind === "text" || el.kind === "sticky") && String(el.text || "").trim();
+  }) as { text?: unknown } | undefined;
+  return String(textElement?.text || "").trim();
+};
+
+const safePreviewText = (asset: DesignPreviewAsset) => {
+  const title = String(asset?.title || "").trim();
+  const content = String(asset?.content || "").trim();
+  const prompt = String(asset?.prompt || "").trim();
+  return content || prompt || title;
+};
+
+const isLogotypeLikeDesign = (asset: DesignPreviewAsset) => {
+  const title = String(asset?.title || "");
+  const prompt = String(asset?.prompt || "");
+  const content = String(asset?.content || "");
+  const metaKind = String(asset?.meta?.kind || asset?.meta?.asset_kind || "");
+  return (
+    asset?.asset_type === "logo" &&
+    (asset?.editor_state?.kind === "logotype" ||
+      GENERIC_LOGOTYPE_TITLE.test(title.trim()) ||
+      /\b(logotype|wordmark|word mark)\b/i.test(`${prompt} ${content} ${metaKind}`))
+  );
+};
+
+const logotypePreviewState = (asset: DesignPreviewAsset) => {
+  const brandContext = asset?.meta?.brand_context || asset?.meta?.brandContext || {};
+  const canvasText = firstCanvasText(asset?.editor_state);
+  const fallback = GENERIC_LOGOTYPE_TITLE.test(String(asset?.title || "").trim())
+    ? canvasText || asset?.prompt || asset?.content
+    : canvasText || asset?.title || asset?.prompt || asset?.content;
+  const text = pickLogotypeText({
+    prompt: asset?.prompt || canvasText,
+    productName: brandContext?.productName || brandContext?.name,
+    url: brandContext?.url || asset?.source_url,
+    fallback,
+  }) || canvasText || String(asset?.title || "Design").trim();
+  return defaultLogotypeState(text, Array.isArray(brandContext?.colors) ? brandContext.colors[0] || "#0A0A0A" : "#0A0A0A");
+};
 
 const Assets = () => {
   const { user } = useAuth();
@@ -280,16 +358,18 @@ const Assets = () => {
 
   const activeFolderName = folders.find((folder) => folder.id === folderParam)?.name;
 
-  const DesignPreview = ({ asset }: { asset: any }) => {
+  const DesignPreview = ({ asset }: { asset: DesignPreviewAsset }) => {
     const isLogotype = asset?.editor_state?.kind === "logotype";
-    const isCanvas = isCanvasAsset(asset);
+    const isCanvas = hasRenderableCanvasElements(asset?.editor_state);
+    const fallbackLogotype = !isLogotype && !isCanvas && isLogotypeLikeDesign(asset);
     const rasterPreview = asset.thumbnail_url || asset.image_url;
-    const isImage = rasterPreview && !isLogotype && !isCanvas;
+    const isImage = rasterPreview && !isLogotype && !isCanvas && !fallbackLogotype;
+    const fallbackText = safePreviewText(asset);
     return (
       <>
-        {isLogotype ? <Logotype state={asset.editor_state} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : (
+        {isLogotype ? <Logotype state={asset.editor_state} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : (
           <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
-            <div className="line-clamp-6 whitespace-pre-wrap">{(asset.content || asset.prompt || "").slice(0, 200)}</div>
+            <div className="line-clamp-6 whitespace-pre-wrap">{fallbackText ? fallbackText.slice(0, 200) : "No preview available"}</div>
           </div>
         )}
       </>
