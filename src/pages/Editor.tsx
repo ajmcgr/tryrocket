@@ -597,7 +597,16 @@ const Editor = () => {
 
   useEffect(() => {
     setHeaderCenter(
-      <div className="mx-auto flex justify-center">
+      <div className="mx-auto flex items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={undo}
+          className="grid h-8 w-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+          aria-label="Undo"
+          title="Undo"
+        >
+          <Undo2 className="h-4 w-4" />
+        </button>
         {isRenamingTitle ? (
           <input
             ref={titleInputRef}
@@ -630,10 +639,19 @@ const Editor = () => {
             <Pencil className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
           </button>
         )}
+        <button
+          type="button"
+          onClick={redo}
+          className="grid h-8 w-8 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+          aria-label="Redo"
+          title="Redo"
+        >
+          <Redo2 className="h-4 w-4" />
+        </button>
       </div>
     );
     return () => setHeaderCenter(null);
-  }, [displayTitle, isRenamingTitle, persistTitle, setHeaderCenter, titleDraft]);
+  }, [displayTitle, isRenamingTitle, persistTitle, redo, setHeaderCenter, titleDraft, undo]);
 
   const fetchProjectsForMenu = useCallback(async () => {
     if (!assetId) return;
@@ -1406,6 +1424,37 @@ const Editor = () => {
     return null;
   };
 
+  const SelectionContextMenuContent = () => (
+    <ContextMenuContent className="w-56">
+      <ContextMenuItem onClick={copySelectedElement} disabled={!selected}>
+        <Copy className="mr-2 h-4 w-4" />
+        Copy
+        <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+      </ContextMenuItem>
+      <ContextMenuItem onClick={copySelectedStyle} disabled={!selected}>
+        <Paintbrush className="mr-2 h-4 w-4" />
+        Copy style
+        <ContextMenuShortcut>⇧⌘C</ContextMenuShortcut>
+      </ContextMenuItem>
+      <ContextMenuItem onClick={pasteClipboard} disabled={!canPaste}>
+        <ClipboardPaste className="mr-2 h-4 w-4" />
+        Paste
+        <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem onClick={() => selected && duplicate(selected.id)} disabled={!selected}>
+        <Copy className="mr-2 h-4 w-4" />
+        Duplicate
+        <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+      </ContextMenuItem>
+      <ContextMenuItem onClick={() => selected && remove(selected.id)} disabled={!selected} className="text-red-600 focus:text-red-600">
+        <Trash2 className="mr-2 h-4 w-4" />
+        Delete
+        <ContextMenuShortcut>DELETE</ContextMenuShortcut>
+      </ContextMenuItem>
+    </ContextMenuContent>
+  );
+
   return (
     <div ref={editorShellRef} className="relative flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-neutral-100">
       {/* Mobile warning */}
@@ -1555,11 +1604,11 @@ const Editor = () => {
                 </div>
 
               </div>
-              <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/80 bg-white/90 px-5 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.10)] backdrop-blur-md">
+              <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-neutral-200/70 bg-white/80 px-3 py-2 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-md">
                 <button
                   type="button"
                   onClick={() => setZoom((value) => Math.max(50, value - 10))}
-                  className="rounded-full px-2 py-1 text-sm font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                  className="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
                   aria-label="Zoom out"
                 >
                   −
@@ -1570,21 +1619,21 @@ const Editor = () => {
                   max={200}
                   step={5}
                   onValueChange={([value]) => setZoom(value ?? 100)}
-                  className="w-40 [&_.bg-primary]:bg-neutral-500 [&_.bg-secondary]:bg-neutral-200 [&_[role=slider]]:border-neutral-300 [&_[role=slider]]:bg-neutral-900 [&_[role=slider]]:shadow-sm"
+                  className="w-28 [&_.bg-primary]:bg-neutral-400 [&_.bg-secondary]:bg-neutral-200 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-neutral-300 [&_[role=slider]]:bg-white [&_[role=slider]]:shadow-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setZoom((value) => Math.min(200, value + 10))}
-                  className="rounded-full px-2 py-1 text-sm font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                  className="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
                   aria-label="Zoom in"
                 >
                   +
                 </button>
-                <div className="mx-1 h-7 w-px bg-neutral-200" />
+                <div className="mx-0.5 h-5 w-px bg-neutral-200" />
                 <button
                   type="button"
                   onClick={() => void toggleFullscreen()}
-                  className="grid h-9 w-9 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                  className="grid h-7 w-7 place-items-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-800"
                   aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
                   title={isFullscreen ? "Exit full screen" : "Enter full screen"}
                 >
@@ -1593,34 +1642,7 @@ const Editor = () => {
               </div>
             </div>
           </ContextMenuTrigger>
-          <ContextMenuContent className="w-56">
-            <ContextMenuItem onClick={copySelectedElement} disabled={!selected}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy
-              <ContextMenuShortcut>⌘C</ContextMenuShortcut>
-            </ContextMenuItem>
-            <ContextMenuItem onClick={copySelectedStyle} disabled={!selected}>
-              <Paintbrush className="mr-2 h-4 w-4" />
-              Copy style
-              <ContextMenuShortcut>⇧⌘C</ContextMenuShortcut>
-            </ContextMenuItem>
-            <ContextMenuItem onClick={pasteClipboard} disabled={!canPaste}>
-              <ClipboardPaste className="mr-2 h-4 w-4" />
-              Paste
-              <ContextMenuShortcut>⌘V</ContextMenuShortcut>
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem onClick={() => selected && duplicate(selected.id)} disabled={!selected}>
-              <Copy className="mr-2 h-4 w-4" />
-              Duplicate
-              <ContextMenuShortcut>⌘D</ContextMenuShortcut>
-            </ContextMenuItem>
-            <ContextMenuItem onClick={() => selected && remove(selected.id)} disabled={!selected} className="text-red-600 focus:text-red-600">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-              <ContextMenuShortcut>DELETE</ContextMenuShortcut>
-            </ContextMenuItem>
-          </ContextMenuContent>
+          <SelectionContextMenuContent />
         </ContextMenu>
       </main>
       </div>
@@ -1635,18 +1657,25 @@ const Editor = () => {
               <ul className="space-y-1">
                 {[...els].reverse().map((e) => (
                   <li key={e.id}>
-                    <button
-                      onClick={() => setSelectedId(e.id)}
-                      className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
-                    >
-                      <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
-                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
-                        {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                      </span>
-                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
-                        {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                      </span>
-                    </button>
+                    <ContextMenu>
+                      <ContextMenuTrigger asChild>
+                        <button
+                          onClick={() => setSelectedId(e.id)}
+                          onMouseDown={(ev) => { if (ev.button === 2) setSelectedId(e.id); }}
+                          onContextMenu={() => setSelectedId(e.id)}
+                          className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
+                        >
+                          <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
+                          <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
+                            {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                          </span>
+                          <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
+                            {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                          </span>
+                        </button>
+                      </ContextMenuTrigger>
+                      <SelectionContextMenuContent />
+                    </ContextMenu>
                   </li>
                 ))}
               </ul>
