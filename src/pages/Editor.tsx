@@ -1219,110 +1219,47 @@ const Editor = () => {
       <div className="relative flex flex-1">
       <div className="flex min-w-0 flex-1 flex-col">
       {/* Top pill */}
-      <aside className="pointer-events-auto mx-auto mt-4 hidden w-fit max-w-[calc(100%-2rem)] flex-nowrap items-stretch justify-center gap-2 overflow-x-auto rounded-[22px] border border-white/80 bg-white/88 p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl md:flex">
-        <div className="min-w-[15.5rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Add</p>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-[11px] font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-white"
-            >
-              <Upload className="h-3.5 w-3.5" />
-              Upload
-            </button>
-          </div>
-          <div className="grid grid-cols-5 gap-1.5">
-            <ToolBtn onClick={addText} label="Text"><Type className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={addRect} label="Rect"><Square className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={addCircle} label="Circle"><CircleIcon className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={addTriangle} label="Triangle"><TriangleIcon className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={addStar} label="Star"><StarIcon className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={addLine} label="Line"><Minus className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={addSticky} label="Sticky"><StickyNote className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={addTable} label="Table"><TableIcon className="h-4 w-4" /></ToolBtn>
-            <ToolBtn onClick={() => fileRef.current?.click()} label="Image"><ImageIcon className="h-4 w-4" /></ToolBtn>
-          </div>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
-        </div>
+      <aside className="pointer-events-auto mx-auto mt-4 hidden w-fit max-w-[calc(100%-2rem)] flex-nowrap items-center justify-center gap-1.5 overflow-x-auto rounded-full border border-white/80 bg-white/88 px-2 py-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl md:flex">
+        <ToolBtn onClick={addText} label="Text"><Type className="h-4 w-4" /></ToolBtn>
+        <ToolBtn onClick={addRect} label="Rectangle"><Square className="h-4 w-4" /></ToolBtn>
+        <ToolBtn onClick={addCircle} label="Circle"><CircleIcon className="h-4 w-4" /></ToolBtn>
+        <ToolBtn onClick={addTriangle} label="Triangle"><TriangleIcon className="h-4 w-4" /></ToolBtn>
+        <ToolBtn onClick={addStar} label="Star"><StarIcon className="h-4 w-4" /></ToolBtn>
+        <ToolBtn onClick={addLine} label="Line"><Minus className="h-4 w-4" /></ToolBtn>
+        <ToolBtn onClick={addSticky} label="Sticky note"><StickyNote className="h-4 w-4" /></ToolBtn>
+        <ToolBtn onClick={addTable} label="Table"><TableIcon className="h-4 w-4" /></ToolBtn>
+        <ToolBtn onClick={() => fileRef.current?.click()} label="Upload image"><ImageIcon className="h-4 w-4" /></ToolBtn>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
 
-        <div className="min-w-[7.5rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
-          <label className="flex items-center justify-between gap-3 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
-            Canvas
-            <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-8 w-10 cursor-pointer rounded-lg border border-neutral-200 bg-white" />
-          </label>
-        </div>
+        <span className="mx-1 h-6 w-px bg-neutral-200" />
+
+        <label title="Canvas background" className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-xl border border-neutral-200/90 bg-white/75 hover:border-neutral-300">
+          <span className="pointer-events-none h-4 w-4 rounded-sm border border-neutral-300" style={{ background: bg }} />
+          <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" />
+        </label>
 
         {(brandKit.colors.length + brandKit.fonts.length + brandKit.logos.length) > 0 && (
-          <div className="min-w-[10.5rem] max-w-[12rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
-            <p className="mb-2 flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">
-              <Sparkles className="h-3 w-3" /> Brand Kit
-            </p>
-            {brandKit.colors.length > 0 && (
-              <div className="mb-2.5">
-                <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Colors</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {brandKit.colors.map((c) => (
-                    <button key={c} title={c} onClick={() => applyColorToSelected(c)}
-                      className="h-5 w-5 rounded-md border border-neutral-200 transition hover:scale-110"
-                      style={{ background: c }} />
-                  ))}
-                </div>
-              </div>
-            )}
-            {brandKit.fonts.length > 0 && (
-              <div className="mb-2.5">
-                <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Fonts</p>
-                <div className="space-y-1">
-                  {brandKit.fonts.slice(0, 3).map((f) => (
-                    <button key={f} onClick={() => applyFontToSelected(f)}
-                      className="w-full rounded-lg border border-neutral-200 px-2 py-1 text-left text-[11px] hover:bg-neutral-50"
-                      style={{ fontFamily: `'${f}', sans-serif` }}>{f}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {brandKit.logos.length > 0 && (
-              <div>
-                <p className="mb-1 text-[10px] uppercase tracking-wider text-neutral-400">Logos</p>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {brandKit.logos.slice(0, 4).map((l) => (
-                    <button key={l.id} onClick={() => addImageFromUrl(l.url)} title={l.title}
-                      className="aspect-square overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 hover:border-brand">
-                      <img src={l.url} alt={l.title} className="h-full w-full object-contain" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="min-w-[11rem] max-w-[12.5rem] rounded-[18px] border border-neutral-200/80 bg-white/88 p-2.5">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Layers</p>
-          <div className="max-h-[7.5rem] overflow-y-auto pr-1">
-            {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
-            <ul className="space-y-1">
-            {[...els].reverse().map((e) => (
-              <li key={e.id}>
-                <button
-                  onClick={() => setSelectedId(e.id)}
-                  className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
-                >
-                  <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
-                  <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
-                    {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                  </span>
-                  <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
-                    {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                  </span>
-                </button>
-              </li>
+          <>
+            <span className="mx-1 h-6 w-px bg-neutral-200" />
+            {brandKit.colors.slice(0, 6).map((c) => (
+              <button key={c} title={c} onClick={() => applyColorToSelected(c)}
+                className="h-6 w-6 rounded-md border border-neutral-200 transition hover:scale-110"
+                style={{ background: c }} />
             ))}
-            </ul>
-          </div>
-        </div>
+            {brandKit.logos.slice(0, 3).map((l) => (
+              <button key={l.id} onClick={() => addImageFromUrl(l.url)} title={l.title}
+                className="h-8 w-8 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 hover:border-brand">
+                <img src={l.url} alt={l.title} className="h-full w-full object-contain" />
+              </button>
+            ))}
+            {brandKit.fonts.slice(0, 2).map((f) => (
+              <button key={f} onClick={() => applyFontToSelected(f)} title={`Font: ${f}`}
+                className="grid h-8 min-w-8 place-items-center rounded-xl border border-neutral-200/90 bg-white/75 px-2 text-[13px] text-neutral-700 hover:border-neutral-300"
+                style={{ fontFamily: `'${f}', sans-serif` }}>Aa</button>
+            ))}
+          </>
+        )}
       </aside>
 
       {/* Center */}
@@ -1409,6 +1346,30 @@ const Editor = () => {
       {/* Right */}
       <aside className="w-[15.5rem] min-w-[15.5rem] max-w-[15.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
         <div className="space-y-3">
+          <div className="rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-sm">
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Layers</p>
+            <div className="max-h-[14rem] overflow-y-auto pr-1">
+              {els.length === 0 && <p className="text-xs text-neutral-400">No layers yet.</p>}
+              <ul className="space-y-1">
+                {[...els].reverse().map((e) => (
+                  <li key={e.id}>
+                    <button
+                      onClick={() => setSelectedId(e.id)}
+                      className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
+                    >
+                      <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
+                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
+                        {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                      </span>
+                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
+                        {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
           {!selected && (
             <div className="rounded-[24px] border border-neutral-200 bg-white/90 p-4 text-xs text-neutral-400 shadow-sm">
               Select a layer to edit its properties.
