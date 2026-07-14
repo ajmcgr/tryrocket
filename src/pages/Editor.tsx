@@ -288,12 +288,12 @@ const TEMPLATES: { id: string; name: string; bg: string; build: () => El[] }[] =
 ];
 
 /* ------------------------- Image node with loader ------------------------- */
-const KonvaImage = ({ el, ...rest }: { el: ImgEl; [k: string]: any }) => {
+const KonvaImage = React.forwardRef<any, { el: ImgEl; [k: string]: any }>(({ el, ...rest }, ref) => {
   const [img] = useImage(el.src, "anonymous");
   return (
-    <KImage image={img as any} x={el.x} y={el.y} width={el.w} height={el.h} rotation={el.rotation || 0} {...rest} />
+    <KImage ref={ref as any} image={img as any} x={el.x} y={el.y} width={el.w} height={el.h} rotation={el.rotation || 0} {...rest} />
   );
-};
+});
 
 /* --------------------------------- Editor --------------------------------- */
 const Editor = () => {
