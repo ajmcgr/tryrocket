@@ -676,7 +676,7 @@ const Editor = () => {
 
   const onUpload = (file: File) => {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const src = reader.result as string;
       const img = new Image();
       img.onload = () => {
@@ -685,6 +685,25 @@ const Editor = () => {
         add({ id: uid(), kind: "image", x: 300, y: 200, w, h, visible: true, locked: false, src } as ImgEl);
       };
       img.src = src;
+      // Mirror into Uploads on /projects so users can reuse it
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const uid2 = userData?.user?.id;
+        if (!uid2) return;
+        const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+        const workspace_id = await ensureActiveWorkspaceId();
+        await supabase.from("assets").insert({
+          user_id: uid2,
+          workspace_id,
+          asset_type: "photo",
+          title: file.name || "Uploaded image",
+          image_url: src,
+          thumbnail_url: src,
+          meta: { uploaded: true, source: "upload", size: file.size, mime: file.type } as any,
+        } as any);
+      } catch (e) {
+        console.warn("upload mirror failed", e);
+      }
     };
     reader.readAsDataURL(file);
   };
