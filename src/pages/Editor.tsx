@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
@@ -22,10 +22,6 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
   DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuShortcut, DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import {
-  ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
-  ContextMenuShortcut,
-} from "@/components/ui/context-menu";
 import type { AppShellOutletContext } from "@/components/AppShell";
 import { defaultLogotypeState, LOGOTYPE_FONTS, pickLogotypeText, type LogotypeState, loadGoogleFont } from "@/lib/logotype";
 const supabase = _sb as any;
@@ -402,10 +398,29 @@ const Editor = () => {
     try { return localStorage.getItem("rocket.editor.bg.v1") || "#ffffff"; } catch { return "#ffffff"; }
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [canvasMenu, setCanvasMenu] = useState<{ x: number; y: number } | null>(null);
   const [autosaveTick, setAutosaveTick] = useState(0);
   const skipAutosaveRef = useRef(false);
   const lastPersistedStateRef = useRef<string>("[]");
   const history = useRef<{ past: El[][]; future: El[][] }>({ past: [], future: [] });
+
+  useEffect(() => {
+    if (!canvasMenu) return;
+    const close = () => setCanvasMenu(null);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [canvasMenu]);
 
   const setEls = useCallback((updater: El[] | ((prev: El[]) => El[]), opts?: { history?: boolean; autosave?: boolean }) => {
     _setEls((prev) => {
@@ -431,6 +446,12 @@ const Editor = () => {
     const next = history.current.future.pop();
     if (!next) return;
     _setEls((cur) => { history.current.past.push(cur); return next; });
+  }, []);
+
+  const openCanvasMenu = useCallback((event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setCanvasMenu({ x: event.clientX, y: event.clientY });
   }, []);
 
   /* load asset */
@@ -1324,7 +1345,10 @@ const Editor = () => {
       draggable: !el.locked,
       onClick: () => setSelectedId(el.id),
       onTap: () => setSelectedId(el.id),
-      onContextMenu: (e: any) => { e.evt.preventDefault(); setSelectedId(el.id); },
+      onContextMenu: (e: any) => {
+        setSelectedId(el.id);
+        openCanvasMenu(e.evt);
+      },
       onDragEnd: (e: any) => update(el.id, { x: e.target.x(), y: e.target.y() } as any),
       onTransformEnd: () => onTransformEnd(el.id),
     };
@@ -1406,36 +1430,72 @@ const Editor = () => {
     return null;
   };
 
-  const SelectionContextMenuContent = () => (
-    <ContextMenuContent className="w-56">
-      <ContextMenuItem onClick={copySelectedElement} disabled={!selected}>
-        <Copy className="mr-2 h-4 w-4" />
-        Copy
-        <ContextMenuShortcut>⌘C</ContextMenuShortcut>
-      </ContextMenuItem>
-      <ContextMenuItem onClick={copySelectedStyle} disabled={!selected}>
-        <Paintbrush className="mr-2 h-4 w-4" />
-        Copy style
-        <ContextMenuShortcut>⇧⌘C</ContextMenuShortcut>
-      </ContextMenuItem>
-      <ContextMenuItem onClick={pasteClipboard} disabled={!canPaste}>
-        <ClipboardPaste className="mr-2 h-4 w-4" />
-        Paste
-        <ContextMenuShortcut>⌘V</ContextMenuShortcut>
-      </ContextMenuItem>
-      <ContextMenuSeparator />
-      <ContextMenuItem onClick={() => selected && duplicate(selected.id)} disabled={!selected}>
-        <Copy className="mr-2 h-4 w-4" />
-        Duplicate
-        <ContextMenuShortcut>⌘D</ContextMenuShortcut>
-      </ContextMenuItem>
-      <ContextMenuItem onClick={() => selected && remove(selected.id)} disabled={!selected} className="text-red-600 focus:text-red-600">
-        <Trash2 className="mr-2 h-4 w-4" />
-        Delete
-        <ContextMenuShortcut>DELETE</ContextMenuShortcut>
-      </ContextMenuItem>
-    </ContextMenuContent>
-  );
+  const CanvasContextMenu = () => {
+    if (!canvasMenu) return null;
+    const MenuButton = ({
+      children,
+      disabled,
+      danger,
+      onClick,
+      shortcut,
+    }: {
+      children: ReactNode;
+      disabled?: boolean;
+      danger?: boolean;
+      onClick: () => void;
+      shortcut: string;
+    }) => (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (disabled) return;
+          onClick();
+          setCanvasMenu(null);
+        }}
+        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${
+          danger
+            ? "text-red-400 hover:bg-white/10 hover:text-red-300"
+            : "text-white hover:bg-white/10"
+        } disabled:pointer-events-none disabled:text-white/35`}
+      >
+        <span className="flex min-w-0 flex-1 items-center gap-3">{children}</span>
+        <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] text-white/55">{shortcut}</span>
+      </button>
+    );
+
+    return (
+      <div
+        className="fixed z-[100] w-56 rounded-xl border border-white/10 bg-neutral-950/88 p-1.5 shadow-2xl backdrop-blur-md"
+        style={{ left: canvasMenu.x, top: canvasMenu.y }}
+        onClick={(event) => event.stopPropagation()}
+        onContextMenu={(event) => event.preventDefault()}
+      >
+        <MenuButton onClick={copySelectedElement} disabled={!selected} shortcut="⌘C">
+          <Copy className="h-4 w-4" />
+          Copy
+        </MenuButton>
+        <MenuButton onClick={copySelectedStyle} disabled={!selected} shortcut="⇧⌘C">
+          <Paintbrush className="h-4 w-4" />
+          Copy style
+        </MenuButton>
+        <MenuButton onClick={pasteClipboard} disabled={!canPaste} shortcut="⌘V">
+          <ClipboardPaste className="h-4 w-4" />
+          Paste
+        </MenuButton>
+        <div className="my-1 h-px bg-white/10" />
+        <MenuButton onClick={() => selected && duplicate(selected.id)} disabled={!selected} shortcut="⌘D">
+          <Copy className="h-4 w-4" />
+          Duplicate
+        </MenuButton>
+        <MenuButton onClick={() => selected && remove(selected.id)} disabled={!selected} danger shortcut="DELETE">
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </MenuButton>
+      </div>
+    );
+  };
 
   return (
     <div ref={editorShellRef} className="relative flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-neutral-100">
@@ -1500,8 +1560,6 @@ const Editor = () => {
       {/* Center */}
       <main className="flex min-w-0 flex-1">
         <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto px-8 pb-6 pt-4">
-          <ContextMenu>
-            <ContextMenuTrigger asChild>
               <div
                 className="relative shadow-xl"
                 style={{
@@ -1521,6 +1579,10 @@ const Editor = () => {
                     ref={stageRef}
                     width={STAGE_W}
                     height={STAGE_H}
+                    onContextMenu={(e) => {
+                      if (e.target === e.target.getStage()) setSelectedId(null);
+                      openCanvasMenu(e.evt);
+                    }}
                     onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
                     onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
                   >
@@ -1592,9 +1654,6 @@ const Editor = () => {
                 </div>
 
               </div>
-            </ContextMenuTrigger>
-            <SelectionContextMenuContent />
-          </ContextMenu>
           <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-neutral-200/70 bg-white/80 px-3 py-2 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-md">
             <button
               type="button"
@@ -1633,6 +1692,7 @@ const Editor = () => {
           </div>
         </div>
       </main>
+      <CanvasContextMenu />
       </div>
 
       {/* Right */}
