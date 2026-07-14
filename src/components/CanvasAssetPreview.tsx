@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { Layer, Stage, Rect, Circle as KCircle, Text as KText, Image as KImage, Line as KLine, RegularPolygon, Star as KStar } from "react-konva";
 import useImage from "use-image";
 import { type CanvasElement } from "@/lib/canvasAsset";
+import { loadGoogleFont } from "@/lib/logotype";
 
 const STAGE_W = 800;
 const STAGE_H = 600;
@@ -79,6 +81,43 @@ export default function CanvasAssetPreview({
   className?: string;
   background?: string;
 }) {
+  const [, setFontRenderTick] = useState(0);
+
+  useEffect(() => {
+    const textElements = elements.filter((el): el is Extract<CanvasElement, { kind: "text" }> => el.kind === "text");
+    if (!textElements.length) return;
+
+    let cancelled = false;
+    const loadFonts = async () => {
+      const uniqueFonts = new Map<string, Set<number>>();
+      textElements.forEach((el) => {
+        const family = String(el.fontFamily || "").trim();
+        if (!family) return;
+        if (!uniqueFonts.has(family)) uniqueFonts.set(family, new Set<number>());
+        uniqueFonts.get(family)!.add(el.fontWeight || 400);
+      });
+
+      await Promise.all(
+        Array.from(uniqueFonts.entries()).map(async ([family, weights]) => {
+          const requestedWeights = Array.from(weights).sort((a, b) => a - b);
+          loadGoogleFont(family, requestedWeights);
+          try {
+            await Promise.all(
+              requestedWeights.map((weight) => (document as any).fonts?.load?.(`${weight} 48px '${family}'`) ?? Promise.resolve()),
+            );
+          } catch {}
+        }),
+      );
+
+      if (!cancelled) setFontRenderTick((tick) => tick + 1);
+    };
+
+    void loadFonts();
+    return () => {
+      cancelled = true;
+    };
+  }, [elements]);
+
   return (
     <div className={className} style={{ display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
       <div style={{ width: "100%", aspectRatio: `${STAGE_W} / ${STAGE_H}` }}>
