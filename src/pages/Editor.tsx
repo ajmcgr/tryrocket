@@ -1554,40 +1554,42 @@ const Editor = () => {
                   )}
                 </div>
 
-                <div className="absolute right-4 top-4 z-20 flex items-center gap-2 rounded-full border border-white/80 bg-white/90 px-3 py-2 shadow-[0_18px_35px_rgba(15,23,42,0.10)] backdrop-blur-md">
-                  <button
-                    type="button"
-                    onClick={() => setZoom((value) => Math.max(50, value - 10))}
-                    className="rounded-full px-2 py-1 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-                  >
-                    −
-                  </button>
-                  <Slider
-                    value={[zoom]}
-                    min={50}
-                    max={200}
-                    step={5}
-                    onValueChange={([value]) => setZoom(value ?? 100)}
-                    className="w-32"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setZoom((value) => Math.min(200, value + 10))}
-                    className="rounded-full px-2 py-1 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-                  >
-                    +
-                  </button>
-                  <div className="h-5 w-px bg-neutral-200" />
-                  <button
-                    type="button"
-                    onClick={() => void toggleFullscreen()}
-                    className="grid h-8 w-8 place-items-center rounded-full text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
-                    aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
-                    title={isFullscreen ? "Exit full screen" : "Enter full screen"}
-                  >
-                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                  </button>
-                </div>
+              </div>
+              <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/80 bg-white/90 px-5 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.10)] backdrop-blur-md">
+                <button
+                  type="button"
+                  onClick={() => setZoom((value) => Math.max(50, value - 10))}
+                  className="rounded-full px-2 py-1 text-sm font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                  aria-label="Zoom out"
+                >
+                  −
+                </button>
+                <Slider
+                  value={[zoom]}
+                  min={50}
+                  max={200}
+                  step={5}
+                  onValueChange={([value]) => setZoom(value ?? 100)}
+                  className="w-40 [&_.bg-primary]:bg-neutral-500 [&_.bg-secondary]:bg-neutral-200 [&_[role=slider]]:border-neutral-300 [&_[role=slider]]:bg-neutral-900 [&_[role=slider]]:shadow-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setZoom((value) => Math.min(200, value + 10))}
+                  className="rounded-full px-2 py-1 text-sm font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                  aria-label="Zoom in"
+                >
+                  +
+                </button>
+                <div className="mx-1 h-7 w-px bg-neutral-200" />
+                <button
+                  type="button"
+                  onClick={() => void toggleFullscreen()}
+                  className="grid h-9 w-9 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                  aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
+                  title={isFullscreen ? "Exit full screen" : "Enter full screen"}
+                >
+                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
               </div>
             </div>
           </ContextMenuTrigger>
