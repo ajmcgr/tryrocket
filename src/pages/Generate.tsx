@@ -534,10 +534,10 @@ const Generate = () => {
           if (scraped && !scraped.error) sharedCtx = { ...scraped, url: u };
           else sharedCtx = { url: u };
         } catch { sharedCtx = { url: u }; }
-      } else if (projectId) {
+      } else if (effectiveProjectId) {
         // Reuse stored project brand context if no new URL was given
         try {
-          const { data: proj } = await supabase.from("projects").select("brand_context,source_url").eq("id", projectId).maybeSingle();
+          const { data: proj } = await supabase.from("projects").select("brand_context,source_url").eq("id", effectiveProjectId).maybeSingle();
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
@@ -569,7 +569,7 @@ const Generate = () => {
         const rows = variants.map((state, i) => ({
           user_id: user!.id,
           workspace_id: _wid,
-          project_id: projectId || null,
+          project_id: effectiveProjectId || null,
           asset_type: "logo",
           title: variants.length > 1 ? `Logotype ${i + 1}` : "Logotype",
           prompt: p,
@@ -590,7 +590,7 @@ const Generate = () => {
         const requestBodyBase = {
           prompt: backendPrompt,
           asset_type: effectiveAssetType,
-          project_id: projectId || undefined,
+          project_id: effectiveProjectId || undefined,
           brand_context: sharedCtx || undefined,
           workspace_id,
           requested_lockup: isMixedLogoAndLogotypePrompt(p),
@@ -660,7 +660,7 @@ const Generate = () => {
         const _wsid = getActiveWorkspaceIdSync() || undefined;
         const results = await Promise.all(plan.map(step =>
           supabase.functions.invoke("generate-asset", {
-            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined, brand_context: sharedCtx || undefined, workspace_id: _wsid },
+            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: effectiveProjectId || undefined, brand_context: sharedCtx || undefined, workspace_id: _wsid },
           })
         ));
         for (const r of results) {
@@ -674,11 +674,11 @@ const Generate = () => {
         }
       }
       // If we scraped a real brand and have a project, persist context to project for reuse
-      if (sharedCtx && projectId && (sharedCtx.productName || sharedCtx.colors?.length)) {
+      if (sharedCtx && effectiveProjectId && (sharedCtx.productName || sharedCtx.colors?.length)) {
         try {
-          const { data: proj } = await supabase.from("projects").select("brand_context").eq("id", projectId).maybeSingle();
+          const { data: proj } = await supabase.from("projects").select("brand_context").eq("id", effectiveProjectId).maybeSingle();
           if (!proj?.brand_context) {
-            await supabase.from("projects").update({ brand_context: sharedCtx, source_url: sharedCtx.url || null }).eq("id", projectId);
+            await supabase.from("projects").update({ brand_context: sharedCtx, source_url: sharedCtx.url || null }).eq("id", effectiveProjectId);
           }
         } catch { /* noop */ }
       }
