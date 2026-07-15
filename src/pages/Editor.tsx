@@ -1,12 +1,12 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
-  Stage, Layer, Rect, Circle as KCircle, Text as KText, Image as KImage,
-  Line as KLine, RegularPolygon, Star as KStar, Transformer, Group, Shape,
+  Stage, Layer, Rect, Circle as KCircle, Text as KText,
+  Line as KLine, RegularPolygon, Star as KStar, Transformer, Group,
 } from "react-konva";
-import useImage from "use-image";
 import type Konva from "konva";
+import KonvaImage from "@/components/KonvaImage";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
