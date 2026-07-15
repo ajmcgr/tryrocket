@@ -20,6 +20,7 @@ import Assets from "./pages/Assets.tsx";
 import Trash from "./pages/Trash.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import Studio from "./pages/Studio.tsx";
+import Brand from "./pages/Brand.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
@@ -58,6 +59,11 @@ const queryClient = new QueryClient();
 const AssetRouteRedirect = () => {
   const { id } = useParams();
   return <Navigate to={id ? `/editor?id=${id}` : "/assets"} replace />;
+};
+
+const StudioRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={id ? `/brand/${id}` : "/brand"} replace />;
 };
 
 const App = () => (
@@ -99,7 +105,10 @@ const App = () => (
               <Route path="/insights" element={<Insights />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
-              <Route path="/studio/:id" element={<Studio />} />
+              <Route path="/studio" element={<Navigate to="/brand" replace />} />
+              <Route path="/studio/:id" element={<StudioRedirect />} />
+              <Route path="/brand" element={<Brand />} />
+              <Route path="/brand/:id" element={<Brand />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/assets" element={<Assets />} />

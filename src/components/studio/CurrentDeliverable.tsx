@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Download, Copy, GitBranch, History, Wand2, ExternalLink } from "lucide-react";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
+import { assetHref, assetOpenLabel, isBrandAsset } from "@/lib/assetExperience";
 
 export default function CurrentDeliverable({
   asset,
@@ -39,12 +40,14 @@ export default function CurrentDeliverable({
           <h2 className="mt-0.5 truncate text-xl font-semibold text-neutral-900">{title}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <Link
-            to={`/editor?id=${asset.id}`}
-            className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-          >
-            <ExternalLink className="h-3.5 w-3.5" /> Open in Editor
-          </Link>
+          {!isBrandAsset(asset) && (
+            <Link
+              to={assetHref(asset)}
+              className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> {assetOpenLabel(asset)}
+            </Link>
+          )}
           {onVariation && (
             <button
               onClick={onVariation}

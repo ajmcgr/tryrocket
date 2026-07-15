@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { assetHref } from "@/lib/assetExperience";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -801,7 +802,7 @@ const Generate = () => {
                 <div className="mb-5">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Latest design</div>
-                    <Link to={`/editor?id=${latest.id}`} className="text-[11px] text-neutral-500 hover:text-neutral-900">
+                    <Link to={assetHref(latest)} className="text-[11px] text-neutral-500 hover:text-neutral-900">
                       Open →
                     </Link>
                   </div>
@@ -819,7 +820,7 @@ const Generate = () => {
               {chatAssets.map((a) => (
                 <Link
                   key={a.id}
-                  to={`/editor?id=${a.id}`}
+                  to={assetHref(a)}
                   className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm"
                 >
                   {a.image_url ? (

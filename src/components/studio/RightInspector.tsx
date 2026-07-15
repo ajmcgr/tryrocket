@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ExternalLink, Info } from "lucide-react";
 import { categoryOf, CATEGORY_LABEL } from "@/lib/assetFamily";
+import { assetHref, assetOpenLabel, isBrandAsset } from "@/lib/assetExperience";
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
@@ -32,14 +33,16 @@ export default function RightInspector({ asset }: { asset: any | null }) {
           {asset.created_at && (
             <Row label="Created" value={new Date(asset.created_at).toLocaleString()} />
           )}
-          <div className="pt-2">
-            <Link
-              to={`/editor?id=${asset.id}`}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-            >
-              <ExternalLink className="h-3.5 w-3.5" /> Open in Editor
-            </Link>
-          </div>
+          {!isBrandAsset(asset) && (
+            <div className="pt-2">
+              <Link
+                to={assetHref(asset)}
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> {assetOpenLabel(asset)}
+              </Link>
+            </div>
+          )}
           <div className="pt-3">
             <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
               Layers

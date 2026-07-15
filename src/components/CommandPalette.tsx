@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { assetHref } from "@/lib/assetExperience";
 import {
   CommandDialog,
   CommandEmpty,
@@ -119,7 +120,7 @@ const CommandPalette = () => {
             <CommandSeparator />
             <CommandGroup heading={searching_q ? "Matching assets" : "Recent assets"}>
               {mergedAssets.map((a) => (
-                <CommandItem key={a.id} value={`asset ${a.title} ${a.asset_type || ""}`} onSelect={() => go(`/editor?id=${a.id}`)}>
+                <CommandItem key={a.id} value={`asset ${a.title} ${a.asset_type || ""}`} onSelect={() => go(assetHref(a))}>
                   <FileText />
                   <span className="truncate">{a.title || "Untitled"}</span>
                   {a.asset_type && <span className="ml-auto text-xs text-neutral-400">{a.asset_type.replace(/_/g, " ")}</span>}

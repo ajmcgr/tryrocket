@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { assetHref } from "@/lib/assetExperience";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -565,7 +566,7 @@ const Assets = () => {
                     </div>
                   </button>
                 ) : (
-                  <Link to={`/editor?id=${asset.id}`} className="block">
+                  <Link to={assetHref(asset)} className="block">
                     <div className="aspect-square w-full overflow-hidden bg-neutral-50">
                       <DesignPreview asset={asset} />
                     </div>
@@ -587,7 +588,7 @@ const Assets = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 bg-white">
                     <DropdownMenuItem asChild className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
-                      <Link to={`/editor?id=${asset.id}`}><Edit3 className="mr-2 h-4 w-4" /> Open design</Link>
+                      <Link to={assetHref(asset)}><Edit3 className="mr-2 h-4 w-4" /> Open design</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => makePublic(asset)}
@@ -659,7 +660,7 @@ const Assets = () => {
                     {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
                   </button>
                 )}
-                <Link to={`/editor?id=${asset.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                <Link to={assetHref(asset)} className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="h-14 w-14 overflow-hidden rounded-lg bg-neutral-50">
                     <DesignPreview asset={asset} />
                   </div>
