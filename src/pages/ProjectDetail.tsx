@@ -171,11 +171,18 @@ const ProjectDetail = () => {
   useEffect(() => { load(); }, [id, user]);
 
   const openPicker = async () => {
-    const { data } = await supabase.from("assets").select("id, title, asset_type, image_url, content").eq("user_id", user!.id).is("project_id", null).order("created_at", { ascending: false }).limit(100);
+    const { data } = await supabase
+      .from("assets")
+      .select("id, title, asset_type, image_url, content")
+      .eq("user_id", user!.id)
+      .is("project_id", null)
+      .is("deleted_at", null)
+      .in("asset_type", [...BRAND_TYPES])
+      .order("created_at", { ascending: false })
+      .limit(100);
     setAllAssets(data || []); setPicking(true);
   };
 
-  const DESIGN_TYPES = Object.keys(WF_OF).filter(t => WF_OF[t] === "design");
   const openDesignPicker = async () => {
     const { data } = await supabase
       .from("assets")
@@ -183,7 +190,7 @@ const ProjectDetail = () => {
       .eq("user_id", user!.id)
       .is("project_id", null)
       .is("deleted_at", null)
-      .in("asset_type", DESIGN_TYPES)
+      .in("asset_type", [...DESIGN_TYPES])
       .order("created_at", { ascending: false })
       .limit(100);
     setAllDesigns(data || []); setPickingDesign(true);
