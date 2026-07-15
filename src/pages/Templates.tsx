@@ -167,7 +167,7 @@ const Templates = () => {
           {filtered.map((design) => (
             <Link
               key={design.id}
-              to={design.share_token ? `/share/asset/${design.share_token}` : "#"}
+              to={`/editor?id=${design.id}`}
               className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
             >
               <div className="aspect-square w-full overflow-hidden bg-neutral-50">
@@ -194,7 +194,7 @@ const Templates = () => {
           {filtered.map((design) => (
             <Link
               key={design.id}
-              to={design.share_token ? `/share/asset/${design.share_token}` : "#"}
+              to={`/editor?id=${design.id}`}
               className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 last:border-b-0"
             >
               <div className="h-14 w-14 overflow-hidden rounded-lg bg-neutral-50">
