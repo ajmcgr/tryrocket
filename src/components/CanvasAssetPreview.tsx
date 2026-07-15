@@ -32,7 +32,7 @@ function RenderEl({ el }: { el: CanvasElement }) {
     case "circle":
       return <KCircle x={el.x + el.w / 2} y={el.y + el.h / 2} radius={Math.min(el.w, el.h) / 2} fill={el.fill} rotation={el.rotation || 0} />;
     case "image":
-      return <CanvasImageNode el={el} />;
+      return <KonvaImage el={el} />;
     case "line":
       return <KLine points={[el.x, el.y, el.x + el.w, el.y + el.h]} stroke={el.color} strokeWidth={el.thickness} />;
     case "sticky":
