@@ -5,8 +5,10 @@ import {
   ArrowLeft, Sparkles, Palette, Type, MessageSquare, Layers, Shapes, Image as ImageIcon,
   Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check, Trash2, X,
   Share2, Facebook, Send, MessageCircle, MessageSquare as MessageSquareIcon, Mail, Link as LinkIcon, Lock,
+  Download, Loader2,
 } from "lucide-react";
 const supabase = _sb as any;
+import { packAssetsZip } from "@/lib/exporters/zipPack";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -107,6 +109,7 @@ const BrandKitHub = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [shareOpen, setShareOpen] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [zipping, setZipping] = useState(false);
 
   const shareUrl = project?.share_token
     ? `${window.location.origin}/share/project/${project.share_token}`
@@ -170,6 +173,19 @@ const BrandKitHub = () => {
     await supabase.from("projects").update({ share_token: null }).eq("id", id);
     setProject((prev: any) => (prev ? { ...prev, share_token: null } : prev));
     toast({ title: "Public link disabled" });
+  };
+
+  const downloadZip = async () => {
+    if (!assets.length) return;
+    setZipping(true);
+    try {
+      const base = (project?.name || "brand-kit").replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "brand-kit";
+      await packAssetsZip(assets, `${base}-assets.zip`);
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e?.message || "Could not build ZIP.", variant: "destructive" });
+    } finally {
+      setZipping(false);
+    }
   };
 
   const ShareTile = ({ Icon, label, onClick, iconClass }: any) => (
@@ -259,6 +275,13 @@ const BrandKitHub = () => {
           <ArrowLeft className="h-4 w-4" /> {project.name}
         </Link>
         <div className="flex gap-2">
+          <button
+            onClick={downloadZip}
+            disabled={zipping || !assets.length}
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50 disabled:opacity-50"
+          >
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download .zip
+          </button>
           <button
             onClick={() => setShareOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"
