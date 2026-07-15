@@ -1,17 +1,11 @@
 import { useEffect, useState } from "react";
-import { Layer, Stage, Rect, Circle as KCircle, Text as KText, Image as KImage, Line as KLine, RegularPolygon, Star as KStar } from "react-konva";
-import useImage from "use-image";
+import { Layer, Stage, Rect, Circle as KCircle, Text as KText, Line as KLine, RegularPolygon, Star as KStar } from "react-konva";
 import { type CanvasElement } from "@/lib/canvasAsset";
 import { loadGoogleFont } from "@/lib/logotype";
+import KonvaImage from "@/components/KonvaImage";
 
 const STAGE_W = 800;
 const STAGE_H = 600;
-
-function CanvasImageNode({ el }: { el: Extract<CanvasElement, { kind: "image" }> }) {
-  const [img] = useImage(el.src, "anonymous");
-  if (!img) return null;
-  return <KImage image={img} x={el.x} y={el.y} width={el.w} height={el.h} rotation={el.rotation || 0} />;
-}
 
 function RenderEl({ el }: { el: CanvasElement }) {
   if (!el.visible) return null;
@@ -38,7 +32,7 @@ function RenderEl({ el }: { el: CanvasElement }) {
     case "circle":
       return <KCircle x={el.x + el.w / 2} y={el.y + el.h / 2} radius={Math.min(el.w, el.h) / 2} fill={el.fill} rotation={el.rotation || 0} />;
     case "image":
-      return <CanvasImageNode el={el} />;
+      return <KonvaImage el={el} />;
     case "line":
       return <KLine points={[el.x, el.y, el.x + el.w, el.y + el.h]} stroke={el.color} strokeWidth={el.thickness} />;
     case "sticky":
