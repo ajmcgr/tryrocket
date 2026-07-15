@@ -27,7 +27,6 @@ export default function BrandHub() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [assets, setAssets] = useState<any[]>([]);
-  const [uploads, setUploads] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [activeProject, setActiveProject] = useState<string>("all");
 
@@ -44,7 +43,6 @@ export default function BrandHub() {
       const loadedProjects = p || [];
       const all = a || [];
       setAssets(all.filter(isBrandAsset));
-      setUploads(all.filter(isUploadedImageDesign));
       setProjects(loadedProjects);
       setLoading(false);
     })();
@@ -55,11 +53,6 @@ export default function BrandHub() {
     if (activeProject === "all") return assets;
     return assets.filter((a) => a.project_id === activeProject);
   }, [assets, activeProject]);
-
-  const filteredUploads = useMemo(() => {
-    if (activeProject === "all") return uploads;
-    return uploads.filter((a) => a.project_id === activeProject);
-  }, [uploads, activeProject]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, any[]>();
