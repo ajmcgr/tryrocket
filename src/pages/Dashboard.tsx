@@ -647,6 +647,88 @@ const Projects = () => {
             )}
           </section>
 
+          <section>
+            <SectionToolbar title="Uploads" total={sortedUploads.length} />
+            {sortedUploads.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
+                <ImageIcon className="mx-auto h-8 w-8 text-neutral-300" />
+                <p className="mt-3 text-sm text-neutral-500">No uploaded files yet. Upload images in the editor to see them here.</p>
+              </div>
+            ) : view === "card" ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {sortedUploads.map((asset) => {
+                  const isSelected = selected.has(selKey("upload", asset.id));
+                  return (
+                    <div key={asset.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${isSelected ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
+                      {selectMode && (
+                        <button onClick={() => toggleSelected(selKey("upload", asset.id))} className="absolute left-2 top-2 z-10 rounded-md bg-white/95 p-1 shadow-sm">
+                          {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
+                        </button>
+                      )}
+                      <Link to={`/editor?id=${asset.id}`} target="_blank" rel="noopener noreferrer" className="block">
+                        <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100">
+                          <img src={asset.thumbnail_url || asset.image_url} alt={asset.title || ""} className="h-full w-full object-cover transition group-hover:scale-[1.02]" loading="lazy" />
+                        </div>
+                        <div className="p-4">
+                          <div className="truncate text-sm font-medium text-neutral-900">{asset.title || "Untitled upload"}</div>
+                          <div className="mt-0.5 text-xs text-neutral-500">{new Date(asset.created_at).toLocaleDateString()}</div>
+                        </div>
+                      </Link>
+                      {!selectMode && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="absolute right-2 top-2 rounded-md bg-white/95 p-1 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-neutral-100"><MoreHorizontal className="h-4 w-4 text-neutral-600" /></button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem onClick={() => duplicateUpload(asset)}><Copy className="mr-2 h-4 w-4" /> Duplicate</DropdownMenuItem>
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger className="cursor-pointer"><FolderPlus className="mr-2 h-4 w-4" /> Move to folder</DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                <DropdownMenuSubContent className="bg-white">
+                                  {folders.length === 0 ? <div className="px-2 py-2 text-xs text-neutral-500">No folders yet.</div> : folders.map((folder) => (
+                                    <DropdownMenuItem key={folder.id} onClick={() => assignUploadToFolder(asset, folder.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
+                                      {folder.name}
+                                    </DropdownMenuItem>
+                                  ))}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => createFolderAndAssignUpload(asset)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"><Plus className="mr-2 h-4 w-4" /> New folder…</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => assignUploadToFolder(asset, null)} className="cursor-pointer text-neutral-600 focus:bg-neutral-100 focus:text-neutral-900">Remove from folder</DropdownMenuItem>
+                                </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                            </DropdownMenuSub>
+                            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => delUpload(asset.id)}><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+                {sortedUploads.map((asset) => {
+                  const isSelected = selected.has(selKey("upload", asset.id));
+                  return (
+                    <div key={asset.id} className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0">
+                      <button onClick={() => toggleSelected(selKey("upload", asset.id))}>
+                        {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
+                      </button>
+                      <Link to={`/editor?id=${asset.id}`} target="_blank" rel="noopener noreferrer" className="flex min-w-0 flex-1 items-center gap-3">
+                        <div className="h-14 w-20 overflow-hidden rounded-lg bg-neutral-100">
+                          <img src={asset.thumbnail_url || asset.image_url} alt={asset.title || ""} className="h-full w-full object-cover" loading="lazy" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium text-neutral-900">{asset.title || "Untitled upload"}</div>
+                          <div className="text-xs text-neutral-500">{new Date(asset.created_at).toLocaleDateString()}</div>
+                        </div>
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
         </div>
       )}
 

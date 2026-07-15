@@ -1,7 +1,7 @@
 // Central classifier: is this a Design (opens in graphic editor) or a Brand (opens in Brand workspace)?
 export type AssetExperience = "design" | "brand";
 
-const BRAND_TYPES = new Set<string>([
+export const BRAND_TYPES = new Set<string>([
   "brand_guidelines",
   "color_system",
   "font_system",
@@ -26,7 +26,7 @@ const BRAND_TYPES = new Set<string>([
   "copywriting_guide",
 ]);
 
-const DESIGN_TYPES = new Set<string>([
+export const DESIGN_TYPES = new Set<string>([
   "logo",
   "logotype",
   "wordmark",
