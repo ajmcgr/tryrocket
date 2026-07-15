@@ -276,6 +276,13 @@ const BrandKitHub = () => {
         </Link>
         <div className="flex gap-2">
           <button
+            onClick={downloadZip}
+            disabled={zipping || !assets.length}
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50 disabled:opacity-50"
+          >
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download .zip
+          </button>
+          <button
             onClick={() => setShareOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"
           >
