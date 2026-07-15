@@ -475,6 +475,7 @@ const Generate = () => {
       const effective = workflow;
       let allIds: string[] = [];
       let creditsErr: any = null;
+      let effectiveProjectId: string | null = projectId || null;
       if (!newChatId) {
         const title = (() => {
           const explicitUrl = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b)/i)?.[1];
@@ -488,7 +489,6 @@ const Generate = () => {
         const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
         const workspace_id = await ensureActiveWorkspaceId();
         // Auto-create a project for this chat if one isn't already attached
-        let effectiveProjectId: string | null = projectId || null;
         if (!effectiveProjectId) {
           const projectName = (() => {
             const explicitUrl = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b)/i)?.[1];
