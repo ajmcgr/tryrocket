@@ -466,7 +466,7 @@ const Editor = () => {
       // If this asset belongs in the Brand workspace (text/strategy), redirect there.
       if (isBrandAsset(a)) {
         const pid = a.project_id ? `/${a.project_id}` : "";
-        nav(`/brand${pid}?asset=${a.id}`, { replace: true });
+        nav(`/brands${pid}?asset=${a.id}`, { replace: true });
         return;
       }
       setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null });
