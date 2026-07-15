@@ -121,6 +121,8 @@ const App = () => (
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/designs" element={<Assets />} />
               <Route path="/designs/:id" element={<AssetRouteRedirect />} />
+              <Route path="/assets" element={<Navigate to="/designs" replace />} />
+              <Route path="/assets/:id" element={<AssetRouteRedirect />} />
               <Route path="/trash" element={<Trash />} />
               <Route path="/create" element={<Generate />} />
               <Route path="/editor" element={<Editor />} />
