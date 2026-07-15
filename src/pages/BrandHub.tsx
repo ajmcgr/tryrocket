@@ -76,22 +76,22 @@ export default function BrandHub() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="mx-auto max-w-7xl px-6 py-10">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Brands</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Brands</h1>
           <p className="mt-1 text-sm text-neutral-500">Guidelines, colors, fonts, voice and copy — organized by category.</p>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={activeProject}
             onChange={(e) => setActiveProject(e.target.value)}
-            className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-neutral-400"
+            className="h-10 rounded-full border border-neutral-200 bg-white px-4 text-sm outline-none focus:border-neutral-400"
           >
             <option value="all">All projects</option>
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+          <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
             <Sparkles className="h-4 w-4" /> Create
           </Link>
         </div>
