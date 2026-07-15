@@ -9,7 +9,7 @@ import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import BrandCover from "@/components/brand/BrandCover";
 import { type CanvasElement } from "@/lib/canvasAsset";
-import { assetHref, isBrandAsset } from "@/lib/assetExperience";
+import { isBrandAsset } from "@/lib/assetExperience";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
 import { defaultLogotypeState, pickLogotypeText } from "@/lib/logotype";
 const supabase = _sb as any;
