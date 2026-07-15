@@ -119,7 +119,7 @@ const isLogotypeLikeDesign = (asset: DesignPreviewAsset) => {
   const metaKind = String(asset?.meta?.kind || asset?.meta?.asset_kind || "");
   return (
     asset?.asset_type === "logo" &&
-    (asset?.editor_state?.kind === "logotype" ||
+    ((asset?.editor_state as any)?.kind === "logotype" ||
       GENERIC_LOGOTYPE_TITLE.test(title.trim()) ||
       /\b(logotype|wordmark|word mark)\b/i.test(`${prompt} ${content} ${metaKind}`))
   );
@@ -359,7 +359,7 @@ const Assets = () => {
   const activeFolderName = folders.find((folder) => folder.id === folderParam)?.name;
 
   const DesignPreview = ({ asset }: { asset: DesignPreviewAsset }) => {
-    const isLogotype = asset?.editor_state?.kind === "logotype";
+    const isLogotype = (asset?.editor_state as any)?.kind === "logotype";
     const isCanvas = hasRenderableCanvasElements(asset?.editor_state);
     const fallbackLogotype = !isLogotype && !isCanvas && isLogotypeLikeDesign(asset);
     const rasterPreview = asset.thumbnail_url || asset.image_url;
@@ -367,7 +367,7 @@ const Assets = () => {
     const fallbackText = safePreviewText(asset);
     return (
       <>
-        {isLogotype ? <Logotype state={asset.editor_state} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state} className="h-full w-full" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : (
+        {isLogotype ? <Logotype state={asset.editor_state as any} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : (
           <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
             <div className="line-clamp-6 whitespace-pre-wrap">{fallbackText ? fallbackText.slice(0, 200) : "No preview available"}</div>
           </div>
