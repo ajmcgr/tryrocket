@@ -38,8 +38,8 @@ export default function Brand() {
   const { toast } = useToast();
   const nav = useNavigate();
 
-  // No project selected → send user to project picker
-  if (!projectId) return <Navigate to="/projects" replace />;
+  // No project selected → send user to the cross-project Brand hub
+  if (!projectId) return <Navigate to="/brand" replace />;
 
   const [project, setProject] = useState<any>(null);
   const [assets, setAssets] = useState<any[]>([]);
