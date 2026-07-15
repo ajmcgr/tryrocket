@@ -47,20 +47,11 @@ const supabase = _sb as any;
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
   logo: "Logo",
-  brand_guidelines: "Brand Guidelines",
-  color_system: "Color System",
-  font_system: "Font System",
-  brand_voice: "Brand Voice",
   graphic: "Graphic",
   icon: "Icon",
   photo: "Photo",
   template: "Template",
-  launch_copy: "Launch Copy",
-  product_hunt_copy: "PH Copy",
-  social_post: "Social Post",
-  founder_bio: "Founder Bio",
   presentation: "Presentation",
-  other: "Other",
 };
 
 const ALL_TYPES = Object.keys(ASSET_TYPE_LABELS);
