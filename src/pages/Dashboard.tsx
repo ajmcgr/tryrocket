@@ -407,11 +407,11 @@ const Projects = () => {
           >
             <Trash2 className="h-4 w-4" />
           </Link>
-          <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50 sm:py-2.5">
-            <Plus className="h-4 w-4" /> New Project
-          </button>
-          <button onClick={() => setCreatingFolder(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50 sm:py-2.5">
+          <button onClick={() => setCreatingFolder(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-5 py-2.5 text-sm font-medium hover:bg-neutral-50">
             <Folder className="h-4 w-4" /> New folder
+          </button>
+          <button onClick={() => setCreating(true)} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
+            <Plus className="h-4 w-4" /> New Project
           </button>
         </div>
       </div>
