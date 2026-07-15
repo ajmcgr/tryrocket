@@ -36,7 +36,7 @@ const Trash = () => {
     if (!user) return;
     setLoading(true);
     const [a, p] = await Promise.all([
-      supabase.from("assets").select("id,title,asset_type,image_url,editor_state,content,deleted_at,created_at").eq("user_id", user.id).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(200),
+      supabase.from("assets").select("*").eq("user_id", user.id).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(200),
       supabase.from("projects").select("id,name,description,deleted_at").eq("user_id", user.id).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(200),
     ]);
     setAssets(a.data || []); setProjects(p.data || []); setLoading(false);
