@@ -200,18 +200,18 @@ const ProjectDetail = () => {
     load();
   };
 
+  const counts: Record<WF, number> = { brand: 0, design: 0, launch: 0, promote: 0, other: 0 };
+  for (const a of assets) counts[wfOf(a.asset_type)]++;
+  const visible = tab === "all" ? assets : assets.filter(a => wfOf(a.asset_type) === tab);
+  const visibleSorted = useMemo(() => sortByOption(visible, sort, a => a.title, a => a.created_at), [visible, sort]);
+  const tabs: ("all" | WF)[] = ["all", "brand", "design", "launch", "promote", "other"];
+
   if (!project) return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="h-8 w-1/3 animate-pulse rounded bg-neutral-100" />
       <AssetGridSkeleton />
     </div>
   );
-
-  const counts: Record<WF, number> = { brand: 0, design: 0, launch: 0, promote: 0, other: 0 };
-  for (const a of assets) counts[wfOf(a.asset_type)]++;
-  const visible = tab === "all" ? assets : assets.filter(a => wfOf(a.asset_type) === tab);
-  const visibleSorted = useMemo(() => sortByOption(visible, sort, a => a.title, a => a.created_at), [visible, sort]);
-  const tabs: ("all" | WF)[] = ["all", "brand", "design", "launch", "promote", "other"];
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
