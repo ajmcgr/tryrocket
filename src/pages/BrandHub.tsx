@@ -3,9 +3,8 @@ import { Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
-import { isUploadedImageDesign } from "@/lib/designCollections";
 import BrandCover from "@/components/brand/BrandCover";
-import { ArrowRight, Plus, Sparkles, ImageIcon, MoreHorizontal, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Sparkles, MoreHorizontal, Trash2 } from "lucide-react";
 
 const supabase = _sb as any;
 
