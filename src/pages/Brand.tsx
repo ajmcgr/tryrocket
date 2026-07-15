@@ -5,11 +5,11 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import BrandContextStrip from "@/components/BrandContextStrip";
-import CurrentDeliverable from "@/components/studio/CurrentDeliverable";
 import VariationStrip from "@/components/studio/VariationStrip";
-import RelatedAssetsRail from "@/components/studio/RelatedAssetsRail";
 import RightInspector from "@/components/studio/RightInspector";
 import StudioLeftPanel from "@/components/studio/StudioLeftPanel";
+import BrandDocument from "@/components/brand/BrandDocument";
+import BrandCategoryNav from "@/components/brand/BrandCategoryNav";
 import { getProjectBrandContext, refreshBrandContext } from "@/lib/brandContext";
 import { getActiveWorkspaceIdSync } from "@/lib/workspace";
 import { handleAiError } from "@/lib/aiErrors";
@@ -49,15 +49,28 @@ export default function Brand() {
 
   const brandAssets = useMemo(() => assets.filter(isBrandAsset), [assets]);
   const activeId = params.get("asset") || undefined;
+  const activeCategory = params.get("cat") || null;
+  const filteredAssets = useMemo(
+    () => (activeCategory ? brandAssets.filter((a) => a.asset_type === activeCategory) : brandAssets),
+    [brandAssets, activeCategory],
+  );
   const active = useMemo(
-    () => brandAssets.find((a) => a.id === activeId) || brandAssets[0] || null,
-    [brandAssets, activeId],
+    () => filteredAssets.find((a) => a.id === activeId) || filteredAssets[0] || null,
+    [filteredAssets, activeId],
   );
 
   const variations = useMemo(() => {
     if (!active) return [] as any[];
     return brandAssets.filter((a) => a.asset_type === active.asset_type);
   }, [brandAssets, active]);
+
+  const selectCategory = (type: string | null) => {
+    const next = new URLSearchParams(params);
+    if (type) next.set("cat", type);
+    else next.delete("cat");
+    next.delete("asset");
+    setParams(next, { replace: true });
+  };
 
   const load = useCallback(async () => {
     if (!projectId || !user) return;
@@ -221,21 +234,28 @@ export default function Brand() {
               </p>
             </div>
           ) : (
-            <>
-              <CurrentDeliverable
-                asset={active}
-                onVariation={active ? handleVariation : undefined}
-                onDuplicate={active ? handleDuplicate : undefined}
-                onExport={active ? handleExport : undefined}
+            <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+              <BrandCategoryNav
+                assets={brandAssets}
+                activeType={activeCategory}
+                onSelect={selectCategory}
               />
-              <VariationStrip
-                variations={variations}
-                activeId={active?.id}
-                onSelect={selectAsset}
-                onCreate={active ? handleVariation : undefined}
-              />
-              <RelatedAssetsRail assets={brandAssets} activeId={active?.id} onSelect={selectAsset} />
-            </>
+              <div className="space-y-6">
+                <BrandDocument
+                  asset={active}
+                  onSaved={load}
+                  onVariation={active ? handleVariation : undefined}
+                  onDuplicate={active ? handleDuplicate : undefined}
+                  onExport={active ? handleExport : undefined}
+                />
+                <VariationStrip
+                  variations={variations}
+                  activeId={active?.id}
+                  onSelect={selectAsset}
+                  onCreate={active ? handleVariation : undefined}
+                />
+              </div>
+            </div>
           )}
         </div>
       </main>
