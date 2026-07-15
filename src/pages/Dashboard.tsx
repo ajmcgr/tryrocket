@@ -510,7 +510,7 @@ const Projects = () => {
                           </div>
                         </button>
                       ) : (
-                        <Link to={`/projects/${project.id}`} className="block">
+                        <Link to={counts[project.id] ? `/projects/${project.id}` : `/create?project=${project.id}`} className="block">
                           {renderCardPreview(project.cover_url || latestImages[project.id], !project.cover_url ? latestLogotypes[project.id] : null)}
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
