@@ -1554,19 +1554,15 @@ const Editor = () => {
 
         <span className="mx-1 h-6 w-px bg-neutral-200" />
 
-        <label title="Canvas background" className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-xl border border-neutral-200/90 bg-white/75 hover:border-neutral-300">
-          <span className="pointer-events-none h-4 w-4 rounded-sm border border-neutral-300" style={{ background: bg }} />
-          <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" />
-        </label>
+        <ColorPickerButton
+          value={selected && (selected as any).fill ? (selected as any).fill : selected && (selected as any).color ? (selected as any).color : bg}
+          onChange={applyColorToSelected}
+          swatches={brandKit.colors}
+        />
 
-        {(brandKit.colors.length + brandKit.fonts.length + brandKit.logos.length) > 0 && (
+        {(brandKit.fonts.length + brandKit.logos.length) > 0 && (
           <>
             <span className="mx-1 h-6 w-px bg-neutral-200" />
-            {brandKit.colors.slice(0, 6).map((c) => (
-              <button key={c} title={c} onClick={() => applyColorToSelected(c)}
-                className="h-6 w-6 rounded-md border border-neutral-200 transition hover:scale-110"
-                style={{ background: c }} />
-            ))}
             {brandKit.logos.slice(0, 3).map((l) => (
               <button key={l.id} onClick={() => addImageFromUrl(l.url)} title={l.title}
                 className="h-8 w-8 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 hover:border-brand">
