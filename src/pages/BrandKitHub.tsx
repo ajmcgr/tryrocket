@@ -3,10 +3,11 @@ import { Link, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   ArrowLeft, Sparkles, Palette, Type, MessageSquare, Layers, Shapes, Image as ImageIcon,
-  Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check,
+  Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check, Trash2,
 } from "lucide-react";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 // A hub "item" maps a Looka-style asset slot to a generator entry-point.
 // asset_type values reuse existing Rocket types where possible; new visual
@@ -94,6 +95,21 @@ const BrandKitHub = () => {
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeGroup, setActiveGroup] = useState<string>("brand");
+  const { toast } = useToast();
+
+  const reload = async () => {
+    if (!id) return;
+    const { data } = await supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,created_at,editor_state").eq("project_id", id).order("created_at", { ascending: false });
+    setAssets(data || []);
+  };
+
+  const deleteAsset = async (assetId: string, label: string) => {
+    if (!confirm(`Delete ${label}? It will move to Trash.`)) return;
+    const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", assetId);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Moved to Trash" });
+    setAssets(prev => prev.filter(a => a.id !== assetId));
+  };
 
   useEffect(() => {
     (async () => {
@@ -139,15 +155,14 @@ const BrandKitHub = () => {
           <ArrowLeft className="h-4 w-4" /> {project.name}
         </Link>
         <div className="flex gap-2">
-          <Link to={`/projects/${id}/brand-kit`} className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50">View Brand Kit</Link>
           <Link to={`/create?project=${id}`} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">Generate any asset</Link>
         </div>
       </div>
 
       <header className="mt-4">
-        <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Brand Kit Hub</div>
+        <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Edit Brand Kit</div>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">{project.name}</h1>
-        <p className="mt-2 max-w-2xl text-sm text-neutral-600">Every asset a founder needs to launch and grow — generate what's missing, reuse what you have.</p>
+        <p className="mt-2 max-w-2xl text-sm text-neutral-600">Add, edit, or delete every brand kit asset in one place.</p>
       </header>
 
       <nav className="mt-8 flex flex-wrap gap-2 border-b border-neutral-200 pb-2">
@@ -198,7 +213,16 @@ const BrandKitHub = () => {
                   </div>
                   <div className="flex gap-1">
                     {done && preview && (
-                      <Link to={`/editor?id=${preview.id}`} className="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] hover:bg-neutral-50" target="_blank" rel="noopener noreferrer">Open</Link>
+                      <Link to={`/editor?id=${preview.id}`} className="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] hover:bg-neutral-50" target="_blank" rel="noopener noreferrer">Edit</Link>
+                    )}
+                    {done && preview && (
+                      <button
+                        onClick={() => deleteAsset(preview.id, it.label)}
+                        className="inline-flex items-center rounded-full border border-neutral-200 px-2 py-1 text-[11px] text-red-600 hover:bg-red-50"
+                        title={`Delete ${it.label}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     )}
                     <Link to={generateHref(it)} className="inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[11px] font-medium text-brand-foreground hover:bg-brand-hover">
                       <Plus className="h-3 w-3" /> {done ? "More" : "Generate"}
