@@ -88,7 +88,7 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
         <button onClick={onToggle} title="Expand chats" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
           <PanelLeft className="h-4 w-4" />
         </button>
-        <Link to="/create" title="New chat" className="mt-2 rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
+        <Link to="/create" title="New" className="mt-2 rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
           <Plus className="h-4 w-4" />
         </Link>
         <div className="mt-auto">
@@ -114,7 +114,7 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
           to="/create"
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
         >
-          <Plus className="h-4 w-4" /> New chat
+          <Plus className="h-4 w-4" /> New
         </Link>
       </div>
       <div className="mt-3 flex-1 overflow-y-auto px-2 pb-4">
