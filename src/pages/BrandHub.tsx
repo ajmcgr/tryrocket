@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
@@ -40,8 +40,12 @@ export default function BrandHub() {
         supabase.from("projects").select("id,name").order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
+      const loadedProjects = p || [];
       setAssets((a || []).filter(isBrandAsset));
-      setProjects(p || []);
+      setProjects(loadedProjects);
+      if (loadedProjects.length > 0) {
+        setActiveProject(loadedProjects[0].id);
+      }
       setLoading(false);
     })();
     return () => { cancel = true; };
@@ -70,11 +74,6 @@ export default function BrandHub() {
     const pid = withHit?.project_id || (activeProject !== "all" ? activeProject : projects[0]?.id);
     return pid ? `/brands/${pid}?cat=${cat.types[0]}` : `/projects`;
   };
-
-  // Default to the most recent project's brand workspace when one exists.
-  if (!loading && projects.length > 0) {
-    return <Navigate to={`/brands/${projects[0].id}`} replace />;
-  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
