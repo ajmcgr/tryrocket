@@ -38,7 +38,7 @@ export default function Brand() {
   const nav = useNavigate();
 
   // No project selected → send user to the cross-project Brand hub
-  if (!projectId) return <Navigate to="/brand" replace />;
+  if (!projectId) return <Navigate to="/brands" replace />;
 
   const [project, setProject] = useState<any>(null);
   const [assets, setAssets] = useState<any[]>([]);

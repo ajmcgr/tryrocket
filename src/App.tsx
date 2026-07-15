@@ -64,7 +64,12 @@ const AssetRouteRedirect = () => {
 
 const StudioRedirect = () => {
   const { id } = useParams();
-  return <Navigate to={id ? `/brand/${id}` : "/brand"} replace />;
+  return <Navigate to={id ? `/brands/${id}` : "/brands"} replace />;
+};
+
+const BrandIdRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={id ? `/brands/${id}` : "/brands"} replace />;
 };
 
 const App = () => (
@@ -106,10 +111,12 @@ const App = () => (
               <Route path="/insights" element={<Insights />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
-              <Route path="/studio" element={<Navigate to="/brand" replace />} />
+              <Route path="/studio" element={<Navigate to="/brands" replace />} />
               <Route path="/studio/:id" element={<StudioRedirect />} />
-              <Route path="/brand" element={<BrandHub />} />
-              <Route path="/brand/:id" element={<Brand />} />
+              <Route path="/brands" element={<BrandHub />} />
+              <Route path="/brands/:id" element={<Brand />} />
+              <Route path="/brand" element={<Navigate to="/brands" replace />} />
+              <Route path="/brand/:id" element={<BrandIdRedirect />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/assets" element={<Assets />} />

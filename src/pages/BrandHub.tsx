@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
@@ -63,20 +63,24 @@ export default function BrandHub() {
     return map;
   }, [filtered]);
 
-  const openInProject = (a: any) => `/brand/${a.project_id}?asset=${a.id}`;
+  const openInProject = (a: any) => `/brands/${a.project_id}?asset=${a.id}`;
   const projectLink = (cat: Category) => {
     // Prefer a project that has assets in this category, otherwise the first project.
     const withHit = filtered.find((a) => cat.types.includes(normalizeAssetType(a.asset_type)));
     const pid = withHit?.project_id || (activeProject !== "all" ? activeProject : projects[0]?.id);
-    return pid ? `/brand/${pid}?cat=${cat.types[0]}` : `/projects`;
+    return pid ? `/brands/${pid}?cat=${cat.types[0]}` : `/projects`;
   };
+
+  // Default to the most recent project's brand workspace when one exists.
+  if (!loading && projects.length > 0) {
+    return <Navigate to={`/brands/${projects[0].id}`} replace />;
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Brand Kit</div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Your brand, all in one place.</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Brands</h1>
           <p className="mt-1 text-sm text-neutral-500">Guidelines, colors, fonts, voice and copy — organized by category.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -150,7 +154,7 @@ export default function BrandHub() {
           <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Open a project workspace</div>
           <div className="flex flex-wrap gap-2">
             {projects.slice(0, 12).map((p) => (
-              <Link key={p.id} to={`/brand/${p.id}`} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-700 hover:border-neutral-400">
+              <Link key={p.id} to={`/brands/${p.id}`} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-700 hover:border-neutral-400">
                 {p.name}
               </Link>
             ))}

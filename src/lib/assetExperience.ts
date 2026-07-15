@@ -79,7 +79,7 @@ export function assetHref(asset: any): string {
   if (!asset?.id) return "/assets";
   if (getAssetExperience(asset) === "brand") {
     const pid = asset.project_id ? `/${asset.project_id}` : "";
-    return `/brand${pid}?asset=${asset.id}`;
+    return `/brands${pid}?asset=${asset.id}`;
   }
   return `/editor?id=${asset.id}`;
 }
