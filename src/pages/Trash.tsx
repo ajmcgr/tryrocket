@@ -51,7 +51,7 @@ const Trash = () => {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
-      <Link to="/assets" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900"><ArrowLeft className="h-4 w-4" /> Assets</Link>
+      <Link to="/designs" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900"><ArrowLeft className="h-4 w-4" /> Assets</Link>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">Trash</h1>
       <p className="mt-1 text-sm text-neutral-500">Deleted items live here for 30 days before being purged automatically.</p>
 

@@ -403,7 +403,7 @@ const Assets = () => {
         <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600">
           <span>Folder:</span>
           <span className="font-medium text-neutral-900">{activeFolderName || "Unknown folder"}</span>
-          <Link to="/assets" className="text-neutral-500 hover:text-neutral-900">Clear</Link>
+          <Link to="/designs" className="text-neutral-500 hover:text-neutral-900">Clear</Link>
         </div>
       )}
 

@@ -777,7 +777,7 @@ const Editor = () => {
         localStorage.removeItem("rocket.editor.bg.v1");
       } catch {}
       toast({ title: "Draft discarded", description: "Your unsaved design draft was cleared." });
-      nav("/assets");
+      nav("/designs");
       return;
     }
     if (!window.confirm("Move this design to Trash? Restore anytime from /trash.")) return;
@@ -787,7 +787,7 @@ const Editor = () => {
       return;
     }
     toast({ title: "Moved to Trash", description: "You can restore it from Trash anytime." });
-    nav("/assets");
+    nav("/designs");
   }, [assetId, bg, els.length, nav, toast]);
 
   /* attach transformer */

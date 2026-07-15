@@ -592,7 +592,7 @@ const Projects = () => {
                           </div>
                         </button>
                       ) : (
-                        <Link to={`/assets?folder=${folder.id}`} className="block">
+                        <Link to={`/designs?folder=${folder.id}`} className="block">
                           {renderCardPreview(latestFolderImages[folder.id], latestFolderLogotypes[folder.id])}
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
@@ -626,7 +626,7 @@ const Projects = () => {
                           {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
                         </button>
                       )}
-                      <Link to={`/assets?folder=${folder.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                      <Link to={`/designs?folder=${folder.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                         <div className="h-14 w-20 overflow-hidden rounded-lg bg-neutral-100">
                           {renderCardPreview(latestFolderImages[folder.id], latestFolderLogotypes[folder.id])}
                         </div>
