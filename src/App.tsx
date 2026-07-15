@@ -111,11 +111,12 @@ const App = () => (
               <Route path="/insights" element={<Insights />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
-              <Route path="/studio" element={<Navigate to="/brands" replace />} />
+              <Route path="/studio" element={<Navigate to="/files" replace />} />
               <Route path="/studio/:id" element={<StudioRedirect />} />
-              <Route path="/brands" element={<BrandHub />} />
+              <Route path="/files" element={<BrandHub />} />
+              <Route path="/brands" element={<Navigate to="/files" replace />} />
               <Route path="/brands/:id" element={<Brand />} />
-              <Route path="/brand" element={<Navigate to="/brands" replace />} />
+              <Route path="/brand" element={<Navigate to="/files" replace />} />
               <Route path="/brand/:id" element={<BrandIdRedirect />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />

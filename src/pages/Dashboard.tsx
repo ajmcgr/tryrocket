@@ -396,7 +396,7 @@ const Projects = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
-          <p className="mt-1 text-sm text-neutral-500">Group designs into projects, folders, and uploads.</p>
+          <p className="mt-1 text-sm text-neutral-500">Group designs into projects and folders.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -647,106 +647,6 @@ const Projects = () => {
             )}
           </section>
 
-          <section>
-            <SectionToolbar title="Uploads" total={sortedUploads.length} />
-            {sortedUploads.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
-                <ImageIcon className="mx-auto h-8 w-8 text-neutral-300" />
-                <p className="mt-3 text-sm text-neutral-500">No uploaded files yet.</p>
-              </div>
-            ) : view === "card" ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {sortedUploads.map((asset) => {
-                  const isSelected = selected.has(selKey("upload", asset.id));
-                  const currentFolderId = getDesignFolderId(asset);
-                  return (
-                    <div key={asset.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${isSelected ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
-                      {selectMode && (
-                        <button onClick={() => toggleSelected(selKey("upload", asset.id))} className="absolute left-2 top-2 z-10 rounded-md bg-white/95 p-1 shadow-sm">
-                          {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
-                        </button>
-                      )}
-                      {selectMode ? (
-                        <button onClick={() => toggleSelected(selKey("upload", asset.id))} className="block w-full text-left">
-                          <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100">
-                            <img src={asset.thumbnail_url || asset.image_url} alt={asset.title} className="h-full w-full object-cover" loading="lazy" />
-                          </div>
-                          <div className="p-4">
-                            <div className="truncate font-medium text-neutral-900">{asset.title || "Untitled upload"}</div>
-                            <div className="mt-0.5 text-xs text-neutral-500">{new Date(asset.created_at).toLocaleDateString()}</div>
-                          </div>
-                        </button>
-                      ) : (
-                        <Link to={`/editor?id=${asset.id}`} className="block" target="_blank" rel="noopener noreferrer">
-                          <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100">
-                            <img src={asset.thumbnail_url || asset.image_url} alt={asset.title} className="h-full w-full object-cover" loading="lazy" />
-                          </div>
-                          <div className="p-4">
-                            <div className="truncate font-medium text-neutral-900">{asset.title || "Untitled upload"}</div>
-                            <div className="mt-0.5 text-xs text-neutral-500">{new Date(asset.created_at).toLocaleDateString()}</div>
-                          </div>
-                        </Link>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="absolute right-2 top-2 rounded-md bg-white/90 p-1 opacity-0 transition group-hover:opacity-100"><MoreHorizontal className="h-4 w-4 text-neutral-700" /></button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 bg-white">
-                          <DropdownMenuItem asChild className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
-                            <Link to={`/editor?id=${asset.id}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Open in editor</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
-                              <FolderPlus className="mr-2 h-4 w-4" /> {currentFolderId ? "Move file to folder" : "Add file to folder"}
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuPortal>
-                              <DropdownMenuSubContent className="w-56 bg-white">
-                                <DropdownMenuLabel className="text-[10px] uppercase text-neutral-500">Folders</DropdownMenuLabel>
-                                {folders.length === 0 ? <div className="px-2 py-2 text-xs text-neutral-500">No folders yet.</div> : folders.map((folder) => (
-                                  <DropdownMenuItem key={folder.id} onClick={() => assignUploadToFolder(asset, folder.id)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
-                                    {folder.name}{currentFolderId === folder.id ? " ✓" : ""}
-                                  </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => createFolderAndAssignUpload(asset)} className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">+ New folder…</DropdownMenuItem>
-                                {currentFolderId && <DropdownMenuItem onClick={() => assignUploadToFolder(asset, null)} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Remove file from folder</DropdownMenuItem>}
-                              </DropdownMenuSubContent>
-                            </DropdownMenuPortal>
-                          </DropdownMenuSub>
-                          <DropdownMenuItem onClick={() => duplicateUpload(asset)}><Copy className="mr-2 h-4 w-4" /> Copy</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => delUpload(asset.id)}><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                {sortedUploads.map((asset) => {
-                  const isSelected = selected.has(selKey("upload", asset.id));
-                  return (
-                    <div key={asset.id} className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0">
-                      {selectMode && (
-                        <button onClick={() => toggleSelected(selKey("upload", asset.id))}>
-                          {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
-                        </button>
-                      )}
-                      <Link to={`/editor?id=${asset.id}`} className="flex min-w-0 flex-1 items-center gap-3" target="_blank" rel="noopener noreferrer">
-                        <img src={asset.thumbnail_url || asset.image_url} alt={asset.title} className="h-14 w-20 rounded-lg object-cover" loading="lazy" />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-neutral-900">{asset.title || "Untitled upload"}</div>
-                          <div className="text-xs text-neutral-500">{new Date(asset.created_at).toLocaleDateString()}</div>
-                        </div>
-                      </Link>
-                      <button onClick={() => duplicateUpload(asset)} className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs hover:bg-neutral-50">Copy</button>
-                      <button onClick={() => delUpload(asset.id)} className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs text-red-600 hover:bg-red-50">Delete</button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
         </div>
       )}
 
