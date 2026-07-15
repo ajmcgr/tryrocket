@@ -259,7 +259,12 @@ const BrandKitHub = () => {
           <ArrowLeft className="h-4 w-4" /> {project.name}
         </Link>
         <div className="flex gap-2">
-          <Link to={`/create?project=${id}`} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">Generate any asset</Link>
+          <button
+            onClick={() => setShareOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"
+          >
+            <Share2 className="h-4 w-4" /> Share
+          </button>
         </div>
       </div>
 
