@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { loadGoogleFont, type LogotypeState } from "@/lib/logotype";
 
 interface Props {
@@ -12,27 +12,54 @@ interface Props {
 
 /** Lightweight DOM-based logotype renderer used in cards. */
 export function Logotype({ state, className, fit = "natural", fontSizePx = 64 }: Props) {
+  const [, force] = useState(0);
   useEffect(() => {
     loadGoogleFont(state.font, [state.weight]);
+    let cancelled = false;
+    (async () => {
+      try { await (document as any).fonts?.load?.(`${state.weight} 64px '${state.font}'`); } catch {}
+      if (!cancelled) force((t) => t + 1);
+    })();
+    return () => { cancelled = true; };
   }, [state.font, state.weight]);
 
+  const displayText = useMemo(() => {
+    const raw = String(state.text || "").trim() || "Brand";
+    if (state.transform === "uppercase") return raw.toUpperCase();
+    if (state.transform === "lowercase") return raw.toLowerCase();
+    if (state.transform === "capitalize") return raw.replace(/\b\w/g, (c) => c.toUpperCase());
+    return raw;
+  }, [state.text, state.transform]);
+
   if (fit === "contain") {
+    // Auto-fit via SVG viewBox — always scales to the card regardless of size.
+    const fontSize = 100;
+    const approxWidth = Math.max(
+      1,
+      displayText.length * fontSize * 0.6 + state.letterSpacing * fontSize * Math.max(0, displayText.length - 1),
+    );
+    const height = fontSize * 1.25;
+    const pad = fontSize * 0.2;
     return (
-      <div className={`flex h-full w-full items-center justify-center overflow-hidden px-4 ${className || ""}`}>
-        <span
-          style={{
-            fontFamily: `'${state.font}', ui-sans-serif, system-ui, sans-serif`,
-            fontWeight: state.weight,
-            color: state.color,
-            letterSpacing: `${state.letterSpacing}em`,
-            textTransform: state.transform,
-            fontSize: "clamp(20px, 7vw, 64px)",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
+      <div className={`flex h-full w-full items-center justify-center overflow-hidden p-4 ${className || ""}`}>
+        <svg
+          viewBox={`0 0 ${approxWidth + pad * 2} ${height + pad * 2}`}
+          preserveAspectRatio="xMidYMid meet"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ width: "100%", height: "100%", display: "block" }}
         >
-          {state.text}
-        </span>
+          <text
+            x={pad}
+            y={pad + fontSize}
+            fill={state.color}
+            fontFamily={`'${state.font}', ui-sans-serif, system-ui, sans-serif`}
+            fontWeight={state.weight}
+            fontSize={fontSize}
+            letterSpacing={state.letterSpacing * fontSize}
+          >
+            {displayText}
+          </text>
+        </svg>
       </div>
     );
   }
@@ -51,7 +78,7 @@ export function Logotype({ state, className, fit = "natural", fontSizePx = 64 }:
         whiteSpace: "nowrap",
       }}
     >
-      {state.text}
+      {displayText}
     </span>
   );
 }
