@@ -75,11 +75,6 @@ export default function BrandHub() {
     return pid ? `/brands/${pid}?cat=${cat.types[0]}` : `/projects`;
   };
 
-  // Default to the most recent project's brand workspace when one exists.
-  if (!loading && projects.length > 0) {
-    return <Navigate to={`/brands/${projects[0].id}`} replace />;
-  }
-
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
