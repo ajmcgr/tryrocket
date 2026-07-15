@@ -12,34 +12,48 @@ interface Props {
 
 /** Lightweight DOM-based logotype renderer used in cards. */
 export function Logotype({ state, className, fit = "natural", fontSizePx = 64 }: Props) {
+  // Harden against partial/legacy editor_state where fields may be missing.
+  const safe = {
+    text: String((state as any)?.text ?? "").trim() || "Brand",
+    font: String((state as any)?.font || "Space Grotesk"),
+    weight: Number((state as any)?.weight) || 600,
+    color: String((state as any)?.color || "#0A0A0A"),
+    letterSpacing: Number.isFinite(Number((state as any)?.letterSpacing))
+      ? Number((state as any).letterSpacing)
+      : 0,
+    transform: ((state as any)?.transform || "none") as LogotypeState["transform"],
+  };
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    loadGoogleFont(state.font, [state.weight]);
+    loadGoogleFont(safe.font, [safe.weight]);
     let cancelled = false;
     (async () => {
-      try { await (document as any).fonts?.load?.(`${state.weight} 100px '${state.font}'`); } catch {}
+      try { await (document as any).fonts?.load?.(`${safe.weight} 100px '${safe.font}'`); } catch {}
       if (!cancelled) setTick((t) => t + 1);
     })();
     return () => { cancelled = true; };
-  }, [state.font, state.weight]);
+  }, [safe.font, safe.weight]);
 
   const displayText = useMemo(() => {
-    const raw = String(state.text || "").trim() || "Brand";
-    if (state.transform === "uppercase") return raw.toUpperCase();
-    if (state.transform === "lowercase") return raw.toLowerCase();
-    if (state.transform === "capitalize") return raw.replace(/\b\w/g, (c) => c.toUpperCase());
+    const raw = safe.text;
+    if (safe.transform === "uppercase") return raw.toUpperCase();
+    if (safe.transform === "lowercase") return raw.toLowerCase();
+    if (safe.transform === "capitalize") return raw.replace(/\b\w/g, (c) => c.toUpperCase());
     return raw;
-  }, [state.text, state.transform]);
+  }, [safe.text, safe.transform]);
 
   if (fit === "contain") {
     // Auto-fit via SVG viewBox — measure with canvas so width matches the real font.
     const fontSize = 100;
-    const measuredWidth = measureTextWidth(displayText, state.font, state.weight, fontSize, state.letterSpacing);
+    const measuredWidth = measureTextWidth(displayText, safe.font, safe.weight, fontSize, safe.letterSpacing);
     // tick is intentionally referenced so the memoized measurement re-runs after font load.
     void tick;
     const height = fontSize * 1.25;
     const pad = fontSize * 0.25;
-    const vbWidth = Math.max(1, measuredWidth) + pad * 2;
+    const safeMeasured = Number.isFinite(measuredWidth) && measuredWidth > 0
+      ? measuredWidth
+      : Math.max(1, displayText.length) * fontSize * 0.62;
+    const vbWidth = Math.max(1, safeMeasured) + pad * 2;
     const vbHeight = height + pad * 2;
     return (
       <div className={`flex h-full w-full items-center justify-center overflow-hidden p-4 ${className || ""}`}>
@@ -52,11 +66,11 @@ export function Logotype({ state, className, fit = "natural", fontSizePx = 64 }:
           <text
             x={pad}
             y={pad + fontSize}
-            fill={state.color}
-            fontFamily={`'${state.font}', ui-sans-serif, system-ui, sans-serif`}
-            fontWeight={state.weight}
+            fill={safe.color}
+            fontFamily={`'${safe.font}', ui-sans-serif, system-ui, sans-serif`}
+            fontWeight={safe.weight}
             fontSize={fontSize}
-            letterSpacing={state.letterSpacing * fontSize}
+            letterSpacing={safe.letterSpacing * fontSize}
           >
             {displayText}
           </text>
@@ -69,11 +83,11 @@ export function Logotype({ state, className, fit = "natural", fontSizePx = 64 }:
     <span
       className={className}
       style={{
-        fontFamily: `'${state.font}', ui-sans-serif, system-ui, sans-serif`,
-        fontWeight: state.weight,
-        color: state.color,
-        letterSpacing: `${state.letterSpacing}em`,
-        textTransform: state.transform,
+        fontFamily: `'${safe.font}', ui-sans-serif, system-ui, sans-serif`,
+        fontWeight: safe.weight,
+        color: safe.color,
+        letterSpacing: `${safe.letterSpacing}em`,
+        textTransform: safe.transform,
         fontSize: fontSizePx,
         lineHeight: 1,
         whiteSpace: "nowrap",
