@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { assetHref, isBrandAsset } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Loader2, Zap, X, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, List, ArrowUpDown, CheckSquare, Square, Loader2, Zap, X, RefreshCw } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import { handleAiError } from "@/lib/aiErrors";
+import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
 const supabase = _sb as any;
 
 type WF = "brand" | "design" | "launch" | "promote" | "other";
@@ -44,6 +45,9 @@ const ProjectDetail = () => {
   const [completionErrors, setCompletionErrors] = useState<Record<string, string>>({});
   const [completePanelOpen, setCompletePanelOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<CollectionView>("card");
+  const [sort, setSort] = useState<DesignSort>("date");
+  const [selectMode, setSelectMode] = useState(false);
   const toggleSelect = (assetId: string) => setSelected(prev => {
     const next = new Set(prev);
     next.has(assetId) ? next.delete(assetId) : next.add(assetId);
@@ -206,6 +210,7 @@ const ProjectDetail = () => {
   const counts: Record<WF, number> = { brand: 0, design: 0, launch: 0, promote: 0, other: 0 };
   for (const a of assets) counts[wfOf(a.asset_type)]++;
   const visible = tab === "all" ? assets : assets.filter(a => wfOf(a.asset_type) === tab);
+  const visibleSorted = useMemo(() => sortByOption(visible, sort, a => a.title, a => a.created_at), [visible, sort]);
   const tabs: ("all" | WF)[] = ["all", "brand", "design", "launch", "promote", "other"];
 
   return (
@@ -244,6 +249,35 @@ const ProjectDetail = () => {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {assets.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
+            <button onClick={() => setView("card")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "card" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <LayoutGrid className="h-3.5 w-3.5" /> Card
+            </button>
+            <button onClick={() => setView("list")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "list" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <List className="h-3.5 w-3.5" /> List
+            </button>
+          </div>
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
+            <button onClick={() => setSort("name")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${sort === "name" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <ArrowUpDown className="h-3.5 w-3.5" /> Name (A–Z)
+            </button>
+            <button onClick={() => setSort("date")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${sort === "date" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              Date created
+            </button>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => { setSelectMode(v => !v); clearSelection(); }}
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition ${selectMode ? "border-brand bg-brand/10 text-brand" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}
+            >
+              {selectMode ? <X className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />} {selectMode ? "Cancel" : "Select"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -291,11 +325,11 @@ const ProjectDetail = () => {
             <button onClick={openPicker} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add existing asset</button>
           </div>
         </div>
-      ) : (
+      ) : view === "card" ? (
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {visible.map(a => (
+          {visibleSorted.map(a => (
             <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white ${selected.has(a.id) ? "border-brand ring-2 ring-brand/40" : "border-neutral-200"}`}>
-              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0) { e.preventDefault(); toggleSelect(a.id); } }}>
+              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0 || selectMode) { e.preventDefault(); toggleSelect(a.id); } }}>
                 <div className="aspect-square w-full bg-neutral-50">
                   {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
                     a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
@@ -310,12 +344,39 @@ const ProjectDetail = () => {
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(a.id); }}
-                className={`absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-md border bg-white/95 transition ${selected.has(a.id) ? "border-brand text-brand opacity-100" : "border-neutral-300 text-transparent opacity-0 group-hover:opacity-100"}`}
+                className={`absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-md border bg-white/95 transition ${selected.has(a.id) || selectMode ? "opacity-100" : "opacity-0 group-hover:opacity-100"} ${selected.has(a.id) ? "border-brand text-brand" : "border-neutral-300 text-transparent"}`}
                 title={selected.has(a.id) ? "Deselect" : "Select"}
               >
                 {selected.has(a.id) && <Check className="h-4 w-4" />}
               </button>
               <button onClick={() => removeAsset(a.id)} className="absolute right-2 top-2 rounded-md bg-white/90 p-1 opacity-0 transition group-hover:opacity-100" title="Remove from project"><Trash2 className="h-4 w-4 text-red-600" /></button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+          {visibleSorted.map(a => (
+            <div key={a.id} className={`flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0 ${selected.has(a.id) ? "bg-brand/5" : ""}`}>
+              <button
+                onClick={() => toggleSelect(a.id)}
+                className="shrink-0 rounded-md p-1"
+                aria-label={selected.has(a.id) ? "Deselect" : "Select"}
+              >
+                {selected.has(a.id) ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
+              </button>
+              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0 || selectMode) { e.preventDefault(); toggleSelect(a.id); } }} className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="h-14 w-20 overflow-hidden rounded-lg bg-neutral-100">
+                  {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
+                    a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
+                    isBrandAsset(a) ? <BrandCover asset={a} /> :
+                    <div className="flex h-full w-full items-center justify-center p-2 text-center text-[10px] text-neutral-500"><div className="line-clamp-3 whitespace-pre-wrap">{(a.content || "").slice(0, 80)}</div></div>}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-neutral-900">{a.title}</div>
+                  <div className="mt-0.5 text-xs text-neutral-500">{a.asset_type} · {new Date(a.created_at).toLocaleDateString()}</div>
+                </div>
+              </Link>
+              <button onClick={() => removeAsset(a.id)} className="rounded-md p-1 text-neutral-500 hover:bg-neutral-100" title="Remove from project"><Trash2 className="h-4 w-4 text-red-600" /></button>
             </div>
           ))}
         </div>
@@ -325,7 +386,7 @@ const ProjectDetail = () => {
         <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
           <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-2 shadow-lg">
             <span className="pl-2 pr-1 text-sm font-medium">{selected.size} selected</span>
-            <button onClick={() => selectAllVisible(visible)} className="rounded-full px-3 py-1 text-xs text-neutral-600 hover:bg-neutral-100">Select all</button>
+            <button onClick={() => selectAllVisible(visibleSorted)} className="rounded-full px-3 py-1 text-xs text-neutral-600 hover:bg-neutral-100">Select all</button>
             <button onClick={bulkRemoveFromProject} className="rounded-full border border-neutral-200 px-3 py-1 text-xs hover:bg-neutral-50">Remove from project</button>
             <button onClick={bulkTrash} className="rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700">Move to Trash</button>
             <button onClick={clearSelection} className="rounded-full px-2 py-1 text-neutral-500 hover:bg-neutral-100"><X className="h-4 w-4" /></button>
