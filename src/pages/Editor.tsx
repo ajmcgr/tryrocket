@@ -393,7 +393,13 @@ const Editor = () => {
 
   /* state + history */
   const [els, _setEls] = useState<El[]>(() => {
-    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch {}
+    // If we're opening a specific asset, start empty and wait for the fetch to
+    // hydrate. Otherwise flash previously-edited design from localStorage.
+    try {
+      const hasAssetId = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("id");
+      if (hasAssetId) return [];
+      const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw);
+    } catch {}
     return [];
   });
   const [bg, setBg] = useState<string>(() => {
