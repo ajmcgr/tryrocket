@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { loadGoogleFont, type LogotypeState } from "@/lib/logotype";
 
 interface Props {
@@ -12,27 +12,55 @@ interface Props {
 
 /** Lightweight DOM-based logotype renderer used in cards. */
 export function Logotype({ state, className, fit = "natural", fontSizePx = 64 }: Props) {
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     loadGoogleFont(state.font, [state.weight]);
+    let cancelled = false;
+    (async () => {
+      try { await (document as any).fonts?.load?.(`${state.weight} 100px '${state.font}'`); } catch {}
+      if (!cancelled) setTick((t) => t + 1);
+    })();
+    return () => { cancelled = true; };
   }, [state.font, state.weight]);
 
+  const displayText = useMemo(() => {
+    const raw = String(state.text || "").trim() || "Brand";
+    if (state.transform === "uppercase") return raw.toUpperCase();
+    if (state.transform === "lowercase") return raw.toLowerCase();
+    if (state.transform === "capitalize") return raw.replace(/\b\w/g, (c) => c.toUpperCase());
+    return raw;
+  }, [state.text, state.transform]);
+
   if (fit === "contain") {
+    // Auto-fit via SVG viewBox — measure with canvas so width matches the real font.
+    const fontSize = 100;
+    const measuredWidth = measureTextWidth(displayText, state.font, state.weight, fontSize, state.letterSpacing);
+    // tick is intentionally referenced so the memoized measurement re-runs after font load.
+    void tick;
+    const height = fontSize * 1.25;
+    const pad = fontSize * 0.25;
+    const vbWidth = Math.max(1, measuredWidth) + pad * 2;
+    const vbHeight = height + pad * 2;
     return (
-      <div className={`flex h-full w-full items-center justify-center overflow-hidden px-4 ${className || ""}`}>
-        <span
-          style={{
-            fontFamily: `'${state.font}', ui-sans-serif, system-ui, sans-serif`,
-            fontWeight: state.weight,
-            color: state.color,
-            letterSpacing: `${state.letterSpacing}em`,
-            textTransform: state.transform,
-            fontSize: "clamp(20px, 7vw, 64px)",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
+      <div className={`flex h-full w-full items-center justify-center overflow-hidden p-4 ${className || ""}`}>
+        <svg
+          viewBox={`0 0 ${vbWidth} ${vbHeight}`}
+          preserveAspectRatio="xMidYMid meet"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ width: "100%", height: "100%", display: "block" }}
         >
-          {state.text}
-        </span>
+          <text
+            x={pad}
+            y={pad + fontSize}
+            fill={state.color}
+            fontFamily={`'${state.font}', ui-sans-serif, system-ui, sans-serif`}
+            fontWeight={state.weight}
+            fontSize={fontSize}
+            letterSpacing={state.letterSpacing * fontSize}
+          >
+            {displayText}
+          </text>
+        </svg>
       </div>
     );
   }
@@ -51,9 +79,22 @@ export function Logotype({ state, className, fit = "natural", fontSizePx = 64 }:
         whiteSpace: "nowrap",
       }}
     >
-      {state.text}
+      {displayText}
     </span>
   );
+}
+
+let _measureCtx: CanvasRenderingContext2D | null = null;
+function measureTextWidth(text: string, font: string, weight: number, size: number, letterSpacing: number): number {
+  try {
+    if (!_measureCtx) _measureCtx = document.createElement("canvas").getContext("2d");
+    if (!_measureCtx) return text.length * size * 0.62;
+    _measureCtx.font = `${weight} ${size}px '${font}', ui-sans-serif, system-ui, sans-serif`;
+    const w = _measureCtx.measureText(text).width;
+    return w + letterSpacing * size * Math.max(0, text.length - 1);
+  } catch {
+    return text.length * size * 0.62;
+  }
 }
 
 /** Build an inline SVG string for export — embeds the rendered text with current font. */

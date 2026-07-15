@@ -842,7 +842,7 @@ const Editor = () => {
       setSelectedId(next.id);
       return;
     }
-    const style = copiedStyleRef.current;
+    const style = copiedStyleRef.current as any;
     if (style && selected) {
       if (selected.kind === "text") {
         update(selected.id, {
@@ -1715,7 +1715,6 @@ const Editor = () => {
               {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </button>
           </div>
-        </div>
       </main>
       <CanvasContextMenu />
       </div>
