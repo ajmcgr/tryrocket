@@ -1675,11 +1675,54 @@ const Editor = () => {
                   width={STAGE_W}
                   height={STAGE_H}
                   onContextMenu={(e) => {
-                    if (e.target === e.target.getStage()) setSelectedId(null);
+                    if (e.target === e.target.getStage()) { setSelectedId(null); setExtraSelectedIds(new Set()); }
                     openCanvasMenu(e.evt);
                   }}
-                  onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
-                  onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
+                  onMouseDown={(e) => {
+                    if (e.target !== e.target.getStage()) return;
+                    if (!e.evt.shiftKey) { setSelectedId(null); setExtraSelectedIds(new Set()); }
+                    const stage = e.target.getStage();
+                    const pos = stage?.getPointerPosition();
+                    if (!pos) return;
+                    marqueeStartRef.current = { x: pos.x, y: pos.y };
+                    setMarquee({ x: pos.x, y: pos.y, w: 0, h: 0 });
+                  }}
+                  onMouseMove={(e) => {
+                    const start = marqueeStartRef.current;
+                    if (!start) return;
+                    const stage = e.target.getStage();
+                    const pos = stage?.getPointerPosition();
+                    if (!pos) return;
+                    setMarquee({
+                      x: Math.min(start.x, pos.x),
+                      y: Math.min(start.y, pos.y),
+                      w: Math.abs(pos.x - start.x),
+                      h: Math.abs(pos.y - start.y),
+                    });
+                  }}
+                  onMouseUp={(e) => {
+                    const box = marquee;
+                    marqueeStartRef.current = null;
+                    setMarquee(null);
+                    if (!box || (box.w < 3 && box.h < 3)) return;
+                    const additive = e.evt.shiftKey;
+                    const hits = els.filter((el) => {
+                      if (!el.visible || el.locked) return false;
+                      return el.x < box.x + box.w && el.x + el.w > box.x && el.y < box.y + box.h && el.y + el.h > box.y;
+                    }).map((el) => el.id);
+                    if (hits.length === 0) return;
+                    if (additive) {
+                      setExtraSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        hits.forEach((id) => { if (id !== selectedId) next.add(id); });
+                        return next;
+                      });
+                    } else {
+                      setSelectedId(hits[0]);
+                      setExtraSelectedIds(new Set(hits.slice(1)));
+                    }
+                  }}
+                  onTouchStart={(e) => { if (e.target === e.target.getStage()) { setSelectedId(null); setExtraSelectedIds(new Set()); } }}
                 >
                   <Layer listening={false}>
                     <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={bg} />
@@ -1704,6 +1747,19 @@ const Editor = () => {
                   </Layer>
                   <Layer>
                     {els.map(renderNode)}
+                    {marquee && (marquee.w > 0 || marquee.h > 0) && (
+                      <Rect
+                        x={marquee.x}
+                        y={marquee.y}
+                        width={marquee.w}
+                        height={marquee.h}
+                        fill="rgba(59,130,246,0.10)"
+                        stroke="#3b82f6"
+                        strokeWidth={1}
+                        dash={[4, 4]}
+                        listening={false}
+                      />
+                    )}
                     <Transformer
                       ref={trRef}
                       rotateEnabled
