@@ -364,6 +364,51 @@ const BrandKitHub = () => {
           </div>
         </div>
       )}
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-2xl bg-white text-neutral-900 border-neutral-200">
+          <DialogHeader><DialogTitle>Share “{project.name}”</DialogTitle></DialogHeader>
+
+          {shareUrl && (
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+              <LinkIcon className="h-3.5 w-3.5 text-emerald-600" />
+              <span className="flex-1 truncate font-mono text-emerald-900">{shareUrl}</span>
+              <button onClick={copyLink} className="rounded-md border border-emerald-300 bg-white px-2 py-1 hover:bg-emerald-100">Copy</button>
+            </div>
+          )}
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Share</h3>
+              <button onClick={nativeShare} className="text-xs text-brand hover:underline">System share…</button>
+            </div>
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+              <ShareTile Icon={LinkIcon} label="Copy link" onClick={copyLink} />
+              <ShareTile Icon={XLogo} label="X" onClick={() => openSocial("twitter")} iconClass="bg-neutral-900 text-white" />
+              <ShareTile Icon={Facebook} label="Facebook" onClick={() => openSocial("facebook")} iconClass="bg-blue-600 text-white" />
+              <ShareTile Icon={Send} label="Messenger" onClick={() => openSocial("messenger")} iconClass="bg-gradient-to-br from-purple-500 to-pink-500 text-white" />
+              <ShareTile Icon={MessageCircle} label="WhatsApp" onClick={() => openSocial("whatsapp")} iconClass="bg-green-500 text-white" />
+              <ShareTile Icon={MessageSquareIcon} label="iMessage" onClick={() => openSocial("imessage")} iconClass="bg-green-400 text-white" />
+              <ShareTile Icon={Mail} label="Email" onClick={() => openSocial("email")} iconClass="bg-neutral-100 text-neutral-700" />
+            </div>
+            <p className="mt-2 text-[11px] text-neutral-500">Instagram / TikTok / YouTube don't allow direct web-share — use the system share sheet on mobile.</p>
+          </div>
+
+          {shareUrl && (
+            <div className="mt-2 flex items-center justify-between rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-700">
+                <Lock className="h-3.5 w-3.5" /> Public link is active
+              </div>
+              <button
+                onClick={disableShare}
+                className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+              >
+                Disable link
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
