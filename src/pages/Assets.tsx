@@ -366,9 +366,10 @@ const Assets = () => {
     const rasterPreview = asset.thumbnail_url || asset.image_url;
     const isImage = rasterPreview && !isLogotype && !isCanvas && !fallbackLogotype;
     const fallbackText = safePreviewText(asset);
+    const brand = !isLogotype && !isCanvas && !fallbackLogotype && !isImage && isBrandAsset(asset);
     return (
       <>
-        {isLogotype ? <Logotype state={asset.editor_state as any} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : (
+        {isLogotype ? <Logotype state={asset.editor_state as any} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : brand ? <BrandCover asset={asset} /> : (
           <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
             <div className="line-clamp-6 whitespace-pre-wrap">{fallbackText ? fallbackText.slice(0, 200) : "No preview available"}</div>
           </div>
