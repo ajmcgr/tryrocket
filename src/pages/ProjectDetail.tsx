@@ -296,11 +296,11 @@ const ProjectDetail = () => {
             <button onClick={openPicker} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add existing asset</button>
           </div>
         </div>
-      ) : (
+      ) : view === "card" ? (
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {visible.map(a => (
+          {visibleSorted.map(a => (
             <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white ${selected.has(a.id) ? "border-brand ring-2 ring-brand/40" : "border-neutral-200"}`}>
-              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0) { e.preventDefault(); toggleSelect(a.id); } }}>
+              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0 || selectMode) { e.preventDefault(); toggleSelect(a.id); } }}>
                 <div className="aspect-square w-full bg-neutral-50">
                   {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
                     a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
@@ -315,12 +315,39 @@ const ProjectDetail = () => {
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(a.id); }}
-                className={`absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-md border bg-white/95 transition ${selected.has(a.id) ? "border-brand text-brand opacity-100" : "border-neutral-300 text-transparent opacity-0 group-hover:opacity-100"}`}
+                className={`absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-md border bg-white/95 transition ${selected.has(a.id) || selectMode ? "opacity-100" : "opacity-0 group-hover:opacity-100"} ${selected.has(a.id) ? "border-brand text-brand" : "border-neutral-300 text-transparent"}`}
                 title={selected.has(a.id) ? "Deselect" : "Select"}
               >
                 {selected.has(a.id) && <Check className="h-4 w-4" />}
               </button>
               <button onClick={() => removeAsset(a.id)} className="absolute right-2 top-2 rounded-md bg-white/90 p-1 opacity-0 transition group-hover:opacity-100" title="Remove from project"><Trash2 className="h-4 w-4 text-red-600" /></button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+          {visibleSorted.map(a => (
+            <div key={a.id} className={`flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0 ${selected.has(a.id) ? "bg-brand/5" : ""}`}>
+              <button
+                onClick={() => toggleSelect(a.id)}
+                className="shrink-0 rounded-md p-1"
+                aria-label={selected.has(a.id) ? "Deselect" : "Select"}
+              >
+                {selected.has(a.id) ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
+              </button>
+              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0 || selectMode) { e.preventDefault(); toggleSelect(a.id); } }} className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="h-14 w-20 overflow-hidden rounded-lg bg-neutral-100">
+                  {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
+                    a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
+                    isBrandAsset(a) ? <BrandCover asset={a} /> :
+                    <div className="flex h-full w-full items-center justify-center p-2 text-center text-[10px] text-neutral-500"><div className="line-clamp-3 whitespace-pre-wrap">{(a.content || "").slice(0, 80)}</div></div>}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-neutral-900">{a.title}</div>
+                  <div className="mt-0.5 text-xs text-neutral-500">{a.asset_type} · {new Date(a.created_at).toLocaleDateString()}</div>
+                </div>
+              </Link>
+              <button onClick={() => removeAsset(a.id)} className="rounded-md p-1 text-neutral-500 hover:bg-neutral-100" title="Remove from project"><Trash2 className="h-4 w-4 text-red-600" /></button>
             </div>
           ))}
         </div>
