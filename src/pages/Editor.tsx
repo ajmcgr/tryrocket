@@ -25,6 +25,7 @@ import {
 import type { AppShellOutletContext } from "@/components/AppShell";
 import { defaultLogotypeState, LOGOTYPE_FONTS, pickLogotypeText, type LogotypeState, loadGoogleFont } from "@/lib/logotype";
 import { isBrandAsset } from "@/lib/assetExperience";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 const supabase = _sb as any;
 
 type Base = {
