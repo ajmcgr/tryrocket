@@ -1368,17 +1368,27 @@ const Editor = () => {
       if (meta && e.key.toLowerCase() === "c") { e.preventDefault(); copySelectedElement(); return; }
       if (meta && e.key.toLowerCase() === "v") { e.preventDefault(); pasteClipboard(); return; }
       if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); if (selectedId) duplicate(selectedId); return; }
-      if (!selectedId) return;
-      if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); remove(selectedId); return; }
+      if (allSelectedIds.length === 0) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        const ids = new Set(allSelectedIds);
+        setEls((p) => p.filter((el) => !ids.has(el.id)));
+        setSelectedId(null);
+        setExtraSelectedIds(new Set());
+        return;
+      }
       const step = e.shiftKey ? 10 : 1;
-      if (e.key === "ArrowLeft")  { e.preventDefault(); update(selectedId, { x: (selected!.x - step) } as any); }
-      if (e.key === "ArrowRight") { e.preventDefault(); update(selectedId, { x: (selected!.x + step) } as any); }
-      if (e.key === "ArrowUp")    { e.preventDefault(); update(selectedId, { y: (selected!.y - step) } as any); }
-      if (e.key === "ArrowDown")  { e.preventDefault(); update(selectedId, { y: (selected!.y + step) } as any); }
+      const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+      const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+      if (dx || dy) {
+        e.preventDefault();
+        const ids = new Set(allSelectedIds);
+        setEls((p) => p.map((el) => ids.has(el.id) ? ({ ...el, x: el.x + dx, y: el.y + dy } as El) : el));
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [copySelectedElement, copySelectedStyle, pasteClipboard, redo, selected, selectedId, undo]);
+  }, [allSelectedIds, copySelectedElement, copySelectedStyle, duplicate, pasteClipboard, redo, selected, selectedId, undo]);
 
   /* inline text editor overlay */
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
