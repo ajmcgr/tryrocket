@@ -101,7 +101,7 @@ export default function RelatedVariantsGrid({ asset }: { asset: any }) {
               to={`/editor?id=${a.id}`}
               title={a.title}
               className={`group relative block h-20 w-20 shrink-0 overflow-hidden rounded-lg border transition ${active ? "border-brand ring-2 ring-brand/40" : "border-neutral-200 hover:border-neutral-300"}`}
-            >
+             target="_blank" rel="noopener noreferrer">
               {a.image_url ? (
                 <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" />
               ) : (

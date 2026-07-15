@@ -250,7 +250,7 @@ const Insights = () => {
                 {recent.length === 0 && <li className="py-4 text-sm text-neutral-500">No assets yet.</li>}
                 {recent.map(a => (
                   <li key={a.id} className="py-2.5">
-                    <Link to={`/editor?id=${a.id}`} className="flex items-center justify-between gap-3 group">
+                    <Link to={`/editor?id=${a.id}`} className="flex items-center justify-between gap-3 group" target="_blank" rel="noopener noreferrer">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-neutral-900 group-hover:underline">{a.title || "Untitled"}</div>
                         <div className="truncate text-xs text-neutral-500">{TYPE_LABEL[a.asset_type || ""] || a.asset_type || "asset"} · {new Date(a.created_at).toLocaleDateString()}</div>
