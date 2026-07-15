@@ -487,14 +487,42 @@ const Generate = () => {
         })();
         const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
         const workspace_id = await ensureActiveWorkspaceId();
+        // Auto-create a project for this chat if one isn't already attached
+        let effectiveProjectId: string | null = projectId || null;
+        if (!effectiveProjectId) {
+          const projectName = (() => {
+            const explicitUrl = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b)/i)?.[1];
+            if (explicitUrl) {
+              const cleaned = explicitUrl.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
+              return cleaned;
+            }
+            return p.length > 60 ? `${p.slice(0, 60).trim()}…` : p;
+          })();
+          try {
+            const { data: proj } = await supabase
+              .from("projects")
+              .insert({ user_id: user.id, workspace_id, name: projectName } as any)
+              .select("id")
+              .single();
+            if (proj?.id) effectiveProjectId = proj.id as string;
+          } catch { /* non-fatal */ }
+        }
         newChatId = await createChatRecord({
           supabase,
           userId: user.id,
           workspaceId: workspace_id,
-          projectId,
+          projectId: effectiveProjectId,
           title,
           prompt: p,
         });
+        // Ensure downstream inserts get project_id too
+        if (effectiveProjectId && !projectId) {
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.set("project", effectiveProjectId);
+            window.history.replaceState({}, "", url.toString());
+          } catch { /* noop */ }
+        }
       }
       // Best-effort brand context: URL in prompt → scrape-url, else project.brand_context, else most recent asset context
       let sharedCtx: any = activeBrandCtx || null;
