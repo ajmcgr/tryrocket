@@ -4,10 +4,12 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   ArrowLeft, Sparkles, Palette, Type, MessageSquare, Layers, Shapes, Image as ImageIcon,
   Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check, Trash2, X,
+  Share2, Facebook, Send, MessageCircle, MessageSquare as MessageSquareIcon, Mail, Link as LinkIcon, Lock,
 } from "lucide-react";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // A hub "item" maps a Looka-style asset slot to a generator entry-point.
 // asset_type values reuse existing Rocket types where possible; new visual
@@ -89,6 +91,12 @@ const GROUPS: Group[] = [
   },
 ];
 
+const XLogo = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
 const BrandKitHub = () => {
   const { id } = useParams();
   const [project, setProject] = useState<any>(null);
@@ -97,6 +105,85 @@ const BrandKitHub = () => {
   const [activeGroup, setActiveGroup] = useState<string>("brand");
   const { toast } = useToast();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+
+  const shareUrl = project?.share_token
+    ? `${window.location.origin}/share/project/${project.share_token}`
+    : null;
+
+  const ensureShareToken = async () => {
+    if (!id) return null;
+    if (project?.share_token) return shareUrl;
+    setShareBusy(true);
+    const token = (crypto as any).randomUUID();
+    const { error } = await supabase.from("projects").update({ share_token: token }).eq("id", id);
+    if (error) {
+      toast({ title: "Failed to enable sharing", description: error.message, variant: "destructive" });
+      setShareBusy(false);
+      return null;
+    }
+    setProject((prev: any) => (prev ? { ...prev, share_token: token } : prev));
+    setShareBusy(false);
+    return `${window.location.origin}/share/project/${token}`;
+  };
+
+  const shareText = `${project?.name || "Rocket project"}`;
+  const openSocial = async (kind: "facebook" | "twitter" | "whatsapp" | "imessage" | "email" | "messenger") => {
+    const url = await ensureShareToken();
+    if (!url) return;
+    const enc = encodeURIComponent;
+    const u = enc(url);
+    const t = enc(shareText);
+    let target = "";
+    switch (kind) {
+      case "facebook": target = `https://www.facebook.com/sharer/sharer.php?u=${u}`; break;
+      case "twitter": target = `https://twitter.com/intent/tweet?text=${t}&url=${u}`; break;
+      case "whatsapp": target = `https://wa.me/?text=${t}%20${u}`; break;
+      case "imessage": target = `sms:&body=${t}%20${url}`; break;
+      case "email": target = `mailto:?subject=${enc(project?.name || "Rocket project")}&body=${t}%0A%0A${u}`; break;
+      case "messenger": target = `https://www.facebook.com/dialog/send?link=${u}&app_id=140586622674265&redirect_uri=${u}`; break;
+    }
+    window.open(target, "_blank", "noopener,noreferrer");
+  };
+
+  const copyLink = async () => {
+    const url = await ensureShareToken();
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    toast({ title: "Link copied" });
+  };
+
+  const nativeShare = async () => {
+    const url = await ensureShareToken();
+    if (!url) return;
+    if (navigator.share) {
+      try { await navigator.share({ title: project?.name || "Rocket project", text: shareText, url }); } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied" });
+    }
+  };
+
+  const disableShare = async () => {
+    if (!id) return;
+    await supabase.from("projects").update({ share_token: null }).eq("id", id);
+    setProject((prev: any) => (prev ? { ...prev, share_token: null } : prev));
+    toast({ title: "Public link disabled" });
+  };
+
+  const ShareTile = ({ Icon, label, onClick, iconClass }: any) => (
+    <button
+      onClick={onClick}
+      disabled={shareBusy}
+      className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-200 bg-white p-3 text-center text-neutral-800 transition hover:border-brand hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${iconClass || "bg-neutral-100 text-neutral-700"}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="text-[11px] font-medium text-neutral-800">{label}</div>
+    </button>
+  );
   const toggleSelect = (assetId: string) => setSelected(prev => {
     const next = new Set(prev);
     next.has(assetId) ? next.delete(assetId) : next.add(assetId);
@@ -132,7 +219,7 @@ const BrandKitHub = () => {
     (async () => {
       if (!id) return;
       const [p, a] = await Promise.all([
-        supabase.from("projects").select("*").eq("id", id).maybeSingle(),
+        supabase.from("projects").select("*,share_token").eq("id", id).maybeSingle(),
         supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,created_at").eq("project_id", id).order("created_at", { ascending: false }),
       ]);
       setProject(p.data); setAssets(a.data || []); setLoading(false);
@@ -172,7 +259,12 @@ const BrandKitHub = () => {
           <ArrowLeft className="h-4 w-4" /> {project.name}
         </Link>
         <div className="flex gap-2">
-          <Link to={`/create?project=${id}`} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">Generate any asset</Link>
+          <button
+            onClick={() => setShareOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"
+          >
+            <Share2 className="h-4 w-4" /> Share
+          </button>
         </div>
       </div>
 
@@ -272,6 +364,51 @@ const BrandKitHub = () => {
           </div>
         </div>
       )}
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-2xl bg-white text-neutral-900 border-neutral-200">
+          <DialogHeader><DialogTitle>Share “{project.name}”</DialogTitle></DialogHeader>
+
+          {shareUrl && (
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+              <LinkIcon className="h-3.5 w-3.5 text-emerald-600" />
+              <span className="flex-1 truncate font-mono text-emerald-900">{shareUrl}</span>
+              <button onClick={copyLink} className="rounded-md border border-emerald-300 bg-white px-2 py-1 hover:bg-emerald-100">Copy</button>
+            </div>
+          )}
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Share</h3>
+              <button onClick={nativeShare} className="text-xs text-brand hover:underline">System share…</button>
+            </div>
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+              <ShareTile Icon={LinkIcon} label="Copy link" onClick={copyLink} />
+              <ShareTile Icon={XLogo} label="X" onClick={() => openSocial("twitter")} iconClass="bg-neutral-900 text-white" />
+              <ShareTile Icon={Facebook} label="Facebook" onClick={() => openSocial("facebook")} iconClass="bg-blue-600 text-white" />
+              <ShareTile Icon={Send} label="Messenger" onClick={() => openSocial("messenger")} iconClass="bg-gradient-to-br from-purple-500 to-pink-500 text-white" />
+              <ShareTile Icon={MessageCircle} label="WhatsApp" onClick={() => openSocial("whatsapp")} iconClass="bg-green-500 text-white" />
+              <ShareTile Icon={MessageSquareIcon} label="iMessage" onClick={() => openSocial("imessage")} iconClass="bg-green-400 text-white" />
+              <ShareTile Icon={Mail} label="Email" onClick={() => openSocial("email")} iconClass="bg-neutral-100 text-neutral-700" />
+            </div>
+            <p className="mt-2 text-[11px] text-neutral-500">Instagram / TikTok / YouTube don't allow direct web-share — use the system share sheet on mobile.</p>
+          </div>
+
+          {shareUrl && (
+            <div className="mt-2 flex items-center justify-between rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-700">
+                <Lock className="h-3.5 w-3.5" /> Public link is active
+              </div>
+              <button
+                onClick={disableShare}
+                className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+              >
+                Disable link
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
