@@ -463,6 +463,12 @@ const Editor = () => {
       setAutosaveTick(0);
       const { data: a } = await supabase.from("assets").select("*").eq("id", assetId).maybeSingle();
       if (!a) return;
+      // If this asset belongs in the Brand workspace (text/strategy), redirect there.
+      if (isBrandAsset(a)) {
+        const pid = a.project_id ? `/${a.project_id}` : "";
+        nav(`/brand${pid}?asset=${a.id}`, { replace: true });
+        return;
+      }
       setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null });
       if (a.editor_state && Array.isArray(a.editor_state)) {
         lastPersistedStateRef.current = JSON.stringify(a.editor_state);
