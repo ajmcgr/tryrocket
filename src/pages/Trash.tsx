@@ -7,8 +7,11 @@ import { RotateCcw, Trash2, ArrowLeft, Search, LayoutGrid, List, ArrowUpDown } f
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
-import { isCanvasAsset } from "@/lib/canvasAsset";
+import BrandCover from "@/components/brand/BrandCover";
+import { type CanvasElement } from "@/lib/canvasAsset";
+import { isBrandAsset } from "@/lib/assetExperience";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
+import { defaultLogotypeState, pickLogotypeText } from "@/lib/logotype";
 const supabase = _sb as any;
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
@@ -19,6 +22,83 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   template: "Template",
   presentation: "Presentation",
   other: "Other",
+};
+
+const GENERIC_LOGOTYPE_TITLE = /^logotype(?:\s+\d+)?$/i;
+
+type TrashPreviewAsset = {
+  title?: string | null;
+  content?: string | null;
+  prompt?: string | null;
+  asset_type?: string | null;
+  editor_state?: unknown;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
+  source_url?: string | null;
+  meta?: {
+    kind?: string | null;
+    asset_kind?: string | null;
+    brand_context?: { productName?: string | null; name?: string | null; url?: string | null; colors?: string[] | null } | null;
+    brandContext?: { productName?: string | null; name?: string | null; url?: string | null; colors?: string[] | null } | null;
+  } | null;
+};
+
+const hasRenderableCanvasElements = (value: unknown): value is CanvasElement[] => {
+  if (!Array.isArray(value)) return false;
+  return value.some((item) => {
+    if (!item || typeof item !== "object") return false;
+    const el = item as { kind?: string; visible?: boolean; text?: unknown; src?: unknown; w?: unknown; h?: unknown };
+    if (el.visible === false || typeof el.kind !== "string") return false;
+    if ((el.kind === "text" || el.kind === "sticky") && String(el.text || "").trim()) return true;
+    if (el.kind === "image" && String(el.src || "").trim()) return true;
+    if (el.kind === "line") return Boolean(Number(el.w) || Number(el.h));
+    return ["rect", "circle", "triangle", "star", "table"].includes(el.kind);
+  });
+};
+
+const firstCanvasText = (value: unknown) => {
+  if (!Array.isArray(value)) return "";
+  const textElement = value.find((item) => {
+    if (!item || typeof item !== "object") return false;
+    const el = item as { kind?: string; visible?: boolean; text?: unknown };
+    return el.visible !== false && (el.kind === "text" || el.kind === "sticky") && String(el.text || "").trim();
+  }) as { text?: unknown } | undefined;
+  return String(textElement?.text || "").trim();
+};
+
+const safePreviewText = (asset: TrashPreviewAsset) => {
+  const title = String(asset?.title || "").trim();
+  const content = String(asset?.content || "").trim();
+  const prompt = String(asset?.prompt || "").trim();
+  return content || prompt || title;
+};
+
+const isLogotypeLikeDesign = (asset: TrashPreviewAsset) => {
+  const title = String(asset?.title || "");
+  const prompt = String(asset?.prompt || "");
+  const content = String(asset?.content || "");
+  const metaKind = String(asset?.meta?.kind || asset?.meta?.asset_kind || "");
+  return (
+    asset?.asset_type === "logo" &&
+    ((asset?.editor_state as any)?.kind === "logotype" ||
+      GENERIC_LOGOTYPE_TITLE.test(title.trim()) ||
+      /\b(logotype|wordmark|word mark)\b/i.test(`${prompt} ${content} ${metaKind}`))
+  );
+};
+
+const logotypePreviewState = (asset: TrashPreviewAsset) => {
+  const brandContext = asset?.meta?.brand_context || asset?.meta?.brandContext || {};
+  const canvasText = firstCanvasText(asset?.editor_state);
+  const fallback = GENERIC_LOGOTYPE_TITLE.test(String(asset?.title || "").trim())
+    ? canvasText || asset?.prompt || asset?.content
+    : canvasText || asset?.title || asset?.prompt || asset?.content;
+  const text = pickLogotypeText({
+    prompt: asset?.prompt || canvasText,
+    productName: brandContext?.productName || brandContext?.name,
+    url: brandContext?.url || asset?.source_url,
+    fallback,
+  }) || canvasText || String(asset?.title || "Design").trim();
+  return defaultLogotypeState(text, Array.isArray(brandContext?.colors) ? brandContext.colors[0] || "#0A0A0A" : "#0A0A0A");
 };
 
 const Trash = () => {
@@ -78,19 +158,28 @@ const Trash = () => {
     return sortByOption(visible, sort, (a) => a.title, (a) => a.deleted_at || a.created_at);
   }, [assets, filter, query, sort]);
 
-  const AssetPreview = ({ a }: { a: any }) => {
-    const isLogotype = a?.editor_state?.kind === "logotype";
-    const isCanvas = isCanvasAsset(a);
-    const isImage = a.image_url && !isLogotype;
-    return isImage ? (
-      <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" loading="lazy" />
-    ) : isLogotype ? (
-      <Logotype state={a.editor_state} fit="contain" />
+  const AssetPreview = ({ a }: { a: TrashPreviewAsset }) => {
+    const isLogotype = (a?.editor_state as any)?.kind === "logotype";
+    const rasterPreview = a.thumbnail_url || a.image_url;
+    const isImage = !!rasterPreview && !isLogotype;
+    const isCanvas = !isImage && !isLogotype && hasRenderableCanvasElements(a?.editor_state);
+    const fallbackLogotype = !isImage && !isLogotype && !isCanvas && isLogotypeLikeDesign(a);
+    const brand = !isLogotype && !isCanvas && !fallbackLogotype && !isImage && isBrandAsset(a);
+    const fallbackText = safePreviewText(a);
+
+    return isLogotype ? (
+      <Logotype state={a.editor_state as any} fit="contain" />
     ) : isCanvas ? (
-      <CanvasAssetPreview elements={a.editor_state} className="h-full w-full" />
+      <CanvasAssetPreview elements={a.editor_state as any} className="h-full w-full" />
+    ) : fallbackLogotype ? (
+      <Logotype state={logotypePreviewState(a)} fit="contain" />
+    ) : isImage ? (
+      <img src={rasterPreview} alt={a.title || "Design"} className="h-full w-full object-cover" loading="lazy" />
+    ) : brand ? (
+      <BrandCover asset={a} />
     ) : (
       <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
-        <div className="line-clamp-6 whitespace-pre-wrap">{(a.content || "").slice(0, 220) || "No preview"}</div>
+        <div className="line-clamp-6 whitespace-pre-wrap">{fallbackText ? fallbackText.slice(0, 220) : "No preview"}</div>
       </div>
     );
   };
