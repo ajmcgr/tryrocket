@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { assetHref, BRAND_TYPES, DESIGN_TYPES } from "@/lib/assetExperience";
+import { assetHref, BRAND_TYPES, DESIGN_TYPES, isBrandAsset } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
