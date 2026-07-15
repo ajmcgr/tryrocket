@@ -3,7 +3,7 @@ import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   Stage, Layer, Rect, Circle as KCircle, Text as KText, Image as KImage,
-  Line as KLine, RegularPolygon, Star as KStar, Transformer, Group,
+  Line as KLine, RegularPolygon, Star as KStar, Transformer, Group, Shape,
 } from "react-konva";
 import useImage from "use-image";
 import type Konva from "konva";
@@ -38,7 +38,7 @@ type Base = {
 type TextEl = Base & { kind: "text"; text: string; color: string; fontSize: number; fontWeight: number; fontFamily: string; align?: "left" | "center" | "right" };
 type RectEl = Base & { kind: "rect"; fill: string; radius: number };
 type CircEl = Base & { kind: "circle"; fill: string };
-type ImgEl  = Base & { kind: "image"; src: string };
+type ImgEl  = Base & { kind: "image"; src: string; color?: string };
 type LineEl = Base & { kind: "line"; color: string; thickness: number };
 type StickyEl = Base & { kind: "sticky"; text: string; fill: string; color: string };
 type TriEl = Base & { kind: "triangle"; fill: string };
@@ -312,6 +312,39 @@ const TEMPLATES: { id: string; name: string; bg: string; build: () => El[] }[] =
 /* ------------------------- Image node with loader ------------------------- */
 const KonvaImage = forwardRef<any, { el: ImgEl; [k: string]: any }>(({ el, ...rest }, ref) => {
   const [img] = useImage(el.src, "anonymous");
+  if (el.color) {
+    return (
+      <Shape
+        ref={ref}
+        x={el.x}
+        y={el.y}
+        width={el.w}
+        height={el.h}
+        rotation={el.rotation || 0}
+        {...rest}
+        sceneFunc={(context: any, shape: any) => {
+          if (!img) {
+            context.beginPath();
+            context.rect(0, 0, el.w, el.h);
+            context.closePath();
+            context.fillStrokeShape(shape);
+            return;
+          }
+          const ctx = context._context as CanvasRenderingContext2D;
+          ctx.drawImage(img, 0, 0, el.w, el.h);
+          ctx.save();
+          ctx.globalCompositeOperation = "source-atop";
+          ctx.fillStyle = el.color as string;
+          ctx.fillRect(0, 0, el.w, el.h);
+          ctx.restore();
+          context.beginPath();
+          context.rect(0, 0, el.w, el.h);
+          context.closePath();
+          context.fillStrokeShape(shape);
+        }}
+      />
+    );
+  }
   return (
     <KImage ref={ref as any} image={img as any} x={el.x} y={el.y} width={el.w} height={el.h} rotation={el.rotation || 0} {...rest} />
   );
@@ -1020,6 +1053,7 @@ const Editor = () => {
     if (selected.kind === "text" || selected.kind === "sticky") update(selected.id, { color } as any);
     else if (selected.kind === "rect" || selected.kind === "circle" || selected.kind === "triangle" || selected.kind === "star") update(selected.id, { fill: color } as any);
     else if (selected.kind === "line") update(selected.id, { color } as any);
+    else if (selected.kind === "image") update(selected.id, { color } as any);
     else setBg(color);
   };
 
@@ -1053,8 +1087,7 @@ const Editor = () => {
 
   const buildSvg = (): string => {
     const parts: string[] = [];
-    parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${STAGE_W}" height="${STAGE_H}" viewBox="0 0 ${STAGE_W} ${STAGE_H}">`);
-    parts.push(`<rect width="${STAGE_W}" height="${STAGE_H}" fill="${bg}"/>`);
+    const defs: string[] = [];
     for (const el of els) {
       if (!el.visible) continue;
       const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
@@ -1090,7 +1123,12 @@ const Editor = () => {
         ).join("");
         parts.push(`<text x="${tx}" y="${el.y}" font-family="${escapeXml(el.fontFamily)}" font-size="${el.fontSize}" font-weight="${el.fontWeight}" fill="${el.color}" text-anchor="${anchor}"${transform}>${inner}</text>`);
       } else if (el.kind === "image") {
-        parts.push(`<image x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" href="${escapeXml(el.src)}" preserveAspectRatio="none"${transform}/>`);
+        if (el.color) {
+          defs.push(`<clipPath id="clip-${el.id}"><image x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" href="${escapeXml(el.src)}" preserveAspectRatio="none"/></clipPath>`);
+          parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" fill="${el.color}" clip-path="url(#clip-${el.id})"${transform}/>`);
+        } else {
+          parts.push(`<image x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" href="${escapeXml(el.src)}" preserveAspectRatio="none"${transform}/>`);
+        }
       } else if (el.kind === "table") {
         parts.push(`<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" fill="${el.color}" stroke="${el.lineColor}"${transform}/>`);
         const cw = el.w / el.cols, rh = el.h / el.rows;
@@ -1100,8 +1138,10 @@ const Editor = () => {
           parts.push(`<line x1="${el.x}" y1="${el.y + rh * i}" x2="${el.x + el.w}" y2="${el.y + rh * i}" stroke="${el.lineColor}"${transform}/>`);
       }
     }
-    parts.push(`</svg>`);
-    return parts.join("");
+    const svgOpen = `<svg xmlns="http://www.w3.org/2000/svg" width="${STAGE_W}" height="${STAGE_H}" viewBox="0 0 ${STAGE_W} ${STAGE_H}">`;
+    const bgRect = `<rect width="${STAGE_W}" height="${STAGE_H}" fill="${bg}"/>`;
+    const defBlock = defs.length > 0 ? `<defs>${defs.join("")}</defs>` : "";
+    return [svgOpen, defBlock, bgRect, ...parts, "</svg>"].join("");
   };
 
   const exportSvg = (target?: string) => {
@@ -1899,6 +1939,14 @@ const Inspector = ({ el, fonts, onChange }: { el: El; fonts: string[]; onChange:
     <div className="space-y-3">
       <Field label="Color"><ColorInput value={el.color} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
       <Field label="Thickness"><NumberInput value={el.thickness} min={1} max={40} onChange={(e: any) => onChange({ thickness: +e.target.value } as any)} /></Field>
+    </div>
+  );
+  if (el.kind === "image") return (
+    <div className="space-y-3">
+      <Field label="Color overlay"><ColorInput value={el.color || "#000000"} onChange={(e: any) => onChange({ color: e.target.value } as any)} /></Field>
+      {el.color && (
+        <button onClick={() => onChange({ color: undefined } as any)} className="text-xs text-neutral-500 hover:text-neutral-900">Clear overlay</button>
+      )}
     </div>
   );
   if (el.kind === "sticky") return (
