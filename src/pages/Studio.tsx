@@ -162,7 +162,7 @@ export default function Studio() {
 
   const handleExport = () => {
     if (!active) return;
-    nav(`/editor?id=${active.id}`);
+    window.open(`/editor?id=${active.id}`, "_blank", "noopener,noreferrer");
   };
 
   if (!project) {

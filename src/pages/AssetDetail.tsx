@@ -377,6 +377,8 @@ const AssetDetail = () => {
           )}
           <Link
             to={editorHref}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"
           >
             <Edit3 className="h-4 w-4" /> Open in Editor
