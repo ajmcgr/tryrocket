@@ -144,39 +144,6 @@ export default function BrandHub() {
         })}
       </div>
 
-      <section className="mt-10">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold tracking-tight">Uploads</h2>
-          {filteredUploads.length > 0 && <span className="text-xs text-neutral-500">{filteredUploads.length} total</span>}
-        </div>
-        {filteredUploads.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
-            <ImageIcon className="mx-auto h-8 w-8 text-neutral-300" />
-            <p className="mt-3 text-sm text-neutral-500">No uploaded files yet.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredUploads.map((asset) => (
-              <Link
-                key={asset.id}
-                to={`/editor?id=${asset.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
-              >
-                <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100">
-                  <img src={asset.thumbnail_url || asset.image_url} alt={asset.title || ""} className="h-full w-full object-cover" loading="lazy" />
-                </div>
-                <div className="p-4">
-                  <div className="truncate text-sm font-medium text-neutral-900">{asset.title || "Untitled upload"}</div>
-                  <div className="mt-0.5 text-xs text-neutral-500">{new Date(asset.created_at).toLocaleDateString()}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
       {!loading && assets.length === 0 && (
         <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
           <h2 className="text-lg font-semibold">Nothing in your brand kit yet</h2>
