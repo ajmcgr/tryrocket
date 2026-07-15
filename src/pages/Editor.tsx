@@ -1715,7 +1715,6 @@ const Editor = () => {
               {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </button>
           </div>
-        </div>
       </main>
       <CanvasContextMenu />
       </div>
