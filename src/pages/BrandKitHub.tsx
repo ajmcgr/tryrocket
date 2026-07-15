@@ -219,7 +219,7 @@ const BrandKitHub = () => {
     (async () => {
       if (!id) return;
       const [p, a] = await Promise.all([
-        supabase.from("projects").select("*").eq("id", id).maybeSingle(),
+        supabase.from("projects").select("*,share_token").eq("id", id).maybeSingle(),
         supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,created_at").eq("project_id", id).order("created_at", { ascending: false }),
       ]);
       setProject(p.data); setAssets(a.data || []); setLoading(false);
