@@ -381,13 +381,19 @@ const Assets = () => {
           <h1 className="text-3xl font-semibold tracking-tight">Designs</h1>
           <p className="mt-1 text-sm text-neutral-500">{assets.length} total · every generated design is saved here.</p>
         </div>
-        <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
-          <Plus className="h-4 w-4" /> New Design
-        </Link>
-      </div>
-
-      <div className="mt-2 text-xs">
-        <Link to="/trash" className="text-neutral-500 hover:text-neutral-800">View Trash →</Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/trash"
+            title="Trash"
+            aria-label="Trash"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Link>
+          <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
+            <Plus className="h-4 w-4" /> New Design
+          </Link>
+        </div>
       </div>
 
       {folderParam && (
@@ -563,7 +569,7 @@ const Assets = () => {
                     </div>
                   </button>
                 ) : (
-                  <Link to={assetHref(asset)} className="block">
+                  <Link to={assetHref(asset)} target="_blank" rel="noopener noreferrer" className="block">
                     <div className="aspect-square w-full overflow-hidden bg-neutral-50">
                       <DesignPreview asset={asset} />
                     </div>
@@ -585,7 +591,7 @@ const Assets = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 bg-white">
                     <DropdownMenuItem asChild className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
-                      <Link to={assetHref(asset)}><Edit3 className="mr-2 h-4 w-4" /> Open design</Link>
+                      <Link to={assetHref(asset)} target="_blank" rel="noopener noreferrer"><Edit3 className="mr-2 h-4 w-4" /> Open design</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => makePublic(asset)}
@@ -657,7 +663,7 @@ const Assets = () => {
                     {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
                   </button>
                 )}
-                <Link to={assetHref(asset)} className="flex min-w-0 flex-1 items-center gap-3">
+                <Link to={assetHref(asset)} target="_blank" rel="noopener noreferrer" className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="h-14 w-14 overflow-hidden rounded-lg bg-neutral-50">
                     <DesignPreview asset={asset} />
                   </div>
