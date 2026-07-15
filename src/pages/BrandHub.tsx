@@ -85,7 +85,7 @@ export default function BrandHub() {
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Files</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Assets</h1>
           <p className="mt-1 text-sm text-neutral-500">Guidelines, colors, fonts, voice and copy — organized by category.</p>
         </div>
         <div className="flex items-center gap-2">
