@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, GitBranch, Loader2, Save } from "lucide-react";
+import { Copy, Download, GitBranch, Loader2, Save } from "lucide-react";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -66,6 +66,25 @@ export default function BrandDocument({
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  const downloadMd = () => {
+    if (!asset) return;
+    const filename =
+      (title || asset.asset_type || "brand-doc")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") + ".md";
+    const body = `# ${title || asset.asset_type || "Untitled"}\n\n${content || ""}\n`;
+    const blob = new Blob([body], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   if (!asset) {
     return (
       <section className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center">
@@ -124,6 +143,12 @@ export default function BrandDocument({
               <Copy className="h-3.5 w-3.5" /> Copy markdown
             </button>
           )}
+          <button
+            onClick={downloadMd}
+            className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50"
+          >
+            <Download className="h-3.5 w-3.5" /> Download .md
+          </button>
         </div>
       </div>
       <textarea

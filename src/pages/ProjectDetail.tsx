@@ -127,10 +127,12 @@ const ProjectDetail = () => {
     const missing = missingKit();
     if (!missing.length) {
       toast({ title: "Brand kit is complete", description: "All core brand assets already exist." });
+      nav(`/brand/${id}`);
       return;
     }
     await runKitGeneration(missing);
     toast({ title: "Brand kit updated", description: "Review results below — retry any that failed." });
+    nav(`/brand/${id}`);
   };
 
   const retryOne = async (type: string) => {

@@ -193,6 +193,7 @@ const Assets = () => {
 
   const filtered = useMemo(() => {
     const visible = assets.filter((asset) => {
+      if (isBrandAsset(asset)) return false;
       if (filter !== "all" && asset.asset_type !== filter) return false;
       if (folderParam && getDesignFolderId(asset) !== folderParam) return false;
       if (q && !((asset.title || "").toLowerCase().includes(q.toLowerCase()) || (asset.prompt || "").toLowerCase().includes(q.toLowerCase()))) return false;
