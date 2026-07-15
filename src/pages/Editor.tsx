@@ -398,6 +398,26 @@ const Editor = () => {
     try { return localStorage.getItem("rocket.editor.bg.v1") || "#ffffff"; } catch { return "#ffffff"; }
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [extraSelectedIds, setExtraSelectedIds] = useState<Set<string>>(new Set());
+  const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const selectOnly = useCallback((id: string) => {
+    setSelectedId(id);
+    setExtraSelectedIds(new Set());
+  }, []);
+  const toggleExtra = useCallback((id: string) => {
+    setExtraSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const allSelectedIds = useMemo(() => {
+    const set = new Set<string>(extraSelectedIds);
+    if (selectedId) set.add(selectedId);
+    return Array.from(set);
+  }, [selectedId, extraSelectedIds]);
   const [canvasMenu, setCanvasMenu] = useState<{ x: number; y: number } | null>(null);
   const [autosaveTick, setAutosaveTick] = useState(0);
   const skipAutosaveRef = useRef(false);
@@ -807,15 +827,16 @@ const Editor = () => {
   /* attach transformer */
   useEffect(() => {
     const tr = trRef.current; if (!tr) return;
-    const node = selectedId ? nodeRefs.current[selectedId] : null;
-    if (node && selected && !selected.locked) {
-      tr.nodes([node]);
-      tr.getLayer()?.batchDraw();
-    } else {
-      tr.nodes([]);
-      tr.getLayer()?.batchDraw();
-    }
-  }, [selectedId, els, selected]);
+    const nodes = allSelectedIds
+      .map((id) => {
+        const el = els.find((e) => e.id === id);
+        if (!el || el.locked) return null;
+        return nodeRefs.current[id] || null;
+      })
+      .filter(Boolean) as any[];
+    tr.nodes(nodes);
+    tr.getLayer()?.batchDraw();
+  }, [allSelectedIds, els, selected]);
 
   const update = (id: string, patch: Partial<El>, opts?: { history?: boolean }) =>
     setEls((prev) => prev.map((e) => (e.id === id ? ({ ...e, ...patch } as El) : e)), opts);
@@ -1347,17 +1368,27 @@ const Editor = () => {
       if (meta && e.key.toLowerCase() === "c") { e.preventDefault(); copySelectedElement(); return; }
       if (meta && e.key.toLowerCase() === "v") { e.preventDefault(); pasteClipboard(); return; }
       if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); if (selectedId) duplicate(selectedId); return; }
-      if (!selectedId) return;
-      if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); remove(selectedId); return; }
+      if (allSelectedIds.length === 0) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        const ids = new Set(allSelectedIds);
+        setEls((p) => p.filter((el) => !ids.has(el.id)));
+        setSelectedId(null);
+        setExtraSelectedIds(new Set());
+        return;
+      }
       const step = e.shiftKey ? 10 : 1;
-      if (e.key === "ArrowLeft")  { e.preventDefault(); update(selectedId, { x: (selected!.x - step) } as any); }
-      if (e.key === "ArrowRight") { e.preventDefault(); update(selectedId, { x: (selected!.x + step) } as any); }
-      if (e.key === "ArrowUp")    { e.preventDefault(); update(selectedId, { y: (selected!.y - step) } as any); }
-      if (e.key === "ArrowDown")  { e.preventDefault(); update(selectedId, { y: (selected!.y + step) } as any); }
+      const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+      const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+      if (dx || dy) {
+        e.preventDefault();
+        const ids = new Set(allSelectedIds);
+        setEls((p) => p.map((el) => ids.has(el.id) ? ({ ...el, x: el.x + dx, y: el.y + dy } as El) : el));
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [copySelectedElement, copySelectedStyle, pasteClipboard, redo, selected, selectedId, undo]);
+  }, [allSelectedIds, copySelectedElement, copySelectedStyle, duplicate, pasteClipboard, redo, selected, selectedId, undo]);
 
   /* inline text editor overlay */
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
@@ -1388,10 +1419,26 @@ const Editor = () => {
       key: el.id,
       ref: (n: any) => { nodeRefs.current[el.id] = n; },
       draggable: !el.locked,
-      onClick: () => setSelectedId(el.id),
-      onTap: () => setSelectedId(el.id),
+      onClick: (e: any) => {
+        const shift = e?.evt?.shiftKey;
+        if (shift) {
+          if (selectedId && selectedId !== el.id) toggleExtra(el.id);
+          else selectOnly(el.id);
+        } else {
+          selectOnly(el.id);
+        }
+      },
+      onTap: (e: any) => {
+        const shift = e?.evt?.shiftKey;
+        if (shift) {
+          if (selectedId && selectedId !== el.id) toggleExtra(el.id);
+          else selectOnly(el.id);
+        } else {
+          selectOnly(el.id);
+        }
+      },
       onContextMenu: (e: any) => {
-        setSelectedId(el.id);
+        if (!allSelectedIds.includes(el.id)) selectOnly(el.id);
         openCanvasMenu(e.evt);
       },
       onDragEnd: (e: any) => update(el.id, { x: e.target.x(), y: e.target.y() } as any),
@@ -1628,11 +1675,54 @@ const Editor = () => {
                   width={STAGE_W}
                   height={STAGE_H}
                   onContextMenu={(e) => {
-                    if (e.target === e.target.getStage()) setSelectedId(null);
+                    if (e.target === e.target.getStage()) { setSelectedId(null); setExtraSelectedIds(new Set()); }
                     openCanvasMenu(e.evt);
                   }}
-                  onMouseDown={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
-                  onTouchStart={(e) => { if (e.target === e.target.getStage()) setSelectedId(null); }}
+                  onMouseDown={(e) => {
+                    if (e.target !== e.target.getStage()) return;
+                    if (!e.evt.shiftKey) { setSelectedId(null); setExtraSelectedIds(new Set()); }
+                    const stage = e.target.getStage();
+                    const pos = stage?.getPointerPosition();
+                    if (!pos) return;
+                    marqueeStartRef.current = { x: pos.x, y: pos.y };
+                    setMarquee({ x: pos.x, y: pos.y, w: 0, h: 0 });
+                  }}
+                  onMouseMove={(e) => {
+                    const start = marqueeStartRef.current;
+                    if (!start) return;
+                    const stage = e.target.getStage();
+                    const pos = stage?.getPointerPosition();
+                    if (!pos) return;
+                    setMarquee({
+                      x: Math.min(start.x, pos.x),
+                      y: Math.min(start.y, pos.y),
+                      w: Math.abs(pos.x - start.x),
+                      h: Math.abs(pos.y - start.y),
+                    });
+                  }}
+                  onMouseUp={(e) => {
+                    const box = marquee;
+                    marqueeStartRef.current = null;
+                    setMarquee(null);
+                    if (!box || (box.w < 3 && box.h < 3)) return;
+                    const additive = e.evt.shiftKey;
+                    const hits = els.filter((el) => {
+                      if (!el.visible || el.locked) return false;
+                      return el.x < box.x + box.w && el.x + el.w > box.x && el.y < box.y + box.h && el.y + el.h > box.y;
+                    }).map((el) => el.id);
+                    if (hits.length === 0) return;
+                    if (additive) {
+                      setExtraSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        hits.forEach((id) => { if (id !== selectedId) next.add(id); });
+                        return next;
+                      });
+                    } else {
+                      setSelectedId(hits[0]);
+                      setExtraSelectedIds(new Set(hits.slice(1)));
+                    }
+                  }}
+                  onTouchStart={(e) => { if (e.target === e.target.getStage()) { setSelectedId(null); setExtraSelectedIds(new Set()); } }}
                 >
                   <Layer listening={false}>
                     <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={bg} />
@@ -1657,6 +1747,19 @@ const Editor = () => {
                   </Layer>
                   <Layer>
                     {els.map(renderNode)}
+                    {marquee && (marquee.w > 0 || marquee.h > 0) && (
+                      <Rect
+                        x={marquee.x}
+                        y={marquee.y}
+                        width={marquee.w}
+                        height={marquee.h}
+                        fill="rgba(59,130,246,0.10)"
+                        stroke="#3b82f6"
+                        strokeWidth={1}
+                        dash={[4, 4]}
+                        listening={false}
+                      />
+                    )}
                     <Transformer
                       ref={trRef}
                       rotateEnabled
