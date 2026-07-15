@@ -230,8 +230,28 @@ export default function Brand() {
               <h2 className="mt-1 text-lg font-semibold">No brand assets yet</h2>
               <p className="mt-1 text-sm text-neutral-500">
                 Brand guidelines, voice, colors, fonts, launch copy and bios will live here.
-                Ask Rocket in the panel on the left to get started.
               </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                {[
+                  { label: "Brand guidelines", prompt: `Draft brand guidelines for ${project.name}.` },
+                  { label: "Brand voice", prompt: `Define the brand voice and tone for ${project.name}.` },
+                  { label: "Color system", prompt: `Design a color system (primary, secondary, accent, neutrals) for ${project.name}.` },
+                  { label: "Font system", prompt: `Recommend a typography system for ${project.name}.` },
+                  { label: "Positioning", prompt: `Write a positioning statement for ${project.name}.` },
+                  { label: "Launch copy", prompt: `Write launch announcement copy for ${project.name}.` },
+                  { label: "Product Hunt", prompt: `Write a Product Hunt launch post for ${project.name}.` },
+                  { label: "Founder bio", prompt: `Write a founder bio for ${project.name}.` },
+                ].map((s) => (
+                  <button
+                    key={s.label}
+                    disabled={busy}
+                    onClick={() => void handleSend(s.prompt)}
+                    className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-700 hover:border-brand hover:text-brand disabled:opacity-50"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
