@@ -215,14 +215,14 @@ const Projects = () => {
   };
 
   const del = async (id: string, skipConfirm = false) => {
-    if (!skipConfirm && !confirm("Delete this project? Designs inside will be uncategorized but not deleted.")) return false;
+    if (!skipConfirm && !confirm("Delete this project? Designs and assets inside will be uncategorized but not deleted.")) return false;
     setProjects((prev) => prev.filter((project) => project.id !== id));
     await supabase.from("projects").delete().eq("id", id);
     return true;
   };
 
   const delFolder = async (folder: any, skipConfirm = false) => {
-    if (!skipConfirm && !confirm(`Delete folder "${folder.name}"? Designs in it will be removed from the folder but not deleted.`)) return false;
+    if (!skipConfirm && !confirm(`Delete folder "${folder.name}"? Designs and assets in it will be removed from the folder but not deleted.`)) return false;
     const linked = allAssets.filter((asset: any) => getDesignFolderId(asset) === folder.id);
     await Promise.all(linked.map((asset: any) => supabase.from("assets").update({ meta: withDesignFolderId(asset.meta, null) }).eq("id", asset.id)));
     setFolders((prev) => prev.filter((item) => item.id !== folder.id));
@@ -396,7 +396,7 @@ const Projects = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
-          <p className="mt-1 text-sm text-neutral-500">Group designs into projects and folders.</p>
+          <p className="mt-1 text-sm text-neutral-500">Group designs and assets into projects and folders.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -483,7 +483,7 @@ const Projects = () => {
             {sortedProjects.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
                 <Folder className="mx-auto h-8 w-8 text-neutral-300" />
-                <p className="mt-3 text-sm text-neutral-500">No projects yet. Create one to organize your designs.</p>
+                <p className="mt-3 text-sm text-neutral-500">No projects yet. Create one to organize your designs and assets.</p>
                 <button onClick={() => setCreating(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground hover:bg-brand-hover">
                   <Plus className="h-3.5 w-3.5" /> New Project
                 </button>
@@ -505,7 +505,7 @@ const Projects = () => {
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium text-neutral-900">{project.name}</div>
-                              <div className="mt-0.5 text-xs text-neutral-500">{counts[project.id] || 0} designs · {new Date(project.created_at).toLocaleDateString()}</div>
+                              <div className="mt-0.5 text-xs text-neutral-500">{counts[project.id] || 0} designs and assets · {new Date(project.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </button>
@@ -515,7 +515,7 @@ const Projects = () => {
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium text-neutral-900">{project.name}</div>
-                              <div className="mt-0.5 text-xs text-neutral-500">{counts[project.id] || 0} designs · {new Date(project.created_at).toLocaleDateString()}</div>
+                              <div className="mt-0.5 text-xs text-neutral-500">{counts[project.id] || 0} designs and assets · {new Date(project.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </Link>
@@ -555,7 +555,7 @@ const Projects = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium text-neutral-900">{project.name}</div>
-                          <div className="text-xs text-neutral-500">{counts[project.id] || 0} designs · {new Date(project.created_at).toLocaleDateString()}</div>
+                          <div className="text-xs text-neutral-500">{counts[project.id] || 0} designs and assets · {new Date(project.created_at).toLocaleDateString()}</div>
                         </div>
                       </Link>
                     </div>
@@ -570,7 +570,7 @@ const Projects = () => {
             {sortedFolders.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
                 <Folder className="mx-auto h-8 w-8 text-neutral-300" />
-                <p className="mt-3 text-sm text-neutral-500">No folders yet. Create one to group designs outside a full project.</p>
+                <p className="mt-3 text-sm text-neutral-500">No folders yet. Create one to group designs and assets outside a full project.</p>
                 <button onClick={() => setCreatingFolder(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50">
                   <Plus className="h-3.5 w-3.5" /> New folder
                 </button>
@@ -592,7 +592,7 @@ const Projects = () => {
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium text-neutral-900">{folder.name}</div>
-                              <div className="mt-0.5 text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs · {new Date(folder.created_at).toLocaleDateString()}</div>
+                              <div className="mt-0.5 text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs and assets · {new Date(folder.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </button>
@@ -602,7 +602,7 @@ const Projects = () => {
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium text-neutral-900">{folder.name}</div>
-                              <div className="mt-0.5 text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs · {new Date(folder.created_at).toLocaleDateString()}</div>
+                              <div className="mt-0.5 text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs and assets · {new Date(folder.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </Link>
@@ -637,7 +637,7 @@ const Projects = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium text-neutral-900">{folder.name}</div>
-                          <div className="text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs · {new Date(folder.created_at).toLocaleDateString()}</div>
+                          <div className="text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs and assets · {new Date(folder.created_at).toLocaleDateString()}</div>
                         </div>
                       </Link>
                     </div>
@@ -698,7 +698,7 @@ const Projects = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Choose cover image</DialogTitle></DialogHeader>
           {coverChoices.length === 0 ? (
-            <p className="py-8 text-center text-sm text-neutral-500">No image designs in this project yet.</p>
+            <p className="py-8 text-center text-sm text-neutral-500">No image designs and assets in this project yet.</p>
           ) : (
             <div className="grid max-h-[60vh] grid-cols-3 gap-3 overflow-y-auto py-2 sm:grid-cols-4">
               {coverChoices.map((asset) => {
@@ -718,7 +718,7 @@ const Projects = () => {
       <Dialog open={!!sharing} onOpenChange={(open) => !open && setSharing(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Share “{sharing?.name}” publicly</DialogTitle></DialogHeader>
-          <p className="text-sm text-neutral-600">Anyone with this link can view the project and its designs. No login required.</p>
+          <p className="text-sm text-neutral-600">Anyone with this link can view the project and its designs and assets. No login required.</p>
           <div className="mt-2 flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
             <Link2 className="h-4 w-4 shrink-0 text-neutral-500" />
             <span className="flex-1 truncate font-mono text-xs text-neutral-800">{shareUrl(sharing?.share_token)}</span>
