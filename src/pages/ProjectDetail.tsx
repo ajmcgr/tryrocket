@@ -41,6 +41,34 @@ const ProjectDetail = () => {
   const [completionStatus, setCompletionStatus] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
   const [completionErrors, setCompletionErrors] = useState<Record<string, string>>({});
   const [completePanelOpen, setCompletePanelOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleSelect = (assetId: string) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(assetId) ? next.delete(assetId) : next.add(assetId);
+    return next;
+  });
+  const clearSelection = () => setSelected(new Set());
+  const bulkRemoveFromProject = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Remove ${ids.length} asset${ids.length === 1 ? "" : "s"} from project?`)) return;
+    const { error } = await supabase.from("assets").update({ project_id: null }).in("id", ids);
+    if (error) { toast({ title: "Remove failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Removed ${ids.length} from project` });
+    clearSelection();
+    load();
+  };
+  const bulkTrash = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Move ${ids.length} asset${ids.length === 1 ? "" : "s"} to Trash?`)) return;
+    const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).in("id", ids);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Moved ${ids.length} to Trash` });
+    clearSelection();
+    load();
+  };
+  const selectAllVisible = (visibleAssets: any[]) => setSelected(new Set(visibleAssets.map(a => a.id)));
 
   const CORE_KIT: { type: string; label: string; prompt: (name: string, ctx: any) => string }[] = [
     { type: "logo", label: "Logotype", prompt: (n, c) => `A polished text-based logotype for ${n}${c?.url ? ` (${c.url})` : ""}. ${c?.tagline || c?.description || ""}` },
@@ -249,8 +277,8 @@ const ProjectDetail = () => {
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {visible.map(a => (
-            <div key={a.id} className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-              <Link to={assetHref(a)}>
+            <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white ${selected.has(a.id) ? "border-brand ring-2 ring-brand/40" : "border-neutral-200"}`}>
+              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0) { e.preventDefault(); toggleSelect(a.id); } }}>
                 <div className="aspect-square w-full bg-neutral-50">
                   {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
                     a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
@@ -262,9 +290,29 @@ const ProjectDetail = () => {
                   <div className="mt-0.5 text-[11px] text-neutral-500">{a.asset_type}</div>
                 </div>
               </Link>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(a.id); }}
+                className={`absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-md border bg-white/95 transition ${selected.has(a.id) ? "border-brand text-brand opacity-100" : "border-neutral-300 text-transparent opacity-0 group-hover:opacity-100"}`}
+                title={selected.has(a.id) ? "Deselect" : "Select"}
+              >
+                {selected.has(a.id) && <Check className="h-4 w-4" />}
+              </button>
               <button onClick={() => removeAsset(a.id)} className="absolute right-2 top-2 rounded-md bg-white/90 p-1 opacity-0 transition group-hover:opacity-100" title="Remove from project"><Trash2 className="h-4 w-4 text-red-600" /></button>
             </div>
           ))}
+        </div>
+      )}
+
+      {selected.size > 0 && (
+        <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
+          <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-2 shadow-lg">
+            <span className="pl-2 pr-1 text-sm font-medium">{selected.size} selected</span>
+            <button onClick={() => selectAllVisible(visible)} className="rounded-full px-3 py-1 text-xs text-neutral-600 hover:bg-neutral-100">Select all</button>
+            <button onClick={bulkRemoveFromProject} className="rounded-full border border-neutral-200 px-3 py-1 text-xs hover:bg-neutral-50">Remove from project</button>
+            <button onClick={bulkTrash} className="rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700">Move to Trash</button>
+            <button onClick={clearSelection} className="rounded-full px-2 py-1 text-neutral-500 hover:bg-neutral-100"><X className="h-4 w-4" /></button>
+          </div>
         </div>
       )}
 
