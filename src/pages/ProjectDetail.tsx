@@ -45,6 +45,9 @@ const ProjectDetail = () => {
   const [completionErrors, setCompletionErrors] = useState<Record<string, string>>({});
   const [completePanelOpen, setCompletePanelOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<CollectionView>("card");
+  const [sort, setSort] = useState<DesignSort>("date");
+  const [selectMode, setSelectMode] = useState(false);
   const toggleSelect = (assetId: string) => setSelected(prev => {
     const next = new Set(prev);
     next.has(assetId) ? next.delete(assetId) : next.add(assetId);
