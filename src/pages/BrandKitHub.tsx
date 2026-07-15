@@ -4,10 +4,12 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   ArrowLeft, Sparkles, Palette, Type, MessageSquare, Layers, Shapes, Image as ImageIcon,
   Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check, Trash2, X,
+  Share2, Facebook, Send, MessageCircle, MessageSquare as MessageSquareIcon, Mail, Link as LinkIcon, Copy, Lock,
 } from "lucide-react";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // A hub "item" maps a Looka-style asset slot to a generator entry-point.
 // asset_type values reuse existing Rocket types where possible; new visual
