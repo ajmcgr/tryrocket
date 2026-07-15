@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { assetHref, isBrandAsset } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Loader2, Zap, X, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, List, ArrowUpDown, CheckSquare, Square, Loader2, Zap, X, RefreshCw } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import { handleAiError } from "@/lib/aiErrors";
+import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
 const supabase = _sb as any;
 
 type WF = "brand" | "design" | "launch" | "promote" | "other";
