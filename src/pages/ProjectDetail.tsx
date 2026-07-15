@@ -5,11 +5,9 @@ import BrandCover from "@/components/brand/BrandCover";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Share2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Download, Loader2, Zap, X, RefreshCw, Rocket as RocketIcon } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, Loader2, Zap, X, RefreshCw } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
-import CollaboratorsModal, { loadCollaborators, type Collaborator } from "@/components/CollaboratorsModal";
 import { Logotype } from "@/components/Logotype";
-import { packAssetsZip } from "@/lib/exporters/zipPack";
 import { handleAiError } from "@/lib/aiErrors";
 const supabase = _sb as any;
 
@@ -38,29 +36,11 @@ const ProjectDetail = () => {
   const [assets, setAssets] = useState<any[]>([]);
   const [allAssets, setAllAssets] = useState<any[]>([]);
   const [picking, setPicking] = useState(false);
-  const [sharing, setSharing] = useState(false);
   const [tab, setTab] = useState<"all" | WF>("all");
-  const [showRun, setShowRun] = useState(false);
-  const [collabOpen, setCollabOpen] = useState(false);
-  const [collabs, setCollabs] = useState<Collaborator[]>([]);
-  const [zipping, setZipping] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [completionStatus, setCompletionStatus] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
   const [completionErrors, setCompletionErrors] = useState<Record<string, string>>({});
   const [completePanelOpen, setCompletePanelOpen] = useState(false);
-  const [galleryToggling, setGalleryToggling] = useState(false);
-
-  const toggleGallery = async () => {
-    if (!project) return;
-    if (!project.share_token) { toast({ title: "Share the project first", description: "Public gallery entries require an active share link." }); return; }
-    setGalleryToggling(true);
-    const next = !project.is_public_gallery;
-    const { error } = await supabase.from("projects").update({ is_public_gallery: next }).eq("id", project.id);
-    setGalleryToggling(false);
-    if (error) { toast({ title: "Could not update gallery status", description: error.message, variant: "destructive" }); return; }
-    toast({ title: next ? "Added to public gallery" : "Removed from public gallery" });
-    load();
-  };
 
   const CORE_KIT: { type: string; label: string; prompt: (name: string, ctx: any) => string }[] = [
     { type: "logo", label: "Logotype", prompt: (n, c) => `A polished text-based logotype for ${n}${c?.url ? ` (${c.url})` : ""}. ${c?.tagline || c?.description || ""}` },
@@ -146,28 +126,6 @@ const ProjectDetail = () => {
     if (targets.length) await runKitGeneration(targets);
   };
 
-  useEffect(() => { if (id) setCollabs(loadCollaborators(id)); }, [id]);
-
-  const downloadPack = async () => {
-    if (!assets.length) return;
-    setZipping(true);
-    try {
-      await packAssetsZip(
-        assets.map((a: any) => ({
-          title: a.title || "asset",
-          asset_type: a.asset_type,
-          image_url: a.image_url,
-          content: a.content,
-        })),
-        `${(project?.name || "brand").replace(/[^a-z0-9-_]+/gi, "-").toLowerCase()}-pack.zip`,
-      );
-    } catch (e: any) {
-      toast({ title: "Download failed", description: e?.message || "Could not build ZIP.", variant: "destructive" });
-    } finally {
-      setZipping(false);
-    }
-  };
-
   const load = async () => {
     if (!id || !user) return;
     const [p, a] = await Promise.all([
@@ -194,29 +152,6 @@ const ProjectDetail = () => {
     load();
   };
 
-  const toggleShare = async () => {
-    if (!project) return;
-    setSharing(true);
-    if (project.share_token) {
-      await supabase.from("projects").update({ share_token: null }).eq("id", project.id);
-      toast({ title: "Share link disabled" });
-    } else {
-      const token = crypto.randomUUID();
-      await supabase.from("projects").update({ share_token: token }).eq("id", project.id);
-      const url = `${window.location.origin}/share/project/${token}`;
-      try { await navigator.clipboard.writeText(url); } catch {}
-      toast({ title: "Public link created", description: "Copied to clipboard." });
-    }
-    await load();
-    setSharing(false);
-  };
-
-  const copyShare = async () => {
-    if (!project?.share_token) return;
-    await navigator.clipboard.writeText(`${window.location.origin}/share/project/${project.share_token}`);
-    toast({ title: "Share link copied" });
-  };
-
   if (!project) return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="h-8 w-1/3 animate-pulse rounded bg-neutral-100" />
@@ -235,25 +170,8 @@ const ProjectDetail = () => {
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{project.name}</h1>
         <div className="flex flex-wrap gap-2">
-          <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><LayoutGrid className="h-4 w-4" /> Brand Kit Hub</Link>
-          <Link to={`/brands/${id}`} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/5 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/10"><RocketIcon className="h-4 w-4" /> Open Brand</Link>
-          <Link to={`/projects/${id}/brand-kit`} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Sparkles className="h-4 w-4" /> Brand Kit</Link>
-          <button onClick={toggleShare} disabled={sharing} className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm ${project.share_token ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-neutral-200 bg-white hover:bg-neutral-50"}`}><Share2 className="h-4 w-4" /> {project.share_token ? "Shared" : "Share"}</button>
-          <button onClick={() => setCollabOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
-            <div className="flex -space-x-1.5">
-              {(collabs.length ? collabs : [{ email: user?.email || "you" } as any]).slice(0, 3).map((c: any, i) => {
-                const palette = ["bg-rose-200 text-rose-800","bg-amber-200 text-amber-800","bg-emerald-200 text-emerald-800","bg-sky-200 text-sky-800","bg-violet-200 text-violet-800"];
-                const ch = (c.email || "?").charCodeAt(0) % palette.length;
-                const letter = (c.email?.[0] || "?").toUpperCase();
-                return <span key={i} className={`flex h-5 w-5 items-center justify-center rounded-full border border-white text-[10px] font-semibold ${palette[ch]}`}>{letter}</span>;
-              })}
-            </div>
-            <span>{collabs.length ? `${collabs.length} collaborator${collabs.length === 1 ? "" : "s"}` : "Invite"}</span>
-          </button>
+          <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/5 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/10"><LayoutGrid className="h-4 w-4" /> Edit Brand Kit</Link>
           <button onClick={openPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add asset</button>
-          <button onClick={downloadPack} disabled={zipping || assets.length === 0} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50">
-            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download pack
-          </button>
           {missingKit().length > 0 && (
             <button
               onClick={completeBrandKit}
@@ -266,41 +184,8 @@ const ProjectDetail = () => {
               <span className="ml-1 rounded-full bg-brand/20 px-1.5 text-[10px]">{missingKit().length}</span>
             </button>
           )}
-          <div className="relative">
-            <button onClick={() => setShowRun(v => !v)} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Plus className="h-4 w-4" /> Run workflow</button>
-            {showRun && (
-              <div className="absolute right-0 z-20 mt-1 w-56 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg" onMouseLeave={() => setShowRun(false)}>
-                <Link to={`/create?project=${id}`} className="block px-3 py-2 text-sm hover:bg-neutral-50">Single asset…</Link>
-                <div className="border-t border-neutral-100" />
-                {(["brand", "design", "launch", "promote"] as WF[]).map(w => {
-                  const M = WF_META[w];
-                  return (
-                    <Link key={w} to={`/create?project=${id}&workflow=${w}&prompt=${encodeURIComponent(project.name)}`} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-neutral-50">
-                      <M.Icon className="h-3.5 w-3.5" /> {M.label} It
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
       </div>
-
-      {project.share_token && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
-          <Check className="h-3.5 w-3.5 text-emerald-600" />
-          <span className="flex-1 truncate font-mono text-emerald-900">{`${window.location.origin}/share/project/${project.share_token}`}</span>
-          <button onClick={copyShare} className="rounded-md border border-emerald-300 bg-white px-2 py-1 text-xs hover:bg-emerald-100">Copy</button>
-          <button
-            onClick={toggleGallery}
-            disabled={galleryToggling}
-            className={`rounded-md border px-2 py-1 text-xs ${project.is_public_gallery ? "border-brand/40 bg-brand/10 text-brand" : "border-emerald-300 bg-white hover:bg-emerald-100"}`}
-            title="Show this project in Rocket's public gallery"
-          >
-            {project.is_public_gallery ? "In gallery ✓" : "Add to gallery"}
-          </button>
-        </div>
-      )}
 
       {assets.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-1.5 border-b border-neutral-200 pb-2">
