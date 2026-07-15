@@ -210,6 +210,7 @@ const ProjectDetail = () => {
   const counts: Record<WF, number> = { brand: 0, design: 0, launch: 0, promote: 0, other: 0 };
   for (const a of assets) counts[wfOf(a.asset_type)]++;
   const visible = tab === "all" ? assets : assets.filter(a => wfOf(a.asset_type) === tab);
+  const visibleSorted = useMemo(() => sortByOption(visible, sort, a => a.title, a => a.created_at), [visible, sort]);
   const tabs: ("all" | WF)[] = ["all", "brand", "design", "launch", "promote", "other"];
 
   return (
