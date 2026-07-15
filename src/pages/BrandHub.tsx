@@ -40,8 +40,12 @@ export default function BrandHub() {
         supabase.from("projects").select("id,name").order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
+      const loadedProjects = p || [];
       setAssets((a || []).filter(isBrandAsset));
-      setProjects(p || []);
+      setProjects(loadedProjects);
+      if (loadedProjects.length > 0) {
+        setActiveProject(loadedProjects[0].id);
+      }
       setLoading(false);
     })();
     return () => { cancel = true; };
