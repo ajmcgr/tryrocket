@@ -510,7 +510,7 @@ const Projects = () => {
                           </div>
                         </button>
                       ) : (
-                        <Link to={`/projects/${project.id}`} className="block">
+                        <Link to={counts[project.id] ? `/projects/${project.id}` : `/create?project=${project.id}`} className="block">
                           {renderCardPreview(project.cover_url || latestImages[project.id], !project.cover_url ? latestLogotypes[project.id] : null)}
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
@@ -549,7 +549,7 @@ const Projects = () => {
                           {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
                         </button>
                       )}
-                      <Link to={`/projects/${project.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                      <Link to={counts[project.id] ? `/projects/${project.id}` : `/create?project=${project.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                         <div className="h-14 w-20 overflow-hidden rounded-lg bg-neutral-100">
                           {renderCardPreview(project.cover_url || latestImages[project.id], !project.cover_url ? latestLogotypes[project.id] : null)}
                         </div>
