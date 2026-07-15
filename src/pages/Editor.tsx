@@ -398,6 +398,26 @@ const Editor = () => {
     try { return localStorage.getItem("rocket.editor.bg.v1") || "#ffffff"; } catch { return "#ffffff"; }
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [extraSelectedIds, setExtraSelectedIds] = useState<Set<string>>(new Set());
+  const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const selectOnly = useCallback((id: string) => {
+    setSelectedId(id);
+    setExtraSelectedIds(new Set());
+  }, []);
+  const toggleExtra = useCallback((id: string) => {
+    setExtraSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const allSelectedIds = useMemo(() => {
+    const set = new Set<string>(extraSelectedIds);
+    if (selectedId) set.add(selectedId);
+    return Array.from(set);
+  }, [selectedId, extraSelectedIds]);
   const [canvasMenu, setCanvasMenu] = useState<{ x: number; y: number } | null>(null);
   const [autosaveTick, setAutosaveTick] = useState(0);
   const skipAutosaveRef = useRef(false);
