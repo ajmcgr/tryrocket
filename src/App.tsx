@@ -61,6 +61,11 @@ const AssetRouteRedirect = () => {
   return <Navigate to={id ? `/editor?id=${id}` : "/assets"} replace />;
 };
 
+const StudioRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={id ? `/brand/${id}` : "/brand"} replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
