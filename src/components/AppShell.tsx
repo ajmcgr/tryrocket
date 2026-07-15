@@ -32,7 +32,7 @@ const AppShell = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [headerCenter, setHeaderCenter] = useState<ReactNode | null>(null);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
-  const sidebarRoutes = ["/create", "/assets", "/editor", "/projects", "/templates", "/brand", "/brands"];
+  const sidebarRoutes = ["/create", "/designs", "/editor", "/projects", "/templates", "/brand", "/brands"];
   const showSidebar = sidebarRoutes.some(r => location.pathname === r || location.pathname.startsWith(r + "/"));
   const isEditorPage = location.pathname === "/editor";
 
@@ -45,7 +45,7 @@ const AppShell = () => {
             {isEditorPage ? headerActions : (
               <>
                 <NavLink data-tour="nav-create" to="/create" className={({ isActive }) => `inline-flex items-center rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Create</NavLink>
-                <NavLink data-tour="nav-assets" to="/assets" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Designs</NavLink>
+                <NavLink data-tour="nav-assets" to="/designs" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Designs</NavLink>
                 <NavLink data-tour="nav-projects" to="/projects" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Projects</NavLink>
                 <NavLink to="/templates" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Templates</NavLink>
                 <NavLink data-tour="nav-brand" to="/brands" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Brands</NavLink>

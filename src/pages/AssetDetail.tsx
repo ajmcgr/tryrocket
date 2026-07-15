@@ -104,8 +104,8 @@ const AssetDetail = () => {
       const tag = (document.activeElement?.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea" || (document.activeElement as HTMLElement)?.isContentEditable) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "ArrowLeft" && prevId) { e.preventDefault(); nav(`/assets/${prevId}`); }
-      else if (e.key === "ArrowRight" && nextId) { e.preventDefault(); nav(`/assets/${nextId}`); }
+      if (e.key === "ArrowLeft" && prevId) { e.preventDefault(); nav(`/designs/${prevId}`); }
+      else if (e.key === "ArrowRight" && nextId) { e.preventDefault(); nav(`/designs/${nextId}`); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -201,7 +201,7 @@ const AssetDetail = () => {
     const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", asset.id);
     if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Moved to Trash", description: "Restore anytime from /trash" });
-    nav("/assets");
+    nav("/designs");
   };
 
   const duplicate = async () => {
@@ -219,7 +219,7 @@ const AssetDetail = () => {
       const { data, error } = await supabase.from("assets").insert(insertRow).select("id").maybeSingle();
       if (error) { toast({ title: "Duplicate failed", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Duplicated" });
-      if (data?.id) nav(`/assets/${data.id}`);
+      if (data?.id) nav(`/designs/${data.id}`);
     } finally {
       setDuplicating(false);
     }
@@ -301,7 +301,7 @@ const AssetDetail = () => {
       if (aiErr) return;
       window.dispatchEvent(new Event("credits:refresh"));
       const newId = d?.asset_ids?.[0];
-      if (newId) { toast({ title: "Variation created" }); setVaryOpen(false); setTweak(""); nav(`/assets/${newId}`); }
+      if (newId) { toast({ title: "Variation created" }); setVaryOpen(false); setTweak(""); nav(`/designs/${newId}`); }
     } catch (e: any) {
       toast({ title: "Failed", description: e.message, variant: "destructive" });
     } finally {
@@ -313,13 +313,13 @@ const AssetDetail = () => {
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-1">
-          <Link to="/assets" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900">
+          <Link to="/designs" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900">
             <ArrowLeft className="h-4 w-4" /> Assets
           </Link>
           {(prevId || nextId) && (
             <div className="ml-3 flex items-center gap-1">
               <button
-                onClick={() => prevId && nav(`/assets/${prevId}`)}
+                onClick={() => prevId && nav(`/designs/${prevId}`)}
                 disabled={!prevId}
                 title="Previous asset (←)"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
@@ -327,7 +327,7 @@ const AssetDetail = () => {
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
-                onClick={() => nextId && nav(`/assets/${nextId}`)}
+                onClick={() => nextId && nav(`/designs/${nextId}`)}
                 disabled={!nextId}
                 title="Next asset (→)"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"

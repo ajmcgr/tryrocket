@@ -100,7 +100,7 @@ const CommandPalette = () => {
         <CommandGroup heading="Actions">
           <CommandItem onSelect={() => go("/create")}><Sparkles /> Create new asset</CommandItem>
           <CommandItem onSelect={() => go("/projects/new")}><FolderOpen /> New project</CommandItem>
-          <CommandItem onSelect={() => go("/assets")}><LayoutGrid /> Browse all assets</CommandItem>
+          <CommandItem onSelect={() => go("/designs")}><LayoutGrid /> Browse all assets</CommandItem>
           <CommandItem onSelect={() => go("/projects")}><FolderOpen /> Browse projects</CommandItem>
           <CommandItem onSelect={() => go("/insights")}><LineChart /> Insights</CommandItem>
           <CommandItem onSelect={() => go("/notifications")}><Bell /> Notifications</CommandItem>

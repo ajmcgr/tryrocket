@@ -76,7 +76,7 @@ export function isDesignAsset(asset: any): boolean {
 }
 
 export function assetHref(asset: any): string {
-  if (!asset?.id) return "/assets";
+  if (!asset?.id) return "/designs";
   if (getAssetExperience(asset) === "brand") {
     const pid = asset.project_id ? `/${asset.project_id}` : "";
     return `/brands${pid}?asset=${asset.id}`;

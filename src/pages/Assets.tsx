@@ -47,20 +47,11 @@ const supabase = _sb as any;
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
   logo: "Logo",
-  brand_guidelines: "Brand Guidelines",
-  color_system: "Color System",
-  font_system: "Font System",
-  brand_voice: "Brand Voice",
   graphic: "Graphic",
   icon: "Icon",
   photo: "Photo",
   template: "Template",
-  launch_copy: "Launch Copy",
-  product_hunt_copy: "PH Copy",
-  social_post: "Social Post",
-  founder_bio: "Founder Bio",
   presentation: "Presentation",
-  other: "Other",
 };
 
 const ALL_TYPES = Object.keys(ASSET_TYPE_LABELS);
@@ -403,7 +394,7 @@ const Assets = () => {
         <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600">
           <span>Folder:</span>
           <span className="font-medium text-neutral-900">{activeFolderName || "Unknown folder"}</span>
-          <Link to="/assets" className="text-neutral-500 hover:text-neutral-900">Clear</Link>
+          <Link to="/designs" className="text-neutral-500 hover:text-neutral-900">Clear</Link>
         </div>
       )}
 

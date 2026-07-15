@@ -59,7 +59,7 @@ const queryClient = new QueryClient();
 
 const AssetRouteRedirect = () => {
   const { id } = useParams();
-  return <Navigate to={id ? `/editor?id=${id}` : "/assets"} replace />;
+  return <Navigate to={id ? `/editor?id=${id}` : "/designs"} replace />;
 };
 
 const StudioRedirect = () => {
@@ -119,7 +119,9 @@ const App = () => (
               <Route path="/brand/:id" element={<BrandIdRedirect />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
-              <Route path="/assets" element={<Assets />} />
+              <Route path="/designs" element={<Assets />} />
+              <Route path="/designs/:id" element={<AssetRouteRedirect />} />
+              <Route path="/assets" element={<Navigate to="/designs" replace />} />
               <Route path="/assets/:id" element={<AssetRouteRedirect />} />
               <Route path="/trash" element={<Trash />} />
               <Route path="/create" element={<Generate />} />

@@ -34,7 +34,7 @@ const seed = (): Notification[] => {
   const now = Date.now();
   return [
     { id: "n1", kind: "system", title: "Welcome to Rocket", body: "Your workspace is ready. Start with Create to ship your first asset.", href: "/create", createdAt: now - 1000 * 60 * 5, read: false },
-    { id: "n2", kind: "asset", title: "Logo pack generated", body: "12 logo variants are ready in your library.", href: "/assets", createdAt: now - 1000 * 60 * 60 * 2, read: false },
+    { id: "n2", kind: "asset", title: "Logo pack generated", body: "12 logo variants are ready in your library.", href: "/designs", createdAt: now - 1000 * 60 * 60 * 2, read: false },
     { id: "n3", kind: "billing", title: "Trial credits added", body: "200 free credits applied. They expire in 14 days.", href: "/settings/billing", createdAt: now - 1000 * 60 * 60 * 24, read: true },
   ];
 };
