@@ -36,6 +36,8 @@ const ProjectDetail = () => {
   const [assets, setAssets] = useState<any[]>([]);
   const [allAssets, setAllAssets] = useState<any[]>([]);
   const [picking, setPicking] = useState(false);
+  const [allDesigns, setAllDesigns] = useState<any[]>([]);
+  const [pickingDesign, setPickingDesign] = useState(false);
   const [tab, setTab] = useState<"all" | WF>("all");
   const [completing, setCompleting] = useState(false);
   const [completionStatus, setCompletionStatus] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
@@ -169,6 +171,20 @@ const ProjectDetail = () => {
     setAllAssets(data || []); setPicking(true);
   };
 
+  const DESIGN_TYPES = Object.keys(WF_OF).filter(t => WF_OF[t] === "design");
+  const openDesignPicker = async () => {
+    const { data } = await supabase
+      .from("assets")
+      .select("id, title, asset_type, image_url, content, editor_state")
+      .eq("user_id", user!.id)
+      .is("project_id", null)
+      .is("deleted_at", null)
+      .in("asset_type", DESIGN_TYPES)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setAllDesigns(data || []); setPickingDesign(true);
+  };
+
   const addAsset = async (assetId: string) => {
     await supabase.from("assets").update({ project_id: id }).eq("id", assetId);
     setPicking(false); load();
@@ -199,6 +215,7 @@ const ProjectDetail = () => {
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{project.name}</h1>
         <div className="flex flex-wrap gap-2">
           <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/5 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/10"><LayoutGrid className="h-4 w-4" /> Edit Brand Kit</Link>
+          <button onClick={openDesignPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add design</button>
           <button onClick={openPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add asset</button>
           {missingKit().length > 0 && (
             <button
@@ -328,6 +345,31 @@ const ProjectDetail = () => {
                   <button key={a.id} onClick={() => addAsset(a.id)} className="overflow-hidden rounded-lg border border-neutral-200 text-left hover:border-brand">
                     <div className="aspect-square w-full bg-neutral-50">
                       {a.image_url ? <img src={a.image_url} alt="" className="h-full w-full object-cover" /> : <div className="p-2 text-[10px] text-neutral-500 line-clamp-5">{a.content || ""}</div>}
+                    </div>
+                    <div className="border-t border-neutral-100 p-2 text-xs truncate">{a.title}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {pickingDesign && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6" onClick={() => setPickingDesign(false)}>
+          <div className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-2xl bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold">Add design</h2>
+            <p className="mt-1 text-xs text-neutral-500">Choose from your designs not yet attached to a project.</p>
+            {allDesigns.length === 0 ? (
+              <p className="mt-4 text-sm text-neutral-500">No unassigned designs.</p>
+            ) : (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {allDesigns.map(a => (
+                  <button key={a.id} onClick={async () => { await addAsset(a.id); setPickingDesign(false); }} className="overflow-hidden rounded-lg border border-neutral-200 text-left hover:border-brand">
+                    <div className="aspect-square w-full bg-neutral-50">
+                      {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
+                        a.image_url ? <img src={a.image_url} alt="" className="h-full w-full object-cover" /> :
+                        <div className="p-2 text-[10px] text-neutral-500 line-clamp-5">{a.content || ""}</div>}
                     </div>
                     <div className="border-t border-neutral-100 p-2 text-xs truncate">{a.title}</div>
                   </button>
