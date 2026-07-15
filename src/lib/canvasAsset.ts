@@ -33,6 +33,7 @@ export type CanvasCircEl = CanvasBase & {
 export type CanvasImgEl = CanvasBase & {
   kind: "image";
   src: string;
+  color?: string;
 };
 
 export type CanvasLineEl = CanvasBase & {
