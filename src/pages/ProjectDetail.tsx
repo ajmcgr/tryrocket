@@ -252,6 +252,35 @@ const ProjectDetail = () => {
         </div>
       )}
 
+      {assets.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
+            <button onClick={() => setView("card")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "card" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <LayoutGrid className="h-3.5 w-3.5" /> Card
+            </button>
+            <button onClick={() => setView("list")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "list" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <List className="h-3.5 w-3.5" /> List
+            </button>
+          </div>
+          <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
+            <button onClick={() => setSort("name")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${sort === "name" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              <ArrowUpDown className="h-3.5 w-3.5" /> Name (A–Z)
+            </button>
+            <button onClick={() => setSort("date")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${sort === "date" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
+              Date created
+            </button>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => { setSelectMode(v => !v); clearSelection(); }}
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition ${selectMode ? "border-brand bg-brand/10 text-brand" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}
+            >
+              {selectMode ? <X className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />} {selectMode ? "Cancel" : "Select"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {assets.length === 0 ? (
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl border border-neutral-200 bg-white p-6">
