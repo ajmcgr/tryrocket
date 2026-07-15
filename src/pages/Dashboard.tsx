@@ -672,7 +672,7 @@ const Projects = () => {
                           </div>
                         </button>
                       ) : (
-                        <Link to={`/editor?id=${asset.id}`} className="block">
+                        <Link to={`/editor?id=${asset.id}`} className="block" target="_blank" rel="noopener noreferrer">
                           <div className="aspect-[16/9] w-full overflow-hidden bg-neutral-100">
                             <img src={asset.thumbnail_url || asset.image_url} alt={asset.title} className="h-full w-full object-cover" loading="lazy" />
                           </div>
@@ -688,7 +688,7 @@ const Projects = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56 bg-white">
                           <DropdownMenuItem asChild className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
-                            <Link to={`/editor?id=${asset.id}`}><ExternalLink className="mr-2 h-4 w-4" /> Open in editor</Link>
+                            <Link to={`/editor?id=${asset.id}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Open in editor</Link>
                           </DropdownMenuItem>
                           <DropdownMenuSub>
                             <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900">
@@ -727,7 +727,7 @@ const Projects = () => {
                           {isSelected ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
                         </button>
                       )}
-                      <Link to={`/editor?id=${asset.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                      <Link to={`/editor?id=${asset.id}`} className="flex min-w-0 flex-1 items-center gap-3" target="_blank" rel="noopener noreferrer">
                         <img src={asset.thumbnail_url || asset.image_url} alt={asset.title} className="h-14 w-20 rounded-lg object-cover" loading="lazy" />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium text-neutral-900">{asset.title || "Untitled upload"}</div>

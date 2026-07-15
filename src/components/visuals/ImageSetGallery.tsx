@@ -177,7 +177,7 @@ export default function ImageSetGallery({ asset }: { asset: any }) {
                   to={`/editor?id=${r.id}`}
                   className="truncate rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium text-neutral-800 hover:bg-white"
                   title="Open asset"
-                >
+                 target="_blank" rel="noopener noreferrer">
                   {isActive ? "Current" : "Open"}
                 </Link>
                 <div className="flex items-center gap-1">
@@ -254,7 +254,7 @@ export default function ImageSetGallery({ asset }: { asset: any }) {
               <Link
                 to={`/editor?id=${active.id}`}
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20"
-              >
+               target="_blank" rel="noopener noreferrer">
                 Open
               </Link>
               <button

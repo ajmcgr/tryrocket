@@ -169,7 +169,7 @@ const Templates = () => {
               key={design.id}
               to={`/editor?id=${design.id}`}
               className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
-            >
+             target="_blank" rel="noopener noreferrer">
               <div className="aspect-square w-full overflow-hidden bg-neutral-50">
                 <DesignPreview design={design} />
               </div>
@@ -196,7 +196,7 @@ const Templates = () => {
               key={design.id}
               to={`/editor?id=${design.id}`}
               className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 last:border-b-0"
-            >
+             target="_blank" rel="noopener noreferrer">
               <div className="h-14 w-14 overflow-hidden rounded-lg bg-neutral-50">
                 <DesignPreview design={design} />
               </div>
