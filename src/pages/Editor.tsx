@@ -827,15 +827,16 @@ const Editor = () => {
   /* attach transformer */
   useEffect(() => {
     const tr = trRef.current; if (!tr) return;
-    const node = selectedId ? nodeRefs.current[selectedId] : null;
-    if (node && selected && !selected.locked) {
-      tr.nodes([node]);
-      tr.getLayer()?.batchDraw();
-    } else {
-      tr.nodes([]);
-      tr.getLayer()?.batchDraw();
-    }
-  }, [selectedId, els, selected]);
+    const nodes = allSelectedIds
+      .map((id) => {
+        const el = els.find((e) => e.id === id);
+        if (!el || el.locked) return null;
+        return nodeRefs.current[id] || null;
+      })
+      .filter(Boolean) as any[];
+    tr.nodes(nodes);
+    tr.getLayer()?.batchDraw();
+  }, [allSelectedIds, els, selected]);
 
   const update = (id: string, patch: Partial<El>, opts?: { history?: boolean }) =>
     setEls((prev) => prev.map((e) => (e.id === id ? ({ ...e, ...patch } as El) : e)), opts);
