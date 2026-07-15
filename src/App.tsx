@@ -21,6 +21,7 @@ import Trash from "./pages/Trash.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import Studio from "./pages/Studio.tsx";
 import Brand from "./pages/Brand.tsx";
+import BrandHub from "./pages/BrandHub.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
@@ -107,7 +108,7 @@ const App = () => (
               <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/studio" element={<Navigate to="/brand" replace />} />
               <Route path="/studio/:id" element={<StudioRedirect />} />
-              <Route path="/brand" element={<Brand />} />
+              <Route path="/brand" element={<BrandHub />} />
               <Route path="/brand/:id" element={<Brand />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
