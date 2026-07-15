@@ -842,7 +842,7 @@ const Editor = () => {
       setSelectedId(next.id);
       return;
     }
-    const style = copiedStyleRef.current;
+    const style = copiedStyleRef.current as any;
     if (style && selected) {
       if (selected.kind === "text") {
         update(selected.id, {
