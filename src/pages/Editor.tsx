@@ -393,7 +393,13 @@ const Editor = () => {
 
   /* state + history */
   const [els, _setEls] = useState<El[]>(() => {
-    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch {}
+    // If we're opening a specific asset, start empty and wait for the fetch to
+    // hydrate. Otherwise flash previously-edited design from localStorage.
+    try {
+      const hasAssetId = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("id");
+      if (hasAssetId) return [];
+      const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw);
+    } catch {}
     return [];
   });
   const [bg, setBg] = useState<string>(() => {
@@ -482,7 +488,22 @@ const Editor = () => {
         _setEls(next); return;
       }
       if (a.image_url) {
-        const next = [{ id: uid(), kind: "image", x: 150, y: 100, w: 500, h: 400, visible: true, locked: false, src: a.image_url } as ImgEl];
+        // Probe natural size so we preserve the photo's real aspect ratio.
+        const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve({ w: img.naturalWidth || 500, h: img.naturalHeight || 400 });
+          img.onerror = () => resolve({ w: 500, h: 400 });
+          img.src = a.image_url as string;
+        });
+        const pad = 60;
+        const maxW = STAGE_W - pad * 2;
+        const maxH = STAGE_H - pad * 2;
+        const ratio = dims.w / dims.h;
+        let w = maxW, h = maxW / ratio;
+        if (h > maxH) { h = maxH; w = maxH * ratio; }
+        const x = (STAGE_W - w) / 2;
+        const y = (STAGE_H - h) / 2;
+        const next = [{ id: uid(), kind: "image", x, y, w, h, visible: true, locked: false, src: a.image_url } as ImgEl];
         lastPersistedStateRef.current = JSON.stringify(next);
         _setEls(next);
       } else if (a.content) {
