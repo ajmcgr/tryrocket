@@ -290,18 +290,6 @@ const ProjectDetail = () => {
         </div>
       )}
 
-      {id && (
-        <CollaboratorsModal
-          open={collabOpen}
-          onOpenChange={setCollabOpen}
-          projectId={id}
-          projectName={project.name}
-          ownerEmail={user?.email || undefined}
-          shareUrl={project.share_token ? `${window.location.origin}/share/project/${project.share_token}` : null}
-          onChange={setCollabs}
-        />
-      )}
-
       {completePanelOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-80 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-2.5">
