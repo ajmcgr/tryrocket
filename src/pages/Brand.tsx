@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import BrandContextStrip from "@/components/BrandContextStrip";
 import VariationStrip from "@/components/studio/VariationStrip";
 import RightInspector from "@/components/studio/RightInspector";
-import StudioLeftPanel from "@/components/studio/StudioLeftPanel";
 import BrandDocument from "@/components/brand/BrandDocument";
 import BrandCategoryNav from "@/components/brand/BrandCategoryNav";
 import { getProjectBrandContext, refreshBrandContext } from "@/lib/brandContext";
@@ -218,7 +217,6 @@ export default function Brand() {
 
   return (
     <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-neutral-50">
-      <StudioLeftPanel projectId={projectId!} busy={busy} onSend={handleSend} />
       <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         <div className="border-b border-neutral-200 bg-white px-6 py-3">
           <div className="flex items-center gap-3">

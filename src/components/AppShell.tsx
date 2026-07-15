@@ -32,7 +32,7 @@ const AppShell = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [headerCenter, setHeaderCenter] = useState<ReactNode | null>(null);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
-  const sidebarRoutes = ["/create", "/assets", "/editor", "/projects", "/templates"];
+  const sidebarRoutes = ["/create", "/assets", "/editor", "/projects", "/templates", "/brand"];
   const showSidebar = sidebarRoutes.some(r => location.pathname === r || location.pathname.startsWith(r + "/"));
   const isEditorPage = location.pathname === "/editor";
 
