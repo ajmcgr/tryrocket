@@ -475,6 +475,7 @@ const Generate = () => {
       const effective = workflow;
       let allIds: string[] = [];
       let creditsErr: any = null;
+      let effectiveProjectId: string | null = projectId || null;
       if (!newChatId) {
         const title = (() => {
           const explicitUrl = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b)/i)?.[1];
@@ -487,14 +488,41 @@ const Generate = () => {
         })();
         const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
         const workspace_id = await ensureActiveWorkspaceId();
+        // Auto-create a project for this chat if one isn't already attached
+        if (!effectiveProjectId) {
+          const projectName = (() => {
+            const explicitUrl = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)\b)/i)?.[1];
+            if (explicitUrl) {
+              const cleaned = explicitUrl.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
+              return cleaned;
+            }
+            return p.length > 60 ? `${p.slice(0, 60).trim()}…` : p;
+          })();
+          try {
+            const { data: proj } = await supabase
+              .from("projects")
+              .insert({ user_id: user.id, workspace_id, name: projectName } as any)
+              .select("id")
+              .single();
+            if (proj?.id) effectiveProjectId = proj.id as string;
+          } catch { /* non-fatal */ }
+        }
         newChatId = await createChatRecord({
           supabase,
           userId: user.id,
           workspaceId: workspace_id,
-          projectId,
+          projectId: effectiveProjectId,
           title,
           prompt: p,
         });
+        // Ensure downstream inserts get project_id too
+        if (effectiveProjectId && !projectId) {
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.set("project", effectiveProjectId);
+            window.history.replaceState({}, "", url.toString());
+          } catch { /* noop */ }
+        }
       }
       // Best-effort brand context: URL in prompt → scrape-url, else project.brand_context, else most recent asset context
       let sharedCtx: any = activeBrandCtx || null;
@@ -506,10 +534,10 @@ const Generate = () => {
           if (scraped && !scraped.error) sharedCtx = { ...scraped, url: u };
           else sharedCtx = { url: u };
         } catch { sharedCtx = { url: u }; }
-      } else if (projectId) {
+      } else if (effectiveProjectId) {
         // Reuse stored project brand context if no new URL was given
         try {
-          const { data: proj } = await supabase.from("projects").select("brand_context,source_url").eq("id", projectId).maybeSingle();
+          const { data: proj } = await supabase.from("projects").select("brand_context,source_url").eq("id", effectiveProjectId).maybeSingle();
           if (proj?.brand_context) sharedCtx = proj.brand_context;
         } catch { /* noop */ }
       }
@@ -541,7 +569,7 @@ const Generate = () => {
         const rows = variants.map((state, i) => ({
           user_id: user!.id,
           workspace_id: _wid,
-          project_id: projectId || null,
+          project_id: effectiveProjectId || null,
           asset_type: "logo",
           title: variants.length > 1 ? `Logotype ${i + 1}` : "Logotype",
           prompt: p,
@@ -562,7 +590,7 @@ const Generate = () => {
         const requestBodyBase = {
           prompt: backendPrompt,
           asset_type: effectiveAssetType,
-          project_id: projectId || undefined,
+          project_id: effectiveProjectId || undefined,
           brand_context: sharedCtx || undefined,
           workspace_id,
           requested_lockup: isMixedLogoAndLogotypePrompt(p),
@@ -632,7 +660,7 @@ const Generate = () => {
         const _wsid = getActiveWorkspaceIdSync() || undefined;
         const results = await Promise.all(plan.map(step =>
           supabase.functions.invoke("generate-asset", {
-            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: projectId || undefined, brand_context: sharedCtx || undefined, workspace_id: _wsid },
+            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: effectiveProjectId || undefined, brand_context: sharedCtx || undefined, workspace_id: _wsid },
           })
         ));
         for (const r of results) {
@@ -646,11 +674,11 @@ const Generate = () => {
         }
       }
       // If we scraped a real brand and have a project, persist context to project for reuse
-      if (sharedCtx && projectId && (sharedCtx.productName || sharedCtx.colors?.length)) {
+      if (sharedCtx && effectiveProjectId && (sharedCtx.productName || sharedCtx.colors?.length)) {
         try {
-          const { data: proj } = await supabase.from("projects").select("brand_context").eq("id", projectId).maybeSingle();
+          const { data: proj } = await supabase.from("projects").select("brand_context").eq("id", effectiveProjectId).maybeSingle();
           if (!proj?.brand_context) {
-            await supabase.from("projects").update({ brand_context: sharedCtx, source_url: sharedCtx.url || null }).eq("id", projectId);
+            await supabase.from("projects").update({ brand_context: sharedCtx, source_url: sharedCtx.url || null }).eq("id", effectiveProjectId);
           }
         } catch { /* noop */ }
       }
