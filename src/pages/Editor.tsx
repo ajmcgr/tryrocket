@@ -1627,14 +1627,13 @@ const Editor = () => {
           swatches={brandKit.colors}
         />
 
-        {(brandKit.fonts.length + brandKit.logos.length) > 0 && (
+        {(brandKit.fonts.length + brandKit.colors.length) > 0 && (
           <>
             <span className="mx-1 h-6 w-px bg-neutral-200" />
-            {brandKit.logos.slice(0, 3).map((l) => (
-              <button key={l.id} onClick={() => addImageFromUrl(l.url)} title={l.title}
-                className="h-8 w-8 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 hover:border-brand">
-                <img src={l.url} alt={l.title} className="h-full w-full object-contain" />
-              </button>
+            {brandKit.colors.slice(0, 3).map((c) => (
+              <button key={c} onClick={() => applyColorToSelected(c)} title={`Color overlay: ${c}`}
+                className="h-8 w-8 rounded-lg border border-neutral-200 hover:border-brand"
+                style={{ background: c }} />
             ))}
             {brandKit.fonts.slice(0, 2).map((f) => (
               <button key={f} onClick={() => applyFontToSelected(f)} title={`Font: ${f}`}
