@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   ArrowLeft, Sparkles, Palette, Type, MessageSquare, Layers, Shapes, Image as ImageIcon,
-  Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check, Trash2,
+  Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check, Trash2, X,
 } from "lucide-react";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
@@ -96,6 +96,23 @@ const BrandKitHub = () => {
   const [loading, setLoading] = useState(true);
   const [activeGroup, setActiveGroup] = useState<string>("brand");
   const { toast } = useToast();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleSelect = (assetId: string) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(assetId) ? next.delete(assetId) : next.add(assetId);
+    return next;
+  });
+  const clearSelection = () => setSelected(new Set());
+  const bulkTrash = async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Move ${ids.length} asset${ids.length === 1 ? "" : "s"} to Trash?`)) return;
+    const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).in("id", ids);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Moved ${ids.length} to Trash` });
+    setAssets(prev => prev.filter(a => !ids.includes(a.id)));
+    clearSelection();
+  };
 
   const reload = async () => {
     if (!id) return;
@@ -187,9 +204,20 @@ const BrandKitHub = () => {
             const existing = assets.filter(it.match);
             const preview = existing.find(a => a.image_url) || existing[0];
             const done = existing.length > 0;
+            const isSelected = preview ? selected.has(preview.id) : false;
             return (
-              <div key={it.key} className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+              <div key={it.key} className={`group overflow-hidden rounded-2xl border bg-white ${isSelected ? "border-brand ring-2 ring-brand/40" : "border-neutral-200"}`}>
                 <div className="relative aspect-square w-full bg-neutral-50">
+                  {preview && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(preview.id); }}
+                      className={`absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border bg-white/95 transition ${isSelected ? "border-brand text-brand opacity-100" : "border-neutral-300 text-transparent opacity-0 group-hover:opacity-100"}`}
+                      title={isSelected ? "Deselect" : "Select"}
+                    >
+                      {isSelected && <Check className="h-4 w-4" />}
+                    </button>
+                  )}
                   {preview?.image_url ? (
                     <img src={preview.image_url} alt={preview.title} className="h-full w-full object-cover" />
                   ) : preview?.content ? (
@@ -234,6 +262,16 @@ const BrandKitHub = () => {
           })}
         </div>
       </section>
+
+      {selected.size > 0 && (
+        <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
+          <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-2 shadow-lg">
+            <span className="pl-2 pr-1 text-sm font-medium">{selected.size} selected</span>
+            <button onClick={bulkTrash} className="rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700">Move to Trash</button>
+            <button onClick={clearSelection} className="rounded-full px-2 py-1 text-neutral-500 hover:bg-neutral-100"><X className="h-4 w-4" /></button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
