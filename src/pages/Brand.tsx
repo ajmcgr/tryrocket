@@ -50,10 +50,18 @@ export default function Brand() {
   const brandAssets = useMemo(() => assets.filter(isBrandAsset), [assets]);
   const activeId = params.get("asset") || undefined;
   const activeCategory = params.get("cat") || null;
-  const filteredAssets = useMemo(
-    () => (activeCategory ? brandAssets.filter((a) => a.asset_type === activeCategory) : brandAssets),
-    [brandAssets, activeCategory],
-  );
+  const searchQ = params.get("q") || "";
+  const filteredAssets = useMemo(() => {
+    const q = searchQ.trim().toLowerCase();
+    return brandAssets.filter((a) => {
+      if (activeCategory && a.asset_type !== activeCategory) return false;
+      if (!q) return true;
+      return (
+        (a.title || "").toLowerCase().includes(q) ||
+        (a.content || "").toLowerCase().includes(q)
+      );
+    });
+  }, [brandAssets, activeCategory, searchQ]);
   const active = useMemo(
     () => filteredAssets.find((a) => a.id === activeId) || filteredAssets[0] || null,
     [filteredAssets, activeId],
@@ -68,6 +76,14 @@ export default function Brand() {
     const next = new URLSearchParams(params);
     if (type) next.set("cat", type);
     else next.delete("cat");
+    next.delete("asset");
+    setParams(next, { replace: true });
+  };
+
+  const setSearch = (q: string) => {
+    const next = new URLSearchParams(params);
+    if (q) next.set("q", q);
+    else next.delete("q");
     next.delete("asset");
     setParams(next, { replace: true });
   };
@@ -255,11 +271,19 @@ export default function Brand() {
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-              <BrandCategoryNav
-                assets={brandAssets}
-                activeType={activeCategory}
-                onSelect={selectCategory}
-              />
+              <div className="space-y-3">
+                <input
+                  value={searchQ}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search brand…"
+                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs outline-none focus:border-neutral-400"
+                />
+                <BrandCategoryNav
+                  assets={brandAssets}
+                  activeType={activeCategory}
+                  onSelect={selectCategory}
+                />
+              </div>
               <div className="space-y-6">
                 <BrandDocument
                   asset={active}
