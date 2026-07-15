@@ -89,6 +89,14 @@ export default function BrandHub() {
           <p className="mt-1 text-sm text-neutral-500">Guidelines, colors, fonts, voice and copy — organized by category.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to="/trash"
+            title="Trash"
+            aria-label="Trash"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Link>
           <select
             value={activeProject}
             onChange={(e) => setActiveProject(e.target.value)}
