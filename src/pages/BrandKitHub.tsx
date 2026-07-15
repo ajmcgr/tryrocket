@@ -91,6 +91,12 @@ const GROUPS: Group[] = [
   },
 ];
 
+const XLogo = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
 const BrandKitHub = () => {
   const { id } = useParams();
   const [project, setProject] = useState<any>(null);
@@ -99,6 +105,85 @@ const BrandKitHub = () => {
   const [activeGroup, setActiveGroup] = useState<string>("brand");
   const { toast } = useToast();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+
+  const shareUrl = project?.share_token
+    ? `${window.location.origin}/share/project/${project.share_token}`
+    : null;
+
+  const ensureShareToken = async () => {
+    if (!id) return null;
+    if (project?.share_token) return shareUrl;
+    setShareBusy(true);
+    const token = (crypto as any).randomUUID();
+    const { error } = await supabase.from("projects").update({ share_token: token }).eq("id", id);
+    if (error) {
+      toast({ title: "Failed to enable sharing", description: error.message, variant: "destructive" });
+      setShareBusy(false);
+      return null;
+    }
+    setProject((prev: any) => (prev ? { ...prev, share_token: token } : prev));
+    setShareBusy(false);
+    return `${window.location.origin}/share/project/${token}`;
+  };
+
+  const shareText = `${project?.name || "Rocket project"}`;
+  const openSocial = async (kind: "facebook" | "twitter" | "whatsapp" | "imessage" | "email" | "messenger") => {
+    const url = await ensureShareToken();
+    if (!url) return;
+    const enc = encodeURIComponent;
+    const u = enc(url);
+    const t = enc(shareText);
+    let target = "";
+    switch (kind) {
+      case "facebook": target = `https://www.facebook.com/sharer/sharer.php?u=${u}`; break;
+      case "twitter": target = `https://twitter.com/intent/tweet?text=${t}&url=${u}`; break;
+      case "whatsapp": target = `https://wa.me/?text=${t}%20${u}`; break;
+      case "imessage": target = `sms:&body=${t}%20${url}`; break;
+      case "email": target = `mailto:?subject=${enc(project?.name || "Rocket project")}&body=${t}%0A%0A${u}`; break;
+      case "messenger": target = `https://www.facebook.com/dialog/send?link=${u}&app_id=140586622674265&redirect_uri=${u}`; break;
+    }
+    window.open(target, "_blank", "noopener,noreferrer");
+  };
+
+  const copyLink = async () => {
+    const url = await ensureShareToken();
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    toast({ title: "Link copied" });
+  };
+
+  const nativeShare = async () => {
+    const url = await ensureShareToken();
+    if (!url) return;
+    if (navigator.share) {
+      try { await navigator.share({ title: project?.name || "Rocket project", text: shareText, url }); } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied" });
+    }
+  };
+
+  const disableShare = async () => {
+    if (!id) return;
+    await supabase.from("projects").update({ share_token: null }).eq("id", id);
+    setProject((prev: any) => (prev ? { ...prev, share_token: null } : prev));
+    toast({ title: "Public link disabled" });
+  };
+
+  const ShareTile = ({ Icon, label, onClick, iconClass }: any) => (
+    <button
+      onClick={onClick}
+      disabled={shareBusy}
+      className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-200 bg-white p-3 text-center text-neutral-800 transition hover:border-brand hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${iconClass || "bg-neutral-100 text-neutral-700"}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="text-[11px] font-medium text-neutral-800">{label}</div>
+    </button>
+  );
   const toggleSelect = (assetId: string) => setSelected(prev => {
     const next = new Set(prev);
     next.has(assetId) ? next.delete(assetId) : next.add(assetId);
