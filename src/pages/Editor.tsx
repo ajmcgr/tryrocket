@@ -1901,3 +1901,71 @@ const Inspector = ({ el, fonts, onChange }: { el: El; fonts: string[]; onChange:
 };
 
 export default Editor;
+
+function ColorPickerButton({ value, onChange, swatches = [] }: { value: string; onChange: (c: string) => void; swatches?: string[] }) {
+  const [hex, setHex] = useState(value || "#000000");
+  useEffect(() => { setHex(value || "#000000"); }, [value]);
+  const normalize = (v: string) => {
+    let s = v.trim();
+    if (!s.startsWith("#")) s = "#" + s;
+    return s;
+  };
+  const commitHex = (v: string) => {
+    const n = normalize(v);
+    if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(n)) onChange(n);
+  };
+  const PRESETS = ["#000000", "#FFFFFF", "#EF4444", "#F59E0B", "#EAB308", "#22C55E", "#06B6D4", "#3B82F6", "#8B5CF6", "#EC4899"];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          title="Color picker"
+          className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-xl border border-neutral-200/90 bg-white/75 hover:border-neutral-300"
+        >
+          <span className="h-4 w-4 rounded-sm border border-neutral-300" style={{ background: value || "transparent" }} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 space-y-3 p-3">
+        <input
+          type="color"
+          value={/^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : "#000000"}
+          onChange={(e) => { setHex(e.target.value); onChange(e.target.value); }}
+          className="h-10 w-full cursor-pointer rounded-md border border-neutral-200 bg-white"
+        />
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-neutral-500">HEX</span>
+          <input
+            value={hex}
+            onChange={(e) => setHex(e.target.value)}
+            onBlur={(e) => commitHex(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { commitHex((e.target as HTMLInputElement).value); (e.target as HTMLInputElement).blur(); } }}
+            spellCheck={false}
+            className="flex-1 rounded-md border border-neutral-200 px-2 py-1 text-sm font-mono focus:border-neutral-400 focus:outline-none"
+          />
+        </div>
+        {swatches.length > 0 && (
+          <div>
+            <div className="mb-1.5 text-xs font-medium text-neutral-500">Brand</div>
+            <div className="flex flex-wrap gap-1.5">
+              {swatches.slice(0, 12).map((c) => (
+                <button key={c} title={c} onClick={() => { setHex(c); onChange(c); }}
+                  className="h-6 w-6 rounded-md border border-neutral-200 transition hover:scale-110"
+                  style={{ background: c }} />
+              ))}
+            </div>
+          </div>
+        )}
+        <div>
+          <div className="mb-1.5 text-xs font-medium text-neutral-500">Presets</div>
+          <div className="flex flex-wrap gap-1.5">
+            {PRESETS.map((c) => (
+              <button key={c} title={c} onClick={() => { setHex(c); onChange(c); }}
+                className="h-6 w-6 rounded-md border border-neutral-200 transition hover:scale-110"
+                style={{ background: c }} />
+            ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
