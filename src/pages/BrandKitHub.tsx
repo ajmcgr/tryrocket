@@ -109,6 +109,7 @@ const BrandKitHub = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [shareOpen, setShareOpen] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [zipping, setZipping] = useState(false);
 
   const shareUrl = project?.share_token
     ? `${window.location.origin}/share/project/${project.share_token}`
