@@ -386,7 +386,7 @@ const ProjectDetail = () => {
         <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
           <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-2 shadow-lg">
             <span className="pl-2 pr-1 text-sm font-medium">{selected.size} selected</span>
-            <button onClick={() => selectAllVisible(visible)} className="rounded-full px-3 py-1 text-xs text-neutral-600 hover:bg-neutral-100">Select all</button>
+            <button onClick={() => selectAllVisible(visibleSorted)} className="rounded-full px-3 py-1 text-xs text-neutral-600 hover:bg-neutral-100">Select all</button>
             <button onClick={bulkRemoveFromProject} className="rounded-full border border-neutral-200 px-3 py-1 text-xs hover:bg-neutral-50">Remove from project</button>
             <button onClick={bulkTrash} className="rounded-full bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700">Move to Trash</button>
             <button onClick={clearSelection} className="rounded-full px-2 py-1 text-neutral-500 hover:bg-neutral-100"><X className="h-4 w-4" /></button>
