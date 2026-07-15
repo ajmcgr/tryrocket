@@ -63,6 +63,7 @@ const AppShell = () => {
           <div className="ml-auto flex items-center gap-2">
             {isEditorPage ? null : headerActions}
             <WorkspaceSwitcher />
+            {isEditorPage && (
             <button
               type="button"
               onClick={() => setShareOpen(true)}
@@ -72,6 +73,7 @@ const AppShell = () => {
               <Share2 className="h-4 w-4" />
               Share
             </button>
+            )}
             <div data-tour="nav-notifications" className="inline-flex">
               <NotificationsBell />
             </div>
