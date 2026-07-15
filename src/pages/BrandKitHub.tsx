@@ -175,6 +175,19 @@ const BrandKitHub = () => {
     toast({ title: "Public link disabled" });
   };
 
+  const downloadZip = async () => {
+    if (!assets.length) return;
+    setZipping(true);
+    try {
+      const base = (project?.name || "brand-kit").replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "brand-kit";
+      await packAssetsZip(assets, `${base}-assets.zip`);
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e?.message || "Could not build ZIP.", variant: "destructive" });
+    } finally {
+      setZipping(false);
+    }
+  };
+
   const ShareTile = ({ Icon, label, onClick, iconClass }: any) => (
     <button
       onClick={onClick}
