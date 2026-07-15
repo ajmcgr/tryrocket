@@ -20,8 +20,6 @@ export function isUploadedImageDesign(asset: any) {
   if (!asset?.image_url) return false;
   const meta = asset?.meta || {};
   return (
-    asset.asset_type === "photo" ||
-    !asset.prompt ||
     meta.uploaded === true ||
     meta.source === "upload" ||
     meta.origin === "upload" ||
