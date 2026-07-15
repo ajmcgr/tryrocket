@@ -363,10 +363,13 @@ const Assets = () => {
 
   const DesignPreview = ({ asset }: { asset: DesignPreviewAsset }) => {
     const isLogotype = (asset?.editor_state as any)?.kind === "logotype";
-    const isCanvas = hasRenderableCanvasElements(asset?.editor_state);
-    const fallbackLogotype = !isLogotype && !isCanvas && isLogotypeLikeDesign(asset);
     const rasterPreview = asset.thumbnail_url || asset.image_url;
-    const isImage = rasterPreview && !isLogotype && !isCanvas && !fallbackLogotype;
+    // Prefer a real image (upload/generated) over speculative canvas/logotype fallbacks —
+    // otherwise assets like uploaded avatars render blank because an empty editor_state
+    // shadows the image.
+    const isImage = !!rasterPreview && !isLogotype;
+    const isCanvas = !isImage && !isLogotype && hasRenderableCanvasElements(asset?.editor_state);
+    const fallbackLogotype = !isImage && !isLogotype && !isCanvas && isLogotypeLikeDesign(asset);
     const fallbackText = safePreviewText(asset);
     const brand = !isLogotype && !isCanvas && !fallbackLogotype && !isImage && isBrandAsset(asset);
     return (
