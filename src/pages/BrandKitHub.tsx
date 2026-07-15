@@ -368,7 +368,7 @@ const BrandKitHub = () => {
                       </button>
                     )}
                     <Link to={generateHref(it)} className="inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[11px] font-medium text-brand-foreground hover:bg-brand-hover">
-                      <Plus className="h-3 w-3" /> {done ? "More" : "Generate"}
+                      <Plus className="h-3 w-3" /> {done ? "New" : "Generate"}
                     </Link>
                   </div>
                 </div>
