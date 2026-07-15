@@ -79,6 +79,14 @@ export const comparisons: Comparison[] = [
       "BrandForce is a creative growth agency. It analyzes the visual landscape of your category to ensure distinctiveness, develops 3 distinct visual directions based on the brand strategy, extends the chosen direction into a comprehensive design system, and creates final assets ready for global deployment across all channels.",
     bestFor: "Brands that want strategic identity development and agency-led rollout",
   },
+  {
+    slug: "bloom",
+    tool: "Bloom",
+    rank: 10,
+    description:
+      "Bloom (trybloom.ai) generates logo concepts and brand assets from a short description of your business, with a friendly guided flow that gets you to a usable identity fast. It's a solid pick if you want a lightweight, opinionated generator that hands you a tidy starter kit. Compared to Rocket, Bloom leans more toward one-shot logo output, while Rocket treats the logo as the seed of an ongoing identity you can keep extending with matching assets, edits, and exports.",
+    bestFor: "Founders who want a quick guided logo and starter brand kit",
+  },
 ];
 
 export const getComparison = (slug: string) =>
