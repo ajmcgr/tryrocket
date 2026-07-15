@@ -1409,10 +1409,26 @@ const Editor = () => {
       key: el.id,
       ref: (n: any) => { nodeRefs.current[el.id] = n; },
       draggable: !el.locked,
-      onClick: () => setSelectedId(el.id),
-      onTap: () => setSelectedId(el.id),
+      onClick: (e: any) => {
+        const shift = e?.evt?.shiftKey;
+        if (shift) {
+          if (selectedId && selectedId !== el.id) toggleExtra(el.id);
+          else selectOnly(el.id);
+        } else {
+          selectOnly(el.id);
+        }
+      },
+      onTap: (e: any) => {
+        const shift = e?.evt?.shiftKey;
+        if (shift) {
+          if (selectedId && selectedId !== el.id) toggleExtra(el.id);
+          else selectOnly(el.id);
+        } else {
+          selectOnly(el.id);
+        }
+      },
       onContextMenu: (e: any) => {
-        setSelectedId(el.id);
+        if (!allSelectedIds.includes(el.id)) selectOnly(el.id);
         openCanvasMenu(e.evt);
       },
       onDragEnd: (e: any) => update(el.id, { x: e.target.x(), y: e.target.y() } as any),
