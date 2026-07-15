@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { AppShellOutletContext } from "@/components/AppShell";
 import { defaultLogotypeState, LOGOTYPE_FONTS, pickLogotypeText, type LogotypeState, loadGoogleFont } from "@/lib/logotype";
+import { isBrandAsset } from "@/lib/assetExperience";
 const supabase = _sb as any;
 
 type Base = {

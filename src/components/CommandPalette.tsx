@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { assetHref } from "@/lib/assetExperience";
+import { assetHref, isBrandAsset } from "@/lib/assetExperience";
 import {
   CommandDialog,
   CommandEmpty,
@@ -14,7 +14,7 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sparkles, LayoutGrid, FolderOpen, LineChart, Settings, CreditCard,
-  LogOut, FileText, Palette, Bell,
+  LogOut, FileText, Palette, Bell, BookOpen,
 } from "lucide-react";
 
 const supabase = _sb as any;
@@ -89,6 +89,8 @@ const CommandPalette = () => {
   const searching_q = query.trim().length >= 2;
   const mergedProjects = searching_q ? searchProjects : projects;
   const mergedAssets = searching_q ? searchAssets : assets;
+  const brandItems = mergedAssets.filter((a) => isBrandAsset(a));
+  const designItems = mergedAssets.filter((a) => !isBrandAsset(a));
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -115,13 +117,27 @@ const CommandPalette = () => {
             </CommandGroup>
           </>
         )}
-        {mergedAssets.length > 0 && (
+        {designItems.length > 0 && (
           <>
             <CommandSeparator />
-            <CommandGroup heading={searching_q ? "Matching assets" : "Recent assets"}>
-              {mergedAssets.map((a) => (
+            <CommandGroup heading={searching_q ? "Matching designs" : "Recent designs"}>
+              {designItems.map((a) => (
                 <CommandItem key={a.id} value={`asset ${a.title} ${a.asset_type || ""}`} onSelect={() => go(assetHref(a))}>
                   <FileText />
+                  <span className="truncate">{a.title || "Untitled"}</span>
+                  {a.asset_type && <span className="ml-auto text-xs text-neutral-400">{a.asset_type.replace(/_/g, " ")}</span>}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+        {brandItems.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading={searching_q ? "Matching brand" : "Brand"}>
+              {brandItems.map((a) => (
+                <CommandItem key={a.id} value={`brand ${a.title} ${a.asset_type || ""}`} onSelect={() => go(assetHref(a))}>
+                  <BookOpen />
                   <span className="truncate">{a.title || "Untitled"}</span>
                   {a.asset_type && <span className="ml-auto text-xs text-neutral-400">{a.asset_type.replace(/_/g, " ")}</span>}
                 </CommandItem>
