@@ -12,6 +12,16 @@ import { packAssetsZip } from "@/lib/exporters/zipPack";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // A hub "item" maps a Looka-style asset slot to a generator entry-point.
 // asset_type values reuse existing Rocket types where possible; new visual
@@ -110,6 +120,7 @@ const BrandKitHub = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
   const [zipping, setZipping] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; label: string; assetTitle?: string } | null>(null);
 
   const shareUrl = project?.share_token
     ? `${window.location.origin}/share/project/${project.share_token}`
@@ -223,12 +234,14 @@ const BrandKitHub = () => {
     setAssets(data || []);
   };
 
-  const deleteAsset = async (assetId: string, label: string) => {
-    if (!confirm(`Delete ${label}? It will move to Trash.`)) return;
+  const confirmRemove = async () => {
+    if (!removeTarget) return;
+    const { id: assetId, label } = removeTarget;
     const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", assetId);
-    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Moved to Trash" });
+    if (error) { toast({ title: "Remove failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Removed ${label} from brand kit`, description: "Moved to Trash. You can restore it anytime." });
     setAssets(prev => prev.filter(a => a.id !== assetId));
+    setRemoveTarget(null);
   };
 
   useEffect(() => {
@@ -316,7 +329,9 @@ const BrandKitHub = () => {
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {active.items.map(it => {
-            const existing = assets.filter(it.match);
+            const existingAll = assets.filter(it.match);
+            // Canonical brand-kit item: first created (oldest). Extras stay accessible via count.
+            const existing = [...existingAll].sort((a, b) => +new Date(a.created_at || 0) - +new Date(b.created_at || 0));
             const preview = existing.find(a => a.image_url) || existing[0];
             const done = existing.length > 0;
             const isSelected = preview ? selected.has(preview.id) : false;
@@ -360,9 +375,9 @@ const BrandKitHub = () => {
                     )}
                     {done && preview && (
                       <button
-                        onClick={() => deleteAsset(preview.id, it.label)}
+                        onClick={() => setRemoveTarget({ id: preview.id, label: it.label, assetTitle: preview.title })}
                         className="inline-flex items-center rounded-full border border-neutral-200 px-2 py-1 text-[11px] text-red-600 hover:bg-red-50"
-                        title={`Delete ${it.label}`}
+                        title={`Remove ${it.label} from brand kit`}
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -432,6 +447,24 @@ const BrandKitHub = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!removeTarget} onOpenChange={(o) => !o && setRemoveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {removeTarget?.label} from brand kit?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {removeTarget?.assetTitle ? `"${removeTarget.assetTitle}" ` : "This asset "}
+              will be moved to Trash. You can restore it from the Trash view within 30 days.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove} className="bg-red-600 text-white hover:bg-red-700">
+              Remove from brand kit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
