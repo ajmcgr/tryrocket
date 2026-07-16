@@ -1020,6 +1020,12 @@ const Editor = () => {
     } as any).select().single();
     if (error || !data) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); return; }
     toast({ title: "Saved as new design" });
+    window.dispatchEvent(new CustomEvent("rocket:notify", { detail: {
+      kind: "asset",
+      title: "New design saved",
+      body: `"${title}" was added to your designs.`,
+      href: `/editor?id=${data.id}`,
+    }}));
     nav(`/editor?id=${data.id}`);
   };
 
