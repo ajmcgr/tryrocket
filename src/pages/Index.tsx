@@ -10,14 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const FAQS = [
-  { q: "What does Rocket actually generate?", a: "A complete brand kit from a single URL: positioning, taglines, value props, audience analysis, founder bio, social posts, Product Hunt copy, directory submissions, launch strategy, email templates, messaging framework, and a full launch checklist." },
-  { q: "What types of brand assets can I create?", a: "Choose from 11 asset types: Brand Guidelines, Brand Templates, Logos, Colors, Fonts, Brand Voice, Photos, Components, Graphics, Icons, and Launch Copy. Every Rocket generates a full kit across all categories, organized and ready to export." },
-  { q: "How long does it take?", a: "About 30–60 seconds. You'll see a live progress UI, then land on your editable Rocket." },
-  { q: "Can I edit and regenerate sections?", a: "Yes. Every section has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit." },
-  { q: "What's a credit?", a: "Credits power every generation. Text assets cost 1 credit; images cost more. Free plan gets 100 credits/month, Pro gets 3,000. Top up anytime with credit packs." },
+  { q: "What does Rocket actually generate?", a: "A complete brand system from a single URL or prompt: logos and logotypes, color palettes, typography, brand voice, launch copy, social posts, Product Hunt kits, email templates, and a full Brand Kit you can export or drop into any design." },
+  { q: "How is Rocket organized?", a: "Projects hold your designs, assets, and uploads. Designs are editable canvas files. Assets are the Brand Kit — one canonical logo, palette, typeface, etc. per project. Templates give you a starting point in one click." },
+  { q: "How does the Brand Kit work?", a: "Each project has one canonical item per category (logo, colors, typography, design system…). Swap or remove any item — Remove moves it to Trash and you can restore within 30 days. Pull extras from any other project via '+ New'." },
+  { q: "Can I edit designs like Canva?", a: "Yes. Multi-select (Shift-click + marquee), drag-resize, color overlays for logos and images, image uploads with resize, layers on the right, and export to PNG/SVG/PDF/ZIP. Brand colors appear as one-click swatches in the toolbar." },
+  { q: "How long does a generation take?", a: "About 30–60 seconds. /create keeps your full chat history per project — prompts and responses persist so you can scroll back and iterate." },
+  { q: "Can I regenerate individual pieces?", a: "Yes. Every asset has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit, and you can leave feedback to steer the next pass." },
+  { q: "What's a credit?", a: "Credits power every generation. Text assets cost 1; images cost more. Free plan gets 100/month, Pro gets 3,000. Top up anytime — packs never expire." },
   { q: "Where can I launch from Rocket?", a: "We pre-fill submissions for Product Hunt, BetaList, There's An AI For That, Hacker News, Peerlist, Uneed, Alternative.me, G2, Indie Hackers, and one-click handoff to Launch." },
-  { q: "Do you support custom domains / branding?", a: "Yes — Pro plan exports as Markdown and PDF with your brand colors." },
-  { q: "Is there a free trial of Pro?", a: "7 days free, no card required on the Free plan to start." },
+  { q: "Do you support sharing and exports?", a: "Yes. Every design has a share link that opens in the editor; projects share a full Brand Kit view. Export PNG, SVG, PDF, or a ZIP of your kit. Pro adds Markdown / PDF brand guidelines and password-protected share links." },
+  { q: "Is there a free trial of Pro?", a: "7 days free on Pro, no card required to start on Free." },
   { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You'll keep access until the end of the period." },
 ];
 
@@ -203,7 +205,7 @@ const Index = () => {
             Make Your Product a Brand
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
-            Create or evolve your brand, plus logos, brand guidelines, graphics, templates, and launch-ready creative assets.
+            Generate your logo, palette, typography, and a full Brand Kit — then design social posts, launch copy, and marketing assets in the Rocket editor. All in one workspace.
           </p>
           <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl">
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">

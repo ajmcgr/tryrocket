@@ -4,14 +4,20 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 
 const FAQS = [
-  { q: "What does Rocket actually generate?", a: "A complete brand kit from a single URL: positioning, taglines, value props, audience analysis, founder bio, social posts, Product Hunt copy, directory submissions, launch strategy, email templates, messaging framework, and a full launch checklist." },
-  { q: "What types of brand assets can I create?", a: "Choose from 11 asset types: Brand Guidelines, Brand Templates, Logos, Colors, Fonts, Brand Voice, Photos, Components, Graphics, Icons, and Launch Copy. Every Rocket generates a full kit across all categories, organized and ready to export." },
-  { q: "How long does it take?", a: "About 30–60 seconds. You'll see a live progress UI, then land on your editable Rocket." },
-  { q: "Can I edit and regenerate sections?", a: "Yes. Every section has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit." },
-  { q: "What's a credit?", a: "One full Rocket = 1 credit. Free plan gets 500 credits/month. Growth gets 3,000. You can also top up with credit packs." },
+  { q: "What does Rocket actually generate?", a: "A complete brand system from a single URL or prompt: logos and logotypes, color palettes, typography, brand voice, launch copy, social posts, Product Hunt kits, email templates, and a full Brand Kit you can export or drop into any design." },
+  { q: "How is Rocket organized?", a: "Three surfaces work together: Projects (per-product folders that hold your designs, assets and uploads), Designs (every editable design across your workspace), and Assets/Files (your Brand Kit — one canonical logo, palette, typeface, etc. per project). Templates give you a starting point in one click." },
+  { q: "What's the difference between Designs and Assets?", a: "Designs are editable canvas files (logos, graphics, social posts, launch copy) that open in the Rocket editor. Assets are the brand-kit items pinned to a project — one logo, one palette, one typography set — used as the source of truth other designs pull from." },
+  { q: "How does the Brand Kit work?", a: "Each project has a Brand Kit with a single canonical item per category (logo, colors, typography, design system, and more). You can swap or remove any item — the Remove dialog moves it to Trash and you can restore it within 30 days. Add extras from any other project through the '+ New' picker." },
+  { q: "Can I edit designs like Canva?", a: "Yes. The Rocket editor supports multi-select (Shift-click and marquee), drag-resize, color overlays for logos and images, image uploads with resize, layers on the right panel, and export to PNG/SVG/PDF/ZIP. Brand colors from your kit appear as one-click swatches in the toolbar." },
+  { q: "What about uploads?", a: "Any image you drop into the editor is mirrored to Uploads in /projects so you can reuse it across designs. Uploads are strictly local files — generated images don't clutter this view." },
+  { q: "Do I get notified when things finish?", a: "Yes. In-app notifications fire for every new design generated, image uploaded, duplicate saved, and background job that completes. Open the bell in the top bar to see history." },
+  { q: "How long does a generation take?", a: "Most designs land in 30–60 seconds. You'll see a live progress UI in /create with your full chat history — prompts and responses persist per project so you can scroll back and iterate." },
+  { q: "Can I regenerate individual pieces?", a: "Yes. Every asset has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit, and you can leave feedback ('avoid this competitor', 'more minimal', 'brighter') to steer the next pass." },
+  { q: "What's a credit?", a: "Credits power every generation. Text assets cost 1 credit; images cost more depending on size and model. Free plan gets 100 credits/month, Pro gets 3,000. Top up anytime with credit packs — they never expire." },
   { q: "Where can I launch from Rocket?", a: "We pre-fill submissions for Product Hunt, BetaList, There's An AI For That, Hacker News, Peerlist, Uneed, Alternative.me, G2, Indie Hackers, and one-click handoff to Launch." },
-  { q: "Do you support custom domains / branding?", a: "Yes — Growth plan exports as Markdown and PDF with your brand colors." },
-  { q: "Is there a free trial of Growth?", a: "7 days free, no card required on the Free plan to start." },
+  { q: "Can I share a design or project?", a: "Yes. Every design gets a share link (opens in the editor in a new tab). Projects can share a whole Brand Kit view. Password-protected links are available on Pro." },
+  { q: "Do you support exports?", a: "Yes — PNG, SVG, PDF, and full ZIP packs of your Brand Kit. Pro also exports Markdown and PDF brand guidelines with your palette and typography applied." },
+  { q: "Is there a free trial of Pro?", a: "7 days free on Pro, no card required to start on Free." },
   { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You'll keep access until the end of the period." },
 ];
 
