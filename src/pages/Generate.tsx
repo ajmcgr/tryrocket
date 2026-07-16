@@ -580,6 +580,14 @@ const Generate = () => {
         const { data, error } = await supabase.from("assets").insert(rows as any).select("id");
         if (error) throw new Error(error.message);
         allIds = (data || []).map((row: any) => row.id);
+        if (allIds.length) {
+          window.dispatchEvent(new CustomEvent("rocket:notify", { detail: {
+            kind: "asset",
+            title: allIds.length === 1 ? "Logotype ready" : `${allIds.length} logotypes ready`,
+            body: sharedCtx?.productName ? `Generated for ${sharedCtx.productName}.` : "Available in your designs.",
+            href: allIds[0] ? `/editor?id=${allIds[0]}` : "/designs",
+          }}));
+        }
       } else if (tpl || effective === "auto") {
         const backendPrompt = normalizeMixedLogoPrompt(
           effectivePrompt,
