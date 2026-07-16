@@ -173,7 +173,7 @@ const ProjectDetail = () => {
   const openPicker = async () => {
     const { data } = await supabase
       .from("assets")
-      .select("id, title, asset_type, image_url, content")
+      .select("id, title, asset_type, image_url, content, project_id")
       .eq("user_id", user!.id)
       .is("deleted_at", null)
       .in("asset_type", [...BRAND_TYPES])
@@ -186,7 +186,7 @@ const ProjectDetail = () => {
   const openDesignPicker = async () => {
     const { data } = await supabase
       .from("assets")
-      .select("id, title, asset_type, image_url, content, editor_state")
+      .select("id, title, asset_type, image_url, content, editor_state, project_id")
       .eq("user_id", user!.id)
       .is("deleted_at", null)
       .in("asset_type", [...DESIGN_TYPES])
