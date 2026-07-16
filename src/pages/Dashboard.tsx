@@ -248,12 +248,18 @@ const Projects = () => {
       ...rest,
       title: asset.title ? `${asset.title} (copy)` : "Uploaded design (copy)",
     };
-    const { error } = await supabase.from("assets").insert(payload).select("id").single();
+    const { data: dupRow, error } = await supabase.from("assets").insert(payload).select("id").single();
     if (error) {
       toast({ title: "Copy failed", description: error.message, variant: "destructive" });
       return;
     }
     toast({ title: "Design copied" });
+    window.dispatchEvent(new CustomEvent("rocket:notify", { detail: {
+      kind: "asset",
+      title: "Upload duplicated",
+      body: payload.title || "Copy saved to uploads.",
+      href: dupRow?.id ? `/editor?id=${dupRow.id}` : "/projects",
+    }}));
     load();
   };
 
