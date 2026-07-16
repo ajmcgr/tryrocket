@@ -173,7 +173,7 @@ const Insights = () => {
       ) : (
         <>
           <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Stat icon={<Sparkles className="h-4 w-4" />} label="Assets generated" value={inRange.length} hint={`of ${totalAssets} total`} />
+            <Stat icon={<Sparkles className="h-4 w-4" />} label="Designs generated" value={inRange.length} hint={`of ${totalAssets} total`} />
             <Stat icon={<Folders className="h-4 w-4" />} label="Projects" value={totalProjects} hint={`${orphanAssets} unassigned assets`} />
             <Stat icon={<Image className="h-4 w-4" />} label="Logos & visuals" value={inRange.filter(a => a.image_url).length} hint="With images" />
             <Stat icon={<Coins className="h-4 w-4" />} label="Credits left" value={creditsRemaining} hint={`${creditsUsed.toLocaleString()} used`} />
@@ -183,7 +183,7 @@ const Insights = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-semibold">Activity</h2>
-                <p className="text-xs text-neutral-500">Assets generated per day · last {range} days</p>
+                <p className="text-xs text-neutral-500">Designs generated per day · last {range} days</p>
               </div>
               <BarChart3 className="h-4 w-4 text-neutral-400" />
             </div>
@@ -208,7 +208,7 @@ const Insights = () => {
               <h2 className="text-base font-semibold">By asset type</h2>
               <p className="text-xs text-neutral-500">Last {range} days</p>
               <div className="mt-4 space-y-2.5">
-                {byType.length === 0 && <p className="text-sm text-neutral-500">No assets in this window.</p>}
+                {byType.length === 0 && <p className="text-sm text-neutral-500">No designs in this window.</p>}
                 {byType.map(([type, count]) => {
                   const pct = Math.round((count / inRange.length) * 100);
                   return (
@@ -245,9 +245,9 @@ const Insights = () => {
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <section className="rounded-2xl border border-neutral-200 bg-white p-6">
-              <h2 className="text-base font-semibold">Recent assets</h2>
+              <h2 className="text-base font-semibold">Recent designs</h2>
               <ul className="mt-3 divide-y divide-neutral-100">
-                {recent.length === 0 && <li className="py-4 text-sm text-neutral-500">No assets yet.</li>}
+                {recent.length === 0 && <li className="py-4 text-sm text-neutral-500">No designs yet.</li>}
                 {recent.map(a => (
                   <li key={a.id} className="py-2.5">
                     <Link to={`/editor?id=${a.id}`} className="flex items-center justify-between gap-3 group" target="_blank" rel="noopener noreferrer">

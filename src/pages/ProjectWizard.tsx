@@ -258,7 +258,7 @@ const ProjectWizard = () => {
         <div className="mt-8 space-y-6">
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Generate your starter pack</h1>
           <p className="text-sm text-neutral-500">
-            We'll create 5 brand assets in a new project: logo, colors, fonts, brand voice, and launch copy.
+            We'll create 5 starter designs in a new project: logo, colors, fonts, brand voice, and launch copy.
             {scraped && (
               <> Items we found on your site (
               {[scraped.logo && "logo", scraped.colors?.length && "colors", scraped.fonts?.length && "fonts"].filter(Boolean).join(", ") || "none"}

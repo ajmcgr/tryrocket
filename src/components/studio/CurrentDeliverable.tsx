@@ -22,7 +22,7 @@ export default function CurrentDeliverable({
         <Wand2 className="h-8 w-8 text-neutral-300" />
         <div className="mt-3 text-sm font-medium text-neutral-700">No deliverable selected</div>
         <p className="mt-1 max-w-sm text-xs text-neutral-500">
-          Use the prompt on the left to create your first asset, or pick one from the rail below.
+          Use the prompt on the left to create your first design, or pick one from the rail below.
         </p>
       </section>
     );

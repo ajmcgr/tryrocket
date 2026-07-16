@@ -97,7 +97,7 @@ const ProductHuntContent = () => (
         <span key={k} className="text-base">▲</span>
       ))}
     </div>
-    <p className="mt-4 text-[10px] uppercase tracking-[0.18em] text-neutral-400">Launch Assets</p>
+    <p className="mt-4 text-[10px] uppercase tracking-[0.18em] text-neutral-400">Launch Designs</p>
   </div>
 );
 
@@ -361,7 +361,7 @@ const PhotosContent = () => (
     </div>
     <div className="mt-4 flex items-center justify-between">
       <Meta>Art Direction</Meta>
-      <span className="font-mono text-[10px] text-neutral-400">24 assets</span>
+      <span className="font-mono text-[10px] text-neutral-400">24 designs</span>
     </div>
   </div>
 );

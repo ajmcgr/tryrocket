@@ -127,10 +127,10 @@ const Trash = () => {
     const { error } = await supabase.from("assets").update({ deleted_at: null }).eq("id", id);
     if (error) return toast({ title: "Restore failed", description: error.message, variant: "destructive" });
     setAssets((prev) => prev.filter(x => x.id !== id));
-    toast({ title: "Asset restored" });
+    toast({ title: "Design restored" });
   };
   const purgeAsset = async (id: string) => {
-    if (!confirm("Permanently delete this asset? This can't be undone.")) return;
+    if (!confirm("Permanently delete this design? This can't be undone.")) return;
     const { error } = await supabase.from("assets").delete().eq("id", id);
     if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     setAssets((prev) => prev.filter(x => x.id !== id));
@@ -142,7 +142,7 @@ const Trash = () => {
     toast({ title: "Project restored" });
   };
   const purgeProject = async (id: string) => {
-    if (!confirm("Permanently delete this project? Its assets stay in Trash unless deleted separately.")) return;
+    if (!confirm("Permanently delete this project? Its designs stay in Trash unless deleted separately.")) return;
     const { error } = await supabase.from("projects").delete().eq("id", id);
     if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     setProjects((prev) => prev.filter(x => x.id !== id));

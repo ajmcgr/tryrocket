@@ -176,7 +176,7 @@ export default function ImageSetGallery({ asset }: { asset: any }) {
                 <Link
                   to={`/editor?id=${r.id}`}
                   className="truncate rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium text-neutral-800 hover:bg-white"
-                  title="Open asset"
+                  title="Open design"
                  target="_blank" rel="noopener noreferrer">
                   {isActive ? "Current" : "Open"}
                 </Link>

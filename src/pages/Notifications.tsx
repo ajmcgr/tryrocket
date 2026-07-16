@@ -17,7 +17,7 @@ const ICON_BG: Record<NotificationKind, string> = {
 const FILTERS: { id: "all" | "unread" | NotificationKind; label: string }[] = [
   { id: "all", label: "All" },
   { id: "unread", label: "Unread" },
-  { id: "asset", label: "Assets" },
+  { id: "asset", label: "Designs" },
   { id: "export", label: "Exports" },
   { id: "project", label: "Projects" },
   { id: "billing", label: "Billing" },

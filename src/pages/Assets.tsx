@@ -105,6 +105,9 @@ const safePreviewText = (asset: DesignPreviewAsset) => {
   return content || prompt || title;
 };
 
+const isLogotypeState = (value: unknown): value is { kind: "logotype" } =>
+  Boolean(value && typeof value === "object" && (value as { kind?: unknown }).kind === "logotype");
+
 const isLogotypeLikeDesign = (asset: DesignPreviewAsset) => {
   const title = String(asset?.title || "");
   const prompt = String(asset?.prompt || "");
@@ -112,7 +115,7 @@ const isLogotypeLikeDesign = (asset: DesignPreviewAsset) => {
   const metaKind = String(asset?.meta?.kind || asset?.meta?.asset_kind || "");
   return (
     asset?.asset_type === "logo" &&
-    ((asset?.editor_state as any)?.kind === "logotype" ||
+    (isLogotypeState(asset?.editor_state) ||
       GENERIC_LOGOTYPE_TITLE.test(title.trim()) ||
       /\b(logotype|wordmark|word mark)\b/i.test(`${prompt} ${content} ${metaKind}`))
   );
@@ -353,19 +356,16 @@ const Assets = () => {
   const activeFolderName = folders.find((folder) => folder.id === folderParam)?.name;
 
   const DesignPreview = ({ asset }: { asset: DesignPreviewAsset }) => {
-    const isLogotype = (asset?.editor_state as any)?.kind === "logotype";
+    const isLogotype = isLogotypeState(asset?.editor_state);
     const rasterPreview = asset.thumbnail_url || asset.image_url;
-    // Prefer a real image (upload/generated) over speculative canvas/logotype fallbacks —
-    // otherwise assets like uploaded avatars render blank because an empty editor_state
-    // shadows the image.
-    const isImage = !!rasterPreview && !isLogotype;
-    const isCanvas = !isImage && !isLogotype && hasRenderableCanvasElements(asset?.editor_state);
-    const fallbackLogotype = !isImage && !isLogotype && !isCanvas && isLogotypeLikeDesign(asset);
+    const fallbackLogotype = !isLogotype && isLogotypeLikeDesign(asset);
+    const isImage = !!rasterPreview && !isLogotype && !fallbackLogotype;
+    const isCanvas = !isImage && !isLogotype && !fallbackLogotype && hasRenderableCanvasElements(asset?.editor_state);
     const fallbackText = safePreviewText(asset);
     const brand = !isLogotype && !isCanvas && !fallbackLogotype && !isImage && isBrandAsset(asset);
     return (
       <>
-        {isLogotype ? <Logotype state={asset.editor_state as any} fit="contain" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-cover" loading="lazy" /> : brand ? <BrandCover asset={asset} /> : (
+        {isLogotype ? <Logotype state={asset.editor_state as any} fit="contain" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-contain" loading="lazy" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" /> : brand ? <BrandCover asset={asset} /> : (
           <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
             <div className="line-clamp-6 whitespace-pre-wrap">{fallbackText ? fallbackText.slice(0, 200) : "No preview available"}</div>
           </div>

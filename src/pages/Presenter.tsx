@@ -229,7 +229,7 @@ export default function Presenter() {
   if (!data) return (
     <div className="grid min-h-screen place-items-center bg-neutral-950 p-10 text-center text-sm text-neutral-400">
       This asset didn't parse as a presentation.
-      <Link to={`/editor?id=${asset.id}`} className="ml-2 text-brand underline" target="_blank" rel="noopener noreferrer">Back to asset</Link>
+      <Link to={`/editor?id=${asset.id}`} className="ml-2 text-brand underline" target="_blank" rel="noopener noreferrer">Back to design</Link>
     </div>
   );
 

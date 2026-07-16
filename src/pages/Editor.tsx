@@ -613,7 +613,9 @@ const Editor = () => {
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       const thumbnail_url = await captureThumbnail();
-      const { error } = await supabase.from("assets").update({ editor_state: els as any, thumbnail_url }).eq("id", assetId);
+      const updatePayload: Record<string, unknown> = { editor_state: els as any };
+      if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
+      const { error } = await supabase.from("assets").update(updatePayload).eq("id", assetId);
       if (error) { setSaveStatus("idle"); return; }
       lastPersistedStateRef.current = serializedState;
       setSaveStatus("saved");
@@ -979,7 +981,9 @@ const Editor = () => {
     if (assetId) {
       const serializedState = JSON.stringify(els);
       const thumbnail_url = await captureThumbnail();
-      const { error } = await supabase.from("assets").update({ editor_state: els as any, thumbnail_url }).eq("id", assetId);
+      const updatePayload: Record<string, unknown> = { editor_state: els as any };
+      if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
+      const { error } = await supabase.from("assets").update(updatePayload).eq("id", assetId);
       if (error) { setSaveStatus("idle"); toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
       lastPersistedStateRef.current = serializedState;
     }

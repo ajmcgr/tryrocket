@@ -71,7 +71,7 @@ const SiteHeader = () => {
               <Link to="/create" className="hover:text-neutral-900">Create</Link>
               <Link to="/projects" className="hover:text-neutral-900">Projects</Link>
               <Link to="/designs" className="hover:text-neutral-900">Designs</Link>
-              <Link to="/files" className="hover:text-neutral-900">Assets</Link>
+              <Link to="/files" className="hover:text-neutral-900">Files</Link>
               <Link to="/templates" className="hover:text-neutral-900">Templates</Link>
             </>
           ) : (

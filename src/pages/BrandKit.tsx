@@ -230,7 +230,7 @@ const BrandKit = () => {
 
         {logos.length === 0 && colors.length === 0 && fonts.length === 0 && !voice && !guidelines && (
           <div className="rounded-2xl border border-dashed border-neutral-300 p-12 text-center text-sm text-neutral-500">
-            Generate brand assets (logo, colors, fonts, voice) in this project to populate the kit.
+            Generate designs (logo, colors, fonts, voice) in this project to populate the kit.
           </div>
         )}
 

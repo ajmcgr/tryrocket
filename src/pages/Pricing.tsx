@@ -116,10 +116,10 @@ const Pricing = () => {
               <ul className="mt-6 space-y-3 text-sm">
                 {[
                   "3,000 credits / month",
-                  "Unlimited saved assets",
+                  "Unlimited saved designs",
                   "Export tools",
                   "Priority generation",
-                  "Full asset history",
+                  "Full design history",
                   "Early access to new generators",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">

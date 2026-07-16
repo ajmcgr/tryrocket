@@ -64,7 +64,7 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
   };
 
   const remove = async (c: Chat) => {
-    if (!confirm(`Delete chat "${c.title}"? Assets in it will be kept.`)) return;
+    if (!confirm(`Delete chat "${c.title}"? Designs in it will be kept.`)) return;
     await supabase.from("chats").delete().eq("id", c.id);
     if (activeChatId === c.id) nav("/create");
     load();

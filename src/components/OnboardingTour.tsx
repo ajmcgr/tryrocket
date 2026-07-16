@@ -16,7 +16,7 @@ const STORAGE_KEY = "rocket.onboarding.v1";
 const STEPS: Step[] = [
   {
     title: "Welcome to Rocket",
-    body: "A 60-second tour of how to take an idea from prompt to launch-ready brand assets.",
+    body: "A 60-second tour of how to take an idea from prompt to launch-ready designs.",
     placement: "center",
     cta: "Start tour",
   },
@@ -34,14 +34,14 @@ const STEPS: Step[] = [
   },
   {
     selector: '[data-tour="nav-assets"]',
-    title: "Your asset library",
+    title: "Your design library",
     body: "Every generated logo, palette, and post lives here. Version history, share links, and exports built in.",
     placement: "bottom",
   },
   {
     selector: '[data-tour="nav-editor"]',
     title: "Refine in Editor",
-    body: "Tweak any asset, regenerate variants, or compose multi-format launch pages.",
+    body: "Tweak any design, regenerate variants, or compose multi-format launch pages.",
     placement: "bottom",
   },
   {
@@ -53,7 +53,7 @@ const STEPS: Step[] = [
   {
     selector: '[data-tour="nav-notifications"]',
     title: "Stay in the loop",
-    body: "Exports, generated assets, collaborator invites, and billing all surface here. Click the bell anytime.",
+    body: "Exports, generated designs, collaborator invites, and billing all surface here. Click the bell anytime.",
     placement: "bottom",
   },
   {
@@ -64,7 +64,7 @@ const STEPS: Step[] = [
   },
   {
     title: "You're set",
-    body: "Jump into Create and ship your first asset. You can replay this tour anytime from Settings.",
+    body: "Jump into Create and ship your first design. You can replay this tour anytime from Settings.",
     placement: "center",
     cta: "Start creating",
   },

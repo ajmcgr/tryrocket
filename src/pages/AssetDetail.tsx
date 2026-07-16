@@ -118,7 +118,7 @@ const AssetDetail = () => {
       <Skeleton className="aspect-video w-full" />
     </div>
   );
-  if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">Asset not found.</div>;
+  if (!asset) return <div className="p-10 text-center text-sm text-neutral-500">Design not found.</div>;
 
   const isLogo = isLogotype(asset);
   const isImage = !!asset.image_url && !isLogo;

@@ -140,7 +140,7 @@ const ProjectDetail = () => {
   const completeBrandKit = async () => {
     const missing = missingKit();
     if (!missing.length) {
-      toast({ title: "Brand kit is complete", description: "All core brand assets already exist." });
+      toast({ title: "Brand kit is complete", description: "All core brand designs already exist." });
       nav(`/brands/${id}`);
       return;
     }

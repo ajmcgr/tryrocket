@@ -11,12 +11,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const FAQS = [
   { q: "What does Rocket actually generate?", a: "A complete brand system from a single URL or prompt: logos and logotypes, color palettes, typography, brand voice, launch copy, social posts, Product Hunt kits, email templates, and a full Brand Kit you can export or drop into any design." },
-  { q: "How is Rocket organized?", a: "Projects hold your designs, assets, and uploads. Designs are editable canvas files. Assets are the Brand Kit — one canonical logo, palette, typeface, etc. per project. Templates give you a starting point in one click." },
+  { q: "How is Rocket organized?", a: "Projects hold your designs, brand kit, and uploads. Designs are editable canvas files. The Brand Kit holds one canonical logo, palette, typeface, and more per project. Templates give you a starting point in one click." },
   { q: "How does the Brand Kit work?", a: "Each project has one canonical item per category (logo, colors, typography, design system…). Swap or remove any item — Remove moves it to Trash and you can restore within 30 days. Pull extras from any other project via '+ New'." },
   { q: "Can I edit designs like Canva?", a: "Yes. Multi-select (Shift-click + marquee), drag-resize, color overlays for logos and images, image uploads with resize, layers on the right, and export to PNG/SVG/PDF/ZIP. Brand colors appear as one-click swatches in the toolbar." },
   { q: "How long does a generation take?", a: "About 30–60 seconds. /create keeps your full chat history per project — prompts and responses persist so you can scroll back and iterate." },
-  { q: "Can I regenerate individual pieces?", a: "Yes. Every asset has Copy, Edit, and Regenerate. Regenerating a single asset costs 1 credit, and you can leave feedback to steer the next pass." },
-  { q: "What's a credit?", a: "Credits power every generation. Text assets cost 1; images cost more. Free plan gets 100/month, Pro gets 3,000. Top up anytime — packs never expire." },
+  { q: "Can I regenerate individual pieces?", a: "Yes. Every design has Copy, Edit, and Regenerate. Regenerating a single design costs 1 credit, and you can leave feedback to steer the next pass." },
+  { q: "What's a credit?", a: "Credits power every generation. Text designs cost 1; images cost more. Free plan gets 100/month, Pro gets 3,000. Top up anytime — packs never expire." },
   { q: "Where can I launch from Rocket?", a: "We pre-fill submissions for Product Hunt, BetaList, There's An AI For That, Hacker News, Peerlist, Uneed, Alternative.me, G2, Indie Hackers, and one-click handoff to Launch." },
   { q: "Do you support sharing and exports?", a: "Yes. Every design has a share link that opens in the editor; projects share a full Brand Kit view. Export PNG, SVG, PDF, or a ZIP of your kit. Pro adds Markdown / PDF brand guidelines and password-protected share links." },
   { q: "Is there a free trial of Pro?", a: "7 days free on Pro, no card required to start on Free." },
@@ -205,7 +205,7 @@ const Index = () => {
             Make Your Product a Brand
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
-            Generate your logo, palette, typography, and a full Brand Kit — then design social posts, launch copy, and marketing assets in the Rocket editor. All in one workspace.
+            Generate your logo, palette, typography, and a full Brand Kit — then design social posts, launch copy, and marketing materials in the Rocket editor. All in one workspace.
           </p>
           <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl">
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
@@ -308,7 +308,7 @@ const Index = () => {
                 accent: "from-indigo-500 to-indigo-700",
                 tint: "from-indigo-50 to-white",
                 title: "SaaS products",
-                desc: "Launch your next software empire with a complete brand system — positioning, identity, and launch assets ready in minutes.",
+                desc: "Launch your next software empire with a complete brand system — positioning, identity, and launch materials ready in minutes.",
                 bullets: [
                   "Logo, colors & type that look investor-ready",
                   "Landing page copy + Product Hunt kit",
@@ -469,10 +469,10 @@ const Index = () => {
               <ul className="mt-6 space-y-3 text-sm">
                 {[
                   "3,000 credits / month",
-                  "Unlimited saved assets",
+                  "Unlimited saved designs",
                   "Export tools",
                   "Priority generation",
-                  "Full asset history",
+                  "Full design history",
                   "Early access to new generators",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
@@ -570,7 +570,7 @@ const Index = () => {
         <div className="mx-auto max-w-4xl px-6 py-24 text-center">
           <h2 className="text-3xl font-medium tracking-tight sm:text-5xl">Ready to launch?</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-neutral-600">
-            Create your first asset in under 60 seconds.
+            Create your first design in under 60 seconds.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link to="/signup">Sign up free <ArrowRight className="h-4 w-4" /></Link>

@@ -157,7 +157,7 @@ const CollaboratorsModal = ({ open, onOpenChange, projectId, projectName, ownerE
         </div>
 
         <div className="border-t border-neutral-100 bg-neutral-50/60 px-5 py-3 text-[11px] text-neutral-500">
-          Editors can change assets and run workflows. Viewers see assets and comments only.
+          Editors can change designs and run workflows. Viewers see designs and comments only.
         </div>
       </div>
     </div>

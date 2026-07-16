@@ -43,7 +43,7 @@ const SharedProject = () => {
         <h1 className="text-3xl font-semibold tracking-tight">{project.name}</h1>
         {project.description && <p className="mt-2 text-neutral-600">{project.description}</p>}
         {assets.length === 0 ? (
-          <p className="mt-10 text-sm text-neutral-500">No assets in this project yet.</p>
+          <p className="mt-10 text-sm text-neutral-500">No designs in this project yet.</p>
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {assets.map((a: any) => (

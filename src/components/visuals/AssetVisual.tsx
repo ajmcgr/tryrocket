@@ -828,7 +828,7 @@ function ParseFallback({ raw, message }: { raw: string; message?: string }) {
       <div className="flex items-start gap-3">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
         <div className="flex-1">
-          <div className="font-medium">{message || "This asset didn't parse into a visual."}</div>
+          <div className="font-medium">{message || "This design didn't parse into a visual."}</div>
           <p className="mt-1 text-xs text-amber-800/80">Use the "Variation" button above to regenerate. The structured renderer needs valid JSON from the model.</p>
           {raw && (
             <button onClick={() => setOpen(o => !o)} className="mt-3 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-3 py-1 text-xs text-amber-900 hover:bg-amber-50">

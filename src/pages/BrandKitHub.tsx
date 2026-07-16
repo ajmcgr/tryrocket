@@ -64,24 +64,24 @@ const GROUPS: Group[] = [
       { key: "li_carousel", label: "LinkedIn Carousels", Icon: Linkedin, asset_type: "graphic", match: titleMatch(/linkedin carousel/i), promptHint: "LinkedIn carousel slide 1080x1350, slide 1 of a 5-slide story about the product" },
       { key: "ig_posts", label: "Instagram Posts", Icon: Instagram, asset_type: "graphic", match: titleMatch(/instagram post/i), promptHint: "Instagram post 1080x1080 with bold brand visual and one-line message" },
       { key: "ig_stories", label: "Instagram Stories", Icon: Instagram, asset_type: "graphic", match: titleMatch(/instagram story|ig story/i), promptHint: "Instagram story 1080x1920 vertical, brand-led product teaser" },
-      { key: "threads", label: "Threads Assets", Icon: Hash, asset_type: "graphic", match: titleMatch(/threads/i), promptHint: "Threads post graphic 1080x1080 with brand-aligned visual" },
+      { key: "threads", label: "Threads Designs", Icon: Hash, asset_type: "graphic", match: titleMatch(/threads/i), promptHint: "Threads post graphic 1080x1080 with brand-aligned visual" },
     ],
   },
   {
     id: "launch", label: "Launch", description: "Everything you need to ship.",
     items: [
-      { key: "ph_assets", label: "Product Hunt Assets", Icon: RocketIcon, asset_type: "graphic", match: titleMatch(/product hunt/i), promptHint: "Product Hunt gallery image 1270x760, bold product hero with tagline" },
-      { key: "launch_assets", label: "Launch Assets", Icon: RocketIcon, asset_type: "graphic", match: titleMatch(/launch (asset|graphic|hero)/i), promptHint: "Launch hero graphic announcing the product is live, brand-led" },
+      { key: "ph_assets", label: "Product Hunt Designs", Icon: RocketIcon, asset_type: "graphic", match: titleMatch(/product hunt/i), promptHint: "Product Hunt gallery image 1270x760, bold product hero with tagline" },
+      { key: "launch_assets", label: "Launch Designs", Icon: RocketIcon, asset_type: "graphic", match: titleMatch(/launch (asset|graphic|hero)/i), promptHint: "Launch hero graphic announcing the product is live, brand-led" },
       { key: "appstore_screens", label: "App Store Screenshots", Icon: ImageIcon, asset_type: "graphic", match: titleMatch(/app store screenshot/i), promptHint: "App Store screenshot 1242x2688 with device mockup and feature headline" },
       { key: "appstore_preview", label: "App Store Preview", Icon: ImageIcon, asset_type: "graphic", match: titleMatch(/app store preview/i), promptHint: "App Store preview graphic, feature-first hero with device mockup" },
-      { key: "waitlist", label: "Waitlist Assets", Icon: Megaphone, asset_type: "graphic", match: titleMatch(/waitlist/i), promptHint: "Waitlist landing graphic, brand-led, with 'Join the waitlist' CTA" },
+      { key: "waitlist", label: "Waitlist Designs", Icon: Megaphone, asset_type: "graphic", match: titleMatch(/waitlist/i), promptHint: "Waitlist landing graphic, brand-led, with 'Join the waitlist' CTA" },
       { key: "founder_announce", label: "Founder Announcement", Icon: Megaphone, asset_type: "graphic", match: titleMatch(/founder announcement/i), promptHint: "Founder announcement post graphic, photo-friendly layout with quote space" },
       { key: "changelog", label: "Changelog Graphics", Icon: Newspaper, asset_type: "graphic", match: titleMatch(/changelog/i), promptHint: "Changelog graphic 1200x630, version badge and headline" },
       { key: "launch_copy", label: "Launch Copy", Icon: RocketIcon, asset_type: "launch_copy", match: has(["launch_copy", "launch_submission", "launch_product_hunt", "product_hunt_copy"]) },
     ],
   },
   {
-    id: "marketing", label: "Marketing", description: "Ads, newsletters and landing assets.",
+    id: "marketing", label: "Marketing", description: "Ads, newsletters and landing designs.",
     items: [
       { key: "meta_ads", label: "Meta Ads", Icon: Megaphone, asset_type: "graphic", match: titleMatch(/meta ad|facebook ad|instagram ad/i), promptHint: "Meta ad creative 1080x1080, single-message brand visual with strong CTA" },
       { key: "x_ads", label: "X Ads", Icon: Twitter, asset_type: "graphic", match: titleMatch(/x ad|twitter ad/i), promptHint: "X ad creative 1200x628, brand-led with one-line value prop" },
@@ -92,13 +92,13 @@ const GROUPS: Group[] = [
     ],
   },
   {
-    id: "pr", label: "PR", description: "Press kit, media and founder assets.",
+    id: "pr", label: "PR", description: "Press kit, media and founder designs.",
     items: [
       { key: "press_kit", label: "Press Kit", Icon: Newspaper, asset_type: "brand_guidelines", match: titleMatch(/press kit/i, "brand_guidelines") },
       { key: "founder_bio", label: "Founder Bio", Icon: MessageSquare, asset_type: "founder_bio", match: has(["founder_bio", "founder_tagline", "founder_story", "founder_x_bio", "founder_linkedin"]) },
-      { key: "media_assets", label: "Media Assets", Icon: ImageIcon, asset_type: "graphic", match: titleMatch(/media asset|press image/i), promptHint: "Press-ready media asset 1920x1080, brand-led hero composition" },
+      { key: "media_assets", label: "Media Designs", Icon: ImageIcon, asset_type: "graphic", match: titleMatch(/media asset|press image/i), promptHint: "Press-ready media asset 1920x1080, brand-led hero composition" },
       { key: "product_shots", label: "Product Screenshots", Icon: ImageIcon, asset_type: "graphic", match: titleMatch(/product screenshot|product shot/i), promptHint: "Polished product screenshot composition with subtle brand backdrop" },
-      { key: "media_page", label: "Media Page Assets", Icon: Newspaper, asset_type: "graphic", match: titleMatch(/media page/i), promptHint: "Media page hero and logo lockup, press-friendly layout" },
+      { key: "media_page", label: "Media Page Designs", Icon: Newspaper, asset_type: "graphic", match: titleMatch(/media page/i), promptHint: "Media page hero and logo lockup, press-friendly layout" },
     ],
   },
 ];
