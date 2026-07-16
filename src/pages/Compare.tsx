@@ -14,7 +14,10 @@ const Compare = () => (
         </div>
         <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">Rocket vs other branding tools</h1>
         <p className="mt-4 text-lg text-neutral-600">
-          Quick founder-friendly breakdowns of the tools people compare Rocket against most often.
+          Quick founder-friendly breakdowns of the tools people compare Rocket against most often — logos, Brand Kits, editors, and full launch workflows.
+        </p>
+        <p className="mx-auto mt-3 max-w-2xl text-sm text-neutral-500">
+          Where Rocket stands out: a canonical Brand Kit per project (one logo, palette, typeface), a Canva-style editor with color overlays and multi-select, plus generated launch copy for Product Hunt, BetaList, and 8+ directories.
         </p>
       </header>
 
