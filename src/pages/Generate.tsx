@@ -708,6 +708,12 @@ const Generate = () => {
         asset_type: effectiveAssetType || undefined,
         has_context: !!sharedCtx,
       });
+      window.dispatchEvent(new CustomEvent("rocket:notify", { detail: {
+        kind: "asset",
+        title: allIds.length === 1 ? "New design generated" : `${allIds.length} designs generated`,
+        body: `From: "${p.slice(0, 80)}${p.length > 80 ? "…" : ""}"`,
+        href: allIds[0] ? `/editor?id=${allIds[0]}` : "/designs",
+      }}));
       setPrompt("");
       if (chatId) {
         // Already in this chat — refresh assets in place so the new prompt appears in history.
