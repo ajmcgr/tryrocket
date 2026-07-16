@@ -950,7 +950,7 @@ const Editor = () => {
         if (!uid2) return;
         const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
         const workspace_id = await ensureActiveWorkspaceId();
-        await supabase.from("assets").insert({
+        const { data: uploadRow } = await supabase.from("assets").insert({
           user_id: uid2,
           workspace_id,
           asset_type: "photo",
@@ -958,7 +958,13 @@ const Editor = () => {
           image_url: src,
           thumbnail_url: src,
           meta: { uploaded: true, source: "upload", size: file.size, mime: file.type } as any,
-        } as any);
+        } as any).select("id").maybeSingle();
+        window.dispatchEvent(new CustomEvent("rocket:notify", { detail: {
+          kind: "asset",
+          title: "Image uploaded",
+          body: `"${file.name || "Uploaded image"}" is now in your Uploads.`,
+          href: uploadRow?.id ? `/editor?id=${uploadRow.id}` : "/projects",
+        }}));
       } catch (e) {
         console.warn("upload mirror failed", e);
       }
@@ -1014,6 +1020,12 @@ const Editor = () => {
     } as any).select().single();
     if (error || !data) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); return; }
     toast({ title: "Saved as new design" });
+    window.dispatchEvent(new CustomEvent("rocket:notify", { detail: {
+      kind: "asset",
+      title: "New design saved",
+      body: `"${title}" was added to your designs.`,
+      href: `/editor?id=${data.id}`,
+    }}));
     nav(`/editor?id=${data.id}`);
   };
 

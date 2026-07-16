@@ -173,27 +173,26 @@ const ProjectDetail = () => {
   const openPicker = async () => {
     const { data } = await supabase
       .from("assets")
-      .select("id, title, asset_type, image_url, content")
+      .select("id, title, asset_type, image_url, content, project_id")
       .eq("user_id", user!.id)
-      .is("project_id", null)
       .is("deleted_at", null)
       .in("asset_type", [...BRAND_TYPES])
       .order("created_at", { ascending: false })
-      .limit(100);
-    setAllAssets(data || []); setPicking(true);
+      .limit(200);
+    // Exclude assets already in this project
+    setAllAssets((data || []).filter((a: any) => a.project_id !== id)); setPicking(true);
   };
 
   const openDesignPicker = async () => {
     const { data } = await supabase
       .from("assets")
-      .select("id, title, asset_type, image_url, content, editor_state")
+      .select("id, title, asset_type, image_url, content, editor_state, project_id")
       .eq("user_id", user!.id)
-      .is("project_id", null)
       .is("deleted_at", null)
       .in("asset_type", [...DESIGN_TYPES])
       .order("created_at", { ascending: false })
-      .limit(100);
-    setAllDesigns(data || []); setPickingDesign(true);
+      .limit(200);
+    setAllDesigns((data || []).filter((a: any) => a.project_id !== id)); setPickingDesign(true);
   };
 
   const addAsset = async (assetId: string) => {
