@@ -13,6 +13,7 @@ import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
+import { matchesDesignQuery, rankDesignsByRelevance } from "@/lib/searchRelevance";
 
 const supabase = _sb as any;
 
@@ -69,16 +70,15 @@ const Templates = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     const visible = designs.filter((design) => {
       if (filter !== "all" && design.asset_type !== filter) return false;
-      if (!q) return true;
-      return [design.title, design.prompt, design.creator_username]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(q));
+      return matchesDesignQuery(design, q);
     });
 
-    return sortByOption(visible, sort, (design) => design.title, (design) => design.created_at);
+    return q
+      ? rankDesignsByRelevance(visible, q)
+      : sortByOption(visible, sort, (design) => design.title, (design) => design.created_at);
   }, [designs, filter, query, sort]);
 
   const DesignPreview = ({ design }: { design: any }) => {

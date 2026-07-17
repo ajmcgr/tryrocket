@@ -42,6 +42,7 @@ import { defaultLogotypeState, pickLogotypeText } from "@/lib/logotype";
 import { packAssetsZip } from "@/lib/exporters/zipPack";
 import { getDesignFolderId, withDesignFolderId } from "@/lib/designFolders";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
+import { matchesDesignQuery, rankDesignsByRelevance } from "@/lib/searchRelevance";
 
 const supabase = _sb as any;
 
@@ -190,10 +191,12 @@ const Assets = () => {
       if (isBrandAsset(asset)) return false;
       if (filter !== "all" && asset.asset_type !== filter) return false;
       if (folderParam && getDesignFolderId(asset) !== folderParam) return false;
-      if (q && !((asset.title || "").toLowerCase().includes(q.toLowerCase()) || (asset.prompt || "").toLowerCase().includes(q.toLowerCase()))) return false;
+      if (!matchesDesignQuery(asset, q)) return false;
       return true;
     });
-    return sortByOption(visible, sort, (asset) => asset.title, (asset) => asset.created_at);
+    return q.trim()
+      ? rankDesignsByRelevance(visible, q)
+      : sortByOption(visible, sort, (asset) => asset.title, (asset) => asset.created_at);
   }, [assets, filter, q, folderParam, sort]);
 
   const toggleSelect = (id: string) => {
@@ -356,16 +359,22 @@ const Assets = () => {
   const activeFolderName = folders.find((folder) => folder.id === folderParam)?.name;
 
   const DesignPreview = ({ asset }: { asset: DesignPreviewAsset }) => {
+    const [rasterFailed, setRasterFailed] = useState(false);
     const isLogotype = isLogotypeState(asset?.editor_state);
     const rasterPreview = asset.thumbnail_url || asset.image_url;
     const fallbackLogotype = !isLogotype && isLogotypeLikeDesign(asset);
-    const isImage = !!rasterPreview && !isLogotype && !fallbackLogotype;
+    const isImage = !!rasterPreview && !rasterFailed && !isLogotype && !fallbackLogotype;
     const isCanvas = !isImage && !isLogotype && !fallbackLogotype && hasRenderableCanvasElements(asset?.editor_state);
     const fallbackText = safePreviewText(asset);
     const brand = !isLogotype && !isCanvas && !fallbackLogotype && !isImage && isBrandAsset(asset);
+
+    useEffect(() => {
+      setRasterFailed(false);
+    }, [rasterPreview]);
+
     return (
       <>
-        {isLogotype ? <Logotype state={asset.editor_state as any} fit="contain" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-contain" loading="lazy" /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" /> : brand ? <BrandCover asset={asset} /> : (
+        {isLogotype ? <Logotype state={asset.editor_state as any} fit="contain" /> : fallbackLogotype ? <Logotype state={logotypePreviewState(asset)} fit="contain" /> : isImage ? <img src={rasterPreview} alt={asset.title} className="h-full w-full object-contain" loading="lazy" onError={() => setRasterFailed(true)} /> : isCanvas ? <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" /> : brand ? <BrandCover asset={asset} /> : (
           <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-neutral-500">
             <div className="line-clamp-6 whitespace-pre-wrap">{fallbackText ? fallbackText.slice(0, 200) : "No preview available"}</div>
           </div>

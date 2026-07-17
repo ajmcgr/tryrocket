@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { assetHref, isBrandAsset } from "@/lib/assetExperience";
+import { designSearchText, rankDesignsByRelevance, rankProjectsByRelevance } from "@/lib/searchRelevance";
 import {
   CommandDialog,
   CommandEmpty,
@@ -19,17 +20,22 @@ import {
 
 const supabase = _sb as any;
 
-type AssetRow = { id: string; title: string; asset_type: string | null };
-type ProjectRow = { id: string; name: string };
+type AssetRow = {
+  id: string;
+  title: string;
+  asset_type: string | null;
+  prompt: string | null;
+  content: string | null;
+  meta: unknown;
+  created_at: string | null;
+};
+type ProjectRow = { id: string; name: string; description: string | null; created_at: string | null };
 
 const CommandPalette = () => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [assets, setAssets] = useState<AssetRow[]>([]);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
-  const [searchAssets, setSearchAssets] = useState<AssetRow[]>([]);
-  const [searchProjects, setSearchProjects] = useState<ProjectRow[]>([]);
-  const [searching, setSearching] = useState(false);
   const nav = useNavigate();
   const { user, signOut } = useAuth();
 
@@ -51,8 +57,8 @@ const CommandPalette = () => {
     let cancel = false;
     (async () => {
       const [{ data: a }, { data: p }] = await Promise.all([
-        supabase.from("assets").select("id,title,asset_type").order("created_at", { ascending: false }).limit(50),
-        supabase.from("projects").select("id,name").order("created_at", { ascending: false }).limit(20),
+        supabase.from("assets").select("id,title,asset_type,prompt,content,meta,created_at").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(250),
+        supabase.from("projects").select("id,name,description,created_at").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(100),
       ]);
       if (cancel) return;
       setAssets((a || []) as AssetRow[]);
@@ -61,44 +67,25 @@ const CommandPalette = () => {
     return () => { cancel = true; };
   }, [open, user?.id]);
 
-  // Debounced server-side search across ALL assets/projects for the user.
-  useEffect(() => {
-    if (!open || !user?.id) return;
-    const q = query.trim();
-    if (q.length < 2) { setSearchAssets([]); setSearchProjects([]); setSearching(false); return; }
-    setSearching(true);
-    const handle = setTimeout(async () => {
-      const like = `%${q.replace(/[%_]/g, (m) => "\\" + m)}%`;
-      const [{ data: a }, { data: p }] = await Promise.all([
-        supabase.from("assets").select("id,title,asset_type").ilike("title", like).order("created_at", { ascending: false }).limit(20),
-        supabase.from("projects").select("id,name").ilike("name", like).order("created_at", { ascending: false }).limit(10),
-      ]);
-      setSearchAssets((a || []) as AssetRow[]);
-      setSearchProjects((p || []) as ProjectRow[]);
-      setSearching(false);
-    }, 180);
-    return () => clearTimeout(handle);
-  }, [query, open, user?.id]);
-
   const go = (path: string) => {
     setOpen(false);
     setQuery("");
     nav(path);
   };
 
-  const searching_q = query.trim().length >= 2;
-  const mergedProjects = searching_q ? searchProjects : projects;
-  const mergedAssets = searching_q ? searchAssets : assets;
+  const searching_q = query.trim().length > 0;
+  const mergedProjects = useMemo(() => rankProjectsByRelevance(projects, query), [projects, query]);
+  const mergedAssets = useMemo(() => rankDesignsByRelevance(assets, query), [assets, query]);
   const brandItems = mergedAssets.filter((a) => isBrandAsset(a));
   const designItems = mergedAssets.filter((a) => !isBrandAsset(a));
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput value={query} onValueChange={setQuery} placeholder="Search assets, projects, or jump to…" />
+      <CommandInput value={query} onValueChange={setQuery} placeholder="Search designs, projects, or jump to…" />
       <CommandList>
-        <CommandEmpty>{searching ? "Searching…" : "No matches."}</CommandEmpty>
+        <CommandEmpty>No matches.</CommandEmpty>
         <CommandGroup heading="Actions">
-          <CommandItem onSelect={() => go("/create")}><Sparkles /> Create new asset</CommandItem>
+          <CommandItem onSelect={() => go("/create")}><Sparkles /> Create new design</CommandItem>
           <CommandItem onSelect={() => go("/projects/new")}><FolderOpen /> New project</CommandItem>
           <CommandItem onSelect={() => go("/designs")}><LayoutGrid /> Browse all designs</CommandItem>
           <CommandItem onSelect={() => go("/projects")}><FolderOpen /> Browse projects</CommandItem>
@@ -122,7 +109,7 @@ const CommandPalette = () => {
             <CommandSeparator />
             <CommandGroup heading={searching_q ? "Matching designs" : "Recent designs"}>
               {designItems.map((a) => (
-                <CommandItem key={a.id} value={`asset ${a.title} ${a.asset_type || ""}`} onSelect={() => go(assetHref(a))}>
+                <CommandItem key={a.id} value={`design ${designSearchText(a)}`} onSelect={() => go(assetHref(a))}>
                   <FileText />
                   <span className="truncate">{a.title || "Untitled"}</span>
                   {a.asset_type && <span className="ml-auto text-xs text-neutral-400">{a.asset_type.replace(/_/g, " ")}</span>}
