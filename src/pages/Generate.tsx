@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { assetHref } from "@/lib/assetExperience";
 import { supabase as _sb } from "@/integrations/supabase/client";
@@ -47,6 +47,49 @@ function getDirectionInstruction(asset: any) {
     `Approved ${String(asset.asset_type || "design").replace(/_/g, " ")}: ${asset.title || "Untitled design"}.`,
     ...details,
   ].join("\n");
+}
+
+function getBrandKitInstruction(context: any) {
+  if (!context) return "";
+  const details = [
+    context.productName && `Brand: ${context.productName}`,
+    Array.isArray(context.colors) && context.colors.length && `Use this colour palette: ${context.colors.slice(0, 6).join(", ")}`,
+    Array.isArray(context.fonts) && context.fonts.length && `Use these typefaces: ${context.fonts.slice(0, 3).join(", ")}`,
+    context.positioning && `Positioning: ${context.positioning}`,
+    context.voice?.tone && `Voice: ${context.voice.tone}`,
+    Array.isArray(context.voice?.traits) && context.voice.traits.length && `Voice traits: ${context.voice.traits.slice(0, 5).join(", ")}`,
+  ].filter(Boolean);
+  if (!details.length) return "";
+  return ["Use the active Rocket brand kit as a firm creative system. Keep this design recognisably on-brand.", ...details].join("\n");
+}
+
+function buildProjectBrandContext(project: any, assets: any[]) {
+  const base = project?.brand_context || {};
+  const find = (...types: string[]) => assets.find((asset) => types.includes(asset.asset_type));
+  const logo = find("logo", "logotype", "wordmark");
+  const colors = tryJson<ColorSystem>(find("color_system", "design_color_palette")?.content || "");
+  const fonts = tryJson<FontSystem>(find("font_system", "design_typography")?.content || "");
+  const voice = tryJson<BrandVoiceData>(find("brand_voice")?.content || "");
+  const guidelines = tryJson<BrandGuidelinesData>(find("brand_guidelines", "design_style_direction")?.content || "");
+  const palette = [colors?.primary, colors?.secondary, colors?.accent, colors?.neutral_dark, colors?.neutral_light].filter(Boolean) as string[];
+  const typefaces = [fonts?.display_font, fonts?.heading_font, fonts?.body_font, fonts?.mono_font].filter(Boolean) as string[];
+  const voiceContext = voice ? {
+    tone: voice.overview,
+    traits: voice.pillars?.map((pillar) => pillar.name).filter(Boolean),
+    doNotSay: voice.dont?.map((item) => item.phrase).filter(Boolean),
+  } : undefined;
+
+  return {
+    ...base,
+    productName: base.productName || project?.name,
+    url: base.url || project?.source_url || undefined,
+    logo: base.logo || logo?.thumbnail_url || logo?.image_url || undefined,
+    colors: base.colors?.length ? base.colors : palette,
+    fonts: base.fonts?.length ? base.fonts : typefaces,
+    positioning: base.positioning || guidelines?.positioning || guidelines?.overview || undefined,
+    targetCustomer: base.targetCustomer || guidelines?.audience || undefined,
+    voice: base.voice || voiceContext,
+  };
 }
 
 function AssetCardThumb({ asset }: { asset: any }) {
@@ -438,6 +481,8 @@ const Generate = () => {
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
   const [directionDesign, setDirectionDesign] = useState<any>(null);
+  const [brandProjects, setBrandProjects] = useState<any[]>([]);
+  const [projectBrandContext, setProjectBrandContext] = useState<any>(null);
   const [ignoreSavedStyle, setIgnoreSavedStyle] = useState(false);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
@@ -469,6 +514,33 @@ const Generate = () => {
   }, [chatId, user]);
 
   useEffect(() => {
+    if (!user) { setBrandProjects([]); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("id,name,brand_context,source_url,created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (!cancelled) setBrandProjects(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  useEffect(() => {
+    if (!projectId || !user) { setProjectBrandContext(null); return; }
+    let cancelled = false;
+    (async () => {
+      const [projectResult, assetsResult] = await Promise.all([
+        supabase.from("projects").select("id,name,brand_context,source_url").eq("id", projectId).eq("user_id", user.id).maybeSingle(),
+        supabase.from("assets").select("asset_type,content,image_url,thumbnail_url,created_at").eq("project_id", projectId).is("deleted_at", null).order("created_at", { ascending: true }),
+      ]);
+      if (!cancelled) setProjectBrandContext(projectResult.data ? buildProjectBrandContext(projectResult.data, assetsResult.data || []) : null);
+    })();
+    return () => { cancelled = true; };
+  }, [projectId, user]);
+
+  useEffect(() => {
     if (!user || ignoreSavedStyle) { setDirectionDesign(null); return; }
     let cancelled = false;
     (async () => {
@@ -495,6 +567,7 @@ const Generate = () => {
   }, [directionId, ignoreSavedStyle, projectId, user]);
 
   const activeBrandCtx = (() => {
+    if (projectBrandContext) return projectBrandContext;
     const direct = chatData?.brand_context;
     if (direct && (direct.productName || direct.url || direct.colors?.length || direct.logo)) return direct;
     const recent = [...chatAssets].reverse().find((a) => {
@@ -503,6 +576,16 @@ const Generate = () => {
     });
     return recent ? { ...(recent.meta?.brand_context || {}), url: recent.meta?.brand_context?.url || recent.source_url || undefined } : null;
   })();
+
+  const selectedProject = useMemo(() => brandProjects.find((project) => project.id === projectId) || null, [brandProjects, projectId]);
+
+  const chooseBrandProject = (nextProjectId: string) => {
+    const next = new URLSearchParams(params);
+    if (nextProjectId) next.set("project", nextProjectId);
+    else next.delete("project");
+    next.delete("chat");
+    nav(`/create${next.toString() ? `?${next.toString()}` : ""}`);
+  };
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -525,9 +608,12 @@ const Generate = () => {
         : selectedChip?.promptPrefix
           ? `${selectedChip.promptPrefix}${p}`
           : p;
-      const directedPrompt = directionDesign
-        ? `${effectivePrompt}\n\n${getDirectionInstruction(directionDesign)}`
-        : effectivePrompt;
+      const brandKitPrompt = getBrandKitInstruction(activeBrandCtx);
+      const directedPrompt = [
+        effectivePrompt,
+        brandKitPrompt,
+        directionDesign ? getDirectionInstruction(directionDesign) : "",
+      ].filter(Boolean).join("\n\n");
       const effective = workflow;
       let allIds: string[] = [];
       let creditsErr: any = null;
@@ -1024,6 +1110,35 @@ const Generate = () => {
           Describe what you need. Rocket routes to our AI and saves it as a design.
         </p>
       </div>
+
+      {brandProjects.length > 0 && (
+        <div className="mb-4 flex w-full flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand">Brand</div>
+            <div className="mt-0.5 text-sm font-medium text-neutral-900">
+              {selectedProject ? `Using ${selectedProject.name}` : "Choose a brand for this design"}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedProject && <Link to={`/brands/${selectedProject.id}`} className="text-xs font-medium text-neutral-600 hover:text-neutral-900">View brand</Link>}
+            <select
+              value={projectId || ""}
+              onChange={(event) => chooseBrandProject(event.target.value)}
+              className="max-w-[200px] rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 outline-none hover:border-neutral-300"
+              aria-label="Choose brand"
+            >
+              <option value="">No brand selected</option>
+              {brandProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {projectBrandContext && (
+        <div className="mb-4 w-full">
+          <BrandContextStrip ctx={projectBrandContext} compact />
+        </div>
+      )}
 
       {directionDesign && (
         <div className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm">
