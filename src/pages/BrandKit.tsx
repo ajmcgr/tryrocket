@@ -7,6 +7,7 @@ import jsPDF from "jspdf";
 const supabase = _sb as any;
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logotype } from "@/components/Logotype";
+import ProjectNavigation from "@/components/ProjectNavigation";
 import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData } from "@/lib/assetSchemas";
 
 function uniq<T>(a: T[]) { return Array.from(new Set(a)); }
@@ -107,7 +108,9 @@ const BrandKit = () => {
         </div>
       </div>
 
-      <div ref={sheetRef} className="space-y-10 rounded-3xl border border-neutral-200 bg-white p-10">
+      <ProjectNavigation projectId={id!} active="downloads" />
+
+      <div ref={sheetRef} className="mt-8 space-y-10 rounded-3xl border border-neutral-200 bg-white p-10">
         <header className="border-b border-neutral-200 pb-8">
           <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Brand Kit</div>
           <h1 className="mt-2 text-5xl font-semibold tracking-tight">{project.name}</h1>

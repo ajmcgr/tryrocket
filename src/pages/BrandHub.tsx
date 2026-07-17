@@ -4,7 +4,7 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { assetHref, isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
-import { ArrowRight, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Download, Plus, Sparkles, Trash2 } from "lucide-react";
 
 const supabase = _sb as any;
 
@@ -32,7 +32,7 @@ export default function BrandHub() {
   const [assets, setAssets] = useState<any[]>([]);
   const [allDesigns, setAllDesigns] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
-  const [activeProject, setActiveProject] = useState<string>(params.get("project") || "all");
+  const [activeProject, setActiveProject] = useState<string>(params.get("project") || "");
 
   useEffect(() => {
     if (!user) return;
@@ -55,14 +55,16 @@ export default function BrandHub() {
   }, [user]);
 
   useEffect(() => {
-    const projectId = params.get("project");
-    if (projectId) setActiveProject(projectId);
+    setActiveProject(params.get("project") || "");
   }, [params]);
 
+  const selectedProjectId = activeProject || projects[0]?.id || "all";
+  const selectedProject = projects.find((project) => project.id === selectedProjectId) || null;
+
   const filtered = useMemo(() => {
-    if (activeProject === "all") return assets;
-    return assets.filter((a) => a.project_id === activeProject);
-  }, [assets, activeProject]);
+    if (selectedProjectId === "all") return assets;
+    return assets.filter((a) => a.project_id === selectedProjectId);
+  }, [assets, selectedProjectId]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -78,11 +80,11 @@ export default function BrandHub() {
   const selectedStyle = useMemo(() => {
     const directionId = params.get("direction");
     if (directionId) return allDesigns.find((design) => design.id === directionId) || null;
-    const relevantDesigns = activeProject === "all"
+    const relevantDesigns = selectedProjectId === "all"
       ? allDesigns
-      : allDesigns.filter((design) => design.project_id === activeProject);
+      : allDesigns.filter((design) => design.project_id === selectedProjectId);
     return relevantDesigns.find((design) => design.meta?.selected_as_direction) || null;
-  }, [activeProject, allDesigns, params]);
+  }, [allDesigns, params, selectedProjectId]);
 
   const createWithStyleHref = (assetType: string, prompt: string) => selectedStyle
     ? `/create?${new URLSearchParams({
@@ -96,7 +98,7 @@ export default function BrandHub() {
   const projectLink = (cat: Category) => {
     // Prefer a project that has assets in this category, otherwise the first project.
     const withHit = filtered.find((a) => cat.types.includes(normalizeAssetType(a.asset_type)));
-    const pid = withHit?.project_id || (activeProject !== "all" ? activeProject : projects[0]?.id);
+    const pid = withHit?.project_id || (selectedProjectId !== "all" ? selectedProjectId : projects[0]?.id);
     return pid ? `/brands/${pid}?cat=${cat.types[0]}` : `/projects`;
   };
   const coreCategories = CATEGORIES.filter((category) => CORE_CATEGORY_KEYS.has(category.key));
@@ -105,12 +107,14 @@ export default function BrandHub() {
     ? createWithStyleHref("graphic", "Create a new design for our brand.")
     : "/create";
 
+  const projectDesignCount = (projectId: string) => allDesigns.filter((design) => design.project_id === projectId).length;
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Your brand</h1>
-          <p className="mt-1 text-sm text-neutral-500">The logo, colours, type and voice that keep every design consistent.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Your brands</h1>
+          <p className="mt-1 text-sm text-neutral-500">Each project is a brand system: its logo, colours, type and voice in one place.</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -121,19 +125,52 @@ export default function BrandHub() {
           >
             <Trash2 className="h-4 w-4" />
           </Link>
-          <select
-            value={activeProject}
-            onChange={(e) => setActiveProject(e.target.value)}
-            className="h-10 rounded-full border border-neutral-200 bg-white px-4 text-sm outline-none focus:border-neutral-400"
-          >
-            <option value="all">All projects</option>
-            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          {selectedProject && (
+            <Link
+              to={`/projects/${selectedProject.id}/hub`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50"
+            >
+              <Download className="h-4 w-4" /> Download brand kit
+            </Link>
+          )}
           <Link to={createOnBrandHref} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
             <Sparkles className="h-4 w-4" /> Create on-brand
           </Link>
         </div>
       </div>
+
+      {projects.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900">Choose a brand</h2>
+              <p className="mt-1 text-sm text-neutral-500">Open the brand system you want to work on.</p>
+            </div>
+            {selectedProject && <span className="text-xs font-medium text-neutral-500">Working in {selectedProject.name}</span>}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => {
+              const isActive = project.id === selectedProjectId;
+              const count = projectDesignCount(project.id);
+              return (
+                <Link
+                  key={project.id}
+                  to={`/brands?project=${project.id}`}
+                  className={`group rounded-2xl border p-4 transition ${isActive ? "border-brand bg-brand/5 shadow-sm" : "border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-neutral-900">{project.name}</p>
+                      <p className="mt-1 text-xs text-neutral-500">{count} {count === 1 ? "design" : "designs"}</p>
+                    </div>
+                    <ArrowRight className={`mt-0.5 h-4 w-4 shrink-0 ${isActive ? "text-brand" : "text-neutral-400 group-hover:text-neutral-900"}`} />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
         {selectedStyle ? (
@@ -240,18 +277,6 @@ export default function BrandHub() {
         </div>
       )}
 
-      {projects.length > 0 && (
-        <div className="mt-10">
-          <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">Open a project workspace</div>
-          <div className="flex flex-wrap gap-2">
-            {projects.slice(0, 12).map((p) => (
-              <Link key={p.id} to={`/brands/${p.id}`} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-700 hover:border-neutral-400">
-                {p.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

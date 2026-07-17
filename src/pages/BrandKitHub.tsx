@@ -11,6 +11,7 @@ const supabase = _sb as any;
 import { packAssetsZip } from "@/lib/exporters/zipPack";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import ProjectNavigation from "@/components/ProjectNavigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -305,10 +306,14 @@ const BrandKitHub = () => {
       </div>
 
       <header className="mt-4">
-        <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Edit Brand Kit</div>
+        <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Brand kit downloads</div>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">{project.name}</h1>
-        <p className="mt-2 max-w-2xl text-sm text-neutral-600">Add, edit, or delete every brand kit asset in one place.</p>
+        <p className="mt-2 max-w-2xl text-sm text-neutral-600">Everything for this brand, ready to organise, refine, share, or download.</p>
       </header>
+
+      <div className="mt-6">
+        <ProjectNavigation projectId={id!} active="downloads" />
+      </div>
 
       <nav className="mt-8 flex flex-wrap gap-2 border-b border-neutral-200 pb-2">
         {GROUPS.map(g => (

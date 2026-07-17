@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   Stage, Layer, Rect, Circle as KCircle, Text as KText,
@@ -322,7 +322,7 @@ const Editor = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
   const assetId = params.get("id");
-  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null } | null>(null);
+  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null; meta?: Record<string, unknown> } | null>(null);
   const [brandKit, setBrandKit] = useState<{ colors: string[]; fonts: string[]; logos: { id: string; url: string; title: string }[] }>({ colors: [], fonts: [], logos: [] });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -334,10 +334,15 @@ const Editor = () => {
   const [fontFamilies, setFontFamilies] = useState<string[]>(DEFAULT_FONTS);
   const [zoom, setZoom] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasDownloaded, setHasDownloaded] = useState(false);
   const editorShellRef = useRef<HTMLDivElement>(null);
   const copiedElementRef = useRef<El | null>(null);
   const copiedStyleRef = useRef<Partial<El> | null>(null);
   const [clipboardTick, setClipboardTick] = useState(0);
+
+  useEffect(() => {
+    setHasDownloaded(false);
+  }, [assetId]);
 
   /* fonts */
   useEffect(() => {
@@ -488,7 +493,7 @@ const Editor = () => {
         nav(`/brands${pid}?asset=${a.id}`, { replace: true });
         return;
       }
-      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null });
+      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null, meta: a.meta || {} });
       if (a.editor_state && Array.isArray(a.editor_state)) {
         lastPersistedStateRef.current = JSON.stringify(a.editor_state);
         _setEls(a.editor_state); return;
@@ -601,6 +606,14 @@ const Editor = () => {
     });
   }, [withSelectionHidden]);
 
+  const updateLifecycleMeta = useCallback(async (updates: Record<string, string>) => {
+    if (!assetId) return;
+    const meta = { ...(assetMeta?.meta || {}), ...updates };
+    setAssetMeta((current) => current ? { ...current, meta } : current);
+    const { error } = await supabase.from("assets").update({ meta }).eq("id", assetId);
+    if (error) console.error("Could not update design lifecycle", error);
+  }, [assetId, assetMeta?.meta]);
+
   /* auto-save to asset (debounced) */
   useEffect(() => {
     if (!assetId || autosaveTick === 0) return;
@@ -613,16 +626,18 @@ const Editor = () => {
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       const thumbnail_url = await captureThumbnail();
-      const updatePayload: Record<string, unknown> = { editor_state: els as any };
+      const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString() };
+      const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
       const { error } = await supabase.from("assets").update(updatePayload).eq("id", assetId);
       if (error) { setSaveStatus("idle"); return; }
+      setAssetMeta((current) => current ? { ...current, meta: nextMeta } : current);
       lastPersistedStateRef.current = serializedState;
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus((s) => s === "saved" ? "idle" : s), 1500);
     }, 800);
     return () => clearTimeout(t);
-  }, [assetId, autosaveTick, captureThumbnail, els]);
+  }, [assetId, assetMeta?.meta, autosaveTick, captureThumbnail, els]);
 
   useEffect(() => {
     if (!isRenamingTitle) setTitleDraft(displayTitle);
@@ -643,13 +658,13 @@ const Editor = () => {
 
     if (nextTitle === previousTitle && assetMeta) return;
 
-    setAssetMeta((prev) => ({ title: nextTitle, project_id: prev?.project_id || null }));
+    setAssetMeta((prev) => ({ title: nextTitle, project_id: prev?.project_id || null, meta: prev?.meta || {} }));
     if (!assetId) return;
 
     setSaveStatus("saving");
     const { error } = await supabase.from("assets").update({ title: nextTitle }).eq("id", assetId);
     if (error) {
-      setAssetMeta((prev) => ({ title: previousTitle, project_id: prev?.project_id || null }));
+      setAssetMeta((prev) => ({ title: previousTitle, project_id: prev?.project_id || null, meta: prev?.meta || {} }));
       setTitleDraft(previousTitle);
       setSaveStatus("idle");
       toast({ title: "Rename failed", description: error.message, variant: "destructive" });
@@ -981,10 +996,12 @@ const Editor = () => {
     if (assetId) {
       const serializedState = JSON.stringify(els);
       const thumbnail_url = await captureThumbnail();
-      const updatePayload: Record<string, unknown> = { editor_state: els as any };
+      const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString() };
+      const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
       const { error } = await supabase.from("assets").update(updatePayload).eq("id", assetId);
       if (error) { setSaveStatus("idle"); toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+      setAssetMeta((current) => current ? { ...current, meta: nextMeta } : current);
       lastPersistedStateRef.current = serializedState;
     }
     setSaveStatus("saved");
@@ -1065,11 +1082,55 @@ const Editor = () => {
       try {
         const dataUrl = stage.toDataURL({ pixelRatio: 2, mimeType: `image/${type}`, quality: 0.95 });
         const a = document.createElement("a"); a.href = dataUrl; a.download = `rocket-design.${type}`; a.click();
+        setHasDownloaded(true);
+        void updateLifecycleMeta({ downloaded_at: new Date().toISOString() });
+        toast({
+          title: `${type === "png" ? "PNG" : "JPG"} downloaded`,
+          description: assetId ? "Next, use it as the style for your brand or keep editing." : "Your design is ready to use.",
+        });
       } catch (e: any) {
         toast({ title: "Export failed", description: e?.message || "Unknown error", variant: "destructive" });
       }
       setSelectedId(prev);
     }, 50);
+  };
+
+  const setAsBrandStyle = async () => {
+    if (!assetId) {
+      toast({ title: "Save this design first", description: "Saved designs can become your brand style." });
+      return;
+    }
+    const projectId = assetMeta?.project_id || null;
+    const { data: current, error: currentError } = await supabase
+      .from("assets")
+      .select("id,meta,project_id")
+      .eq("id", assetId)
+      .maybeSingle();
+    if (currentError || !current) {
+      toast({ title: "Could not set brand style", description: currentError?.message, variant: "destructive" });
+      return;
+    }
+    let existingQuery = supabase.from("assets").select("id,meta").eq("user_id", (await supabase.auth.getUser()).data?.user?.id);
+    existingQuery = projectId ? existingQuery.eq("project_id", projectId) : existingQuery.is("project_id", null);
+    const { data: existing } = await existingQuery.limit(100);
+    await Promise.all((existing || [])
+      .filter((design: any) => design.id !== assetId && design.meta?.selected_as_direction)
+      .map((design: any) => supabase.from("assets").update({ meta: { ...(design.meta || {}), selected_as_direction: false } }).eq("id", design.id)));
+    const nextMeta = {
+      ...(current.meta || {}),
+      selected_as_direction: true,
+      selected_as_direction_at: new Date().toISOString(),
+      direction_feedback: "kept",
+    };
+    const { error } = await supabase.from("assets").update({ meta: nextMeta }).eq("id", assetId);
+    if (error) {
+      toast({ title: "Could not set brand style", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssetMeta((prev) => (prev ? { ...prev, meta: nextMeta } : prev));
+    toast({ title: "Brand style set", description: "Future designs can now follow this direction." });
+    const query = new URLSearchParams({ direction: assetId, ...(projectId ? { project: projectId } : {}) });
+    nav(`/brands?${query.toString()}`);
   };
 
   const triggerDownload = (blob: Blob, filename: string) => {
@@ -1850,6 +1911,34 @@ const Editor = () => {
       {/* Right */}
       <aside className="w-[15.5rem] min-w-[15.5rem] max-w-[15.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
         <div className="space-y-3">
+          <section className="rounded-[24px] border border-brand/15 bg-white p-4 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Finish your design</p>
+            <p className="mt-1 text-sm font-semibold text-neutral-900">Ready to use it?</p>
+            <p className="mt-1 text-xs leading-relaxed text-neutral-500">Download a PNG, then use this style to keep future work on-brand.</p>
+            <button
+              type="button"
+              onClick={() => exportImage("png")}
+              className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground hover:bg-brand-hover"
+            >
+              <Download className="h-3.5 w-3.5" /> Download PNG
+            </button>
+            {assetId ? (
+              <button
+                type="button"
+                onClick={() => void setAsBrandStyle()}
+                className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                {assetMeta?.meta?.selected_as_direction ? "Your brand style" : "Use as brand style"}
+              </button>
+            ) : (
+              <Link to="/create" className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                Create another design
+              </Link>
+            )}
+            {hasDownloaded && !assetMeta?.meta?.selected_as_direction && assetId && (
+              <p className="mt-2 text-center text-[11px] text-neutral-500">Next: set this as your brand style.</p>
+            )}
+          </section>
           <div className="rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-sm">
             <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Layers</p>
             <div className="max-h-[14rem] overflow-y-auto pr-1">

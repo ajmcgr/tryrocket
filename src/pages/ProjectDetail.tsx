@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { assetHref, BRAND_TYPES, DESIGN_TYPES, isBrandAsset } from "@/lib/assetExperience";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { assetHref, BRAND_TYPES, DESIGN_TYPES, isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Sparkles, Trash2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, List, ArrowUpDown, CheckSquare, Square, Loader2, Zap, X, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2, Check, Paintbrush, Send, Radio, Wand2, LayoutGrid, List, ArrowUpDown, CheckSquare, Square, Loader2, Zap, X, RefreshCw, Download } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import { handleAiError } from "@/lib/aiErrors";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
+import ProjectNavigation from "@/components/ProjectNavigation";
 const supabase = _sb as any;
 
 type WF = "brand" | "design" | "launch" | "promote" | "other";
@@ -27,10 +28,18 @@ const WF_META: Record<WF, { label: string; Icon: any }> = {
   other: { label: "Other", Icon: Wand2 },
 };
 const wfOf = (t: string): WF => WF_OF[t] || "other";
+const designStatus = (asset: any) => {
+  const meta = asset?.meta || {};
+  if (meta.downloaded_at) return "Downloaded";
+  if (meta.approved_at || meta.selected_as_direction) return "Approved";
+  if (meta.edited_at) return "Edited";
+  return "Ready";
+};
 
 const ProjectDetail = () => {
   const { id } = useParams();
   const nav = useNavigate();
+  const [params] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [project, setProject] = useState<any>(null);
@@ -48,6 +57,11 @@ const ProjectDetail = () => {
   const [view, setView] = useState<CollectionView>("card");
   const [sort, setSort] = useState<DesignSort>("date");
   const [selectMode, setSelectMode] = useState(false);
+  const [settingsName, setSettingsName] = useState("");
+  const [settingsDescription, setSettingsDescription] = useState("");
+  const [settingsUrl, setSettingsUrl] = useState("");
+  const [savingSettings, setSavingSettings] = useState(false);
+  const section = params.get("section") === "settings" ? "settings" : params.get("section") === "templates" ? "templates" : "designs";
   const toggleSelect = (assetId: string) => setSelected(prev => {
     const next = new Set(prev);
     next.has(assetId) ? next.delete(assetId) : next.add(assetId);
@@ -57,17 +71,17 @@ const ProjectDetail = () => {
   const bulkRemoveFromProject = async () => {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    if (!confirm(`Remove ${ids.length} asset${ids.length === 1 ? "" : "s"} from project?`)) return;
+    if (!confirm(`Remove ${ids.length} design${ids.length === 1 ? "" : "s"} from project?`)) return;
     const { error } = await supabase.from("assets").update({ project_id: null }).in("id", ids);
     if (error) { toast({ title: "Remove failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: `Removed ${ids.length} from project` });
+    toast({ title: `Removed ${ids.length} design${ids.length === 1 ? "" : "s"} from project` });
     clearSelection();
     load();
   };
   const bulkTrash = async () => {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    if (!confirm(`Move ${ids.length} asset${ids.length === 1 ? "" : "s"} to Trash?`)) return;
+    if (!confirm(`Move ${ids.length} design${ids.length === 1 ? "" : "s"} to Trash?`)) return;
     const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).in("id", ids);
     if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: `Moved ${ids.length} to Trash` });
@@ -170,6 +184,41 @@ const ProjectDetail = () => {
   };
   useEffect(() => { load(); }, [id, user]);
 
+  useEffect(() => {
+    if (!project) return;
+    setSettingsName(project.name || "");
+    setSettingsDescription(project.description || "");
+    setSettingsUrl(project.source_url || "");
+  }, [project]);
+
+  const saveProjectSettings = async () => {
+    if (!id || !settingsName.trim()) {
+      toast({ title: "Name your brand", description: "A project needs a name.", variant: "destructive" });
+      return;
+    }
+    setSavingSettings(true);
+    const { error } = await supabase
+      .from("projects")
+      .update({
+        name: settingsName.trim(),
+        description: settingsDescription.trim() || null,
+        source_url: settingsUrl.trim() || null,
+      })
+      .eq("id", id);
+    setSavingSettings(false);
+    if (error) {
+      toast({ title: "Could not save project settings", description: error.message, variant: "destructive" });
+      return;
+    }
+    setProject((current: any) => current ? {
+      ...current,
+      name: settingsName.trim(),
+      description: settingsDescription.trim() || null,
+      source_url: settingsUrl.trim() || null,
+    } : current);
+    toast({ title: "Brand settings saved" });
+  };
+
   const openPicker = async () => {
     const { data } = await supabase
       .from("assets")
@@ -208,7 +257,10 @@ const ProjectDetail = () => {
 
   const counts: Record<WF, number> = { brand: 0, design: 0, launch: 0, promote: 0, other: 0 };
   for (const a of assets) counts[wfOf(a.asset_type)]++;
-  const visible = tab === "all" ? assets : assets.filter(a => wfOf(a.asset_type) === tab);
+  const workspaceAssets = section === "templates"
+    ? assets.filter((asset) => ["template", "brand_template", "social_template", "presentation"].includes(normalizeAssetType(asset.asset_type)))
+    : assets;
+  const visible = tab === "all" ? workspaceAssets : workspaceAssets.filter(a => wfOf(a.asset_type) === tab);
   const visibleSorted = useMemo(() => sortByOption(visible, sort, a => a.title, a => a.created_at), [visible, sort]);
   const tabs: ("all" | WF)[] = ["all", "brand", "design", "launch", "promote", "other"];
 
@@ -219,15 +271,54 @@ const ProjectDetail = () => {
     </div>
   );
 
+  if (section === "settings") return (
+    <div className="mx-auto max-w-4xl px-6 py-10">
+      <Link to="/projects" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900"><ArrowLeft className="h-4 w-4" /> Brands</Link>
+      <div className="mt-3">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{project.name}</h1>
+        <p className="mt-1 text-sm text-neutral-500">Keep the context Rocket uses for every design in this brand.</p>
+      </div>
+      <div className="mt-6">
+        <ProjectNavigation projectId={id!} active="settings" />
+      </div>
+      <form
+        className="mt-8 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm"
+        onSubmit={(event) => { event.preventDefault(); void saveProjectSettings(); }}
+      >
+        <div className="max-w-xl">
+          <h2 className="text-lg font-semibold text-neutral-900">Brand settings</h2>
+          <p className="mt-1 text-sm text-neutral-500">Your name and website help Rocket carry the right context into every new design.</p>
+        </div>
+        <div className="mt-6 grid gap-5">
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-800">
+            Brand name
+            <input value={settingsName} onChange={(event) => setSettingsName(event.target.value)} className="h-10 rounded-lg border border-neutral-200 px-3 text-sm font-normal outline-none focus:border-neutral-400" />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-800">
+            Website
+            <input value={settingsUrl} onChange={(event) => setSettingsUrl(event.target.value)} placeholder="https://yourcompany.com" className="h-10 rounded-lg border border-neutral-200 px-3 text-sm font-normal outline-none focus:border-neutral-400" />
+          </label>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-800">
+            Brand description
+            <textarea value={settingsDescription} onChange={(event) => setSettingsDescription(event.target.value)} placeholder="What does this company do?" rows={4} className="rounded-lg border border-neutral-200 px-3 py-2 text-sm font-normal outline-none focus:border-neutral-400" />
+          </label>
+        </div>
+        <button disabled={savingSettings} className="mt-6 inline-flex items-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:bg-brand-hover disabled:opacity-50">
+          {savingSettings ? "Saving…" : "Save settings"}
+        </button>
+      </form>
+    </div>
+  );
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       <Link to="/projects" className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900"><ArrowLeft className="h-4 w-4" /> Projects</Link>
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{project.name}</h1>
         <div className="flex flex-wrap gap-2">
-          <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/5 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/10"><LayoutGrid className="h-4 w-4" /> Edit Brand Kit</Link>
+          <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/5 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/10"><Download className="h-4 w-4" /> Download brand kit</Link>
           <button onClick={openDesignPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add design</button>
-          <button onClick={openPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add asset</button>
+          <button onClick={openPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add brand work</button>
           {missingKit().length > 0 && (
             <button
               onClick={completeBrandKit}
@@ -243,10 +334,21 @@ const ProjectDetail = () => {
         </div>
       </div>
 
-      {assets.length > 0 && (
+      <div className="mt-6">
+        <ProjectNavigation projectId={id!} active={section === "templates" ? "templates" : "designs"} />
+      </div>
+
+      {section === "templates" && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold text-neutral-900">Templates</h2>
+          <p className="mt-1 text-sm text-neutral-500">Reusable layouts and presentations for this brand.</p>
+        </div>
+      )}
+
+      {workspaceAssets.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-1.5 border-b border-neutral-200 pb-2">
           {tabs.map(t => {
-            const count = t === "all" ? assets.length : counts[t as WF];
+            const count = t === "all" ? workspaceAssets.length : workspaceAssets.filter((asset) => wfOf(asset.asset_type) === t).length;
             if (t !== "all" && count === 0) return null;
             const label = t === "all" ? "All" : WF_META[t as WF].label;
             return (
@@ -258,7 +360,7 @@ const ProjectDetail = () => {
         </div>
       )}
 
-      {assets.length > 0 && (
+      {workspaceAssets.length > 0 && (
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-1">
             <button onClick={() => setView("card")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${view === "card" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"}`}>
@@ -287,7 +389,15 @@ const ProjectDetail = () => {
         </div>
       )}
 
-      {assets.length === 0 ? (
+      {section === "templates" && workspaceAssets.length === 0 ? (
+        <div className="mt-10 rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
+          <h2 className="text-lg font-semibold text-neutral-900">No templates in this brand yet.</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-neutral-500">Create a social post, presentation, or reusable layout and it will appear here.</p>
+          <Link to={`/create?project=${id}&asset_type=template&prompt=${encodeURIComponent(`Create a reusable brand template for ${project.name}`)}`} className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+            <Sparkles className="h-4 w-4" /> Create a template
+          </Link>
+        </div>
+      ) : assets.length === 0 ? (
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl border border-neutral-200 bg-white p-6">
             <div className="text-xs uppercase tracking-wider text-neutral-500">Get started</div>
@@ -327,8 +437,8 @@ const ProjectDetail = () => {
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-6">
             <div className="text-xs uppercase tracking-wider text-neutral-500">Or</div>
             <h2 className="mt-1 text-lg font-semibold">Bring in existing work</h2>
-            <p className="mt-1 text-sm text-neutral-500">Attach assets you've already generated in Rocket to this project.</p>
-            <button onClick={openPicker} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add existing asset</button>
+            <p className="mt-1 text-sm text-neutral-500">Attach brand work you've already generated in Rocket to this project.</p>
+            <button onClick={openPicker} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add existing brand work</button>
           </div>
         </div>
       ) : view === "card" ? (
@@ -344,7 +454,7 @@ const ProjectDetail = () => {
                 </div>
                 <div className="border-t border-neutral-100 p-3">
                   <div className="truncate text-sm font-medium">{a.title}</div>
-                  <div className="mt-0.5 text-[11px] text-neutral-500">{a.asset_type}</div>
+                  <div className="mt-0.5 text-[11px] text-neutral-500">{a.asset_type} · {designStatus(a)}</div>
                 </div>
               </Link>
               <button
@@ -379,7 +489,7 @@ const ProjectDetail = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-neutral-900">{a.title}</div>
-                  <div className="mt-0.5 text-xs text-neutral-500">{a.asset_type} · {new Date(a.created_at).toLocaleDateString()}</div>
+                  <div className="mt-0.5 text-xs text-neutral-500">{a.asset_type} · {designStatus(a)} · {new Date(a.created_at).toLocaleDateString()}</div>
                 </div>
               </Link>
               <button onClick={() => removeAsset(a.id)} className="rounded-md p-1 text-neutral-500 hover:bg-neutral-100" title="Remove from project"><Trash2 className="h-4 w-4 text-red-600" /></button>

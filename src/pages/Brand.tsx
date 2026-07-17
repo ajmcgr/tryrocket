@@ -9,6 +9,7 @@ import VariationStrip from "@/components/studio/VariationStrip";
 import RightInspector from "@/components/studio/RightInspector";
 import BrandDocument from "@/components/brand/BrandDocument";
 import BrandCategoryNav from "@/components/brand/BrandCategoryNav";
+import ProjectNavigation from "@/components/ProjectNavigation";
 import { getProjectBrandContext, refreshBrandContext } from "@/lib/brandContext";
 import { getActiveWorkspaceIdSync } from "@/lib/workspace";
 import { handleAiError } from "@/lib/aiErrors";
@@ -234,6 +235,7 @@ export default function Brand() {
             </div>
           </div>
         </div>
+        <ProjectNavigation projectId={projectId} active="brand" />
         <div className="space-y-6 px-6 py-6">
           {ctx && (
             <BrandContextStrip ctx={ctx} onRefresh={handleRefreshCtx} refreshing={refreshing} />
