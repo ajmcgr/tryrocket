@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { assetHref, isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
-import { ArrowRight, Download, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Download, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 
 const supabase = _sb as any;
 
@@ -25,14 +26,36 @@ const CATEGORIES: Category[] = [
 
 const CORE_CATEGORY_KEYS = new Set(["logos", "colors", "fonts", "voice"]);
 
+const KIT_ESSENTIALS = [
+  { key: "logo", label: "Logo", types: ["logo", "logotype", "wordmark"], prompt: (name: string) => `A polished logotype for ${name}.` },
+  { key: "colors", label: "Colours", types: ["color_system"], prompt: (name: string) => `A cohesive color system for ${name}.` },
+  { key: "fonts", label: "Typography", types: ["font_system", "typography_system"], prompt: (name: string) => `A font pairing for ${name}.` },
+  { key: "voice", label: "Brand voice", types: ["brand_voice", "tone_of_voice"], prompt: (name: string) => `Brand voice and tone guidelines for ${name}.` },
+  { key: "guidelines", label: "Guidelines", types: ["brand_guidelines"], prompt: (name: string) => `Brand guidelines for ${name}.` },
+] as const;
+
 export default function BrandHub() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [params] = useSearchParams();
   const [loading, setLoading] = useState(true);
+  const [completingKit, setCompletingKit] = useState(false);
   const [assets, setAssets] = useState<any[]>([]);
   const [allDesigns, setAllDesigns] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [activeProject, setActiveProject] = useState<string>(params.get("project") || "");
+
+  const refreshAssets = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("assets")
+      .select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta")
+      .order("created_at", { ascending: false })
+      .limit(400);
+    const all = data || [];
+    setAllDesigns(all);
+    setAssets(all.filter(isBrandAsset));
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -40,8 +63,8 @@ export default function BrandHub() {
     (async () => {
       setLoading(true);
       const [{ data: a }, { data: p }] = await Promise.all([
-        supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,created_at,meta").order("created_at", { ascending: false }).limit(400),
-        supabase.from("projects").select("id,name").order("created_at", { ascending: false }).limit(50),
+        supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").order("created_at", { ascending: false }).limit(400),
+        supabase.from("projects").select("id,name,brand_context,source_url").order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
       const loadedProjects = p || [];
@@ -86,6 +109,50 @@ export default function BrandHub() {
     return relevantDesigns.find((design) => design.meta?.selected_as_direction) || null;
   }, [allDesigns, params, selectedProjectId]);
 
+  const selectedProjectDesigns = useMemo(() => {
+    if (!selectedProject) return [];
+    return allDesigns.filter((design) => design.project_id === selectedProject.id);
+  }, [allDesigns, selectedProject]);
+
+  const missingEssentials = useMemo(() => {
+    const availableTypes = new Set(selectedProjectDesigns.map((design) => normalizeAssetType(design.asset_type)));
+    if (selectedStyle?.project_id === selectedProject?.id) {
+      availableTypes.add(normalizeAssetType(selectedStyle.asset_type));
+    }
+    return KIT_ESSENTIALS.filter((essential) => !essential.types.some((type) => availableTypes.has(type)));
+  }, [selectedProject, selectedProjectDesigns, selectedStyle]);
+
+  const choosingDirection = Boolean(params.get("direction") && selectedStyle && selectedProject);
+  const showKitSetup = choosingDirection && missingEssentials.length > 0;
+
+  const completeBrandKit = async () => {
+    if (!selectedProject || !user || completingKit || !missingEssentials.length) return;
+    setCompletingKit(true);
+    const context = selectedProject.brand_context || (selectedProject.source_url ? { url: selectedProject.source_url, productName: selectedProject.name } : undefined);
+    const directionInstruction = selectedStyle
+      ? `Use the chosen direction, “${selectedStyle.title || "Untitled design"}”, as the visual foundation. ${selectedStyle.prompt ? `Original brief: ${selectedStyle.prompt}` : ""}`
+      : "";
+    const results = await Promise.all(missingEssentials.map(async (essential) => {
+      const { data, error } = await supabase.functions.invoke("generate-asset", {
+        body: {
+          prompt: `${essential.prompt(selectedProject.name || "this brand")} ${directionInstruction}`.trim(),
+          asset_type: essential.types[0],
+          project_id: selectedProject.id,
+          brand_context: context,
+        },
+      });
+      return { essential, error: error || data?.error || (data?.refused ? new Error(data.message || "Generation refused") : null) };
+    }));
+    const failed = results.filter((result) => result.error);
+    await refreshAssets();
+    setCompletingKit(false);
+    if (failed.length) {
+      toast({ title: "Some of your kit could not be created", description: "You can retry the missing essentials from this brand.", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Your brand kit is ready", description: "Download it whenever you are ready to use it." });
+  };
+
   const createWithStyleHref = (assetType: string, prompt: string) => selectedStyle
     ? `/create?${new URLSearchParams({
       direction: selectedStyle.id,
@@ -117,29 +184,72 @@ export default function BrandHub() {
           <p className="mt-1 text-sm text-neutral-500">Each project is a brand system: its logo, colours, type and voice in one place.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            to="/trash"
-            title="Trash"
-            aria-label="Trash"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Link>
-          {selectedProject && (
+          {!choosingDirection && (
+            <>
+              <Link
+                to="/trash"
+                title="Trash"
+                aria-label="Trash"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Link>
+              {selectedProject && (
+                <Link
+                  to={`/projects/${selectedProject.id}/hub`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50"
+                >
+                  <Download className="h-4 w-4" /> Download brand kit
+                </Link>
+              )}
+              <Link to={createOnBrandHref} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
+                <Sparkles className="h-4 w-4" /> Create on-brand
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+
+      {choosingDirection && (
+        <section className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand/25 bg-brand/5 px-5 py-5 shadow-sm">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-neutral-900">Direction chosen</p>
+              <p className="mt-1 text-sm text-neutral-600">
+                <span className="font-medium text-neutral-900">{selectedStyle.title || "This design"}</span> will guide your logo, colours, typography, voice and guidelines.
+              </p>
+              {missingEssentials.length > 0 && (
+                <p className="mt-2 text-xs font-medium text-neutral-500">
+                  Next: {missingEssentials.map((essential) => essential.label).join(" · ")}
+                </p>
+              )}
+            </div>
+          </div>
+          {missingEssentials.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => void completeBrandKit()}
+              disabled={completingKit}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover disabled:opacity-60"
+            >
+              {completingKit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {completingKit ? "Completing your brand kit…" : "Complete your brand kit"}
+            </button>
+          ) : (
             <Link
               to={`/projects/${selectedProject.id}/hub`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover"
             >
               <Download className="h-4 w-4" /> Download brand kit
             </Link>
           )}
-          <Link to={createOnBrandHref} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
-            <Sparkles className="h-4 w-4" /> Create on-brand
-          </Link>
-        </div>
-      </div>
+        </section>
+      )}
 
-      {projects.length > 0 && (
+      {!showKitSetup && projects.length > 0 && (
         <section className="mt-8">
           <div className="mb-3 flex items-baseline justify-between gap-3">
             <div>
@@ -172,7 +282,7 @@ export default function BrandHub() {
         </section>
       )}
 
-      <section className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+      {!showKitSetup && <section className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
         {selectedStyle ? (
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
@@ -196,15 +306,15 @@ export default function BrandHub() {
             <Link to="/designs" className="ml-1 shrink-0 text-sm font-medium text-neutral-600 hover:text-neutral-900">Choose</Link>
           </div>
         )}
-      </section>
+      </section>}
 
-      <div className="mt-8 flex items-baseline justify-between gap-4">
+      {!showKitSetup && <div className="mt-8 flex items-baseline justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-neutral-900">Core identity</h2>
           <p className="mt-1 text-sm text-neutral-500">The essentials every new design should follow.</p>
         </div>
-      </div>
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      </div>}
+      {!showKitSetup && <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {coreCategories.map((cat) => {
           const items = byCategory.get(cat.key) || [];
           const isLogos = cat.key === "logos"; // logos live in Designs, not Brand — link there
@@ -243,9 +353,9 @@ export default function BrandHub() {
             </Link>
           );
         })}
-      </div>
+      </div>}
 
-      <section className="mt-8 border-t border-neutral-200 pt-6">
+      {!showKitSetup && <section className="mt-8 border-t border-neutral-200 pt-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-neutral-900">Supporting material</h2>
@@ -265,9 +375,9 @@ export default function BrandHub() {
             );
           })}
         </div>
-      </section>
+      </section>}
 
-      {!loading && assets.length === 0 && (
+      {!showKitSetup && !loading && assets.length === 0 && (
         <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
           <h2 className="text-lg font-semibold">Start your brand</h2>
           <p className="mt-1 text-sm text-neutral-500">Create a logo, then choose the colours, type and voice that fit it.</p>
