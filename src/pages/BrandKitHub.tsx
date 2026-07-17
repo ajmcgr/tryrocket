@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 const supabase = _sb as any;
 import { packAssetsZip } from "@/lib/exporters/zipPack";
+import { exportAsset } from "@/lib/exporters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import ProjectNavigation from "@/components/ProjectNavigation";
@@ -104,6 +105,14 @@ const GROUPS: Group[] = [
   },
 ];
 
+const BRAND_KIT_ESSENTIALS = [
+  { key: "logo", label: "Logo", types: ["logo", "logotype", "wordmark"] },
+  { key: "colours", label: "Colours", types: ["color_system", "design_color_palette"] },
+  { key: "typography", label: "Typography", types: ["font_system", "design_typography"] },
+  { key: "voice", label: "Brand voice", types: ["brand_voice"] },
+  { key: "guidelines", label: "Guidelines", types: ["brand_guidelines", "design_style_direction"] },
+];
+
 const XLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -121,6 +130,8 @@ const BrandKitHub = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
   const [zipping, setZipping] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
+  const [downloadingAssetId, setDownloadingAssetId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ id: string; label: string; assetTitle?: string } | null>(null);
 
   const shareUrl = project?.share_token
@@ -192,11 +203,24 @@ const BrandKitHub = () => {
     setZipping(true);
     try {
       const base = (project?.name || "brand-kit").replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "brand-kit";
-      await packAssetsZip(assets, `${base}-assets.zip`);
+      await packAssetsZip(assets, `${base}-brand-kit.zip`);
+      setDownloaded(true);
+      toast({ title: "Brand kit downloaded", description: "Your files are ready. Create your next on-brand design whenever you are ready." });
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || "Could not build ZIP.", variant: "destructive" });
     } finally {
       setZipping(false);
+    }
+  };
+
+  const downloadEssential = async (asset: any) => {
+    setDownloadingAssetId(asset.id);
+    try {
+      await exportAsset(asset, asset.image_url ? "png" : "pdf");
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e?.message || "Could not download this design.", variant: "destructive" });
+    } finally {
+      setDownloadingAssetId(null);
     }
   };
 
@@ -262,6 +286,13 @@ const BrandKitHub = () => {
     return c;
   }, [assets]);
 
+  const brandKitEssentials = useMemo(() => BRAND_KIT_ESSENTIALS.map((essential) => ({
+    ...essential,
+    asset: assets.find((asset) => essential.types.includes(asset.asset_type)) || null,
+  })), [assets]);
+  const completeEssentialCount = brandKitEssentials.filter((essential) => essential.asset).length;
+  const brandKitReady = completeEssentialCount === BRAND_KIT_ESSENTIALS.length;
+
   const generateHref = (it: Item) => {
     const seed = it.promptHint
       ? `${it.label} for ${project?.name || "my product"} — ${it.promptHint}`
@@ -294,7 +325,7 @@ const BrandKitHub = () => {
             disabled={zipping || !assets.length}
             className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50 disabled:opacity-50"
           >
-            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download .zip
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download brand kit
           </button>
           <button
             onClick={() => setShareOpen(true)}
@@ -314,6 +345,68 @@ const BrandKitHub = () => {
       <div className="mt-6">
         <ProjectNavigation projectId={id!} active="downloads" />
       </div>
+
+      <section className="mt-8 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
+              <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${brandKitReady ? "bg-emerald-500 text-white" : "bg-neutral-200 text-neutral-600"}`}>
+                {brandKitReady ? <Check className="h-3.5 w-3.5" /> : completeEssentialCount}
+              </span>
+              {brandKitReady ? "Your brand kit is ready" : "Your brand kit is taking shape"}
+            </div>
+            <p className="mt-1 text-sm text-neutral-600">
+              {brandKitReady
+                ? "Your logo, colours, typography, voice and guidelines are ready to download."
+                : `${completeEssentialCount} of ${BRAND_KIT_ESSENTIALS.length} brand essentials are ready. Finish the remaining pieces to complete your kit.`}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={downloadZip}
+              disabled={zipping || !assets.length}
+              className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover disabled:opacity-50"
+            >
+              {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Download brand kit (.zip)
+            </button>
+            {downloaded && (
+              <Link
+                to={`/create?project=${id}`}
+                className="inline-flex items-center rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
+              >
+                Create an on-brand design
+              </Link>
+            )}
+          </div>
+        </div>
+        <div className="grid divide-y border-t border-neutral-100 sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+          {brandKitEssentials.map((essential) => (
+            <div key={essential.key} className="flex min-w-0 items-center justify-between gap-2 px-4 py-3">
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-neutral-900">{essential.label}</div>
+                <div className={`mt-0.5 text-[11px] ${essential.asset ? "text-emerald-700" : "text-neutral-500"}`}>
+                  {essential.asset ? "Included" : "Not included yet"}
+                </div>
+              </div>
+              {essential.asset && (
+                <button
+                  onClick={() => downloadEssential(essential.asset)}
+                  disabled={downloadingAssetId === essential.asset.id}
+                  className="shrink-0 rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  {downloadingAssetId === essential.asset.id ? "Downloading" : "Download"}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        {downloaded && (
+          <div className="border-t border-neutral-100 bg-neutral-50 px-5 py-3 text-sm text-neutral-600">
+            Your kit is downloaded. <Link to={`/create?project=${id}`} className="font-medium text-neutral-900 underline underline-offset-2">Create your next on-brand design</Link> to put it to work.
+          </div>
+        )}
+      </section>
 
       <nav className="mt-8 flex flex-wrap gap-2 border-b border-neutral-200 pb-2">
         {GROUPS.map(g => (
