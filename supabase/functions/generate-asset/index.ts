@@ -333,10 +333,12 @@ Deno.serve(async (req) => {
     let logoRefs: { mimeType: string; data: string }[] | undefined;
     if (spec.kind === "image") {
       const candidates: (string | undefined)[] = [];
+      const selectedDirectionImage = ctx.selected_direction?.image_url;
+      const selectedDirectionIsLogo = /^(logo|logotype|wordmark)$/.test(ctx.selected_direction?.asset_type || "");
       if (cls.asset_type === "logo") {
-        candidates.push(ctx.logo, ctx.screenshot, ctx.ogImage, ctx.favicon);
+        candidates.push(selectedDirectionIsLogo ? selectedDirectionImage : undefined, ctx.logo, ctx.screenshot, ctx.ogImage, ctx.favicon);
       } else {
-        candidates.push(ctx.screenshot, ctx.ogImage, ctx.logo);
+        candidates.push(selectedDirectionImage, ctx.screenshot, ctx.ogImage, ctx.logo);
       }
       const refs: { mimeType: string; data: string }[] = [];
       for (const u of candidates) {
@@ -346,7 +348,7 @@ Deno.serve(async (req) => {
       }
       if (refs.length) {
         logoRefs = refs;
-        console.log(`[refs] attached ${refs.length} brand ref image(s) for ${cls.asset_type} (logo=${!!ctx.logo} screenshot=${!!ctx.screenshot} favicon=${!!ctx.favicon})`);
+        console.log(`[refs] attached ${refs.length} brand ref image(s) for ${cls.asset_type} (selected_direction=${!!selectedDirectionImage} logo=${!!ctx.logo} screenshot=${!!ctx.screenshot} favicon=${!!ctx.favicon})`);
       } else {
         console.warn(`[refs] NO brand refs resolved for ${cls.asset_type} — ctx urls: logo=${ctx.logo} screenshot=${ctx.screenshot} favicon=${ctx.favicon} ogImage=${ctx.ogImage}`);
       }

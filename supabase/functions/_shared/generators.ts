@@ -29,6 +29,9 @@ export interface BrandContext {
   category?: string; product?: string; targetCustomer?: string;
   audienceSegments?: string[]; positioning?: string; keywords?: string[];
   valueProps?: string[]; voice?: { tone?: string; traits?: string[]; notToBe?: string[] };
+  selected_direction?: {
+    id?: string; title?: string; asset_type?: string; image_url?: string; prompt?: string;
+  };
 }
 
 function ctxBlock(c: BrandContext, userPrompt: string): string {
@@ -57,12 +60,16 @@ function ctxBlock(c: BrandContext, userPrompt: string): string {
   if (c.favicon) lines.push(`Existing favicon URL (reference only): ${c.favicon}`);
   if (c.ogImage) lines.push(`OG image URL (reference only): ${c.ogImage}`);
   if (c.screenshot) lines.push(`Homepage screenshot URL (reference only): ${c.screenshot}`);
+  if (c.selected_direction?.title) {
+    lines.push(`Selected brand direction: ${c.selected_direction.title}${c.selected_direction.asset_type ? ` (${c.selected_direction.asset_type})` : ""}`);
+  }
+  if (c.selected_direction?.prompt) lines.push(`Selected direction brief: ${c.selected_direction.prompt.slice(0, 500)}`);
   if (c.competitors?.length) lines.push(`Competitors: ${c.competitors.join(", ")}`);
   lines.push("");
   lines.push(`User request: ${userPrompt}`);
-  if (c.colors?.length || c.productName || c.logo || c.screenshot) {
+  if (c.colors?.length || c.productName || c.logo || c.screenshot || c.selected_direction) {
     lines.push("");
-    lines.push("CRITICAL: This is a REAL existing brand. Your job is to EVOLVE its existing identity, not invent a new one. Stay faithful to the scraped colors, fonts, logo motif, and visual language above. Do not invent unrelated colors, names, motifs, or vibes. Reference images may also be attached — match their style.");
+    lines.push("CRITICAL: This is a REAL existing brand. Your job is to EVOLVE its existing identity, not invent a new one. Stay faithful to the scraped colors, fonts, logo motif, and visual language above. When a selected brand direction is present, treat it as the approved source of truth: preserve its distinctive visual choices and tone while creating a new original design. Do not invent unrelated colors, names, motifs, or vibes. Reference images may also be attached — match their style.");
   }
   return lines.join("\n");
 }

@@ -473,7 +473,7 @@ const Generate = () => {
     (async () => {
       let query = supabase
         .from("assets")
-        .select("id,title,asset_type,prompt,meta,source_url,project_id")
+        .select("id,title,asset_type,prompt,meta,source_url,project_id,image_url,thumbnail_url")
         .eq("user_id", user.id)
         .is("deleted_at", null);
 
@@ -617,6 +617,8 @@ const Generate = () => {
             id: directionDesign.id,
             title: directionDesign.title,
             asset_type: directionDesign.asset_type,
+            image_url: directionDesign.thumbnail_url || directionDesign.image_url || undefined,
+            prompt: directionDesign.prompt || undefined,
           },
         };
       }
