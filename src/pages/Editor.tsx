@@ -1217,20 +1217,6 @@ const Editor = () => {
             <Upload className="mr-2 h-4 w-4" />
             Upload files
           </DropdownMenuItem>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <LayoutTemplate className="mr-2 h-4 w-4" />
-              Templates
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-56">
-              {TEMPLATES.map((template, index) => (
-                <DropdownMenuItem key={template.id} onClick={() => applyTemplate(template.id)}>
-                  <span className="mr-2 h-4 w-4 rounded border border-neutral-200" style={{ background: template.bg }} />
-                  {TEMPLATE_MENU_LABELS[index] || template.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
