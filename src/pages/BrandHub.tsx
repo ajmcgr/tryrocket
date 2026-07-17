@@ -74,12 +74,12 @@ export default function BrandHub() {
     return relevantDesigns.find((design) => design.meta?.selected_as_direction) || null;
   }, [activeProject, allDesigns]);
 
-  const nextDesignHref = selectedStyle
+  const createWithStyleHref = (assetType: string, prompt: string) => selectedStyle
     ? `/create?${new URLSearchParams({
       direction: selectedStyle.id,
       ...(selectedStyle.project_id ? { project: selectedStyle.project_id } : {}),
-      asset_type: "social_post",
-      prompt: "Create a social post that introduces our brand.",
+      asset_type: assetType,
+      prompt,
     }).toString()}`
     : "/designs";
 
@@ -129,9 +129,11 @@ export default function BrandHub() {
               <h2 className="mt-1 truncate text-lg font-semibold text-neutral-900">Your style: {selectedStyle.title || "Untitled design"}</h2>
               <p className="mt-1 text-sm text-neutral-500">Create your next design with this style already applied.</p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
               <Link to={assetHref(selectedStyle)} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">View style</Link>
-              <Link to={nextDesignHref} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Sparkles className="h-4 w-4" /> Create a social post</Link>
+              <Link to={createWithStyleHref("graphic", "Create a graphic that introduces our brand.")} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">Create a graphic</Link>
+              <Link to={createWithStyleHref("launch_copy", "Create launch copy that introduces our brand.")} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">Create launch copy</Link>
+              <Link to={createWithStyleHref("social_post", "Create a social post that introduces our brand.")} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Sparkles className="h-4 w-4" /> Create a social post</Link>
             </div>
           </div>
         ) : (
