@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
+import { assetHref, isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
 import { ArrowRight, Plus, Sparkles, MoreHorizontal, Trash2 } from "lucide-react";
 
@@ -27,6 +27,7 @@ export default function BrandHub() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [assets, setAssets] = useState<any[]>([]);
+  const [allDesigns, setAllDesigns] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [activeProject, setActiveProject] = useState<string>("all");
 
@@ -42,6 +43,7 @@ export default function BrandHub() {
       if (cancel) return;
       const loadedProjects = p || [];
       const all = a || [];
+      setAllDesigns(all);
       setAssets(all.filter(isBrandAsset));
       setProjects(loadedProjects);
       setLoading(false);
@@ -64,6 +66,22 @@ export default function BrandHub() {
     }
     return map;
   }, [filtered]);
+
+  const selectedStyle = useMemo(() => {
+    const relevantDesigns = activeProject === "all"
+      ? allDesigns
+      : allDesigns.filter((design) => design.project_id === activeProject);
+    return relevantDesigns.find((design) => design.meta?.selected_as_direction) || null;
+  }, [activeProject, allDesigns]);
+
+  const nextDesignHref = selectedStyle
+    ? `/create?${new URLSearchParams({
+      direction: selectedStyle.id,
+      ...(selectedStyle.project_id ? { project: selectedStyle.project_id } : {}),
+      asset_type: "social_post",
+      prompt: "Create a social post that introduces our brand.",
+    }).toString()}`
+    : "/designs";
 
   const openInProject = (a: any) => `/brands/${a.project_id}?asset=${a.id}`;
   const projectLink = (cat: Category) => {
@@ -102,6 +120,31 @@ export default function BrandHub() {
           </Link>
         </div>
       </div>
+
+      <section className="mt-8 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        {selectedStyle ? (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand">Continue your brand</p>
+              <h2 className="mt-1 truncate text-lg font-semibold text-neutral-900">Your style: {selectedStyle.title || "Untitled design"}</h2>
+              <p className="mt-1 text-sm text-neutral-500">Create your next design with this style already applied.</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Link to={assetHref(selectedStyle)} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">View style</Link>
+              <Link to={nextDesignHref} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Sparkles className="h-4 w-4" /> Create a social post</Link>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand">Continue your brand</p>
+              <h2 className="mt-1 text-lg font-semibold text-neutral-900">Choose a style you want to build on</h2>
+              <p className="mt-1 text-sm text-neutral-500">Pick one design you like, then use it to guide every future design.</p>
+            </div>
+            <Link to="/designs" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Sparkles className="h-4 w-4" /> Browse designs</Link>
+          </div>
+        )}
+      </section>
 
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {CATEGORIES.map((cat) => {

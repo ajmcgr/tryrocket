@@ -350,8 +350,8 @@ const Assets = () => {
     if (!updated) return;
     const next = new URLSearchParams({ direction: asset.id });
     if (asset.project_id) next.set("project", asset.project_id);
-    toast({ title: "Style selected", description: "Your next design will follow this visual direction." });
-    nav(`/create?${next.toString()}`);
+    toast({ title: "Style selected", description: "Choose what to create next from your Brand page." });
+    nav(`/files?${next.toString()}`);
   };
 
   const createProjectAndAssign = async (assetId: string) => {
