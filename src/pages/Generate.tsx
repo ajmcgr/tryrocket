@@ -438,6 +438,7 @@ const Generate = () => {
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
   const [directionDesign, setDirectionDesign] = useState<any>(null);
+  const [ignoreSavedStyle, setIgnoreSavedStyle] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
   const [pendingPrompts, setPendingPrompts] = useState<{ text: string; at: string }[]>([]);
   const { toast } = useToast();
@@ -467,20 +468,30 @@ const Generate = () => {
   }, [chatId, user]);
 
   useEffect(() => {
-    if (!directionId || !user) { setDirectionDesign(null); return; }
+    if (!user || ignoreSavedStyle) { setDirectionDesign(null); return; }
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("assets")
         .select("id,title,asset_type,prompt,meta,source_url,project_id")
-        .eq("id", directionId)
         .eq("user_id", user.id)
-        .is("deleted_at", null)
-        .maybeSingle();
+        .is("deleted_at", null);
+
+      if (directionId) {
+        query = query.eq("id", directionId);
+      } else {
+        query = query
+          .contains("meta", { selected_as_direction: true })
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (projectId) query = query.eq("project_id", projectId);
+      }
+
+      const { data } = await query.maybeSingle();
       if (!cancelled) setDirectionDesign(data || null);
     })();
     return () => { cancelled = true; };
-  }, [directionId, user]);
+  }, [directionId, ignoreSavedStyle, projectId, user]);
 
   const activeBrandCtx = (() => {
     const direct = chatData?.brand_context;
@@ -957,7 +968,13 @@ const Generate = () => {
             <p className="mt-0.5 text-xs text-neutral-600">New work will follow this visual direction.</p>
           </div>
           <Link to={assetHref(directionDesign)} className="shrink-0 text-xs font-medium text-neutral-700 hover:text-neutral-950">Review</Link>
-          <Link to={projectId ? `/create?project=${encodeURIComponent(projectId)}` : "/create"} className="shrink-0 text-xs text-neutral-500 hover:text-neutral-900">Clear</Link>
+          <button
+            type="button"
+            onClick={() => setIgnoreSavedStyle(true)}
+            className="shrink-0 text-xs text-neutral-500 hover:text-neutral-900"
+          >
+            Use without style
+          </button>
         </div>
       )}
 
