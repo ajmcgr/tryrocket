@@ -33,6 +33,22 @@ function withResolvedLogotypeText(asset: any) {
   return resolved ? { ...state, text: resolved, color: state.color || ctx.colors?.[0] } : state;
 }
 
+function getDirectionInstruction(asset: any) {
+  if (!asset) return "";
+  const context = asset.meta?.brand_context || asset.meta?.brandContext || {};
+  const details = [
+    asset.prompt && `Original brief: ${String(asset.prompt).slice(0, 500)}`,
+    context.productName && `Brand: ${context.productName}`,
+    Array.isArray(context.colors) && context.colors.length && `Colors: ${context.colors.slice(0, 6).join(", ")}`,
+    Array.isArray(context.fonts) && context.fonts.length && `Fonts: ${context.fonts.slice(0, 3).join(", ")}`,
+  ].filter(Boolean);
+  return [
+    "Use the approved brand direction below as visual context. Keep its distinctive choices coherent, but create a new original design.",
+    `Approved ${String(asset.asset_type || "design").replace(/_/g, " ")}: ${asset.title || "Untitled design"}.`,
+    ...details,
+  ].join("\n");
+}
+
 function AssetCardThumb({ asset }: { asset: any }) {
   const at = asset.asset_type as string;
   if (asset?.editor_state?.kind === "logotype") {
@@ -408,11 +424,13 @@ const Generate = () => {
   const [count, setCount] = useState<number>(MIN_PROMPT_RESULTS);
   const projectId = params.get("project");
   const chatId = params.get("chat");
+  const directionId = params.get("direction");
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
   const [outOfCredits, setOutOfCredits] = useState<{ needed?: number; remaining?: number } | null>(null);
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
+  const [directionDesign, setDirectionDesign] = useState<any>(null);
   const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
   const [pendingPrompts, setPendingPrompts] = useState<{ text: string; at: string }[]>([]);
   const { toast } = useToast();
@@ -440,6 +458,22 @@ const Generate = () => {
       setChatAssets(a || []);
     })();
   }, [chatId, user]);
+
+  useEffect(() => {
+    if (!directionId || !user) { setDirectionDesign(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("assets")
+        .select("id,title,asset_type,prompt,meta,source_url,project_id")
+        .eq("id", directionId)
+        .eq("user_id", user.id)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (!cancelled) setDirectionDesign(data || null);
+    })();
+    return () => { cancelled = true; };
+  }, [directionId, user]);
 
   const activeBrandCtx = (() => {
     const direct = chatData?.brand_context;
@@ -472,6 +506,9 @@ const Generate = () => {
         : selectedChip?.promptPrefix
           ? `${selectedChip.promptPrefix}${p}`
           : p;
+      const directedPrompt = directionDesign
+        ? `${effectivePrompt}\n\n${getDirectionInstruction(directionDesign)}`
+        : effectivePrompt;
       const effective = workflow;
       let allIds: string[] = [];
       let creditsErr: any = null;
@@ -553,6 +590,18 @@ const Generate = () => {
           };
         }
       }
+      if (directionDesign) {
+        const directionContext = directionDesign.meta?.brand_context || directionDesign.meta?.brandContext || {};
+        sharedCtx = {
+          ...directionContext,
+          ...(sharedCtx || {}),
+          selected_direction: {
+            id: directionDesign.id,
+            title: directionDesign.title,
+            asset_type: directionDesign.asset_type,
+          },
+        };
+      }
       if (!tpl && isLogotypeOnlyPrompt(p)) {
         const priorPromptText = [p, chatData?.prompt, ...[...chatAssets].reverse().map((asset) => asset.prompt)].filter(Boolean).join("\n");
         const brandText = pickLogotypeText({
@@ -590,7 +639,7 @@ const Generate = () => {
         }
       } else if (tpl || effective === "auto") {
         const backendPrompt = normalizeMixedLogoPrompt(
-          effectivePrompt,
+          directedPrompt,
           pickLogotypeText({ prompt: p, productName: sharedCtx?.productName, url: sharedCtx?.url }),
           sharedCtx?.url,
         );
@@ -668,7 +717,7 @@ const Generate = () => {
         const _wsid = getActiveWorkspaceIdSync() || undefined;
         const results = await Promise.all(plan.map(step =>
           supabase.functions.invoke("generate-asset", {
-            body: { prompt: p, asset_type: step.asset_type, count: step.count, project_id: effectiveProjectId || undefined, brand_context: sharedCtx || undefined, workspace_id: _wsid },
+            body: { prompt: directedPrompt, asset_type: step.asset_type, count: step.count, project_id: effectiveProjectId || undefined, brand_context: sharedCtx || undefined, workspace_id: _wsid },
           })
         ));
         for (const r of results) {
@@ -892,6 +941,18 @@ const Generate = () => {
           Describe what you need. Rocket routes to our AI and saves it as a design.
         </p>
       </div>
+
+      {directionDesign && (
+        <div className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm">
+          <Sparkles className="h-4 w-4 shrink-0 text-brand" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium text-neutral-900">Using “{directionDesign.title || "Untitled design"}” as your approved brand direction</p>
+            <p className="mt-0.5 text-xs text-neutral-600">New work will stay coherent with this chosen direction.</p>
+          </div>
+          <Link to={assetHref(directionDesign)} className="shrink-0 text-xs font-medium text-neutral-700 hover:text-neutral-950">Review</Link>
+          <Link to={projectId ? `/create?project=${encodeURIComponent(projectId)}` : "/create"} className="shrink-0 text-xs text-neutral-500 hover:text-neutral-900">Clear</Link>
+        </div>
+      )}
 
       <form onSubmit={submit} className="w-full">
         <div className="rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">

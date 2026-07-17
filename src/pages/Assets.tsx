@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { assetHref, isBrandAsset } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
 import { supabase as _sb } from "@/integrations/supabase/client";
@@ -21,6 +21,9 @@ import {
   ArrowUpDown,
   Share2,
   Lock,
+  Compass,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -140,6 +143,7 @@ const logotypePreviewState = (asset: DesignPreviewAsset) => {
 const Assets = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const nav = useNavigate();
   const [params] = useSearchParams();
   const highlight = (params.get("highlight") || "").split(",").filter(Boolean);
   const folderParam = params.get("folder") || "";
@@ -326,6 +330,35 @@ const Assets = () => {
     }
     setAssets((prev) => prev.map((row) => row.id === asset.id ? { ...row, share_token: null } : row));
     toast({ title: "Removed from Templates", description: "This design is now private." });
+  };
+
+  const updateDesignMeta = async (asset: any, patch: Record<string, unknown>) => {
+    const meta = { ...(asset.meta || {}), ...patch };
+    const { error } = await supabase.from("assets").update({ meta }).eq("id", asset.id);
+    if (error) {
+      toast({ title: "Could not update design", description: error.message, variant: "destructive" });
+      return false;
+    }
+    setAssets((prev) => prev.map((row) => row.id === asset.id ? { ...row, meta } : row));
+    return true;
+  };
+
+  const useAsBrandDirection = async (asset: any) => {
+    const updated = await updateDesignMeta(asset, {
+      direction_feedback: "kept",
+      selected_as_direction: true,
+      selected_as_direction_at: new Date().toISOString(),
+    });
+    if (!updated) return;
+    const next = new URLSearchParams({ direction: asset.id });
+    if (asset.project_id) next.set("project", asset.project_id);
+    toast({ title: "Brand direction selected", description: "Your next design will use this direction as context." });
+    nav(`/create?${next.toString()}`);
+  };
+
+  const setDesignFeedback = async (asset: any, feedback: "kept" | "not_for_brand") => {
+    const updated = await updateDesignMeta(asset, { direction_feedback: feedback });
+    if (updated) toast({ title: feedback === "kept" ? "Direction saved" : "Feedback saved" });
   };
 
   const createProjectAndAssign = async (assetId: string) => {
@@ -616,6 +649,25 @@ const Assets = () => {
                         <Lock className="mr-2 h-4 w-4" /> Make Private
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => useAsBrandDirection(asset)}
+                      className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"
+                    >
+                      <Compass className="mr-2 h-4 w-4" /> Use as brand direction
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setDesignFeedback(asset, "kept")}
+                      className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"
+                    >
+                      <ThumbsUp className="mr-2 h-4 w-4" /> Keep this direction
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setDesignFeedback(asset, "not_for_brand")}
+                      className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"
+                    >
+                      <ThumbsDown className="mr-2 h-4 w-4" /> Not for this brand
+                    </DropdownMenuItem>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900">
                         <FolderPlus className="mr-2 h-4 w-4" /> {asset.project_id ? "Move design to project" : "Add design to project"}
@@ -682,6 +734,14 @@ const Assets = () => {
                   </div>
                   <div className="shrink-0 text-xs text-neutral-400">{new Date(asset.created_at).toLocaleDateString()}</div>
                 </Link>
+                <button
+                  onClick={() => useAsBrandDirection(asset)}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+                  title="Use as brand direction"
+                  aria-label="Use as brand direction"
+                >
+                  <Compass className="h-4 w-4" />
+                </button>
               </div>
             );
           })}
