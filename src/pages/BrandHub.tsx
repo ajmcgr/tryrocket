@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { assetHref, isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
-import { ArrowRight, Plus, Sparkles, MoreHorizontal, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Sparkles, Trash2 } from "lucide-react";
 
 const supabase = _sb as any;
 
@@ -23,13 +23,16 @@ const CATEGORIES: Category[] = [
   { key: "website", label: "Website & email", types: ["website_copy", "email_copy"] },
 ];
 
+const CORE_CATEGORY_KEYS = new Set(["logos", "colors", "fonts", "voice"]);
+
 export default function BrandHub() {
   const { user } = useAuth();
+  const [params] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [assets, setAssets] = useState<any[]>([]);
   const [allDesigns, setAllDesigns] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
-  const [activeProject, setActiveProject] = useState<string>("all");
+  const [activeProject, setActiveProject] = useState<string>(params.get("project") || "all");
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +54,11 @@ export default function BrandHub() {
     return () => { cancel = true; };
   }, [user]);
 
+  useEffect(() => {
+    const projectId = params.get("project");
+    if (projectId) setActiveProject(projectId);
+  }, [params]);
+
   const filtered = useMemo(() => {
     if (activeProject === "all") return assets;
     return assets.filter((a) => a.project_id === activeProject);
@@ -68,11 +76,13 @@ export default function BrandHub() {
   }, [filtered]);
 
   const selectedStyle = useMemo(() => {
+    const directionId = params.get("direction");
+    if (directionId) return allDesigns.find((design) => design.id === directionId) || null;
     const relevantDesigns = activeProject === "all"
       ? allDesigns
       : allDesigns.filter((design) => design.project_id === activeProject);
     return relevantDesigns.find((design) => design.meta?.selected_as_direction) || null;
-  }, [activeProject, allDesigns]);
+  }, [activeProject, allDesigns, params]);
 
   const createWithStyleHref = (assetType: string, prompt: string) => selectedStyle
     ? `/create?${new URLSearchParams({
@@ -83,13 +93,17 @@ export default function BrandHub() {
     }).toString()}`
     : "/designs";
 
-  const openInProject = (a: any) => `/brands/${a.project_id}?asset=${a.id}`;
   const projectLink = (cat: Category) => {
     // Prefer a project that has assets in this category, otherwise the first project.
     const withHit = filtered.find((a) => cat.types.includes(normalizeAssetType(a.asset_type)));
     const pid = withHit?.project_id || (activeProject !== "all" ? activeProject : projects[0]?.id);
     return pid ? `/brands/${pid}?cat=${cat.types[0]}` : `/projects`;
   };
+  const coreCategories = CATEGORIES.filter((category) => CORE_CATEGORY_KEYS.has(category.key));
+  const supportingCategories = CATEGORIES.filter((category) => !CORE_CATEGORY_KEYS.has(category.key));
+  const createOnBrandHref = selectedStyle
+    ? createWithStyleHref("graphic", "Create a new design for our brand.")
+    : "/create";
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
@@ -115,41 +129,46 @@ export default function BrandHub() {
             <option value="all">All projects</option>
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
-            <Sparkles className="h-4 w-4" /> Create a design
+          <Link to={createOnBrandHref} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
+            <Sparkles className="h-4 w-4" /> Create on-brand
           </Link>
         </div>
       </div>
 
-      <section className="mt-8 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <section className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
         {selectedStyle ? (
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+              <Sparkles className="h-4 w-4" />
+            </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-brand">Continue your brand</p>
-              <h2 className="mt-1 truncate text-lg font-semibold text-neutral-900">Your style: {selectedStyle.title || "Untitled design"}</h2>
-              <p className="mt-1 text-sm text-neutral-500">Create your next design with this style already applied.</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Your style</p>
+              <p className="truncate text-sm font-medium text-neutral-900">{selectedStyle.title || "Untitled design"}</p>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-              <Link to={assetHref(selectedStyle)} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">View style</Link>
-              <Link to={createWithStyleHref("graphic", "Create a graphic that introduces our brand.")} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">Create a graphic</Link>
-              <Link to={createWithStyleHref("launch_copy", "Create launch copy that introduces our brand.")} className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">Create launch copy</Link>
-              <Link to={createWithStyleHref("social_post", "Create a social post that introduces our brand.")} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Sparkles className="h-4 w-4" /> Create a social post</Link>
-            </div>
+            <Link to={assetHref(selectedStyle)} className="ml-1 shrink-0 text-sm font-medium text-neutral-600 hover:text-neutral-900">Change</Link>
           </div>
         ) : (
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-brand">Continue your brand</p>
-              <h2 className="mt-1 text-lg font-semibold text-neutral-900">Choose a style you want to build on</h2>
-              <p className="mt-1 text-sm text-neutral-500">Pick one design you like, then use it to guide every future design.</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
+              <Sparkles className="h-4 w-4" />
             </div>
-            <Link to="/designs" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover"><Sparkles className="h-4 w-4" /> Browse designs</Link>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Your style</p>
+              <p className="text-sm text-neutral-600">Choose a design you like to guide future work.</p>
+            </div>
+            <Link to="/designs" className="ml-1 shrink-0 text-sm font-medium text-neutral-600 hover:text-neutral-900">Choose</Link>
           </div>
         )}
       </section>
 
+      <div className="mt-8 flex items-baseline justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-neutral-900">Core identity</h2>
+          <p className="mt-1 text-sm text-neutral-500">The essentials every new design should follow.</p>
+        </div>
+      </div>
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {CATEGORIES.map((cat) => {
+        {coreCategories.map((cat) => {
           const items = byCategory.get(cat.key) || [];
           const isLogos = cat.key === "logos"; // logos live in Designs, not Brand — link there
           return (
@@ -188,6 +207,28 @@ export default function BrandHub() {
           );
         })}
       </div>
+
+      <section className="mt-8 border-t border-neutral-200 pt-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">Supporting material</h2>
+            <p className="mt-1 text-sm text-neutral-500">Guidance and launch work built from your core identity.</p>
+          </div>
+          <Link to="/designs" className="text-sm font-medium text-neutral-600 hover:text-neutral-900">View all designs</Link>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {supportingCategories.map((cat) => {
+            const items = byCategory.get(cat.key) || [];
+            return (
+              <Link key={cat.key} to={projectLink(cat)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 hover:border-neutral-400 hover:text-neutral-900">
+                {cat.label}
+                {items.length > 0 && <span className="text-xs text-neutral-400">{items.length}</span>}
+                <ArrowRight className="h-3.5 w-3.5 text-neutral-400" />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
       {!loading && assets.length === 0 && (
         <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">

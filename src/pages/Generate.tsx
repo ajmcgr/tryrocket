@@ -439,6 +439,7 @@ const Generate = () => {
   const [chatAssets, setChatAssets] = useState<any[]>([]);
   const [directionDesign, setDirectionDesign] = useState<any>(null);
   const [ignoreSavedStyle, setIgnoreSavedStyle] = useState(false);
+  const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
   const [pendingPrompts, setPendingPrompts] = useState<{ text: string; at: string }[]>([]);
   const { toast } = useToast();
@@ -804,6 +805,63 @@ const Generate = () => {
     }
   };
 
+  const useAsMyBrand = async (designId: string) => {
+    if (!user) return;
+    const { data: chosen, error: chosenError } = await supabase
+      .from("assets")
+      .select("id,project_id,meta")
+      .eq("id", designId)
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (chosenError || !chosen) {
+      toast({ title: "Could not set your brand", description: chosenError?.message || "Design not found.", variant: "destructive" });
+      return;
+    }
+
+    let previousStylesQuery = supabase
+      .from("assets")
+      .select("id,meta")
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .contains("meta", { selected_as_direction: true });
+    previousStylesQuery = chosen.project_id
+      ? previousStylesQuery.eq("project_id", chosen.project_id)
+      : previousStylesQuery.is("project_id", null);
+    const { data: previousStyles, error: previousError } = await previousStylesQuery;
+    if (previousError) {
+      toast({ title: "Could not set your brand", description: previousError.message, variant: "destructive" });
+      return;
+    }
+
+    const resetResults = await Promise.all((previousStyles || []).filter((style) => style.id !== chosen.id).map((style) =>
+      supabase.from("assets").update({ meta: { ...(style.meta || {}), selected_as_direction: false } }).eq("id", style.id),
+    ));
+    const resetError = resetResults.find((result) => result.error)?.error;
+    if (resetError) {
+      toast({ title: "Could not set your brand", description: resetError.message, variant: "destructive" });
+      return;
+    }
+
+    const { error: updateError } = await supabase.from("assets").update({
+      meta: {
+        ...(chosen.meta || {}),
+        direction_feedback: "kept",
+        selected_as_direction: true,
+        selected_as_direction_at: new Date().toISOString(),
+      },
+    }).eq("id", chosen.id);
+    if (updateError) {
+      toast({ title: "Could not set your brand", description: updateError.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Your brand is set", description: "Future designs will use this direction." });
+    const next = new URLSearchParams({ direction: chosen.id });
+    if (chosen.project_id) next.set("project", chosen.project_id);
+    nav(`/brands?${next.toString()}`);
+  };
+
   useEffect(() => {
     if (autoRan.current) return;
     if (params.get("prompt") && user) { autoRan.current = true; submit(); }
@@ -929,23 +987,28 @@ const Generate = () => {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {chatAssets.map((a) => (
-                <Link
-                  key={a.id}
-                  to={assetHref(a)}
-                  className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm"
-                >
-                  {a.image_url ? (
-                    <div className="aspect-square w-full bg-neutral-50">
-                      <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
+                <div key={a.id} className="group overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm">
+                  <Link to={assetHref(a)} className="block">
+                    {a.image_url ? (
+                      <div className="aspect-square w-full bg-neutral-50">
+                        <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
+                      </div>
+                    ) : (
+                      <AssetCardThumb asset={a} />
+                    )}
+                    <div className="border-t border-neutral-100 px-3 py-2">
+                      <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-400">{a.asset_type}</p>
                     </div>
-                  ) : (
-                    <AssetCardThumb asset={a} />
-                  )}
-                  <div className="border-t border-neutral-100 px-3 py-2">
-                    <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-neutral-400">{a.asset_type}</p>
-                  </div>
-                </Link>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => void useAsMyBrand(a.id)}
+                    className="w-full border-t border-neutral-100 px-3 py-2 text-left text-xs font-medium text-brand hover:bg-brand/5"
+                  >
+                    Use as my brand
+                  </button>
+                </div>
               ))}
               {chatAssets.length === 0 && (
                 <p className="col-span-full text-sm text-neutral-500">No designs in this chat.</p>
@@ -1001,23 +1064,41 @@ const Generate = () => {
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2 px-2 pb-1 pt-2">
-            <span className="text-xs text-neutral-500">Start with</span>
-            <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowCreateOptions((open) => !open)}
+              className="text-xs font-medium text-neutral-500 hover:text-neutral-900"
+            >
+              {showCreateOptions ? "Fewer options" : "More options"}
+            </button>
+            {assetType && (
+              <button
+                type="button"
+                onClick={() => setAssetType(null)}
+                className="rounded-full bg-brand/10 px-2 py-1 text-xs font-medium text-brand hover:bg-brand/15"
+              >
+                {ASSET_CHIPS.find((item) => item.id === assetType)?.label || "Design type"} ×
+              </button>
+            )}
+          </div>
+          {showCreateOptions && (
+            <div className="flex flex-wrap items-center gap-1.5 border-t border-neutral-100 px-2 pb-1 pt-2">
+              <span className="mr-1 text-xs text-neutral-500">Create</span>
               {QUICK_STARTS.map((c) => {
                 const chip = ASSET_CHIPS.find((item) => item.id === c.id)!;
                 return (
-                <button
-                  type="button"
-                  key={c.id}
-                  onClick={() => setAssetType(assetType === c.id ? null : c.id)}
-                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${assetType === c.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
-                >
-                  <chip.Icon className="h-3 w-3" /> {c.label}
-                </button>
+                  <button
+                    type="button"
+                    key={c.id}
+                    onClick={() => setAssetType(assetType === c.id ? null : c.id)}
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${assetType === c.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
+                  >
+                    <chip.Icon className="h-3 w-3" /> {c.label}
+                  </button>
                 );
               })}
             </div>
-          </div>
+          )}
         </div>
       </form>
 
