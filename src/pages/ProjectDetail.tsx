@@ -335,7 +335,7 @@ const ProjectDetail = () => {
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {visibleSorted.map(a => (
             <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white ${selected.has(a.id) ? "border-brand ring-2 ring-brand/40" : "border-neutral-200"}`}>
-              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0 || selectMode) { e.preventDefault(); toggleSelect(a.id); } }}>
+              <Link to={assetHref(a)} target="_blank" rel="noopener noreferrer" onClick={(e) => { if (selected.size > 0 || selectMode) { e.preventDefault(); toggleSelect(a.id); } }}>
                 <div className="aspect-square w-full bg-neutral-50">
                   {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
                     a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :
@@ -370,7 +370,7 @@ const ProjectDetail = () => {
               >
                 {selected.has(a.id) ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4 text-neutral-500" />}
               </button>
-              <Link to={assetHref(a)} onClick={(e) => { if (selected.size > 0 || selectMode) { e.preventDefault(); toggleSelect(a.id); } }} className="flex min-w-0 flex-1 items-center gap-3">
+              <Link to={assetHref(a)} target="_blank" rel="noopener noreferrer" onClick={(e) => { if (selected.size > 0 || selectMode) { e.preventDefault(); toggleSelect(a.id); } }} className="flex min-w-0 flex-1 items-center gap-3">
                 <div className="h-14 w-20 overflow-hidden rounded-lg bg-neutral-100">
                   {a?.editor_state?.kind === "logotype" ? <Logotype state={a.editor_state} fit="contain" /> :
                     a.image_url ? <img src={a.image_url} alt={a.title} className="h-full w-full object-cover" /> :

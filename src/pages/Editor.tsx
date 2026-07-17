@@ -1217,20 +1217,6 @@ const Editor = () => {
             <Upload className="mr-2 h-4 w-4" />
             Upload files
           </DropdownMenuItem>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <LayoutTemplate className="mr-2 h-4 w-4" />
-              Templates
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-56">
-              {TEMPLATES.map((template, index) => (
-                <DropdownMenuItem key={template.id} onClick={() => applyTemplate(template.id)}>
-                  <span className="mr-2 h-4 w-4 rounded border border-neutral-200" style={{ background: template.bg }} />
-                  {TEMPLATE_MENU_LABELS[index] || template.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
@@ -1564,18 +1550,18 @@ const Editor = () => {
         }}
         className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${
           danger
-            ? "text-red-400 hover:bg-white/10 hover:text-red-300"
-            : "text-white hover:bg-white/10"
-        } disabled:pointer-events-none disabled:text-white/35`}
+            ? "text-red-600 hover:bg-red-50"
+            : "text-neutral-800 hover:bg-neutral-100"
+        } disabled:pointer-events-none disabled:text-neutral-400`}
       >
         <span className="flex min-w-0 flex-1 items-center gap-3">{children}</span>
-        <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] text-white/55">{shortcut}</span>
+        <span className="rounded-md bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-500">{shortcut}</span>
       </button>
     );
 
     return (
       <div
-        className="fixed z-[100] w-56 rounded-xl border border-white/10 bg-neutral-950/88 p-1.5 shadow-2xl backdrop-blur-md"
+        className="fixed z-[100] w-56 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl"
         style={{ left: canvasMenu.x, top: canvasMenu.y }}
         onClick={(event) => event.stopPropagation()}
         onContextMenu={(event) => event.preventDefault()}
@@ -1592,7 +1578,7 @@ const Editor = () => {
           <ClipboardPaste className="h-4 w-4" />
           Paste
         </MenuButton>
-        <div className="my-1 h-px bg-white/10" />
+        <div className="my-1 h-px bg-neutral-200" />
         <MenuButton onClick={() => selected && duplicate(selected.id)} disabled={!selected} shortcut="⌘D">
           <Copy className="h-4 w-4" />
           Duplicate
@@ -1606,7 +1592,7 @@ const Editor = () => {
   };
 
   return (
-    <div ref={editorShellRef} className="relative flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-neutral-100">
+    <div ref={editorShellRef} className="relative flex h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-neutral-100">
       {/* Mobile warning */}
       <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white p-8 text-center md:hidden">
         <LayoutTemplate className="mb-3 h-8 w-8 text-neutral-400" />

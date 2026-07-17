@@ -6,7 +6,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import HeaderCreditsChip from "./HeaderCreditsChip";
 
 const LANGUAGES = [
   { code: "en", flag: "🇺🇸", label: "English" },
@@ -101,8 +100,6 @@ const SiteHeader = () => {
           {loading ? (
             <div className="h-8 w-8 rounded-full bg-neutral-100" />
           ) : user ? (
-            <>
-            <HeaderCreditsChip />
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none focus:ring-2 focus:ring-neutral-300" aria-label="Account menu">
                 <Avatar className="h-8 w-8 border border-neutral-200">
@@ -129,7 +126,6 @@ const SiteHeader = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            </>
           ) : (
             <>
               <Link to="/login" className="hidden text-sm font-semibold text-neutral-600 hover:text-neutral-900 sm:inline">Log in</Link>
