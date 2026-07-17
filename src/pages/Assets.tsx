@@ -342,12 +342,33 @@ const Assets = () => {
   };
 
   const useAsBrandDirection = async (asset: any) => {
+    const previousStyles = assets.filter((row) =>
+      row.id !== asset.id &&
+      row.meta?.selected_as_direction &&
+      (row.project_id || null) === (asset.project_id || null),
+    );
+    const resetResults = await Promise.all(previousStyles.map(async (row) => {
+      const meta = { ...(row.meta || {}), selected_as_direction: false };
+      return supabase.from("assets").update({ meta }).eq("id", row.id);
+    }));
+    const resetError = resetResults.find((result) => result.error)?.error;
+    if (resetError) {
+      toast({ title: "Could not update style", description: resetError.message, variant: "destructive" });
+      return;
+    }
     const updated = await updateDesignMeta(asset, {
       direction_feedback: "kept",
       selected_as_direction: true,
       selected_as_direction_at: new Date().toISOString(),
     });
     if (!updated) return;
+    if (previousStyles.length) {
+      setAssets((prev) => prev.map((row) =>
+        previousStyles.some((style) => style.id === row.id)
+          ? { ...row, meta: { ...(row.meta || {}), selected_as_direction: false } }
+          : row,
+      ));
+    }
     const next = new URLSearchParams({ direction: asset.id });
     if (asset.project_id) next.set("project", asset.project_id);
     toast({ title: "Style selected", description: "Choose what to create next from your Brand page." });
@@ -577,6 +598,7 @@ const Assets = () => {
             const isHighlighted = highlight.includes(asset.id);
             const isSelected = selected.has(asset.id);
             const currentFolderId = getDesignFolderId(asset);
+            const isCurrentStyle = asset.meta?.selected_as_direction === true;
 
             return (
               <div key={asset.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${isSelected ? "border-brand ring-2 ring-brand/40" : isHighlighted ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
@@ -596,7 +618,10 @@ const Assets = () => {
                       <DesignPreview asset={asset} />
                     </div>
                     <div className="border-t border-neutral-100 p-3">
-                      <div className="truncate text-sm font-medium text-neutral-900">{asset.title}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">{asset.title}</div>
+                        {isCurrentStyle && <span className="shrink-0 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium text-brand">Your style</span>}
+                      </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2">
                         <span className="truncate text-[11px] text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type] || asset.asset_type}</span>
                         <span className="shrink-0 text-[10px] text-neutral-400">{new Date(asset.created_at).toLocaleDateString()}</span>
@@ -609,7 +634,10 @@ const Assets = () => {
                       <DesignPreview asset={asset} />
                     </div>
                     <div className="border-t border-neutral-100 p-3">
-                      <div className="truncate text-sm font-medium text-neutral-900">{asset.title}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">{asset.title}</div>
+                        {isCurrentStyle && <span className="shrink-0 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium text-brand">Your style</span>}
+                      </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2">
                         <span className="truncate text-[11px] text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type] || asset.asset_type}</span>
                         <span className="shrink-0 text-[10px] text-neutral-400">{new Date(asset.created_at).toLocaleDateString()}</span>
@@ -698,6 +726,7 @@ const Assets = () => {
         <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
           {filtered.map((asset) => {
             const isSelected = selected.has(asset.id);
+            const isCurrentStyle = asset.meta?.selected_as_direction === true;
             return (
               <div key={asset.id} className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0">
                 {selectMode && (
@@ -710,7 +739,10 @@ const Assets = () => {
                     <DesignPreview asset={asset} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-neutral-900">{asset.title}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="truncate text-sm font-medium text-neutral-900">{asset.title}</div>
+                      {isCurrentStyle && <span className="shrink-0 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium text-brand">Your style</span>}
+                    </div>
                     <div className="text-xs text-neutral-500">{ASSET_TYPE_LABELS[asset.asset_type] || asset.asset_type}</div>
                   </div>
                   <div className="shrink-0 text-xs text-neutral-400">{new Date(asset.created_at).toLocaleDateString()}</div>
