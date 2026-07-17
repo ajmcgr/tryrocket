@@ -22,8 +22,6 @@ import {
   Share2,
   Lock,
   Compass,
-  ThumbsUp,
-  ThumbsDown,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -352,13 +350,8 @@ const Assets = () => {
     if (!updated) return;
     const next = new URLSearchParams({ direction: asset.id });
     if (asset.project_id) next.set("project", asset.project_id);
-    toast({ title: "Brand direction selected", description: "Your next design will use this direction as context." });
+    toast({ title: "Style selected", description: "Your next design will follow this visual direction." });
     nav(`/create?${next.toString()}`);
-  };
-
-  const setDesignFeedback = async (asset: any, feedback: "kept" | "not_for_brand") => {
-    const updated = await updateDesignMeta(asset, { direction_feedback: feedback });
-    if (updated) toast({ title: feedback === "kept" ? "Direction saved" : "Feedback saved" });
   };
 
   const createProjectAndAssign = async (assetId: string) => {
@@ -654,19 +647,7 @@ const Assets = () => {
                       onClick={() => useAsBrandDirection(asset)}
                       className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"
                     >
-                      <Compass className="mr-2 h-4 w-4" /> Use as brand direction
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setDesignFeedback(asset, "kept")}
-                      className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"
-                    >
-                      <ThumbsUp className="mr-2 h-4 w-4" /> Keep this direction
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setDesignFeedback(asset, "not_for_brand")}
-                      className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900"
-                    >
-                      <ThumbsDown className="mr-2 h-4 w-4" /> Not for this brand
+                      <Compass className="mr-2 h-4 w-4" /> Make this my style
                     </DropdownMenuItem>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="cursor-pointer focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900">
@@ -737,8 +718,8 @@ const Assets = () => {
                 <button
                   onClick={() => useAsBrandDirection(asset)}
                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-                  title="Use as brand direction"
-                  aria-label="Use as brand direction"
+                  title="Make this my style"
+                  aria-label="Make this my style"
                 >
                   <Compass className="h-4 w-4" />
                 </button>

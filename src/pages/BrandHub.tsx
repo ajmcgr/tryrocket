@@ -77,8 +77,8 @@ export default function BrandHub() {
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Assets</h1>
-          <p className="mt-1 text-sm text-neutral-500">Guidelines, colors, fonts, voice and copy — organized by category.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Your brand</h1>
+          <p className="mt-1 text-sm text-neutral-500">The logo, colours, type and voice that keep every design consistent.</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -98,7 +98,7 @@ export default function BrandHub() {
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
-            <Sparkles className="h-4 w-4" /> Create
+            <Sparkles className="h-4 w-4" /> Create a design
           </Link>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function BrandHub() {
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-neutral-900">{cat.label}</div>
                   <div className="mt-0.5 truncate text-[11px] text-neutral-500">
-                    {items.length === 0 ? "None yet" : `${items.length} ${items.length === 1 ? "asset" : "assets"}`}
+                    {items.length === 0 ? "Not chosen yet" : `${items.length} ${items.length === 1 ? "design" : "designs"}`}
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-neutral-400 transition group-hover:text-neutral-900" />
@@ -146,10 +146,10 @@ export default function BrandHub() {
 
       {!loading && assets.length === 0 && (
         <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
-          <h2 className="text-lg font-semibold">Nothing in your brand kit yet</h2>
-          <p className="mt-1 text-sm text-neutral-500">Ask Rocket to draft brand guidelines, voice, colors or launch copy.</p>
+          <h2 className="text-lg font-semibold">Start your brand</h2>
+          <p className="mt-1 text-sm text-neutral-500">Create a logo, then choose the colours, type and voice that fit it.</p>
           <Link to="/create" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
-            <Sparkles className="h-4 w-4" /> Create your first brand asset
+            <Sparkles className="h-4 w-4" /> Create your first design
           </Link>
         </div>
       )}

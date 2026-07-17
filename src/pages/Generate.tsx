@@ -270,6 +270,13 @@ const SAMPLE_PROMPTS = [
   "Brand voice for an indie newsletter app",
 ];
 
+const QUICK_STARTS = [
+  { id: "logo", label: "Logo" },
+  { id: "color_system", label: "Colours" },
+  { id: "social_post", label: "Social post" },
+  { id: "launch_copy", label: "Launch copy" },
+] as const;
+
 function isLogotypeOnlyPrompt(text: string) {
   const lower = text.toLowerCase();
   const wantsTextLogo = /\b(logotype|logotypes|wordmark|word\s*mark|word-mark|text[- ]?based\s+logo|text\s+logo|type[- ]?based\s+logo|typographic\s+logo|typography\s+logo|lettering|letters\s+only|name\s+only)\b/.test(lower);
@@ -946,8 +953,8 @@ const Generate = () => {
         <div className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm">
           <Sparkles className="h-4 w-4 shrink-0 text-brand" />
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-neutral-900">Using “{directionDesign.title || "Untitled design"}” as your approved brand direction</p>
-            <p className="mt-0.5 text-xs text-neutral-600">New work will stay coherent with this chosen direction.</p>
+            <p className="truncate font-medium text-neutral-900">Style: {directionDesign.title || "Untitled design"}</p>
+            <p className="mt-0.5 text-xs text-neutral-600">New work will follow this visual direction.</p>
           </div>
           <Link to={assetHref(directionDesign)} className="shrink-0 text-xs font-medium text-neutral-700 hover:text-neutral-950">Review</Link>
           <Link to={projectId ? `/create?project=${encodeURIComponent(projectId)}` : "/create"} className="shrink-0 text-xs text-neutral-500 hover:text-neutral-900">Clear</Link>
@@ -975,83 +982,27 @@ const Generate = () => {
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2 px-2 pb-1 pt-2">
+            <span className="text-xs text-neutral-500">Start with</span>
             <div className="flex flex-wrap items-center gap-1.5">
-              {workflow === "auto" && ASSET_CHIPS.map((c) => (
+              {QUICK_STARTS.map((c) => {
+                const chip = ASSET_CHIPS.find((item) => item.id === c.id)!;
+                return (
                 <button
                   type="button"
                   key={c.id}
                   onClick={() => setAssetType(assetType === c.id ? null : c.id)}
                   className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${assetType === c.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
                 >
-                  <c.Icon className="h-3 w-3" /> {c.label}
+                  <chip.Icon className="h-3 w-3" /> {c.label}
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
       </form>
 
-      {workflow === "auto" && assetType && (
-        <div className="mt-3 w-full">
-          <div className="mb-1.5 flex items-center justify-between">
-            <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">Variations</div>
-            <div className="text-xs text-neutral-500">{count} option{count === 1 ? "" : "s"}</div>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {[12, 16, 24].map((n) => (
-              <button
-                type="button"
-                key={n}
-                onClick={() => setCount(n)}
-                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs transition ${count === n ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-4 w-full">
-        <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-neutral-500">Workflow</div>
-        <div className="flex flex-wrap gap-1.5">
-          {WORKFLOWS.map((w) => (
-            <button
-              type="button"
-              key={w.id}
-              onClick={() => { setWorkflow(w.id); if (w.id !== "auto") setAssetType(null); if (w.id !== "design") setTemplate(null); }}
-              title={w.hint}
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${workflow === w.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
-            >
-              <w.Icon className="h-3 w-3" /> {w.label}
-            </button>
-          ))}
-        </div>
-        {workflow !== "auto" && (
-          <p className="mt-1.5 text-xs text-neutral-500">{WORKFLOWS.find(w => w.id === workflow)?.hint}</p>
-        )}
-        {workflow === "design" && (
-          <div className="mt-3">
-            <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-neutral-500">Template (optional)</div>
-            <div className="flex flex-wrap gap-1.5">
-              {DESIGN_TEMPLATES.map((t) => (
-                <button
-                  type="button"
-                  key={t.id}
-                  onClick={() => setTemplate(template === t.id ? null : t.id)}
-                  title={`${t.label} — ${t.ratio}`}
-                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${template === t.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
-                >
-                  <ImageIcon className="h-3 w-3" /> {t.label}
-                </button>
-              ))}
-            </div>
-            {template && (
-              <p className="mt-1.5 text-xs text-neutral-500">Generates a single image with the {DESIGN_TEMPLATES.find(t => t.id === template)?.ratio} template scaffold instead of the 3-concept logo fan-out.</p>
-            )}
-          </div>
-        )}
-      </div>
+      <p className="mt-3 text-center text-xs text-neutral-500">Rocket creates at least 12 directions, then keeps future work consistent with the style you choose.</p>
 
       {loading ? (
         <div className="mt-6 text-sm text-neutral-500">{MESSAGES[msgIdx]}</div>
