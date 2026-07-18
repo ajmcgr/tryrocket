@@ -192,7 +192,7 @@ export default function Brand() {
     setParams(next, { replace: true });
   };
 
-  // Brand assets are text/strategy — no graphic editor. "Export" copies markdown to clipboard.
+  // Brand documents export as copyable plain text.
   const handleExport = async () => {
     if (!active) return;
     const text = String(active.content || "").trim();
@@ -202,7 +202,7 @@ export default function Brand() {
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast({ title: "Copied to clipboard", description: `${active.title || active.asset_type} copied as markdown.` });
+      toast({ title: "Copied to clipboard", description: `${active.title || active.asset_type} is ready to paste anywhere.` });
     } catch {
       toast({ title: "Copy failed", variant: "destructive" });
     }
