@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "./Logo";
-import ChatsSidebar from "./ChatsSidebar";
 import ShareExportModal from "./ShareExportModal";
 import OnboardingTour from "./OnboardingTour";
 import NotificationsBell from "./NotificationsBell";
@@ -25,31 +24,30 @@ export type AppShellOutletContext = {
 const AppShell = () => {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
-  const location = useLocation();
   const initial = (user?.email?.[0] || "U").toUpperCase();
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [headerCenter, setHeaderCenter] = useState<ReactNode | null>(null);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
-  const sidebarRoutes = ["/create", "/designs", "/editor", "/projects", "/templates", "/brand", "/brands", "/files"];
-  const showSidebar = sidebarRoutes.some(r => location.pathname === r || location.pathname.startsWith(r + "/"));
-  const isEditorPage = location.pathname === "/editor";
+
+  const navItemClass = ({ isActive }: { isActive: boolean }) =>
+    `rounded-lg px-2.5 py-2 text-sm transition ${isActive
+      ? "bg-neutral-900 text-white"
+      : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"}`;
 
   return (
-    <div className="app-shell min-h-screen bg-neutral-50 text-neutral-900">
+    <div className="app-shell min-h-screen bg-[#f7f8fb] text-neutral-900">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="relative flex h-14 w-full items-center px-4">
           <Logo to="/create" className="shrink-0" />
-          <nav className="ml-8 hidden items-center gap-2 text-sm font-medium text-neutral-700 md:flex">
-            {isEditorPage ? headerActions : (
-              <>
-                <NavLink data-tour="nav-create" to="/create" className={({ isActive }) => `inline-flex items-center rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Create</NavLink>
-                <NavLink data-tour="nav-brand" to="/brands" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Brands</NavLink>
-                <NavLink data-tour="nav-assets" to="/designs" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Designs</NavLink>
-                <NavLink to="/templates" className={({ isActive }) => `rounded-lg px-3 py-2.5 transition ${isActive ? "text-neutral-900" : "hover:bg-neutral-100"}`}>Templates</NavLink>
-              </>
-            )}
+          <nav className="ml-7 hidden items-center gap-1 font-medium md:flex">
+            <NavLink data-tour="nav-create" to="/create" className={navItemClass}>Create</NavLink>
+            <NavLink data-tour="nav-assets" to="/designs" className={navItemClass}>Designs</NavLink>
+            <NavLink data-tour="nav-brand" to="/brands" className={navItemClass}>Brand</NavLink>
+            <NavLink to="/projects" className={navItemClass}>Projects</NavLink>
+            <NavLink to="/editor" className={navItemClass}>Editor</NavLink>
+            <NavLink to="/settings/profile" className={navItemClass}>Settings</NavLink>
+            <Link to="/faq" className="rounded-lg px-2.5 py-2 text-sm text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-950">Support</Link>
           </nav>
           <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden -translate-x-1/2 items-center justify-center md:flex">
             <div
@@ -60,9 +58,8 @@ const AppShell = () => {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            {isEditorPage ? null : headerActions}
+            {headerActions}
             <WorkspaceSwitcher />
-            {isEditorPage && (
             <button
               type="button"
               onClick={() => setShareOpen(true)}
@@ -72,7 +69,6 @@ const AppShell = () => {
               <Share2 className="h-4 w-4" />
               Share
             </button>
-            )}
             <div data-tour="nav-notifications" className="inline-flex">
               <NotificationsBell />
             </div>
@@ -113,18 +109,9 @@ const AppShell = () => {
         asset={{ id: "site", title: "Rocket — AI brand & content studio" } as any}
         onCreateShareLink={async () => (typeof window !== "undefined" ? window.location.origin : "https://tryrocket.ai")}
       />
-      {showSidebar ? (
-        <div className="flex w-full items-start">
-          <ChatsSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(c => !c)} />
-          <main className="min-w-0 flex-1">
-            <Outlet context={{ setHeaderCenter, setHeaderActions }} />
-          </main>
-        </div>
-      ) : (
-        <main className="w-full">
-          <Outlet context={{ setHeaderCenter, setHeaderActions }} />
-        </main>
-      )}
+      <main className="w-full">
+        <Outlet context={{ setHeaderCenter, setHeaderActions }} />
+      </main>
     </div>
   );
 };

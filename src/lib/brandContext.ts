@@ -5,23 +5,18 @@ const supabase = _sb as any;
 export type BrandContext = Record<string, any>;
 
 export async function getProjectBrandContext(projectId: string): Promise<BrandContext | null> {
-  const { data } = await supabase
-    .from("projects")
-    .select("brand_context, source_url, name")
-    .eq("id", projectId)
-    .maybeSingle();
-  if (!data) return null;
-  return (
-    data.brand_context ||
-    (data.source_url ? { url: data.source_url, productName: data.name } : null)
-  );
+  const [{ data: project }, { data: designs }] = await Promise.all([
+    supabase.from("projects").select("name").eq("id", projectId).maybeSingle(),
+    supabase.from("assets").select("meta").eq("project_id", projectId).order("created_at", { ascending: false }).limit(100),
+  ]);
+  const contextDesign = (designs || []).find((design: any) => design?.meta?.brand_context || design?.meta?.brandContext);
+  const context = contextDesign?.meta?.brand_context || contextDesign?.meta?.brandContext;
+  if (context) return context;
+  return project?.name ? { productName: project.name } : null;
 }
 
-export async function setProjectBrandContext(projectId: string, ctx: BrandContext) {
-  await supabase
-    .from("projects")
-    .update({ brand_context: ctx, source_url: ctx?.url || null })
-    .eq("id", projectId);
+export async function setProjectBrandContext(_projectId: string, ctx: BrandContext) {
+  return ctx;
 }
 
 export async function refreshBrandContext(projectId: string, url: string): Promise<BrandContext | null> {

@@ -402,7 +402,7 @@ const Projects = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
-          <p className="mt-1 text-sm text-neutral-500">Group designs and assets into projects and folders.</p>
+          <p className="mt-1 text-sm text-neutral-500">Keep every design, upload and brand decision in one workspace.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -489,7 +489,7 @@ const Projects = () => {
             {sortedProjects.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
                 <Folder className="mx-auto h-8 w-8 text-neutral-300" />
-                <p className="mt-3 text-sm text-neutral-500">No projects yet. Create one to organize your designs and assets.</p>
+                <p className="mt-3 text-sm text-neutral-500">No projects yet. Create one to organize your brand and designs.</p>
                 <button onClick={() => setCreating(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm text-brand-foreground hover:bg-brand-hover">
                   <Plus className="h-3.5 w-3.5" /> New Project
                 </button>
@@ -511,7 +511,7 @@ const Projects = () => {
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium text-neutral-900">{project.name}</div>
-                              <div className="mt-0.5 text-xs text-neutral-500">{counts[project.id] || 0} designs and assets · {new Date(project.created_at).toLocaleDateString()}</div>
+                              <div className="mt-0.5 text-xs text-neutral-500">{counts[project.id] || 0} designs · {new Date(project.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </button>
@@ -521,7 +521,7 @@ const Projects = () => {
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium text-neutral-900">{project.name}</div>
-                              <div className="mt-0.5 text-xs text-neutral-500">{counts[project.id] || 0} designs and assets · {new Date(project.created_at).toLocaleDateString()}</div>
+                              <div className="mt-0.5 text-xs text-neutral-500">{counts[project.id] || 0} designs · {new Date(project.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </Link>
@@ -561,7 +561,7 @@ const Projects = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium text-neutral-900">{project.name}</div>
-                          <div className="text-xs text-neutral-500">{counts[project.id] || 0} designs and assets · {new Date(project.created_at).toLocaleDateString()}</div>
+                          <div className="text-xs text-neutral-500">{counts[project.id] || 0} designs · {new Date(project.created_at).toLocaleDateString()}</div>
                         </div>
                       </Link>
                     </div>
@@ -576,7 +576,7 @@ const Projects = () => {
             {sortedFolders.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
                 <Folder className="mx-auto h-8 w-8 text-neutral-300" />
-                <p className="mt-3 text-sm text-neutral-500">No folders yet. Create one to group designs and assets outside a full project.</p>
+                <p className="mt-3 text-sm text-neutral-500">No folders yet. Create one to group related designs outside a full project.</p>
                 <button onClick={() => setCreatingFolder(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50">
                   <Plus className="h-3.5 w-3.5" /> New folder
                 </button>
@@ -598,7 +598,7 @@ const Projects = () => {
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium text-neutral-900">{folder.name}</div>
-                              <div className="mt-0.5 text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs and assets · {new Date(folder.created_at).toLocaleDateString()}</div>
+                              <div className="mt-0.5 text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs · {new Date(folder.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </button>
@@ -608,7 +608,7 @@ const Projects = () => {
                           <div className="flex items-start gap-3 p-4">
                             <div className="min-w-0 flex-1">
                               <div className="truncate font-medium text-neutral-900">{folder.name}</div>
-                              <div className="mt-0.5 text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs and assets · {new Date(folder.created_at).toLocaleDateString()}</div>
+                              <div className="mt-0.5 text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs · {new Date(folder.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
                         </Link>
@@ -643,7 +643,7 @@ const Projects = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium text-neutral-900">{folder.name}</div>
-                          <div className="text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs and assets · {new Date(folder.created_at).toLocaleDateString()}</div>
+                          <div className="text-xs text-neutral-500">{folderCounts[folder.id] || 0} designs · {new Date(folder.created_at).toLocaleDateString()}</div>
                         </div>
                       </Link>
                     </div>

@@ -65,7 +65,7 @@ function getBrandKitInstruction(context: any) {
 }
 
 function buildProjectBrandContext(project: any, assets: any[]) {
-  const base = project?.brand_context || {};
+  const base: Record<string, any> = {};
   const find = (...types: string[]) => assets.find((asset) => types.includes(asset.asset_type));
   const logo = find("logo", "logotype", "wordmark");
   const colors = tryJson<ColorSystem>(find("color_system", "design_color_palette")?.content || "");
@@ -349,7 +349,7 @@ function normalizeMixedLogoPrompt(text: string, brandText?: string, url?: string
 
 const MIN_PROMPT_RESULTS = 12;
 const IMAGE_ASSET_TYPES = new Set(["logo", "graphic", "icon", "photo"]);
-const SAFE_IMAGE_BATCH_SIZE = 4;
+const SAFE_IMAGE_BATCH_SIZE = 2;
 
 function requestedCount(text: string, fallback = MIN_PROMPT_RESULTS) {
   const lower = text.toLowerCase();
@@ -429,41 +429,20 @@ async function createChatRecord({
   userId,
   title,
   prompt,
-  workspaceId,
-  projectId,
 }: {
   supabase: any;
   userId: string;
   title: string;
   prompt: string;
-  workspaceId?: string | null;
-  projectId?: string | null;
 }) {
-  const payloads = [
-    { user_id: userId, workspace_id: workspaceId ?? undefined, project_id: projectId ?? undefined, title, prompt },
-    { user_id: userId, workspace_id: workspaceId ?? undefined, title, prompt },
-    { user_id: userId, project_id: projectId ?? undefined, title, prompt },
-    { user_id: userId, title, prompt },
-  ];
-  const attempted = new Set<string>();
-  let lastError: any = null;
+  const { data, error } = await supabase
+    .from("chats")
+    .insert({ user_id: userId, title, prompt } as any)
+    .select("id")
+    .single();
 
-  for (const payload of payloads) {
-    const cleaned = Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined));
-    const key = Object.keys(cleaned).sort().join(",");
-    if (attempted.has(key)) continue;
-
-    attempted.add(key);
-
-    const { data, error } = await supabase.from("chats").insert(cleaned as any).select("id").single();
-    if (!error && data?.id) return data.id as string;
-
-    lastError = error;
-    const message = String(error?.message || "");
-    if (!/Could not find .* column .* schema cache/i.test(message)) break;
-  }
-
-  throw new Error(lastError?.message || "Failed to create chat");
+  if (error || !data?.id) throw new Error(error?.message || "Failed to create chat");
+  return data.id as string;
 }
 
 const Generate = () => {
@@ -613,7 +592,6 @@ const Generate = () => {
           user_id: user.id,
           workspace_id: workspaceId,
           name,
-          brand_context: { productName: name },
         } as any)
         .select("id,name,created_at")
         .single();
@@ -707,8 +685,6 @@ const Generate = () => {
         newChatId = await createChatRecord({
           supabase,
           userId: user.id,
-          workspaceId: workspace_id,
-          projectId: effectiveProjectId,
           title,
           prompt: p,
         });
@@ -727,20 +703,19 @@ const Generate = () => {
         try {
           const { data: project } = await supabase
             .from("projects")
-            .select("name,brand_context,source_url")
+            .select("name")
             .eq("id", effectiveProjectId)
             .maybeSingle();
           persistedProject = project || null;
         } catch { /* noop */ }
       }
 
-      let sharedCtx: any = activeBrandCtx || persistedProject?.brand_context || null;
-      if (sharedCtx || persistedProject?.name || persistedProject?.source_url) {
+      let sharedCtx: any = activeBrandCtx || null;
+      if (sharedCtx || persistedProject?.name) {
         sharedCtx = {
-          ...(persistedProject?.brand_context || {}),
           ...(sharedCtx || {}),
-          productName: sharedCtx?.productName || persistedProject?.brand_context?.productName || persistedProject?.name || undefined,
-          url: sharedCtx?.url || persistedProject?.brand_context?.url || persistedProject?.source_url || undefined,
+          productName: sharedCtx?.productName || persistedProject?.name || undefined,
+          url: sharedCtx?.url || undefined,
         };
       }
       const urlMatch = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
@@ -780,18 +755,11 @@ const Generate = () => {
       }
       if (effectiveProjectId) {
         const projectContext = {
-          ...(persistedProject?.brand_context || {}),
           ...(sharedCtx || {}),
-          productName: sharedCtx?.productName || persistedProject?.brand_context?.productName || persistedProject?.name || undefined,
-          url: sharedCtx?.url || persistedProject?.brand_context?.url || persistedProject?.source_url || undefined,
+          productName: sharedCtx?.productName || persistedProject?.name || undefined,
+          url: sharedCtx?.url || undefined,
         };
         sharedCtx = projectContext;
-        try {
-          await supabase.from("projects").update({
-            brand_context: projectContext,
-            source_url: projectContext.url || null,
-          } as any).eq("id", effectiveProjectId);
-        } catch { /* non-fatal: generation still has the in-memory context */ }
       }
       if (!tpl && isLogotypeOnlyPrompt(p)) {
         const priorPromptText = [p, chatData?.prompt, ...[...chatAssets].reverse().map((asset) => asset.prompt)].filter(Boolean).join("\n");
@@ -1149,9 +1117,14 @@ const Generate = () => {
               );
             })()}
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-sans text-sm font-semibold text-neutral-900">Results</h2>
+              <h2 className="font-sans text-sm font-semibold text-neutral-900">Choose a direction</h2>
               <span className="text-xs text-neutral-500">{chatAssets.length} design{chatAssets.length === 1 ? "" : "s"}</span>
             </div>
+            {chatAssets.some((asset) => ["logo", "logotype", "wordmark"].includes(String(asset.asset_type || "").toLowerCase())) && (
+              <div className="mb-3 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2 text-xs leading-5 text-neutral-700">
+                <span className="font-semibold text-neutral-900">Next:</span> Open a favourite to refine and download it, or keep it to build the matching brand kit.
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {chatAssets.map((a) => (
                 <div key={a.id} className="group overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm">
@@ -1168,15 +1141,23 @@ const Generate = () => {
                       <p className="text-[10px] uppercase tracking-wider text-neutral-400">{a.asset_type}</p>
                     </div>
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => void useAsMyBrand(a.id)}
-                    className="w-full border-t border-neutral-100 px-3 py-2 text-left text-xs font-medium text-brand hover:bg-brand/5"
-                  >
-                    {["logo", "logotype", "wordmark"].includes(String(a.asset_type || "").toLowerCase())
-                      ? "Keep this logo & build my brand"
-                      : "Use this direction"}
-                  </button>
+                  <div className="flex border-t border-neutral-100">
+                    <Link
+                      to={assetHref(a)}
+                      className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 border-r border-neutral-100 px-2 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                    >
+                      Open & edit <ArrowRight className="h-3 w-3" />
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => void useAsMyBrand(a.id)}
+                      className="min-w-0 flex-1 px-2 py-2 text-xs font-semibold text-brand hover:bg-brand/5"
+                    >
+                      {["logo", "logotype", "wordmark"].includes(String(a.asset_type || "").toLowerCase())
+                        ? "Keep for my brand"
+                        : "Use this direction"}
+                    </button>
+                  </div>
                 </div>
               ))}
               {chatAssets.length === 0 && (
@@ -1275,6 +1256,38 @@ const Generate = () => {
         </div>
       )}
 
+      <div className="mb-4 grid w-full gap-2 sm:grid-cols-3">
+        <button
+          type="button"
+          onClick={() => {
+            setAssetType("logo");
+            if (!prompt.trim()) setPrompt(`A distinctive logo and matching logotype${selectedProject?.name ? ` for ${selectedProject.name}` : ""}`);
+          }}
+          className={`rounded-xl border p-3 text-left transition ${assetType === "logo" ? "border-brand bg-brand/5 ring-1 ring-brand/20" : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"}`}
+        >
+          <div className="text-sm font-semibold text-neutral-900">Logo identity</div>
+          <p className="mt-1 text-xs leading-5 text-neutral-500">Logo, logotype and a clear visual direction.</p>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setAssetType("icon");
+            if (!prompt.trim()) setPrompt(`A distinctive app icon${selectedProject?.name ? ` for ${selectedProject.name}` : ""}`);
+          }}
+          className={`rounded-xl border p-3 text-left transition ${assetType === "icon" ? "border-brand bg-brand/5 ring-1 ring-brand/20" : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"}`}
+        >
+          <div className="text-sm font-semibold text-neutral-900">Icon</div>
+          <p className="mt-1 text-xs leading-5 text-neutral-500">A reusable icon for product, app and favicon use.</p>
+        </button>
+        <Link
+          to="/templates"
+          className="rounded-xl border border-neutral-200 bg-white p-3 text-left transition hover:border-neutral-300 hover:bg-neutral-50"
+        >
+          <div className="text-sm font-semibold text-neutral-900">Start from a template</div>
+          <p className="mt-1 text-xs leading-5 text-neutral-500">Browse public starting points, then customize them.</p>
+        </Link>
+      </div>
+
       <form onSubmit={submit} className="w-full">
         <div className="rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
           <div className="flex items-start gap-2">
@@ -1334,7 +1347,10 @@ const Generate = () => {
         </div>
       </form>
 
-      <p className="mt-3 text-center text-xs text-neutral-500">Rocket creates at least 12 directions, then keeps future work consistent with the style you choose.</p>
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-xs text-neutral-500">
+        <span>Rocket creates at least 12 directions, then keeps future work consistent with the style you choose.</span>
+        <Link to="/templates" className="font-medium text-neutral-700 underline-offset-4 hover:text-neutral-950 hover:underline">Browse templates</Link>
+      </div>
 
       {loading ? (
         <div className="mt-6 text-sm text-neutral-500">{MESSAGES[msgIdx]}</div>

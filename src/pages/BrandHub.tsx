@@ -51,6 +51,7 @@ export default function BrandHub() {
     const { data } = await supabase
       .from("assets")
       .select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(400);
     const all = data || [];
@@ -64,8 +65,8 @@ export default function BrandHub() {
     (async () => {
       setLoading(true);
       const [{ data: a }, { data: p }] = await Promise.all([
-        supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").order("created_at", { ascending: false }).limit(400),
-        supabase.from("projects").select("id,name,brand_context,source_url").order("created_at", { ascending: false }).limit(50),
+        supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").eq("user_id", user.id).order("created_at", { ascending: false }).limit(400),
+        supabase.from("projects").select("id,name,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
       const loadedProjects = p || [];
@@ -139,9 +140,8 @@ export default function BrandHub() {
     if (!selectedProject || !user || completingKit || !missingEssentials.length) return;
     setCompletingKit(true);
     const context = {
-      ...(selectedProject.brand_context || {}),
-      productName: selectedProject.name || selectedProject.brand_context?.productName || "",
-      ...(selectedProject.source_url && !selectedProject.brand_context?.url ? { url: selectedProject.source_url } : {}),
+      ...(selectedStyle?.meta?.brand_context || selectedStyle?.meta?.brandContext || {}),
+      productName: selectedProject.name || selectedStyle?.meta?.brand_context?.productName || "",
     };
     const directionInstruction = selectedStyle
       ? `Use the chosen direction, “${selectedStyle.title || "Untitled design"}”, as the visual foundation. ${selectedStyle.prompt ? `Original brief: ${selectedStyle.prompt}` : ""}`
@@ -232,10 +232,10 @@ export default function BrandHub() {
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Your brands</h1>
-            <p className="mt-1 max-w-2xl text-sm text-neutral-500">Choose a brand to keep its logo, colours, typography and every new design in one place.</p>
+            <h1 className="text-3xl font-semibold tracking-tight">Brands</h1>
+            <p className="mt-1 max-w-2xl text-sm text-neutral-500">Each brand keeps its direction, designs and download-ready kit together.</p>
           </div>
-          <Link to="/projects" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
+          <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
             <Plus className="h-4 w-4" /> Create a brand
           </Link>
         </div>
@@ -272,7 +272,7 @@ export default function BrandHub() {
           <section className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-14 text-center">
             <h2 className="text-lg font-semibold text-neutral-900">Create your first brand</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">Start with a logo, then Rocket will help you build the colours, type and voice around it.</p>
-            <Link to="/projects" className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+            <Link to="/create" className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
               <Plus className="h-4 w-4" /> Create a brand
             </Link>
           </section>

@@ -8,7 +8,7 @@ const STAGE_W = 800;
 const STAGE_H = 600;
 
 function RenderEl({ el }: { el: CanvasElement }) {
-  if (!el.visible) return null;
+  if (el.visible === false) return null;
   switch (el.kind) {
     case "text":
       return (

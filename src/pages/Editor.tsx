@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
+import JSZip from "jszip";
 import {
   Stage, Layer, Rect, Circle as KCircle, Text as KText,
   Line as KLine, RegularPolygon, Star as KStar, Transformer, Group,
@@ -79,6 +80,15 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const STORAGE_KEY = "rocket.editor.v2";
 const STAGE_W = 800;
 const STAGE_H = 600;
+
+function normalizeCanvasElements(value: unknown): El[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((element) => ({
+    ...element,
+    visible: (element as El).visible !== false,
+    locked: Boolean((element as El).locked),
+  })) as El[];
+}
 
 function applyTextTransform(text: string, transform?: LogotypeState["transform"]): string {
   if (transform === "uppercase") return text.toUpperCase();
@@ -322,7 +332,7 @@ const Editor = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
   const assetId = params.get("id");
-  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null; asset_type?: string | null; image_url?: string | null; meta?: Record<string, unknown> } | null>(null);
+  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null; asset_type?: string | null; image_url?: string | null; thumbnail_url?: string | null; meta?: Record<string, unknown> } | null>(null);
   const [brandKit, setBrandKit] = useState<{ colors: string[]; fonts: string[]; logos: { id: string; url: string; title: string }[] }>({ colors: [], fonts: [], logos: [] });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -335,6 +345,7 @@ const Editor = () => {
   const [zoom, setZoom] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasDownloaded, setHasDownloaded] = useState(false);
+  const [downloadingLogoPack, setDownloadingLogoPack] = useState(false);
   const editorShellRef = useRef<HTMLDivElement>(null);
   const copiedElementRef = useRef<El | null>(null);
   const copiedStyleRef = useRef<Partial<El> | null>(null);
@@ -395,7 +406,7 @@ const Editor = () => {
     try {
       const hasAssetId = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("id");
       if (hasAssetId) return [];
-      const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw);
+      const raw = localStorage.getItem(STORAGE_KEY); if (raw) return normalizeCanvasElements(JSON.parse(raw));
     } catch {}
     return [];
   });
@@ -426,8 +437,31 @@ const Editor = () => {
   const [canvasMenu, setCanvasMenu] = useState<{ x: number; y: number } | null>(null);
   const [autosaveTick, setAutosaveTick] = useState(0);
   const skipAutosaveRef = useRef(false);
+  const previewBackfillRef = useRef<string | null>(null);
   const lastPersistedStateRef = useRef<string>("[]");
   const history = useRef<{ past: El[][]; future: El[][] }>({ past: [], future: [] });
+
+  const setZoomAtViewportCenter = useCallback((nextZoom: number) => {
+    const next = Math.max(50, Math.min(200, nextZoom));
+    const container = containerRef.current;
+    const previous = zoom;
+    if (!container || previous === next) {
+      setZoom(next);
+      return;
+    }
+
+    const centerX = container.scrollLeft + container.clientWidth / 2;
+    const centerY = container.scrollTop + container.clientHeight / 2;
+    const ratio = next / previous;
+    setZoom(next);
+
+    window.requestAnimationFrame(() => {
+      const viewport = containerRef.current;
+      if (!viewport) return;
+      viewport.scrollLeft = Math.max(0, Math.min(viewport.scrollWidth - viewport.clientWidth, centerX * ratio - viewport.clientWidth / 2));
+      viewport.scrollTop = Math.max(0, Math.min(viewport.scrollHeight - viewport.clientHeight, centerY * ratio - viewport.clientHeight / 2));
+    });
+  }, [zoom]);
 
   useEffect(() => {
     if (!canvasMenu) return;
@@ -493,10 +527,12 @@ const Editor = () => {
         nav(`/brands${pid}?asset=${a.id}`, { replace: true });
         return;
       }
-      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null, asset_type: a.asset_type || null, image_url: a.image_url || null, meta: a.meta || {} });
+      previewBackfillRef.current = null;
+      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null, asset_type: a.asset_type || null, image_url: a.image_url || null, thumbnail_url: a.thumbnail_url || null, meta: a.meta || {} });
       if (a.editor_state && Array.isArray(a.editor_state)) {
-        lastPersistedStateRef.current = JSON.stringify(a.editor_state);
-        _setEls(a.editor_state); return;
+        const next = normalizeCanvasElements(a.editor_state);
+        lastPersistedStateRef.current = JSON.stringify(next);
+        _setEls(next); return;
       }
       const logotypeState = deriveLogotypeState(a);
       if (logotypeState) {
@@ -605,6 +641,25 @@ const Editor = () => {
       }
     });
   }, [withSelectionHidden]);
+
+  useEffect(() => {
+    if (!assetId || !assetMeta || assetMeta.image_url || assetMeta.thumbnail_url || !els.length) return;
+    if (previewBackfillRef.current === assetId) return;
+
+    previewBackfillRef.current = assetId;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const thumbnailUrl = await captureThumbnail();
+        if (!thumbnailUrl) return;
+        const { error } = await supabase.from("assets").update({ thumbnail_url: thumbnailUrl }).eq("id", assetId);
+        if (!error) {
+          setAssetMeta((current) => current ? { ...current, thumbnail_url: thumbnailUrl } : current);
+        }
+      })();
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [assetId, assetMeta, captureThumbnail, els.length]);
 
   const updateLifecycleMeta = useCallback(async (updates: Record<string, string>) => {
     if (!assetId) return;
@@ -1185,7 +1240,7 @@ const Editor = () => {
     const parts: string[] = [];
     const defs: string[] = [];
     for (const el of els) {
-      if (!el.visible) continue;
+      if (el.visible === false) continue;
       const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
       const transform = el.rotation ? ` transform="rotate(${el.rotation} ${cx} ${cy})"` : "";
       if (el.kind === "rect") {
@@ -1250,6 +1305,49 @@ const Editor = () => {
     }
   };
 
+  const downloadLogoPack = async () => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    setDownloadingLogoPack(true);
+    try {
+      const pngDataUrl = await withSelectionHidden(() => stage.toDataURL({ pixelRatio: 2, mimeType: "image/png" }));
+      const zip = new JSZip();
+      const base = (displayTitle || "rocket-logo")
+        .replace(/[^a-z0-9-_]+/gi, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80) || "rocket-logo";
+
+      zip.file(`${base}.png`, pngDataUrl.split(",")[1], { base64: true });
+      zip.file(`${base}.svg`, buildSvg());
+      zip.file("README.txt", [
+        `${displayTitle} logo pack`,
+        "",
+        `Included: ${base}.png (high-resolution image)`,
+        `Included: ${base}.svg (editable vector file)`,
+        "",
+        "Tip: Keep this logo as your brand direction in Rocket to generate matching colours, typography, voice and future designs.",
+      ].join("\n"));
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      triggerDownload(blob, `${base}-logo-pack.zip`);
+      setHasDownloaded(true);
+      await updateLifecycleMeta({ downloaded_at: new Date().toISOString(), logo_pack_downloaded_at: new Date().toISOString() });
+      toast({
+        title: "Logo pack downloaded",
+        description: "Your PNG and editable SVG are ready. Keep this logo to build the rest of your brand.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Logo pack download failed",
+        description: error?.message || "Could not build your logo pack.",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloadingLogoPack(false);
+    }
+  };
+
   const exportPsd = async () => {
     const stage = stageRef.current; if (!stage) return;
     const prev = selectedId; setSelectedId(null);
@@ -1265,7 +1363,7 @@ const Editor = () => {
       bgCtx.fillStyle = bg; bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
       layers.push({ name: "Background", canvas: bgCanvas });
       for (const el of els) {
-        if (!el.visible) continue;
+        if (el.visible === false) continue;
         const node = nodeRefs.current[el.id]; if (!node) continue;
         try {
           const layerCanvas = (node as any).toCanvas({ pixelRatio: 2 }) as HTMLCanvasElement;
@@ -1516,7 +1614,7 @@ const Editor = () => {
   };
 
   const renderNode = (el: El) => {
-    if (!el.visible) return null;
+    if (el.visible === false) return null;
     const common = {
       key: el.id,
       ref: (n: any) => { nodeRefs.current[el.id] = n; },
@@ -1540,6 +1638,7 @@ const Editor = () => {
         }
       },
       onContextMenu: (e: any) => {
+        e.cancelBubble = true;
         if (!allSelectedIds.includes(el.id)) selectOnly(el.id);
         openCanvasMenu(e.evt);
       },
@@ -1776,7 +1875,10 @@ const Editor = () => {
                   width={STAGE_W}
                   height={STAGE_H}
                   onContextMenu={(e) => {
-                    if (e.target === e.target.getStage()) { setSelectedId(null); setExtraSelectedIds(new Set()); }
+                    e.cancelBubble = true;
+                    if (e.target !== e.target.getStage()) return;
+                    setSelectedId(null);
+                    setExtraSelectedIds(new Set());
                     openCanvasMenu(e.evt);
                   }}
                   onMouseDown={(e) => {
@@ -1910,7 +2012,7 @@ const Editor = () => {
           <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-neutral-200/70 bg-white/80 px-3 py-2 shadow-[0_12px_32px_rgba(15,23,42,0.08)] backdrop-blur-md">
             <button
               type="button"
-              onClick={() => setZoom((value) => Math.max(50, value - 10))}
+              onClick={() => setZoomAtViewportCenter(zoom - 10)}
               className="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
               aria-label="Zoom out"
             >
@@ -1921,12 +2023,12 @@ const Editor = () => {
               min={50}
               max={200}
               step={5}
-              onValueChange={([value]) => setZoom(value ?? 100)}
+              onValueChange={([value]) => setZoomAtViewportCenter(value ?? 100)}
               className="w-28 [&_.bg-primary]:bg-neutral-400 [&_.bg-secondary]:bg-neutral-200 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-neutral-300 [&_[role=slider]]:bg-white [&_[role=slider]]:shadow-sm"
             />
             <button
               type="button"
-              onClick={() => setZoom((value) => Math.min(200, value + 10))}
+              onClick={() => setZoomAtViewportCenter(zoom + 10)}
               className="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
               aria-label="Zoom in"
             >
@@ -1973,15 +2075,31 @@ const Editor = () => {
                 Create another design
               </Link>
             )}
-            <button
-              type="button"
-              onClick={() => exportImage("png")}
-              className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-            >
-              <Download className="h-3.5 w-3.5" /> Download PNG
-            </button>
+            {isLogoDesign ? (
+              <button
+                type="button"
+                onClick={() => void downloadLogoPack()}
+                disabled={downloadingLogoPack}
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {downloadingLogoPack ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                {downloadingLogoPack ? "Preparing logo pack…" : "Download logo pack"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => exportImage("png")}
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                <Download className="h-3.5 w-3.5" /> Download PNG
+              </button>
+            )}
             {isLogoDesign && (
-              <p className="mt-2 text-center text-[11px] text-neutral-500">Keep logo → complete kit → download brand kit</p>
+              <p className="mt-2 text-center text-[11px] text-neutral-500">
+                {assetMeta?.meta?.selected_as_direction
+                  ? "Complete your brand kit whenever you are ready."
+                  : "Keep this logo to create matching colours, type and brand assets."}
+              </p>
             )}
           </section>
           <div className="rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-sm">
@@ -1996,8 +2114,8 @@ const Editor = () => {
                       className={`group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${selectedId === e.id ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"}`}
                     >
                       <span className="flex-1 truncate capitalize">{e.kind}{e.kind === "text" ? `: ${(e as TextEl).text.slice(0, 16)}` : ""}</span>
-                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: !e.visible } as any); }} className="opacity-60 hover:opacity-100">
-                        {e.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                      <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { visible: e.visible === false } as any); }} className="opacity-60 hover:opacity-100">
+                        {e.visible !== false ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                       </span>
                       <span onClick={(ev) => { ev.stopPropagation(); update(e.id, { locked: !e.locked } as any); }} className="opacity-60 hover:opacity-100">
                         {e.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}

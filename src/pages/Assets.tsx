@@ -419,9 +419,10 @@ const Assets = () => {
     const [rasterFailed, setRasterFailed] = useState(false);
     const isLogotype = isLogotypeState(asset?.editor_state);
     const isEditedCanvas = Array.isArray(asset?.editor_state) && hasRenderableCanvasElements(asset.editor_state);
-    const rasterPreview = asset.thumbnail_url || asset.image_url || firstCanvasImage(asset.editor_state);
+    const canvasImage = firstCanvasImage(asset.editor_state);
+    const rasterPreview = asset.image_url || canvasImage || asset.thumbnail_url;
     const fallbackLogotype = !isLogotype && isLogotypeLikeDesign(asset);
-    const isCanvas = !isLogotype && isEditedCanvas && !asset.thumbnail_url;
+    const isCanvas = !isLogotype && isEditedCanvas && !canvasImage;
     const isImage = !!rasterPreview && !rasterFailed && !isLogotype && (!fallbackLogotype || isEditedCanvas) && !isCanvas;
     const fallbackText = safePreviewText(asset);
     const brand = !isLogotype && !isCanvas && !fallbackLogotype && !isImage && isBrandAsset(asset);

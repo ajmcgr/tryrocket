@@ -106,6 +106,26 @@ function augmentImagePrompt(assetType: AssetType, basePrompt: string, i: number,
   return basePrompt;
 }
 
+function buildDirectImagePrompt(assetType: AssetType, context: BrandContext, request: string, index: number, count: number): string {
+  const variation = augmentImagePrompt(assetType, request, index, count);
+  const brandName = context.productName ? ` for ${context.productName}` : "";
+  const colors = context.colors?.length ? ` Use only these brand colors: ${context.colors.slice(0, 4).join(", ")}.` : "";
+
+  if (assetType === "logo") {
+    return `Create one distinct, original logo mark${brandName}. Brief: ${variation}. Flat geometric vector, iconic and scalable, centred on a solid white background. No words, letters, typography, gradients, mockups, or photorealism.${colors}`;
+  }
+
+  if (assetType === "icon") {
+    return `Create one polished icon${brandName}. Brief: ${variation}. Clean vector design on a solid white background, with strong silhouette and consistent stroke weight. No words, letters, mockups, or photorealism.${colors}`;
+  }
+
+  if (assetType === "graphic") {
+    return `Create one polished brand graphic${brandName}. Brief: ${variation}. Use a clear visual hierarchy and a production-ready composition. Do not include unreadable text or device mockups unless the brief explicitly asks for them.${colors}`;
+  }
+
+  return `Create one polished brand photograph${brandName}. Brief: ${variation}. Use realistic lighting, intentional composition, and a cohesive art direction. Do not include unreadable text overlays.${colors}`;
+}
+
 async function classify(prompt: string): Promise<{ asset_type: AssetType; count: number }> {
   try {
     const out = await geminiText({ system: CLASSIFIER_SYSTEM, user: prompt, temperature: 0.1, json: true });
@@ -230,17 +250,8 @@ Deno.serve(async (req) => {
     } else if (detectedUrl) {
       ctx = await scrapeUrl(detectedUrl, SUPABASE_URL, SUPABASE_ANON_KEY, jwt);
     } else if (project_id) {
-      // No URL in this prompt — reuse stored brand context from project (Brand Analysis Mode persistence)
-      const { data: proj } = await admin.from("projects").select("brand_context,source_url").eq("id", project_id).maybeSingle();
-      if (proj?.brand_context) ctx = { ...(proj.brand_context as BrandContext), url: (proj.brand_context as any).url || proj.source_url || undefined };
-    }
-
-    // Persist brand context to project if we scraped a real brand and the project has none yet
-    if (project_id && (ctx.productName || ctx.colors?.length)) {
-      const { data: proj } = await admin.from("projects").select("brand_context").eq("id", project_id).maybeSingle();
-      if (!proj?.brand_context) {
-        await admin.from("projects").update({ brand_context: ctx, source_url: ctx.url || null }).eq("id", project_id);
-      }
+      const { data: proj } = await admin.from("projects").select("name").eq("id", project_id).maybeSingle();
+      if (proj?.name) ctx = { productName: proj.name };
     }
 
     // Credits check (text=1 each, image=10 each)
@@ -299,17 +310,28 @@ Deno.serve(async (req) => {
     // a free image proxy that converts arbitrary image URLs to PNG.
     async function fetchAsRef(u?: string | null): Promise<{ mimeType: string; data: string } | null> {
       if (!u) return null;
+      const fetchWithTimeout = async (url: string): Promise<Response | null> => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4_000);
+        try {
+          return await fetch(url, { signal: controller.signal });
+        } catch {
+          return null;
+        } finally {
+          clearTimeout(timeout);
+        }
+      };
       const directThenProxy = async (url: string): Promise<Response | null> => {
         try {
-          const r = await fetch(url);
-          if (!r.ok) return null;
+          const r = await fetchWithTimeout(url);
+          if (!r?.ok) return null;
           const ct = (r.headers.get("content-type") || "").toLowerCase();
           // If it's a format Gemini can't consume directly (svg/ico/avif/heic),
           // re-fetch via wsrv.nl to rasterize to PNG.
           if (!ct || ct.includes("svg") || ct.includes("icon") || ct.includes("avif") || ct.includes("heic")) {
             const proxied = `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ""))}&output=png&w=1024&we`;
-            const p = await fetch(proxied);
-            return p.ok ? p : null;
+            const p = await fetchWithTimeout(proxied);
+            return p?.ok ? p : null;
           }
           return r;
         } catch { return null; }
@@ -320,7 +342,7 @@ Deno.serve(async (req) => {
         let ct = (r.headers.get("content-type") || "image/png").split(";")[0].toLowerCase();
         if (!/^image\/(png|jpeg|jpg|webp)$/.test(ct)) ct = "image/png";
         const buf = new Uint8Array(await r.arrayBuffer());
-        if (buf.length === 0) return null;
+        if (buf.length === 0 || buf.length > 4_000_000) return null;
         let bin = "";
         for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
         return { mimeType: ct, data: btoa(bin) };
@@ -362,14 +384,11 @@ Deno.serve(async (req) => {
           // Skip the text-prompt rewrite step entirely. Feed a stable variation instruction + reference image directly.
           const variantHint = ["alternate angle", "monochrome (single brand color on white)", "simplified minimal version", "refined geometry, more polished", "badge / circle enclosure"][i % 5];
           imgPrompt = `Create a logo VARIATION of the brand shown in the attached reference image${ctx.productName ? ` ("${ctx.productName}")` : ""}.\n\nHARD RULES:\n- KEEP the same core motif/symbol from the reference (do not invent a new unrelated concept).\n- KEEP the same silhouette family, proportions, and overall style.\n- KEEP the exact brand colors${ctx.colors?.length ? `: ${ctx.colors.slice(0,3).join(", ")}` : " from the reference"}. No new colors.\n- This variant: ${variantHint}.\n- Solid white background, flat vector, app-icon ready, no text, no typography, no letters.\n- The result must look like it belongs to the SAME brand as the reference.`;
-        } else if (logoRefs) {
-          // Non-logo image with brand visual references attached — instruct Gemini to evolve, not invent.
-          const variantPrompt = augmentImagePrompt(cls.asset_type, prompt, i, count);
-          const base = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.9 });
-          imgPrompt = `${base}\n\nVISUAL BRAND CONSTRAINTS (reference images are attached):\n- Match the visual language, color palette, and typographic feel of the attached reference(s).\n- This is for the EXISTING brand${ctx.productName ? ` "${ctx.productName}"` : ""}${ctx.colors?.length ? ` — use ONLY these brand colors: ${ctx.colors.slice(0,4).join(", ")}` : ""}.\n- Do not invent a new visual identity. Evolve the one shown.`;
         } else {
-          const variantPrompt = augmentImagePrompt(cls.asset_type, prompt, i, count);
-          imgPrompt = await geminiText({ system: spec.system, user: spec.build(ctx, variantPrompt), temperature: 0.9 });
+          imgPrompt = buildDirectImagePrompt(cls.asset_type, ctx, prompt, i, count);
+          if (logoRefs) {
+            imgPrompt += "\n\nReference images are attached. Evolve their existing visual language and do not invent a separate identity.";
+          }
         }
         const png = await geminiImage(imgPrompt, logoRefs);
         const path = `${user.id}/${Date.now()}-${i}.png`;
@@ -389,12 +408,11 @@ Deno.serve(async (req) => {
         return asset?.id ? { id: asset.id, image_url: pub.publicUrl, variant: i + 1 } : undefined;
       };
       // Per-variant failures must NOT abort the whole batch — users asked for many
-      // variants and one Gemini hiccup shouldn't throw away the rest. We also retry
-      // each failed slot up to 2 extra times so a flaky provider doesn't silently
-      // halve the user's results.
+      // variants and one Gemini hiccup shouldn't throw away the rest. Retry each
+      // failed slot once without extending the request past the Edge time limit.
       let lastUnavailable: GeminiUnavailableError | null = null;
       const safeVariant = async (i: number) => {
-        const MAX_ATTEMPTS = 5;
+        const MAX_ATTEMPTS = 2;
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
           try { return await createImageVariant(i); }
           catch (e) {
