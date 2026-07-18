@@ -87,7 +87,7 @@ const SiteHeader = () => {
               <span className="text-base leading-none">{lang.flag}</span>
               <ChevronDown className="h-3 w-3" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto bg-white text-neutral-900 border-neutral-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto bg-white text-neutral-900 border-neutral-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ colorScheme: "light" }}>
               {LANGUAGES.map((l) => (
                 <DropdownMenuItem key={l.code} onSelect={() => setLanguage(l)} className="gap-2 text-neutral-900 focus:bg-neutral-100 focus:text-neutral-900">
                   {l.code === lang.code ? <Check className="h-4 w-4" /> : <span className="w-4" />}
