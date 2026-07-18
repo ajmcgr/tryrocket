@@ -65,7 +65,7 @@ export default function BrandHub() {
       setLoading(true);
       const [{ data: a }, { data: p }] = await Promise.all([
         supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").order("created_at", { ascending: false }).limit(400),
-        supabase.from("projects").select("id,name").order("created_at", { ascending: false }).limit(50),
+        supabase.from("projects").select("id,name,brand_context,source_url").order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
       const loadedProjects = p || [];
@@ -126,6 +126,11 @@ export default function BrandHub() {
   const choosingDirection = Boolean(params.get("direction") && selectedStyle && selectedProject);
   const showKitSetup = choosingDirection && missingEssentials.length > 0;
   const selectedStyleIsLogo = ["logo", "logotype", "wordmark"].includes(normalizeAssetType(selectedStyle?.asset_type));
+  const brandKitComplete = Boolean(selectedProject && missingEssentials.length === 0);
+  const completedEssentialCount = KIT_ESSENTIALS.length - missingEssentials.length;
+  const completeKitHref = selectedProject && selectedStyle
+    ? `/brands?${new URLSearchParams({ project: selectedProject.id, direction: selectedStyle.id }).toString()}`
+    : "/designs";
   const kitStepComplete = (key: string) => key === "logo"
     ? Boolean(selectedStyleIsLogo || selectedProjectDesigns.some((design) => KIT_ESSENTIALS[0].types.some((type) => type === normalizeAssetType(design.asset_type))))
     : !missingEssentials.some((essential) => essential.key === key);
@@ -133,7 +138,11 @@ export default function BrandHub() {
   const completeBrandKit = async () => {
     if (!selectedProject || !user || completingKit || !missingEssentials.length) return;
     setCompletingKit(true);
-    const context = { productName: selectedProject.name };
+    const context = {
+      ...(selectedProject.brand_context || {}),
+      productName: selectedProject.name || selectedProject.brand_context?.productName || "",
+      ...(selectedProject.source_url && !selectedProject.brand_context?.url ? { url: selectedProject.source_url } : {}),
+    };
     const directionInstruction = selectedStyle
       ? `Use the chosen direction, “${selectedStyle.title || "Untitled design"}”, as the visual foundation. ${selectedStyle.prompt ? `Original brief: ${selectedStyle.prompt}` : ""}`
       : "";
@@ -390,6 +399,23 @@ export default function BrandHub() {
               <p className="text-sm text-neutral-600">Choose a design you like to guide future work.</p>
             </div>
             <Link to="/designs" className="ml-1 shrink-0 text-sm font-medium text-neutral-600 hover:text-neutral-900">Choose</Link>
+          </div>
+        )}
+        {selectedProject && (
+          <div className="flex min-w-0 items-center gap-3 rounded-xl bg-neutral-50 px-3 py-2">
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs ${brandKitComplete ? "bg-emerald-500 text-white" : "bg-brand/10 text-brand"}`}>
+              {brandKitComplete ? <Check className="h-4 w-4" /> : completedEssentialCount}
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-neutral-900">{brandKitComplete ? "Brand kit ready" : `${completedEssentialCount} of ${KIT_ESSENTIALS.length} essentials ready`}</p>
+              <p className="text-[11px] text-neutral-500">{brandKitComplete ? "Download everything together." : "Complete your kit to make this style reusable."}</p>
+            </div>
+            <Link
+              to={brandKitComplete ? `/projects/${selectedProject.id}/hub` : completeKitHref}
+              className="ml-1 shrink-0 text-sm font-medium text-brand hover:text-brand-hover"
+            >
+              {brandKitComplete ? "Download" : "Continue"}
+            </Link>
           </div>
         )}
       </section>}

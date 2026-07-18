@@ -94,7 +94,15 @@ const ProjectWizard = () => {
   const run = async () => {
     if (!user) return;
     setRunning(true);
-    const brandContext = scraped ? { ...scraped, url: normalizeUrl(ctx.url), productName: ctx.name.trim() || scraped.productName } : null;
+    const normalizedUrl = ctx.url.trim() ? normalizeUrl(ctx.url) : null;
+    const brandContext = {
+      ...(scraped || {}),
+      productName: ctx.name.trim() || scraped?.productName || "",
+      description: ctx.description.trim() || scraped?.description || scraped?.tagline || "",
+      audience: ctx.audience,
+      tone: ctx.tone,
+      ...(normalizedUrl ? { url: normalizedUrl } : {}),
+    };
     const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
     const workspace_id = await ensureActiveWorkspaceId();
     const { data: project, error } = await supabase.from("projects").insert({
@@ -102,6 +110,8 @@ const ProjectWizard = () => {
       workspace_id,
       name: ctx.name.trim(),
       description: ctx.description.trim() || null,
+      source_url: normalizedUrl,
+      brand_context: brandContext,
     } as any).select().single();
     if (error || !project) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); setRunning(false); return; }
 

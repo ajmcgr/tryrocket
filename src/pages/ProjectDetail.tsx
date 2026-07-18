@@ -197,12 +197,19 @@ const ProjectDetail = () => {
       return;
     }
     setSavingSettings(true);
+    const brandContext = {
+      ...(project?.brand_context || {}),
+      productName: settingsName.trim(),
+      description: settingsDescription.trim() || undefined,
+      url: settingsUrl.trim() || undefined,
+    };
     const { error } = await supabase
       .from("projects")
       .update({
         name: settingsName.trim(),
         description: settingsDescription.trim() || null,
         source_url: settingsUrl.trim() || null,
+        brand_context: brandContext,
       })
       .eq("id", id);
     setSavingSettings(false);
@@ -215,6 +222,7 @@ const ProjectDetail = () => {
       name: settingsName.trim(),
       description: settingsDescription.trim() || null,
       source_url: settingsUrl.trim() || null,
+      brand_context: brandContext,
     } : current);
     toast({ title: "Brand settings saved" });
   };

@@ -613,6 +613,7 @@ const Generate = () => {
           user_id: user.id,
           workspace_id: workspaceId,
           name,
+          brand_context: { productName: name },
         } as any)
         .select("id,name,created_at")
         .single();
@@ -720,28 +721,36 @@ const Generate = () => {
           } catch { /* noop */ }
         }
       }
-      // Best-effort brand context: URL in prompt → project details → most recent design context.
-      let sharedCtx: any = activeBrandCtx || null;
+      // Best-effort brand context: saved project → URL in prompt → recent design context.
+      let persistedProject: any = null;
+      if (effectiveProjectId) {
+        try {
+          const { data: project } = await supabase
+            .from("projects")
+            .select("name,brand_context,source_url")
+            .eq("id", effectiveProjectId)
+            .maybeSingle();
+          persistedProject = project || null;
+        } catch { /* noop */ }
+      }
+
+      let sharedCtx: any = activeBrandCtx || persistedProject?.brand_context || null;
+      if (sharedCtx || persistedProject?.name || persistedProject?.source_url) {
+        sharedCtx = {
+          ...(persistedProject?.brand_context || {}),
+          ...(sharedCtx || {}),
+          productName: sharedCtx?.productName || persistedProject?.brand_context?.productName || persistedProject?.name || undefined,
+          url: sharedCtx?.url || persistedProject?.brand_context?.url || persistedProject?.source_url || undefined,
+        };
+      }
       const urlMatch = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
       if (urlMatch) {
         const u = /^https?:\/\//i.test(urlMatch[1]) ? urlMatch[1] : "https://" + urlMatch[1];
         try {
           const { data: scraped } = await supabase.functions.invoke("scrape-url", { body: { url: u } });
-          if (scraped && !scraped.error) sharedCtx = { ...scraped, url: u };
-          else sharedCtx = { url: u };
-        } catch { sharedCtx = { url: u }; }
-      } else if (effectiveProjectId) {
-        // Derive a minimal context from the project when no new URL was given.
-        try {
-          const { data: proj } = await supabase.from("projects").select("name").eq("id", effectiveProjectId).maybeSingle();
-          if (proj) {
-            sharedCtx = {
-              ...(sharedCtx || {}),
-              productName: sharedCtx?.productName || proj.name || undefined,
-              url: sharedCtx?.url || undefined,
-            };
-          }
-        } catch { /* noop */ }
+          if (scraped && !scraped.error) sharedCtx = { ...sharedCtx, ...scraped, url: u };
+          else sharedCtx = { ...sharedCtx, url: u };
+        } catch { sharedCtx = { ...sharedCtx, url: u }; }
       }
       if (!sharedCtx && chatAssets.length) {
         const recentWithContext = [...chatAssets].reverse().find((asset) => {
@@ -768,6 +777,21 @@ const Generate = () => {
             prompt: directionDesign.prompt || undefined,
           },
         };
+      }
+      if (effectiveProjectId) {
+        const projectContext = {
+          ...(persistedProject?.brand_context || {}),
+          ...(sharedCtx || {}),
+          productName: sharedCtx?.productName || persistedProject?.brand_context?.productName || persistedProject?.name || undefined,
+          url: sharedCtx?.url || persistedProject?.brand_context?.url || persistedProject?.source_url || undefined,
+        };
+        sharedCtx = projectContext;
+        try {
+          await supabase.from("projects").update({
+            brand_context: projectContext,
+            source_url: projectContext.url || null,
+          } as any).eq("id", effectiveProjectId);
+        } catch { /* non-fatal: generation still has the in-memory context */ }
       }
       if (!tpl && isLogotypeOnlyPrompt(p)) {
         const priorPromptText = [p, chatData?.prompt, ...[...chatAssets].reverse().map((asset) => asset.prompt)].filter(Boolean).join("\n");
@@ -946,7 +970,7 @@ const Generate = () => {
     if (!user) return;
     const { data: chosen, error: chosenError } = await supabase
       .from("assets")
-      .select("id,project_id,meta")
+      .select("id,project_id,meta,asset_type")
       .eq("id", designId)
       .eq("user_id", user.id)
       .is("deleted_at", null)
@@ -993,7 +1017,13 @@ const Generate = () => {
       return;
     }
 
-    toast({ title: "Direction chosen", description: "Complete your brand kit to make this style reusable." });
+    const isLogo = ["logo", "logotype", "wordmark"].includes(String(chosen.asset_type || "").toLowerCase());
+    toast({
+      title: isLogo ? "Logo chosen — build your brand kit next" : "Direction chosen",
+      description: isLogo
+        ? "Rocket will use this logo for your colours, typography, voice and guidelines."
+        : "Complete your brand kit to make this style reusable.",
+    });
     const next = new URLSearchParams({ direction: chosen.id });
     if (chosen.project_id) next.set("project", chosen.project_id);
     nav(`/brands?${next.toString()}`);
@@ -1143,7 +1173,9 @@ const Generate = () => {
                     onClick={() => void useAsMyBrand(a.id)}
                     className="w-full border-t border-neutral-100 px-3 py-2 text-left text-xs font-medium text-brand hover:bg-brand/5"
                   >
-                    Choose this direction
+                    {["logo", "logotype", "wordmark"].includes(String(a.asset_type || "").toLowerCase())
+                      ? "Keep this logo & build my brand"
+                      : "Use this direction"}
                   </button>
                 </div>
               ))}

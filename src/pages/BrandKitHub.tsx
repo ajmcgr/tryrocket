@@ -198,6 +198,22 @@ const BrandKitHub = () => {
     toast({ title: "Public link disabled" });
   };
 
+  const markDesignsDownloaded = async (items: any[]) => {
+    const downloadedAt = new Date().toISOString();
+    const results = await Promise.all(items.map((item) =>
+      supabase
+        .from("assets")
+        .update({ meta: { ...(item.meta || {}), downloaded_at: downloadedAt } })
+        .eq("id", item.id),
+    ));
+    if (results.some((result) => result.error)) return;
+    setAssets((previous) => previous.map((item) =>
+      items.some((downloadedItem) => downloadedItem.id === item.id)
+        ? { ...item, meta: { ...(item.meta || {}), downloaded_at: downloadedAt } }
+        : item,
+    ));
+  };
+
   const downloadZip = async () => {
     if (!assets.length) return;
     if (!brandKitReady) {
@@ -208,6 +224,7 @@ const BrandKitHub = () => {
     try {
       const base = (project?.name || "brand-kit").replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "brand-kit";
       const result = await packAssetsZip(assets, `${base}-brand-kit.zip`);
+      await markDesignsDownloaded(assets);
       setDownloaded(true);
       toast({
         title: "Brand kit downloaded",
@@ -226,6 +243,7 @@ const BrandKitHub = () => {
     setDownloadingAssetId(asset.id);
     try {
       await exportAsset(asset, asset.image_url ? "png" : "pdf");
+      await markDesignsDownloaded([asset]);
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || "Could not download this design.", variant: "destructive" });
     } finally {
@@ -264,7 +282,7 @@ const BrandKitHub = () => {
 
   const reload = async () => {
     if (!id) return;
-    const { data } = await supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,created_at,editor_state").eq("project_id", id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,created_at,editor_state,meta").eq("project_id", id).order("created_at", { ascending: false });
     setAssets(data || []);
   };
 
@@ -283,7 +301,7 @@ const BrandKitHub = () => {
       if (!id) return;
       const [p, a] = await Promise.all([
         supabase.from("projects").select("*,share_token").eq("id", id).maybeSingle(),
-        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,created_at").eq("project_id", id).order("created_at", { ascending: false }),
+        supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,created_at,meta").eq("project_id", id).order("created_at", { ascending: false }),
       ]);
       setProject(p.data); setAssets(a.data || []); setLoading(false);
     })();
