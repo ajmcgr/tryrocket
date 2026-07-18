@@ -322,7 +322,7 @@ const Editor = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
   const assetId = params.get("id");
-  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null; meta?: Record<string, unknown> } | null>(null);
+  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null; asset_type?: string | null; meta?: Record<string, unknown> } | null>(null);
   const [brandKit, setBrandKit] = useState<{ colors: string[]; fonts: string[]; logos: { id: string; url: string; title: string }[] }>({ colors: [], fonts: [], logos: [] });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -493,7 +493,7 @@ const Editor = () => {
         nav(`/brands${pid}?asset=${a.id}`, { replace: true });
         return;
       }
-      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null, meta: a.meta || {} });
+      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null, asset_type: a.asset_type || null, meta: a.meta || {} });
       if (a.editor_state && Array.isArray(a.editor_state)) {
         lastPersistedStateRef.current = JSON.stringify(a.editor_state);
         _setEls(a.editor_state); return;
@@ -1095,41 +1095,81 @@ const Editor = () => {
     }, 50);
   };
 
+  const isLogoDesign = ["logo", "logotype", "wordmark"].includes(String(assetMeta?.asset_type || "").toLowerCase());
+
   const setAsBrandStyle = async () => {
     if (!assetId) {
       toast({ title: "Save this design first", description: "Saved designs can become your brand style." });
       return;
     }
-    const projectId = assetMeta?.project_id || null;
+    let projectId = assetMeta?.project_id || null;
     const { data: current, error: currentError } = await supabase
       .from("assets")
-      .select("id,meta,project_id")
+      .select("id,meta,project_id,user_id,title,asset_type")
       .eq("id", assetId)
       .maybeSingle();
     if (currentError || !current) {
       toast({ title: "Could not set brand style", description: currentError?.message, variant: "destructive" });
       return;
     }
+    if (!projectId) {
+      const suggestedName = String(current.meta?.brand_context?.productName || current.title || "My brand").trim() || "My brand";
+      const name = window.prompt("Name your brand", suggestedName);
+      if (!name?.trim()) return;
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const workspace_id = await ensureActiveWorkspaceId();
+      const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .insert({
+          user_id: current.user_id,
+          workspace_id,
+          name: name.trim(),
+          brand_context: current.meta?.brand_context || { productName: name.trim() },
+        } as any)
+        .select("id")
+        .maybeSingle();
+      if (projectError || !project?.id) {
+        toast({ title: "Could not create brand", description: projectError?.message, variant: "destructive" });
+        return;
+      }
+      projectId = project.id;
+      const { error: assignError } = await supabase.from("assets").update({ project_id: projectId }).eq("id", assetId);
+      if (assignError) {
+        toast({ title: "Could not add design to brand", description: assignError.message, variant: "destructive" });
+        return;
+      }
+    }
+    if (!projectId) return;
     let existingQuery = supabase.from("assets").select("id,meta").eq("user_id", (await supabase.auth.getUser()).data?.user?.id);
-    existingQuery = projectId ? existingQuery.eq("project_id", projectId) : existingQuery.is("project_id", null);
+    existingQuery = existingQuery.eq("project_id", projectId);
     const { data: existing } = await existingQuery.limit(100);
     await Promise.all((existing || [])
       .filter((design: any) => design.id !== assetId && design.meta?.selected_as_direction)
-      .map((design: any) => supabase.from("assets").update({ meta: { ...(design.meta || {}), selected_as_direction: false } }).eq("id", design.id)));
+      .map((design: any) => supabase.from("assets").update({
+        meta: {
+          ...(design.meta || {}),
+          selected_as_direction: false,
+          ...(design.meta?.brand_role === "primary_logo" ? { brand_role: null } : {}),
+        },
+      }).eq("id", design.id)));
     const nextMeta = {
       ...(current.meta || {}),
       selected_as_direction: true,
       selected_as_direction_at: new Date().toISOString(),
       direction_feedback: "kept",
+      ...(isLogoDesign ? { brand_role: "primary_logo" } : {}),
     };
-    const { error } = await supabase.from("assets").update({ meta: nextMeta }).eq("id", assetId);
+    const { error } = await supabase.from("assets").update({ meta: nextMeta, project_id: projectId }).eq("id", assetId);
     if (error) {
       toast({ title: "Could not set brand style", description: error.message, variant: "destructive" });
       return;
     }
-    setAssetMeta((prev) => (prev ? { ...prev, meta: nextMeta } : prev));
-    toast({ title: "Brand style set", description: "Future designs can now follow this direction." });
-    const query = new URLSearchParams({ direction: assetId, ...(projectId ? { project: projectId } : {}) });
+    setAssetMeta((prev) => (prev ? { ...prev, project_id: projectId, meta: nextMeta } : prev));
+    toast({
+      title: isLogoDesign ? "Logo kept as your brand" : "Brand style set",
+      description: isLogoDesign ? "Next: choose colours, typography, voice and guidelines." : "Future designs can now follow this direction.",
+    });
+    const query = new URLSearchParams({ direction: assetId, project: projectId });
     nav(`/brands?${query.toString()}`);
   };
 
@@ -1914,7 +1954,9 @@ const Editor = () => {
           <section className="rounded-[24px] border border-brand/15 bg-white p-4 shadow-sm">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Finish your design</p>
             <p className="mt-1 text-sm font-semibold text-neutral-900">Ready to use it?</p>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-500">Download a PNG, then use this style to keep future work on-brand.</p>
+            <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+              {isLogoDesign ? "Keep this logo to make it the foundation of your brand, then finish your kit." : "Download a PNG, then use this style to keep future work on-brand."}
+            </p>
             <button
               type="button"
               onClick={() => exportImage("png")}
@@ -1928,7 +1970,7 @@ const Editor = () => {
                 onClick={() => void setAsBrandStyle()}
                 className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
               >
-                {assetMeta?.meta?.selected_as_direction ? "Your brand style" : "Use as brand style"}
+                {assetMeta?.meta?.selected_as_direction ? "Open your brand" : isLogoDesign ? "Keep this logo" : "Use as brand style"}
               </button>
             ) : (
               <Link to="/create" className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
@@ -1936,7 +1978,7 @@ const Editor = () => {
               </Link>
             )}
             {hasDownloaded && !assetMeta?.meta?.selected_as_direction && assetId && (
-              <p className="mt-2 text-center text-[11px] text-neutral-500">Next: set this as your brand style.</p>
+              <p className="mt-2 text-center text-[11px] text-neutral-500">Next: {isLogoDesign ? "keep this logo to build your brand kit." : "set this as your brand style."}</p>
             )}
           </section>
           <div className="rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-sm">

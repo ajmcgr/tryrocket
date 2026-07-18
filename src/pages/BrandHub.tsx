@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { assetHref, isBrandAsset, normalizeAssetType } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
-import { ArrowRight, Download, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Check, Download, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 
 const supabase = _sb as any;
 
@@ -124,6 +124,10 @@ export default function BrandHub() {
 
   const choosingDirection = Boolean(params.get("direction") && selectedStyle && selectedProject);
   const showKitSetup = choosingDirection && missingEssentials.length > 0;
+  const selectedStyleIsLogo = ["logo", "logotype", "wordmark"].includes(normalizeAssetType(selectedStyle?.asset_type));
+  const kitStepComplete = (key: string) => key === "logo"
+    ? Boolean(selectedStyleIsLogo || selectedProjectDesigns.some((design) => KIT_ESSENTIALS[0].types.some((type) => type === normalizeAssetType(design.asset_type))))
+    : !missingEssentials.some((essential) => essential.key === key);
 
   const completeBrandKit = async () => {
     if (!selectedProject || !user || completingKit || !missingEssentials.length) return;
@@ -217,15 +221,21 @@ export default function BrandHub() {
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-neutral-900">Direction chosen</p>
+              <p className="text-sm font-semibold text-neutral-900">{selectedStyleIsLogo ? "Logo chosen" : "Style chosen"}</p>
               <p className="mt-1 text-sm text-neutral-600">
-                <span className="font-medium text-neutral-900">{selectedStyle.title || "This design"}</span> will guide your logo, colours, typography, voice and guidelines.
+                <span className="font-medium text-neutral-900">{selectedStyle.title || "This design"}</span> will guide your {selectedStyleIsLogo ? "colours, typography, voice and guidelines" : "logo, colours, typography, voice and guidelines"}.
               </p>
-              {missingEssentials.length > 0 && (
-                <p className="mt-2 text-xs font-medium text-neutral-500">
-                  Next: {missingEssentials.map((essential) => essential.label).join(" · ")}
-                </p>
-              )}
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {KIT_ESSENTIALS.map((essential) => {
+                  const complete = kitStepComplete(essential.key);
+                  return (
+                    <span key={essential.key} className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium ${complete ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-white text-neutral-500"}`}>
+                      {complete ? <Check className="h-3 w-3" /> : <span className="grid h-3 w-3 place-items-center rounded-full border border-current text-[8px]">{KIT_ESSENTIALS.indexOf(essential) + 1}</span>}
+                      {essential.label}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
           {missingEssentials.length > 0 ? (
