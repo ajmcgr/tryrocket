@@ -40,6 +40,7 @@ export default function BrandHub() {
   const [params] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [completingKit, setCompletingKit] = useState(false);
+  const [kitProgress, setKitProgress] = useState("");
   const [assets, setAssets] = useState<any[]>([]);
   const [allDesigns, setAllDesigns] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
@@ -81,7 +82,7 @@ export default function BrandHub() {
     setActiveProject(params.get("project") || "");
   }, [params]);
 
-  const selectedProjectId = activeProject || projects[0]?.id || "all";
+  const selectedProjectId = activeProject || "all";
   const selectedProject = projects.find((project) => project.id === selectedProjectId) || null;
 
   const filtered = useMemo(() => {
@@ -136,22 +137,33 @@ export default function BrandHub() {
     const directionInstruction = selectedStyle
       ? `Use the chosen direction, “${selectedStyle.title || "Untitled design"}”, as the visual foundation. ${selectedStyle.prompt ? `Original brief: ${selectedStyle.prompt}` : ""}`
       : "";
-    const results = await Promise.all(missingEssentials.map(async (essential) => {
-      const { data, error } = await supabase.functions.invoke("generate-asset", {
-        body: {
-          prompt: `${essential.prompt(selectedProject.name || "this brand")} ${directionInstruction}`.trim(),
-          asset_type: essential.types[0],
-          project_id: selectedProject.id,
-          brand_context: context,
-        },
-      });
-      return { essential, error: error || data?.error || (data?.refused ? new Error(data.message || "Generation refused") : null) };
-    }));
+    const results: { essential: typeof missingEssentials[number]; error: unknown }[] = [];
+    for (const [index, essential] of missingEssentials.entries()) {
+      setKitProgress(`Creating ${essential.label} (${index + 1} of ${missingEssentials.length})`);
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-asset", {
+          body: {
+            prompt: `${essential.prompt(selectedProject.name || "this brand")} ${directionInstruction}`.trim(),
+            asset_type: essential.types[0],
+            project_id: selectedProject.id,
+            brand_context: context,
+          },
+        });
+        results.push({ essential, error: error || data?.error || (data?.refused ? new Error(data.message || "Generation refused") : null) });
+      } catch (error) {
+        results.push({ essential, error });
+      }
+    }
     const failed = results.filter((result) => result.error);
     await refreshAssets();
     setCompletingKit(false);
+    setKitProgress("");
     if (failed.length) {
-      toast({ title: "Some of your kit could not be created", description: "You can retry the missing essentials from this brand.", variant: "destructive" });
+      toast({
+        title: "Some brand essentials could not be created",
+        description: `${failed.map((result) => result.essential.label).join(", ")} can be retried from this brand.`,
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: "Your brand kit is ready", description: "Download it whenever you are ready to use it." });
@@ -176,16 +188,80 @@ export default function BrandHub() {
   const supportingCategories = CATEGORIES.filter((category) => !CORE_CATEGORY_KEYS.has(category.key));
   const createOnBrandHref = selectedStyle
     ? createWithStyleHref("graphic", "Create a new design for our brand.")
-    : "/create";
+    : selectedProject
+      ? `/create?${new URLSearchParams({ project: selectedProject.id }).toString()}`
+      : "/create";
 
   const projectDesignCount = (projectId: string) => allDesigns.filter((design) => design.project_id === projectId).length;
+
+  const projectKitProgress = (projectId: string) => {
+    const types = new Set(allDesigns
+      .filter((design) => design.project_id === projectId)
+      .map((design) => normalizeAssetType(design.asset_type)));
+    return KIT_ESSENTIALS.filter((essential) => essential.types.some((type) => types.has(type))).length;
+  };
+
+  if (!loading && !activeProject && !params.get("direction")) {
+    return (
+      <div className="mx-auto max-w-7xl px-6 py-10">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Your brands</h1>
+            <p className="mt-1 max-w-2xl text-sm text-neutral-500">Choose a brand to keep its logo, colours, typography and every new design in one place.</p>
+          </div>
+          <Link to="/projects" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
+            <Plus className="h-4 w-4" /> Create a brand
+          </Link>
+        </div>
+
+        {projects.length ? (
+          <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => {
+              const designCount = projectDesignCount(project.id);
+              const essentials = projectKitProgress(project.id);
+              const ready = essentials === KIT_ESSENTIALS.length;
+              return (
+                <Link
+                  key={project.id}
+                  to={`/brands?project=${project.id}`}
+                  className="group rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-sm font-semibold text-white">
+                      {String(project.name || "B").trim().slice(0, 2).toUpperCase()}
+                    </div>
+                    <ArrowRight className="mt-1 h-4 w-4 text-neutral-400 transition group-hover:text-neutral-900" />
+                  </div>
+                  <h2 className="mt-5 truncate text-lg font-semibold text-neutral-900">{project.name}</h2>
+                  <p className="mt-1 text-sm text-neutral-500">{designCount} {designCount === 1 ? "design" : "designs"}</p>
+                  <div className="mt-5 flex items-center justify-between border-t border-neutral-100 pt-4 text-xs">
+                    <span className={ready ? "font-medium text-emerald-700" : "text-neutral-500"}>{ready ? "Ready to download" : `${essentials}/5 kit essentials`}</span>
+                    <span className="font-medium text-neutral-900">Open brand</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </section>
+        ) : (
+          <section className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-14 text-center">
+            <h2 className="text-lg font-semibold text-neutral-900">Create your first brand</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">Start with a logo, then Rocket will help you build the colours, type and voice around it.</p>
+            <Link to="/projects" className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+              <Plus className="h-4 w-4" /> Create a brand
+            </Link>
+          </section>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Your brands</h1>
-          <p className="mt-1 text-sm text-neutral-500">Each project is a brand system: its logo, colours, type and voice in one place.</p>
+          {activeProject && <Link to="/brands" className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-900">← All brands</Link>}
+          <h1 className="text-3xl font-semibold tracking-tight">{selectedProject?.name || "Your brand"}</h1>
+          <p className="mt-1 text-sm text-neutral-500">Logo, colours, typography and every future design in one place.</p>
         </div>
         <div className="flex items-center gap-2">
           {!choosingDirection && (
@@ -246,7 +322,7 @@ export default function BrandHub() {
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover disabled:opacity-60"
             >
               {completingKit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {completingKit ? "Completing your brand kit…" : "Complete your brand kit"}
+              {completingKit ? kitProgress || "Completing your brand kit…" : "Complete your brand kit"}
             </button>
           ) : (
             <Link
@@ -259,7 +335,7 @@ export default function BrandHub() {
         </section>
       )}
 
-      {!showKitSetup && projects.length > 0 && (
+      {!showKitSetup && !activeProject && projects.length > 0 && (
         <section className="mt-8">
           <div className="mb-3 flex items-baseline justify-between gap-3">
             <div>

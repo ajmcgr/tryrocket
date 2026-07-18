@@ -322,7 +322,7 @@ const Editor = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
   const assetId = params.get("id");
-  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null; asset_type?: string | null; meta?: Record<string, unknown> } | null>(null);
+  const [assetMeta, setAssetMeta] = useState<{ title: string; project_id: string | null; asset_type?: string | null; image_url?: string | null; meta?: Record<string, unknown> } | null>(null);
   const [brandKit, setBrandKit] = useState<{ colors: string[]; fonts: string[]; logos: { id: string; url: string; title: string }[] }>({ colors: [], fonts: [], logos: [] });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -493,7 +493,7 @@ const Editor = () => {
         nav(`/brands${pid}?asset=${a.id}`, { replace: true });
         return;
       }
-      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null, asset_type: a.asset_type || null, meta: a.meta || {} });
+      setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null, asset_type: a.asset_type || null, image_url: a.image_url || null, meta: a.meta || {} });
       if (a.editor_state && Array.isArray(a.editor_state)) {
         lastPersistedStateRef.current = JSON.stringify(a.editor_state);
         _setEls(a.editor_state); return;
@@ -625,7 +625,7 @@ const Editor = () => {
     if (serializedState === lastPersistedStateRef.current) return;
     setSaveStatus("saving");
     const t = setTimeout(async () => {
-      const thumbnail_url = await captureThumbnail();
+      const thumbnail_url = assetMeta?.image_url ? null : await captureThumbnail();
       const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString() };
       const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
@@ -637,7 +637,7 @@ const Editor = () => {
       setTimeout(() => setSaveStatus((s) => s === "saved" ? "idle" : s), 1500);
     }, 800);
     return () => clearTimeout(t);
-  }, [assetId, assetMeta?.meta, autosaveTick, captureThumbnail, els]);
+  }, [assetId, assetMeta?.image_url, assetMeta?.meta, autosaveTick, captureThumbnail, els]);
 
   useEffect(() => {
     if (!isRenamingTitle) setTitleDraft(displayTitle);
@@ -658,13 +658,13 @@ const Editor = () => {
 
     if (nextTitle === previousTitle && assetMeta) return;
 
-    setAssetMeta((prev) => ({ title: nextTitle, project_id: prev?.project_id || null, meta: prev?.meta || {} }));
+    setAssetMeta((prev) => prev ? { ...prev, title: nextTitle } : prev);
     if (!assetId) return;
 
     setSaveStatus("saving");
     const { error } = await supabase.from("assets").update({ title: nextTitle }).eq("id", assetId);
     if (error) {
-      setAssetMeta((prev) => ({ title: previousTitle, project_id: prev?.project_id || null, meta: prev?.meta || {} }));
+      setAssetMeta((prev) => prev ? { ...prev, title: previousTitle } : prev);
       setTitleDraft(previousTitle);
       setSaveStatus("idle");
       toast({ title: "Rename failed", description: error.message, variant: "destructive" });
@@ -995,7 +995,7 @@ const Editor = () => {
     setSaveStatus("saving");
     if (assetId) {
       const serializedState = JSON.stringify(els);
-      const thumbnail_url = await captureThumbnail();
+      const thumbnail_url = assetMeta?.image_url ? null : await captureThumbnail();
       const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString() };
       const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
@@ -1953,32 +1953,36 @@ const Editor = () => {
         <div className="space-y-3">
           <section className="rounded-[24px] border border-brand/15 bg-white p-4 shadow-sm">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Finish your design</p>
-            <p className="mt-1 text-sm font-semibold text-neutral-900">Ready to use it?</p>
+            <p className="mt-1 text-sm font-semibold text-neutral-900">Make it part of your brand</p>
             <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-              {isLogoDesign ? "Keep this logo to make it the foundation of your brand, then finish your kit." : "Download a PNG, then use this style to keep future work on-brand."}
+              {isLogoDesign
+                ? assetMeta?.meta?.selected_as_direction
+                  ? "Your logo is guiding this brand. Complete the kit, then download everything together."
+                  : "First keep this logo. Rocket will use it to create the colours, typography, voice and guidelines around it."
+                : "Use this design as your brand style, then keep future work on-brand."}
             </p>
-            <button
-              type="button"
-              onClick={() => exportImage("png")}
-              className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground hover:bg-brand-hover"
-            >
-              <Download className="h-3.5 w-3.5" /> Download PNG
-            </button>
             {assetId ? (
               <button
                 type="button"
                 onClick={() => void setAsBrandStyle()}
-                className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground hover:bg-brand-hover"
               >
-                {assetMeta?.meta?.selected_as_direction ? "Open your brand" : isLogoDesign ? "Keep this logo" : "Use as brand style"}
+                {assetMeta?.meta?.selected_as_direction ? "Complete your brand kit" : isLogoDesign ? "Keep this logo" : "Use as brand style"}
               </button>
             ) : (
-              <Link to="/create" className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+              <Link to="/create" className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">
                 Create another design
               </Link>
             )}
-            {hasDownloaded && !assetMeta?.meta?.selected_as_direction && assetId && (
-              <p className="mt-2 text-center text-[11px] text-neutral-500">Next: {isLogoDesign ? "keep this logo to build your brand kit." : "set this as your brand style."}</p>
+            <button
+              type="button"
+              onClick={() => exportImage("png")}
+              className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              <Download className="h-3.5 w-3.5" /> Download PNG
+            </button>
+            {isLogoDesign && (
+              <p className="mt-2 text-center text-[11px] text-neutral-500">Keep logo → complete kit → download brand kit</p>
             )}
           </section>
           <div className="rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-sm">

@@ -100,6 +100,25 @@ const firstCanvasText = (value: unknown) => {
   return String(textElement?.text || "").trim();
 };
 
+const canvasHasNonImageElements = (value: unknown) => {
+  if (!Array.isArray(value)) return false;
+  return value.some((item) => {
+    if (!item || typeof item !== "object") return false;
+    const el = item as { kind?: string; visible?: boolean };
+    return el.visible !== false && typeof el.kind === "string" && el.kind !== "image";
+  });
+};
+
+const firstCanvasImage = (value: unknown) => {
+  if (!Array.isArray(value)) return "";
+  const image = value.find((item) => {
+    if (!item || typeof item !== "object") return false;
+    const el = item as { kind?: string; visible?: boolean; src?: unknown };
+    return el.visible !== false && el.kind === "image" && String(el.src || "").trim();
+  }) as { src?: unknown } | undefined;
+  return String(image?.src || "").trim();
+};
+
 const safePreviewText = (asset: DesignPreviewAsset) => {
   const title = String(asset?.title || "").trim();
   const content = String(asset?.content || "").trim();
@@ -408,10 +427,10 @@ const Assets = () => {
   const DesignPreview = ({ asset }: { asset: DesignPreviewAsset }) => {
     const [rasterFailed, setRasterFailed] = useState(false);
     const isLogotype = isLogotypeState(asset?.editor_state);
-    const rasterPreview = asset.thumbnail_url || asset.image_url;
+    const rasterPreview = asset.image_url || firstCanvasImage(asset.editor_state) || asset.thumbnail_url;
     const fallbackLogotype = !isLogotype && isLogotypeLikeDesign(asset);
-    const isImage = !!rasterPreview && !rasterFailed && !isLogotype && !fallbackLogotype;
-    const isCanvas = !isImage && !isLogotype && !fallbackLogotype && hasRenderableCanvasElements(asset?.editor_state);
+    const isCanvas = !isLogotype && !fallbackLogotype && canvasHasNonImageElements(asset?.editor_state) && hasRenderableCanvasElements(asset?.editor_state);
+    const isImage = !!rasterPreview && !rasterFailed && !isLogotype && !fallbackLogotype && !isCanvas;
     const fallbackText = safePreviewText(asset);
     const brand = !isLogotype && !isCanvas && !fallbackLogotype && !isImage && isBrandAsset(asset);
 
