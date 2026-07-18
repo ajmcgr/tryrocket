@@ -4,7 +4,7 @@ import { assetHref } from "@/lib/assetExperience";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
+import { ArrowRight, ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
@@ -17,6 +17,7 @@ import { handleAiError } from "@/lib/aiErrors";
 import { track } from "@/lib/analytics";
 
 const supabase = _sb as any;
+const FIRST_BRAND_ONBOARDING_SKIP_KEY = "rocket:first-brand-onboarding-skipped";
 
 function withResolvedLogotypeText(asset: any) {
   const state = asset?.editor_state;
@@ -482,6 +483,12 @@ const Generate = () => {
   const [chatAssets, setChatAssets] = useState<any[]>([]);
   const [directionDesign, setDirectionDesign] = useState<any>(null);
   const [brandProjects, setBrandProjects] = useState<any[]>([]);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
+  const [brandName, setBrandName] = useState("");
+  const [startingBrand, setStartingBrand] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
+    try { return localStorage.getItem(FIRST_BRAND_ONBOARDING_SKIP_KEY) === "1"; } catch { return false; }
+  });
   const [projectBrandContext, setProjectBrandContext] = useState<any>(null);
   const [ignoreSavedStyle, setIgnoreSavedStyle] = useState(false);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
@@ -514,7 +521,7 @@ const Generate = () => {
   }, [chatId, user]);
 
   useEffect(() => {
-    if (!user) { setBrandProjects([]); return; }
+    if (!user) { setBrandProjects([]); setProjectsLoaded(false); return; }
     let cancelled = false;
     (async () => {
       const { data } = await supabase
@@ -522,7 +529,10 @@ const Generate = () => {
         .select("id,name,brand_context,source_url,created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      if (!cancelled) setBrandProjects(data || []);
+      if (!cancelled) {
+        setBrandProjects(data || []);
+        setProjectsLoaded(true);
+      }
     })();
     return () => { cancelled = true; };
   }, [user]);
@@ -578,6 +588,7 @@ const Generate = () => {
   })();
 
   const selectedProject = useMemo(() => brandProjects.find((project) => project.id === projectId) || null, [brandProjects, projectId]);
+  const showFirstBrandOnboarding = projectsLoaded && !!user && brandProjects.length === 0 && !projectId && !chatId && !directionId && !onboardingDismissed;
 
   const chooseBrandProject = (nextProjectId: string) => {
     const next = new URLSearchParams(params);
@@ -585,6 +596,50 @@ const Generate = () => {
     else next.delete("project");
     next.delete("chat");
     nav(`/create${next.toString() ? `?${next.toString()}` : ""}`);
+  };
+
+  const startFirstBrand = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    const name = brandName.trim();
+    if (!name || !user || startingBrand) return;
+
+    setStartingBrand(true);
+    try {
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const workspaceId = await ensureActiveWorkspaceId();
+      const { data: project, error } = await supabase
+        .from("projects")
+        .insert({
+          user_id: user.id,
+          workspace_id: workspaceId,
+          name,
+          brand_context: { productName: name },
+        } as any)
+        .select("id,name,brand_context,source_url,created_at")
+        .single();
+
+      if (error || !project?.id) throw error || new Error("Rocket couldn't create your brand.");
+
+      try { localStorage.setItem(FIRST_BRAND_ONBOARDING_SKIP_KEY, "1"); } catch { /* noop */ }
+      setOnboardingDismissed(true);
+      setBrandProjects((projects) => [project, ...projects]);
+      setPrompt(`Create a logo for ${name}`);
+      setAssetType("logo");
+      nav(`/create?project=${project.id}&asset_type=logo`);
+    } catch (error: any) {
+      toast({
+        title: "Couldn't create your brand",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setStartingBrand(false);
+    }
+  };
+
+  const skipFirstBrandOnboarding = () => {
+    try { localStorage.setItem(FIRST_BRAND_ONBOARDING_SKIP_KEY, "1"); } catch { /* noop */ }
+    setOnboardingDismissed(true);
   };
 
   const submit = async (e?: React.FormEvent) => {
@@ -1102,6 +1157,40 @@ const Generate = () => {
             </div>
           </div>
         </div>
+      ) : showFirstBrandOnboarding ? (
+        <section className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center py-12">
+          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-sm sm:p-10">
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+              <Sparkles className="h-3.5 w-3.5" /> Start your brand
+            </div>
+            <h1 className="mt-5 text-4xl font-semibold tracking-tight text-neutral-900">What’s your brand called?</h1>
+            <p className="mt-3 max-w-md text-sm leading-6 text-neutral-600">
+              Rocket will create a home for your brand, then help you make its first logo. Every future design can build on the style you choose.
+            </p>
+            <form onSubmit={startFirstBrand} className="mt-7 space-y-3">
+              <label htmlFor="first-brand-name" className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Brand name</label>
+              <input
+                id="first-brand-name"
+                autoFocus
+                value={brandName}
+                onChange={(event) => setBrandName(event.target.value)}
+                placeholder="e.g. TryLaunch"
+                disabled={startingBrand}
+                className="h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-base text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+              />
+              <button
+                type="submit"
+                disabled={!brandName.trim() || startingBrand}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {startingBrand ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Create your logo <ArrowRight className="h-4 w-4" /></>}
+              </button>
+            </form>
+            <button type="button" onClick={skipFirstBrandOnboarding} className="mt-4 w-full text-center text-xs font-medium text-neutral-500 transition hover:text-neutral-900">
+              I’ll create something without a brand first
+            </button>
+          </div>
+        </section>
       ) : (
         <div className="flex w-full flex-1 flex-col items-center justify-center">
       <div className="mb-8 text-center">
