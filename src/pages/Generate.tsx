@@ -970,7 +970,7 @@ const Generate = () => {
     if (!user) return;
     const { data: chosen, error: chosenError } = await supabase
       .from("assets")
-      .select("id,project_id,meta")
+      .select("id,project_id,meta,asset_type")
       .eq("id", designId)
       .eq("user_id", user.id)
       .is("deleted_at", null)
@@ -1017,7 +1017,13 @@ const Generate = () => {
       return;
     }
 
-    toast({ title: "Direction chosen", description: "Complete your brand kit to make this style reusable." });
+    const isLogo = ["logo", "logotype", "wordmark"].includes(String(chosen.asset_type || "").toLowerCase());
+    toast({
+      title: isLogo ? "Logo chosen — build your brand kit next" : "Direction chosen",
+      description: isLogo
+        ? "Rocket will use this logo for your colours, typography, voice and guidelines."
+        : "Complete your brand kit to make this style reusable.",
+    });
     const next = new URLSearchParams({ direction: chosen.id });
     if (chosen.project_id) next.set("project", chosen.project_id);
     nav(`/brands?${next.toString()}`);
@@ -1167,7 +1173,9 @@ const Generate = () => {
                     onClick={() => void useAsMyBrand(a.id)}
                     className="w-full border-t border-neutral-100 px-3 py-2 text-left text-xs font-medium text-brand hover:bg-brand/5"
                   >
-                    Choose this direction
+                    {["logo", "logotype", "wordmark"].includes(String(a.asset_type || "").toLowerCase())
+                      ? "Keep this logo & build my brand"
+                      : "Use this direction"}
                   </button>
                 </div>
               ))}
