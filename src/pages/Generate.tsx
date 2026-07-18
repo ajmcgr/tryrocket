@@ -83,7 +83,7 @@ function buildProjectBrandContext(project: any, assets: any[]) {
   return {
     ...base,
     productName: base.productName || project?.name,
-    url: base.url || project?.source_url || undefined,
+    url: base.url || undefined,
     logo: base.logo || logo?.thumbnail_url || logo?.image_url || undefined,
     colors: base.colors?.length ? base.colors : palette,
     fonts: base.fonts?.length ? base.fonts : typefaces,
@@ -526,7 +526,7 @@ const Generate = () => {
     (async () => {
       const { data } = await supabase
         .from("projects")
-        .select("id,name,source_url,created_at")
+        .select("id,name,created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (!cancelled) {
@@ -542,7 +542,7 @@ const Generate = () => {
     let cancelled = false;
     (async () => {
       const [projectResult, assetsResult] = await Promise.all([
-        supabase.from("projects").select("id,name,source_url").eq("id", projectId).eq("user_id", user.id).maybeSingle(),
+        supabase.from("projects").select("id,name").eq("id", projectId).eq("user_id", user.id).maybeSingle(),
         supabase.from("assets").select("asset_type,content,image_url,thumbnail_url,created_at").eq("project_id", projectId).is("deleted_at", null).order("created_at", { ascending: true }),
       ]);
       if (!cancelled) setProjectBrandContext(projectResult.data ? buildProjectBrandContext(projectResult.data, assetsResult.data || []) : null);
@@ -614,7 +614,7 @@ const Generate = () => {
           workspace_id: workspaceId,
           name,
         } as any)
-        .select("id,name,source_url,created_at")
+        .select("id,name,created_at")
         .single();
 
       if (error || !project?.id) throw error || new Error("Rocket couldn't create your brand.");
@@ -733,12 +733,12 @@ const Generate = () => {
       } else if (effectiveProjectId) {
         // Derive a minimal context from the project when no new URL was given.
         try {
-          const { data: proj } = await supabase.from("projects").select("name,source_url").eq("id", effectiveProjectId).maybeSingle();
+          const { data: proj } = await supabase.from("projects").select("name").eq("id", effectiveProjectId).maybeSingle();
           if (proj) {
             sharedCtx = {
               ...(sharedCtx || {}),
               productName: sharedCtx?.productName || proj.name || undefined,
-              url: sharedCtx?.url || proj.source_url || undefined,
+              url: sharedCtx?.url || undefined,
             };
           }
         } catch { /* noop */ }
@@ -896,12 +896,6 @@ const Generate = () => {
           }
           if (d?.asset_ids?.length) allIds.push(...d.asset_ids);
         }
-      }
-      // Persist the source URL when present. Rich brand context is stored on generated designs.
-      if (sharedCtx?.url && effectiveProjectId) {
-        try {
-          await supabase.from("projects").update({ source_url: sharedCtx.url }).eq("id", effectiveProjectId);
-        } catch { /* noop */ }
       }
       if (allIds.length === 0 && creditsErr) {
         setOutOfCredits({ needed: creditsErr.needed, remaining: creditsErr.remaining });

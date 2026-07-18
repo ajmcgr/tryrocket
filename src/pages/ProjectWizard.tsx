@@ -102,7 +102,6 @@ const ProjectWizard = () => {
       workspace_id,
       name: ctx.name.trim(),
       description: ctx.description.trim() || null,
-      source_url: ctx.url.trim() ? normalizeUrl(ctx.url) : null,
     } as any).select().single();
     if (error || !project) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); setRunning(false); return; }
 

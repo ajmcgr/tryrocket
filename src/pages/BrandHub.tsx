@@ -65,7 +65,7 @@ export default function BrandHub() {
       setLoading(true);
       const [{ data: a }, { data: p }] = await Promise.all([
         supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").order("created_at", { ascending: false }).limit(400),
-        supabase.from("projects").select("id,name,source_url").order("created_at", { ascending: false }).limit(50),
+        supabase.from("projects").select("id,name").order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
       const loadedProjects = p || [];
@@ -133,10 +133,7 @@ export default function BrandHub() {
   const completeBrandKit = async () => {
     if (!selectedProject || !user || completingKit || !missingEssentials.length) return;
     setCompletingKit(true);
-    const context = {
-      productName: selectedProject.name,
-      ...(selectedProject.source_url ? { url: selectedProject.source_url } : {}),
-    };
+    const context = { productName: selectedProject.name };
     const directionInstruction = selectedStyle
       ? `Use the chosen direction, “${selectedStyle.title || "Untitled design"}”, as the visual foundation. ${selectedStyle.prompt ? `Original brief: ${selectedStyle.prompt}` : ""}`
       : "";
