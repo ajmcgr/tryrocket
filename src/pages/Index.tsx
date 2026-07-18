@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const FAQS = [
-  { q: "What does Rocket actually generate?", a: "A complete brand system from a single URL or prompt: logos and logotypes, color palettes, typography, brand voice, launch copy, social posts, Product Hunt kits, email templates, and a full Brand Kit you can export or drop into any design." },
+  { q: "What does Rocket actually generate?", a: "Start with logo directions: a logo mark, matching logotype, icon, colours and typography. Choose a direction, refine it in the editor, then download your logo files or continue into a matching Brand Kit." },
   { q: "How is Rocket organized?", a: "Projects hold your designs, brand kit, and uploads. Designs are editable canvas files. The Brand Kit holds one canonical logo, palette, typeface, and more per project. Templates give you a starting point in one click." },
   { q: "How does the Brand Kit work?", a: "Each project has one canonical item per category (logo, colors, typography, design system…). Swap or remove any item — Remove moves it to Trash and you can restore within 30 days. Pull extras from any other project via '+ New'." },
   { q: "Can I edit designs like Canva?", a: "Yes. Multi-select (Shift-click + marquee), drag-resize, color overlays for logos and images, image uploads with resize, layers on the right, and export to PNG/SVG/PDF/ZIP. Brand colors appear as one-click swatches in the toolbar." },
@@ -149,16 +149,16 @@ const Index = () => {
   };
 
   const CATEGORIES = [
-    { label: "Brand Guidelines", slug: "brand-guidelines", Icon: BookMarked },
-    { label: "Brand Templates", slug: "brand-templates", Icon: LayoutTemplate },
     { label: "Logos", slug: "logos", Icon: Shapes },
+    { label: "Icons", slug: "icons", Icon: Puzzle },
+    { label: "Brand Templates", slug: "brand-templates", Icon: LayoutTemplate },
+    { label: "Brand Guidelines", slug: "brand-guidelines", Icon: BookMarked },
     { label: "Colors", slug: "colors", Icon: Palette },
     { label: "Fonts", slug: "fonts", Icon: TypeIcon },
     { label: "Brand voice", slug: "brand-voice", Icon: Mic },
     { label: "Photos", slug: "photos", Icon: ImageIcon },
     { label: "Components", slug: "components", Icon: Box },
     { label: "Graphics", slug: "graphics", Icon: Sparkle },
-    { label: "Icons", slug: "icons", Icon: Puzzle },
     { label: "Launch Copy", slug: "launch-copy", Icon: Megaphone },
   ];
 
@@ -201,11 +201,14 @@ const Index = () => {
           }}
         />
         <div className="mx-auto max-w-6xl px-6 pt-20 pb-24 text-center sm:pt-28 sm:pb-32">
-          <h1 className="mx-auto max-w-4xl text-4xl font-medium tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
-            Make Your Product a Brand
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand/5 px-3 py-1 text-xs font-semibold text-brand">
+            <Sparkles className="h-3.5 w-3.5" /> AI logo generator for founders
+          </div>
+          <h1 className="mx-auto mt-5 max-w-4xl text-4xl font-medium tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
+            Create a logo people remember.
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
-            Generate your logo, palette, typography, and a full Brand Kit — then design social posts, launch copy, and marketing materials in the Rocket editor. All in one workspace.
+            Turn a URL or idea into logo directions, a matching wordmark, icon, colours and typography. Pick a favourite, refine it, and download it — then build the brand kit around it.
           </p>
           <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl">
             <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
@@ -245,7 +248,7 @@ const Index = () => {
                 </button>
                 <input
                   type="text"
-                  placeholder="Paste your URL, describe your idea, or attach images..."
+                  placeholder="Paste your URL or describe the logo you need..."
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 outline-none"
@@ -253,15 +256,16 @@ const Index = () => {
                 <button
                   type="submit"
                   disabled={!url && images.length === 0}
-                  aria-label="Generate brand"
+                  aria-label="Generate logo directions"
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
                 >
                   <ArrowUp className="h-4 w-4" />
                 </button>
               </div>
             </div>
-            <p className="mt-2 text-center text-xs text-neutral-400">Enter to send · Shift+Enter for newline</p>
+            <p className="mt-2 text-center text-xs text-neutral-400">Generate 12 logo directions · Edit and download your favourite</p>
           </form>
+          <p className="mt-7 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">What should Rocket make first?</p>
           <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-1.5">
             {CATEGORIES.map((cat) => {
               const isActive = selected.includes(cat.slug);
@@ -283,9 +287,36 @@ const Index = () => {
               );
             })}
           </div>
+          <div className="mx-auto mt-6 flex flex-wrap justify-center gap-2 text-xs font-medium text-neutral-600">
+            {[
+              "Logo + logotype",
+              "App icon + favicon",
+              "PNG, SVG & PDF exports",
+            ].map((item) => (
+              <span key={item} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5">{item}</span>
+            ))}
+          </div>
           <div className="mt-12">
             <SenjaWidget />
           </div>
+        </div>
+      </section>
+
+      <section className="border-y border-neutral-200/60 bg-neutral-50/70">
+        <div className="mx-auto grid max-w-5xl gap-6 px-6 py-12 text-left sm:grid-cols-3">
+          {[
+            ["1", "Generate directions", "Get a logo mark, wordmark and icon concepts from one short brief."],
+            ["2", "Choose and refine", "Open a favourite in the editor to adjust type, colour, layout and more."],
+            ["3", "Download or build", "Export your logo pack, or turn the chosen direction into a complete Brand Kit."],
+          ].map(([number, title, description]) => (
+            <div key={number} className="flex gap-4">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-semibold text-white">{number}</span>
+              <div>
+                <h2 className="font-semibold text-neutral-900">{title}</h2>
+                <p className="mt-1 text-sm leading-relaxed text-neutral-600">{description}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -296,9 +327,9 @@ const Index = () => {
       <section id="use-cases" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-medium tracking-tight sm:text-5xl">What can you brand with Rocket?</h2>
+            <h2 className="text-4xl font-medium tracking-tight sm:text-5xl">Your logo first. Your brand kit next.</h2>
             <p className="mt-4 text-lg text-neutral-600">
-              From indie side projects to full SaaS launches — Rocket brands them all.
+              Choose one direction you love, then let it guide every launch asset that follows.
             </p>
           </div>
           <div className="mt-14 space-y-6">
@@ -568,12 +599,12 @@ const Index = () => {
       {/* CTA */}
       <section className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-4xl px-6 py-24 text-center">
-          <h2 className="text-3xl font-medium tracking-tight sm:text-5xl">Ready to launch?</h2>
+          <h2 className="text-3xl font-medium tracking-tight sm:text-5xl">Ready to make your logo?</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-neutral-600">
-            Create your first design in under 60 seconds.
+            Start with a logo direction. Build the rest of your brand when you are ready.
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link to="/signup">Sign up free <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/signup">Create your logo <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
       </section>
