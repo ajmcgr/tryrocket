@@ -625,7 +625,7 @@ const Editor = () => {
     if (serializedState === lastPersistedStateRef.current) return;
     setSaveStatus("saving");
     const t = setTimeout(async () => {
-      const thumbnail_url = assetMeta?.image_url ? null : await captureThumbnail();
+      const thumbnail_url = await captureThumbnail();
       const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString() };
       const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
@@ -637,7 +637,7 @@ const Editor = () => {
       setTimeout(() => setSaveStatus((s) => s === "saved" ? "idle" : s), 1500);
     }, 800);
     return () => clearTimeout(t);
-  }, [assetId, assetMeta?.image_url, assetMeta?.meta, autosaveTick, captureThumbnail, els]);
+  }, [assetId, assetMeta?.meta, autosaveTick, captureThumbnail, els]);
 
   useEffect(() => {
     if (!isRenamingTitle) setTitleDraft(displayTitle);
@@ -995,7 +995,7 @@ const Editor = () => {
     setSaveStatus("saving");
     if (assetId) {
       const serializedState = JSON.stringify(els);
-      const thumbnail_url = assetMeta?.image_url ? null : await captureThumbnail();
+      const thumbnail_url = await captureThumbnail();
       const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString() };
       const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;

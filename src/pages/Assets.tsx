@@ -100,15 +100,6 @@ const firstCanvasText = (value: unknown) => {
   return String(textElement?.text || "").trim();
 };
 
-const canvasHasNonImageElements = (value: unknown) => {
-  if (!Array.isArray(value)) return false;
-  return value.some((item) => {
-    if (!item || typeof item !== "object") return false;
-    const el = item as { kind?: string; visible?: boolean };
-    return el.visible !== false && typeof el.kind === "string" && el.kind !== "image";
-  });
-};
-
 const firstCanvasImage = (value: unknown) => {
   if (!Array.isArray(value)) return "";
   const image = value.find((item) => {
@@ -427,10 +418,11 @@ const Assets = () => {
   const DesignPreview = ({ asset }: { asset: DesignPreviewAsset }) => {
     const [rasterFailed, setRasterFailed] = useState(false);
     const isLogotype = isLogotypeState(asset?.editor_state);
-    const rasterPreview = asset.image_url || firstCanvasImage(asset.editor_state) || asset.thumbnail_url;
+    const isEditedCanvas = Array.isArray(asset?.editor_state) && hasRenderableCanvasElements(asset.editor_state);
+    const rasterPreview = asset.thumbnail_url || asset.image_url || firstCanvasImage(asset.editor_state);
     const fallbackLogotype = !isLogotype && isLogotypeLikeDesign(asset);
-    const isCanvas = !isLogotype && !fallbackLogotype && canvasHasNonImageElements(asset?.editor_state) && hasRenderableCanvasElements(asset?.editor_state);
-    const isImage = !!rasterPreview && !rasterFailed && !isLogotype && !fallbackLogotype && !isCanvas;
+    const isCanvas = !isLogotype && isEditedCanvas && !asset.thumbnail_url;
+    const isImage = !!rasterPreview && !rasterFailed && !isLogotype && (!fallbackLogotype || isEditedCanvas) && !isCanvas;
     const fallbackText = safePreviewText(asset);
     const brand = !isLogotype && !isCanvas && !fallbackLogotype && !isImage && isBrandAsset(asset);
 
