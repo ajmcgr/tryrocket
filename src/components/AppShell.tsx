@@ -7,7 +7,18 @@ import OnboardingTour from "./OnboardingTour";
 import NotificationsBell from "./NotificationsBell";
 import CommandPalette from "./CommandPalette";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
-import { Share2 } from "lucide-react";
+import {
+  FolderKanban,
+  Grid2X2,
+  Heart,
+  HelpCircle,
+  Palette,
+  PenTool,
+  Settings,
+  Share2,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -21,6 +32,21 @@ export type AppShellOutletContext = {
   setHeaderActions: (node: ReactNode | null) => void;
 };
 
+type StudioNavItem = {
+  label: string;
+  to: string;
+  icon: LucideIcon;
+  tour?: string;
+};
+
+const studioNav: StudioNavItem[] = [
+  { label: "Create", to: "/create", icon: Sparkles, tour: "nav-create" },
+  { label: "Designs", to: "/designs", icon: Grid2X2, tour: "nav-assets" },
+  { label: "Brand", to: "/brands", icon: Palette, tour: "nav-brand" },
+  { label: "Projects", to: "/projects", icon: FolderKanban },
+  { label: "Editor", to: "/editor", icon: PenTool },
+];
+
 const AppShell = () => {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
@@ -30,25 +56,84 @@ const AppShell = () => {
   const [headerCenter, setHeaderCenter] = useState<ReactNode | null>(null);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
 
-  const navItemClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-lg px-2.5 py-2 text-sm transition ${isActive
-      ? "bg-neutral-900 text-white"
-      : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"}`;
+  const railItemClass = ({ isActive }: { isActive: boolean }) =>
+    `group relative flex h-10 w-10 items-center justify-center rounded-xl transition ${isActive
+      ? "bg-neutral-900 text-white shadow-sm"
+      : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"}`;
 
   return (
-    <div className="app-shell min-h-screen bg-[#f7f8fb] text-neutral-900">
+    <div className="app-shell min-h-screen bg-[#f5f7fb] text-neutral-900">
+      <aside className="fixed inset-y-0 left-0 z-50 hidden w-[68px] flex-col items-center border-r border-neutral-200 bg-white py-3 lg:flex">
+        <Link
+          to="/create"
+          className="mb-7 flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-sm transition hover:bg-brand-hover"
+          aria-label="Rocket home"
+          title="Rocket home"
+        >
+          <Sparkles className="h-5 w-5" />
+        </Link>
+        <nav className="flex flex-col items-center gap-2" aria-label="Rocket studio">
+          {studioNav.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                data-tour={item.tour}
+                className={railItemClass}
+                aria-label={item.label}
+                title={item.label}
+              >
+                <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
+                <span className="pointer-events-none absolute left-12 hidden whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white shadow-lg group-hover:block">
+                  {item.label}
+                </span>
+              </NavLink>
+            );
+          })}
+        </nav>
+        <div className="mt-auto flex flex-col items-center gap-2">
+          <NavLink
+            to="/templates"
+            className={railItemClass}
+            aria-label="Templates"
+            title="Templates"
+          >
+            <Heart className="h-[18px] w-[18px]" strokeWidth={1.9} />
+          </NavLink>
+          <NavLink
+            to="/settings/profile"
+            className={railItemClass}
+            aria-label="Settings"
+            title="Settings"
+          >
+            <Settings className="h-[18px] w-[18px]" strokeWidth={1.9} />
+          </NavLink>
+          <Link
+            to="/faq"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950"
+            aria-label="Support"
+            title="Support"
+          >
+            <HelpCircle className="h-[18px] w-[18px]" strokeWidth={1.9} />
+          </Link>
+        </div>
+      </aside>
+      <div className="min-h-screen lg:pl-[68px]">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
-        <div className="relative flex h-14 w-full items-center px-4">
-          <Logo to="/create" className="shrink-0" />
-          <nav className="ml-7 hidden items-center gap-1 font-medium md:flex">
-            <NavLink data-tour="nav-create" to="/create" className={navItemClass}>Create</NavLink>
-            <NavLink data-tour="nav-assets" to="/designs" className={navItemClass}>Designs</NavLink>
-            <NavLink data-tour="nav-brand" to="/brands" className={navItemClass}>Brand</NavLink>
-            <NavLink to="/projects" className={navItemClass}>Projects</NavLink>
-            <NavLink to="/editor" className={navItemClass}>Editor</NavLink>
-            <NavLink to="/settings/profile" className={navItemClass}>Settings</NavLink>
-            <Link to="/faq" className="rounded-lg px-2.5 py-2 text-sm text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-950">Support</Link>
-          </nav>
+        <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
+          <Logo to="/create" size="sm" className="shrink-0" />
+          <div className="ml-4 hidden items-center gap-1 md:flex lg:hidden">
+            {studioNav.slice(0, 3).map((item) => (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={({ isActive }) => `rounded-lg px-2.5 py-2 text-sm font-medium transition ${isActive ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"}`}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
           <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden -translate-x-1/2 items-center justify-center md:flex">
             <div
               className="pointer-events-auto max-w-full px-4"
@@ -112,6 +197,7 @@ const AppShell = () => {
       <main className="w-full">
         <Outlet context={{ setHeaderCenter, setHeaderActions }} />
       </main>
+      </div>
     </div>
   );
 };

@@ -1022,7 +1022,7 @@ const Generate = () => {
     return list;
   })();
   return (
-    <div className={`flex min-h-[calc(100vh-4rem)] w-full flex-col ${isChatView ? "px-6 py-6" : "mx-auto max-w-3xl items-center px-6 py-12"}`}>
+    <div className={`flex min-h-[calc(100vh-4rem)] w-full flex-col ${isChatView ? "px-5 py-5 lg:px-8" : "mx-auto max-w-5xl items-center px-5 py-8 sm:px-8"}`}>
       {isChatView ? (
         <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
           {/* Left: chat panel */}
@@ -1202,10 +1202,15 @@ const Generate = () => {
         </section>
       ) : (
         <div className="flex w-full flex-1 flex-col items-center justify-center">
+          <section className="w-full rounded-[28px] border border-white/80 bg-white/75 p-5 shadow-[0_24px_70px_-38px_hsl(var(--foreground)/0.35)] backdrop-blur sm:p-8">
       <div className="mb-8 text-center">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+          <Sparkles className="h-3.5 w-3.5" />
+          Rocket studio
+        </div>
         <h1 className="text-4xl font-semibold tracking-tight text-neutral-900">Create a design</h1>
-        <p className="mt-2 text-sm text-neutral-500">
-          Describe what you need. Rocket routes to our AI and saves it as a design.
+        <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-500">
+          Start with a logo, icon or template. Rocket turns the direction you choose into a reusable brand system.
         </p>
       </div>
 
@@ -1367,6 +1372,7 @@ const Generate = () => {
           ))}
         </div>
       )}
+          </section>
         </div>
       )}
 
