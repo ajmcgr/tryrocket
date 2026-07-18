@@ -526,7 +526,7 @@ const Generate = () => {
     (async () => {
       const { data } = await supabase
         .from("projects")
-        .select("id,name,brand_context,source_url,created_at")
+        .select("id,name,source_url,created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (!cancelled) {
@@ -542,7 +542,7 @@ const Generate = () => {
     let cancelled = false;
     (async () => {
       const [projectResult, assetsResult] = await Promise.all([
-        supabase.from("projects").select("id,name,brand_context,source_url").eq("id", projectId).eq("user_id", user.id).maybeSingle(),
+        supabase.from("projects").select("id,name,source_url").eq("id", projectId).eq("user_id", user.id).maybeSingle(),
         supabase.from("assets").select("asset_type,content,image_url,thumbnail_url,created_at").eq("project_id", projectId).is("deleted_at", null).order("created_at", { ascending: true }),
       ]);
       if (!cancelled) setProjectBrandContext(projectResult.data ? buildProjectBrandContext(projectResult.data, assetsResult.data || []) : null);
@@ -613,9 +613,8 @@ const Generate = () => {
           user_id: user.id,
           workspace_id: workspaceId,
           name,
-          brand_context: { productName: name },
         } as any)
-        .select("id,name,brand_context,source_url,created_at")
+        .select("id,name,source_url,created_at")
         .single();
 
       if (error || !project?.id) throw error || new Error("Rocket couldn't create your brand.");
@@ -721,7 +720,7 @@ const Generate = () => {
           } catch { /* noop */ }
         }
       }
-      // Best-effort brand context: URL in prompt → scrape-url, else project.brand_context, else most recent asset context
+      // Best-effort brand context: URL in prompt → project details → most recent design context.
       let sharedCtx: any = activeBrandCtx || null;
       const urlMatch = p.match(/(https?:\/\/\S+|\b[\w-]+\.(?:com|ai|io|co|app|dev|net|org|xyz|so|gg|me)(?:\/\S*)?)/i);
       if (urlMatch) {
@@ -732,10 +731,16 @@ const Generate = () => {
           else sharedCtx = { url: u };
         } catch { sharedCtx = { url: u }; }
       } else if (effectiveProjectId) {
-        // Reuse stored project brand context if no new URL was given
+        // Derive a minimal context from the project when no new URL was given.
         try {
-          const { data: proj } = await supabase.from("projects").select("brand_context,source_url").eq("id", effectiveProjectId).maybeSingle();
-          if (proj?.brand_context) sharedCtx = proj.brand_context;
+          const { data: proj } = await supabase.from("projects").select("name,source_url").eq("id", effectiveProjectId).maybeSingle();
+          if (proj) {
+            sharedCtx = {
+              ...(sharedCtx || {}),
+              productName: sharedCtx?.productName || proj.name || undefined,
+              url: sharedCtx?.url || proj.source_url || undefined,
+            };
+          }
         } catch { /* noop */ }
       }
       if (!sharedCtx && chatAssets.length) {
@@ -892,13 +897,10 @@ const Generate = () => {
           if (d?.asset_ids?.length) allIds.push(...d.asset_ids);
         }
       }
-      // If we scraped a real brand and have a project, persist context to project for reuse
-      if (sharedCtx && effectiveProjectId && (sharedCtx.productName || sharedCtx.colors?.length)) {
+      // Persist the source URL when present. Rich brand context is stored on generated designs.
+      if (sharedCtx?.url && effectiveProjectId) {
         try {
-          const { data: proj } = await supabase.from("projects").select("brand_context").eq("id", effectiveProjectId).maybeSingle();
-          if (!proj?.brand_context) {
-            await supabase.from("projects").update({ brand_context: sharedCtx, source_url: sharedCtx.url || null }).eq("id", effectiveProjectId);
-          }
+          await supabase.from("projects").update({ source_url: sharedCtx.url }).eq("id", effectiveProjectId);
         } catch { /* noop */ }
       }
       if (allIds.length === 0 && creditsErr) {

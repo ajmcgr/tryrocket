@@ -1124,7 +1124,6 @@ const Editor = () => {
           user_id: current.user_id,
           workspace_id,
           name: name.trim(),
-          brand_context: current.meta?.brand_context || { productName: name.trim() },
         } as any)
         .select("id")
         .maybeSingle();

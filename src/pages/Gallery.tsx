@@ -60,7 +60,7 @@ const Gallery = () => {
       // If the column doesn't exist yet, we get an error and just render an empty state.
       const { data: projects, error } = await supabase
         .from("projects")
-        .select("id, name, description, brand_context, share_token, updated_at")
+        .select("id, name, description, share_token, updated_at")
         .eq("is_public_gallery", true)
         .not("share_token", "is", null)
         .order("updated_at", { ascending: false })
@@ -137,8 +137,8 @@ const Gallery = () => {
                 <div className="flex items-start justify-between gap-3 border-t border-neutral-100 p-4">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-neutral-900 group-hover:text-brand">{project.name}</div>
-                    {(project.description || project.brand_context?.tagline) && (
-                      <div className="mt-0.5 line-clamp-2 text-xs text-neutral-500">{project.description || project.brand_context?.tagline}</div>
+                    {project.description && (
+                      <div className="mt-0.5 line-clamp-2 text-xs text-neutral-500">{project.description}</div>
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
@@ -156,7 +156,7 @@ const Gallery = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const prompt = `Create a brand kit inspired by "${project.name}"${project.brand_context?.tagline ? ` — ${project.brand_context.tagline}` : ""}`;
+                        const prompt = `Create a brand kit inspired by "${project.name}"`;
                         window.location.href = `/create?prompt=${encodeURIComponent(prompt)}`;
                       }}
                       title="Remix this"

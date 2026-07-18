@@ -103,7 +103,6 @@ const ProjectWizard = () => {
       name: ctx.name.trim(),
       description: ctx.description.trim() || null,
       source_url: ctx.url.trim() ? normalizeUrl(ctx.url) : null,
-      brand_context: brandContext,
     } as any).select().single();
     if (error || !project) { toast({ title: "Failed", description: error?.message, variant: "destructive" }); setRunning(false); return; }
 
