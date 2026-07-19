@@ -185,7 +185,7 @@ export default function LogoFiles() {
             No logo saved for this project yet.
           </p>
           <Link
-            to="/create/generate"
+            to="/wizard"
             className="mt-3 inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand-hover"
           >
             Generate a logo

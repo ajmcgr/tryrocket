@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "./Logo";
@@ -20,6 +20,8 @@ import {
   Home,
   Wand2,
   Coins,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,9 +47,9 @@ type StudioNavItem = {
 
 const studioNav: StudioNavItem[] = [
   { label: "Home", to: "/create", icon: Home, tour: "nav-create" },
-  { label: "Wizard", to: "/create/generate", icon: Wand2, tour: "nav-wizard" },
   { label: "Logo Designer", to: "/logos", icon: Sparkles, tour: "nav-logos" },
   { label: "Icon Designer", to: "/icons", icon: Shapes, tour: "nav-icons" },
+  { label: "Wizard", to: "/wizard", icon: Wand2, tour: "nav-wizard" },
   { label: "Templates", to: "/templates", icon: LayoutTemplate, tour: "nav-templates" },
   { label: "Saved", to: "/saved", icon: Star, tour: "nav-saved" },
   { label: "Editor", to: "/editor", icon: PenTool, tour: "nav-editor" },
@@ -63,24 +65,47 @@ const AppShell = () => {
   const [headerLeft, setHeaderLeft] = useState<ReactNode | null>(null);
   const [headerCenter, setHeaderCenter] = useState<ReactNode | null>(null);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("rocket:sidebar-collapsed") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("rocket:sidebar-collapsed", collapsed ? "1" : "0");
+  }, [collapsed]);
 
   const sidebarItemClass = ({ isActive }: { isActive: boolean }) =>
-    `group flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition ${isActive
+    `group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium transition ${collapsed ? "justify-center px-0" : "px-3"} ${isActive
       ? "bg-neutral-900 text-white shadow-sm"
       : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"}`;
 
+  const sidebarWidth = collapsed ? 68 : 220;
+
   return (
     <div className="app-shell min-h-screen bg-[#f5f7fb] text-neutral-900">
-      <aside className="fixed inset-y-0 left-0 z-50 hidden w-[220px] flex-col border-r border-neutral-200 bg-white py-3 px-3 lg:flex">
+      <aside
+        className="fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-neutral-200 bg-white py-3 px-3 lg:flex transition-[width] duration-200"
+        style={{ width: sidebarWidth }}
+      >
         <Link
           to="/logos"
-          className="mb-6 flex h-10 w-full items-center gap-3 rounded-xl bg-brand px-3 text-brand-foreground shadow-sm transition hover:bg-brand-hover"
+          className={`mb-3 flex h-10 w-full items-center gap-3 rounded-xl bg-brand text-brand-foreground shadow-sm transition hover:bg-brand-hover ${collapsed ? "justify-center px-0" : "px-3"}`}
           aria-label="Logo Designer"
           title="Logo Designer"
         >
           <Sparkles className="h-5 w-5 shrink-0" />
-          <span className="text-sm font-medium">Logo Designer</span>
+          {!collapsed && <span className="text-sm font-medium">Logo Designer</span>}
         </Link>
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          className={`mb-3 flex h-9 w-full items-center gap-2 rounded-xl text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 ${collapsed ? "justify-center px-0" : "px-3"}`}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          {!collapsed && <span>Collapse</span>}
+        </button>
         <nav className="flex flex-col gap-1" aria-label="Rocket studio">
           {studioNav.map((item) => {
             const Icon = item.icon;
@@ -94,7 +119,7 @@ const AppShell = () => {
                 title={item.label}
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-                <span className="truncate">{item.label}</span>
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </NavLink>
             );
           })}
@@ -107,7 +132,7 @@ const AppShell = () => {
             title="Buy Credits"
           >
             <Coins className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-            <span className="truncate">Buy Credits</span>
+            {!collapsed && <span className="truncate">Buy Credits</span>}
           </NavLink>
           <NavLink
             to="/settings/profile"
@@ -116,20 +141,21 @@ const AppShell = () => {
             title="Settings"
           >
             <Settings className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-            <span className="truncate">Settings</span>
+            {!collapsed && <span className="truncate">Settings</span>}
           </NavLink>
           <a
             href="mailto:alex@tryrocket.ai"
-            className="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950"
+            className={`flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`}
             aria-label="Email support"
             title="Email support"
           >
             <HelpCircle className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-            <span className="truncate">Help</span>
+            {!collapsed && <span className="truncate">Help</span>}
           </a>
         </div>
       </aside>
-      <div className="min-h-screen lg:pl-[220px]">
+      <div className="min-h-screen transition-[padding] duration-200" style={{ paddingLeft: `var(--rocket-sidebar, 0px)` }}>
+        <style>{`@media (min-width: 1024px){.app-shell{--rocket-sidebar:${sidebarWidth}px}}`}</style>
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
           <Logo to="/create" size="md" className="shrink-0" />

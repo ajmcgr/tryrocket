@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { LayoutGrid, Package, Sparkles as SparklesIcon, Palette } from "lucide-react";
+import { Wand2, LayoutTemplate, Sparkles as SparklesIcon, Shapes } from "lucide-react";
 
 /**
  * Logged-in landing page — four big colored cards routing to Rocket's
@@ -10,12 +10,12 @@ const HomeHub = () => {
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10 sm:px-6">
       <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
         <HubCard
-          to="/create/generate"
+          to="/wizard"
           title="Wizard"
           subtitle="Auto-generate hundreds of logos"
           bg="bg-[#7B8CF7]"
           hover="hover:bg-[#6B7CE7]"
-          icon={<LayoutGrid className="h-6 w-6" />}
+          icon={<Wand2 className="h-6 w-6" />}
         />
         <HubCard
           to="/templates"
@@ -23,7 +23,7 @@ const HomeHub = () => {
           subtitle="Start from a logo template"
           bg="bg-[#4CD9A0]"
           hover="hover:bg-[#3AC48D]"
-          icon={<Package className="h-6 w-6" />}
+          icon={<LayoutTemplate className="h-6 w-6" />}
         />
         <HubCard
           to="/logos"
@@ -31,7 +31,7 @@ const HomeHub = () => {
           subtitle="Design a logo from a brief"
           bg="bg-[#1676e3]"
           hover="hover:bg-[#1268c9]"
-          icon={<Palette className="h-6 w-6" />}
+          icon={<SparklesIcon className="h-6 w-6" />}
         />
         <HubCard
           to="/icons"
@@ -39,7 +39,7 @@ const HomeHub = () => {
           subtitle="Prompt to create a unique icon"
           bg="bg-[#EE5FA6]"
           hover="hover:bg-[#E14C97]"
-          icon={<SparklesIcon className="h-6 w-6" />}
+          icon={<Shapes className="h-6 w-6" />}
         />
       </div>
     </div>
