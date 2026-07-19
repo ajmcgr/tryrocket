@@ -318,6 +318,7 @@ export default function BrandLayout() {
       );
 
       // --- Brand Book ---
+      const brandBookFolder = zip.folder("brand-book")!;
       const brandBook = [
         `# ${brandName} — Brand Book`,
         "",
@@ -337,7 +338,18 @@ export default function BrandLayout() {
         "- Do not stretch, recolor, or rotate the logo.",
         "- Use the inverse variant on dark or photographic backgrounds.",
       ].join("\n");
-      zip.folder("brand-book")!.file("brand-book.md", `${brandBook}\n`);
+      brandBookFolder.file("brand-book.md", `${brandBook}\n`);
+
+      // --- Brand Book exports ---
+      try {
+        const bbCanvas = await buildBrandBookCanvas();
+        const bbPng = await new Promise<Blob | null>((resolve) =>
+          bbCanvas.toBlob((b) => resolve(b), "image/png"),
+        );
+        if (bbPng) brandBookFolder.file("brand-book.png", bbPng);
+        const bbPdf = await buildBrandBookPdfBlob(bbCanvas);
+        brandBookFolder.file("brand-book.pdf", bbPdf);
+      } catch {}
 
       // --- README ---
       zip.file(
@@ -347,10 +359,10 @@ export default function BrandLayout() {
           `Generated ${new Date().toISOString()}`,
           "",
           "Contents:",
-          `  /logo-files    ${logoCount} file(s)`,
+          `  /logo-files    ${logoCount} file(s) + logo variants`,
           `  /palette       palette.txt`,
           `  /fonts         fonts.txt`,
-          `  /brand-book    brand-book.md`,
+          `  /brand-book    brand-book.md, brand-book.png, brand-book.pdf`,
           otherCount ? `  /assets        ${otherCount} file(s)` : "",
         ].filter(Boolean).join("\n") + "\n",
       );
