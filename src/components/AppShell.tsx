@@ -19,6 +19,7 @@ import {
   LayoutTemplate,
   Star,
   Home,
+  Wand2,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,10 +44,11 @@ type StudioNavItem = {
 
 const studioNav: StudioNavItem[] = [
   { label: "Home", to: "/create", icon: Home, tour: "nav-create" },
-  { label: "Generate", to: "/create/generate", icon: Sparkles },
+  { label: "Wizard", to: "/create/generate", icon: Wand2 },
+  { label: "Logo Designer", to: "/logos", icon: Sparkles },
   { label: "Icon Designer", to: "/icons", icon: Shapes },
   { label: "Templates", to: "/templates", icon: LayoutTemplate },
-  { label: "Saved Logos", to: "/logos", icon: Star },
+  { label: "Saved", to: "/saved", icon: Star },
   { label: "Editor", to: "/editor", icon: PenTool },
   { label: "Projects", to: "/projects", icon: FolderKanban },
   { label: "Brand Kit", to: "/brands", icon: Palette, tour: "nav-brand" },
@@ -70,10 +72,10 @@ const AppShell = () => {
     <div className="app-shell min-h-screen bg-[#f5f7fb] text-neutral-900">
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-[68px] flex-col items-center border-r border-neutral-200 bg-white py-3 lg:flex">
         <Link
-          to="/create"
+          to="/logos"
           className="mb-7 flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-sm transition hover:bg-brand-hover"
-          aria-label="Rocket home"
-          title="Rocket home"
+          aria-label="Logo Designer"
+          title="Logo Designer"
         >
           <Sparkles className="h-5 w-5" />
         </Link>

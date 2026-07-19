@@ -18,6 +18,7 @@ import CreateEntry from "./pages/CreateEntry.tsx";
 import LogoStudio from "./pages/LogoStudio.tsx";
 import SavedLogos from "./pages/SavedLogos.tsx";
 import IconDesigner from "./pages/IconDesigner.tsx";
+import LogoDesigner from "./pages/LogoDesigner.tsx";
 import Editor from "./pages/Editor.tsx";
 import Presenter from "./pages/Presenter.tsx";
 import Assets from "./pages/Assets.tsx";
@@ -144,7 +145,8 @@ const App = () => (
               <Route path="/create" element={<CreateEntry />} />
               <Route path="/create/generate" element={<LogoStudio />} />
               <Route path="/create/chat" element={<Generate />} />
-              <Route path="/logos" element={<SavedLogos />} />
+              <Route path="/saved" element={<SavedLogos />} />
+              <Route path="/logos" element={<LogoDesigner />} />
               <Route path="/icons" element={<IconDesigner />} />
               <Route path="/editor" element={<Editor />} />
               <Route path="/present" element={<Presenter />} />
