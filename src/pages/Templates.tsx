@@ -14,6 +14,7 @@ import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
 import { matchesDesignQuery, rankDesignsByRelevance } from "@/lib/searchRelevance";
+import { SEED_TEMPLATES } from "@/lib/seedTemplates";
 
 const supabase = _sb as any;
 
@@ -72,9 +73,10 @@ const Templates = () => {
       if (!cancelled) {
         if (error) {
           console.error(error);
-          setDesigns([]);
+          setDesigns([...SEED_TEMPLATES]);
         } else {
-          setDesigns(data || []);
+          // Merge live public designs first, then seed catalog so users always see 200+.
+          setDesigns([...(data || []), ...SEED_TEMPLATES]);
         }
         setLoading(false);
       }
