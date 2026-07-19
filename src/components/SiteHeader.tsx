@@ -63,7 +63,7 @@ const SiteHeader = () => {
   return (
     <header className={`sticky z-50 bg-white/80 backdrop-blur-xl transition-[top] duration-200 ${scrolled ? "top-0" : "top-2"}`}>
       <div className="relative mx-auto flex h-16 max-w-4xl items-center px-6">
-        <Logo size="lg" />
+        <Logo size="md" />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
           {user ? (
             <>
