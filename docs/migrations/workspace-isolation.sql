@@ -71,18 +71,26 @@ DO $$ BEGIN
 END $$;
 
 -- 3) Security-definer helpers -----------------------------------------------
--- Keep legacy argument names (_ws, _uid) so CREATE OR REPLACE works on
--- projects where this helper already exists. Postgres does not allow changing
--- function input parameter names without dropping dependent policies first.
-CREATE OR REPLACE FUNCTION public.is_workspace_member(_ws uuid, _uid uuid)
+-- Drop policies first so existing helpers can be safely recreated even if an
+-- older migration used different parameter names. Postgres cannot rename input
+-- parameters with CREATE OR REPLACE FUNCTION.
+DROP POLICY IF EXISTS "assets_workspace_read"   ON public.assets;
+DROP POLICY IF EXISTS "assets_workspace_write"  ON public.assets;
+
+DROP FUNCTION IF EXISTS public.is_workspace_member(uuid, uuid);
+DROP FUNCTION IF EXISTS public.has_pro_plan(uuid);
+DROP FUNCTION IF EXISTS public.create_workspace(text);
+DROP FUNCTION IF EXISTS public.purge_old_trash();
+
+CREATE FUNCTION public.is_workspace_member(_workspace_id uuid, _user_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspace_members
-    WHERE workspace_id = _ws AND user_id = _uid
+    WHERE workspace_id = _workspace_id AND user_id = _user_id
   );
 $$;
 
-CREATE OR REPLACE FUNCTION public.has_pro_plan(_user_id uuid)
+CREATE FUNCTION public.has_pro_plan(_user_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.subscriptions
@@ -94,8 +102,6 @@ $$;
 
 -- 4) RLS policies: scope reads/writes to workspace members -------------------
 -- Example for assets; repeat pattern for projects, chats, notifications, folders.
-DROP POLICY IF EXISTS "assets_workspace_read"   ON public.assets;
-DROP POLICY IF EXISTS "assets_workspace_write"  ON public.assets;
 CREATE POLICY "assets_workspace_read" ON public.assets FOR SELECT TO authenticated
   USING (workspace_id IS NULL AND user_id = auth.uid()
       OR workspace_id IS NOT NULL AND public.is_workspace_member(workspace_id, auth.uid()));
@@ -105,7 +111,7 @@ CREATE POLICY "assets_workspace_write" ON public.assets FOR ALL TO authenticated
   WITH CHECK (user_id = auth.uid());
 
 -- 5) Pro-only workspace creation --------------------------------------------
-CREATE OR REPLACE FUNCTION public.create_workspace(_name text)
+CREATE FUNCTION public.create_workspace(_name text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE new_id uuid;
 BEGIN
@@ -118,7 +124,7 @@ BEGIN
 END $$;
 
 -- 6) Auto-purge trash > 30 days (cron via pg_cron or invoked from edge fn) ---
-CREATE OR REPLACE FUNCTION public.purge_old_trash()
+CREATE FUNCTION public.purge_old_trash()
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE n1 int; n2 int;
 BEGIN
