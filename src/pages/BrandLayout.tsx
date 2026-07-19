@@ -375,7 +375,7 @@ export default function BrandLayout() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-      const total = logoCount + otherCount + 3; // + palette, fonts, brand book
+      const total = logoCount + otherCount + 5 + (primaryLogoUrl ? 3 : 0); // palette, fonts, md/png/pdf brand book + logo variants
       toast({ title: "Brand kit downloaded", description: `${total} files packed.` });
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
