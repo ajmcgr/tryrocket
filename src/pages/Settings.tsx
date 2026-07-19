@@ -327,21 +327,6 @@ export const AccountSettings = () => {
   return (
     <div className="space-y-6">
     <section className="rounded-2xl border border-neutral-200 bg-white p-6">
-      <h2 className="text-base font-semibold">Refer a founder, earn credits</h2>
-      <p className="mt-1 text-sm text-neutral-600">Both of you get <span className="font-medium">100 credits</span> — you when they make their first paid purchase, they on signup.</p>
-      {refUrl ? (
-        <div className="mt-4 flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-2">
-          <span className="flex-1 truncate font-mono text-xs text-neutral-800">{refUrl}</span>
-          <button onClick={copyRef} className="rounded-md border border-neutral-200 bg-white px-3 py-1 text-xs hover:bg-neutral-100">Copy</button>
-        </div>
-      ) : (
-        <button onClick={generateCode} disabled={creatingCode} className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-60">
-          {creatingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate my link"}
-        </button>
-      )}
-      {refCount > 0 && <p className="mt-3 text-xs text-neutral-500">{refCount} friend{refCount === 1 ? "" : "s"} joined with your link.</p>}
-    </section>
-    <section className="rounded-2xl border border-neutral-200 bg-white p-6">
       <h2 className="text-base font-semibold">Trash</h2>
       <p className="mt-1 text-sm text-neutral-600">Recently deleted projects and designs live here for 30 days.</p>
       <button onClick={() => nav("/trash")} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50">Open Trash</button>
