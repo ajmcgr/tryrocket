@@ -87,7 +87,7 @@ const AppShell = () => {
 
   return (
     <div className="app-shell min-h-screen bg-[#f5f7fb] font-body text-neutral-900">
-      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.06)]">
+      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white">
         <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
           <Logo to="/create" size="md" className="shrink-0" />
           {headerLeft && <div className="ml-2 flex shrink-0 items-center gap-2">{headerLeft}</div>}
