@@ -71,11 +71,14 @@ DO $$ BEGIN
 END $$;
 
 -- 3) Security-definer helpers -----------------------------------------------
-CREATE OR REPLACE FUNCTION public.is_workspace_member(_workspace_id uuid, _user_id uuid)
+-- Keep legacy argument names (_ws, _uid) so CREATE OR REPLACE works on
+-- projects where this helper already exists. Postgres does not allow changing
+-- function input parameter names without dropping dependent policies first.
+CREATE OR REPLACE FUNCTION public.is_workspace_member(_ws uuid, _uid uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspace_members
-    WHERE workspace_id = _workspace_id AND user_id = _user_id
+    WHERE workspace_id = _ws AND user_id = _uid
   );
 $$;
 
