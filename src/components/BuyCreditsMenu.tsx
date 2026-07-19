@@ -93,8 +93,8 @@ export default function BuyCreditsMenu({ collapsed }: Props) {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        side="right"
-        align="end"
+        side="top"
+        align="start"
         sideOffset={8}
         avoidCollisions
         className="w-60 rounded-xl border border-neutral-200 bg-white p-0 font-body shadow-xl"
