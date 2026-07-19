@@ -2349,6 +2349,7 @@ type QuickEditProps = {
   fonts: string[];
   bg: string;
   setBg: (c: string) => void;
+  touchAutosave: () => void;
   update: (id: string, patch: Partial<El>, opts?: { history?: boolean }) => void;
   setEls: (updater: El[] | ((prev: El[]) => El[]), opts?: { history?: boolean; autosave?: boolean }) => void;
   addText: () => void;
@@ -2358,30 +2359,50 @@ type QuickEditProps = {
   onClose: () => void;
 };
 
-function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn, qeOpen, toggleQe, onClose }: QuickEditProps) {
+function QuickEditPanel({ els, fonts, bg, setBg, touchAutosave, update, setEls, addText, uidFn, qeOpen, toggleQe, onClose }: QuickEditProps) {
   const texts = els.filter((e) => e.kind === "text") as TextEl[];
   const title = texts[0];
   const slogan = texts[1];
   const icon = els.find((e) => e.kind === "image") as ImgEl | undefined;
 
   const setLayout = (mode: "icon-top" | "icon-left" | "icon-right" | "text-only") => {
-    if (!title && !icon) return;
-    setEls((prev) => prev.map((e) => {
-      if (icon && e.id === icon.id) {
+    setEls((prev) => {
+      const next = [...prev];
+      let currentTitle = next.find((e) => e.kind === "text") as TextEl | undefined;
+      let currentIcon = next.find((e) => e.kind === "image") as ImgEl | undefined;
+
+      if (!currentTitle) {
+        currentTitle = {
+          id: uidFn(), kind: "text", x: STAGE_W / 2 - 180, y: STAGE_H / 2 - 38, w: 360, h: 76,
+          visible: true, locked: false, text: "Your brand", color: "#111111", fontSize: 56, fontWeight: 700, fontFamily: "Inter", align: "center",
+        } as TextEl;
+        next.push(currentTitle);
+      }
+      if (mode !== "text-only" && !currentIcon) {
+        currentIcon = {
+          id: uidFn(), kind: "image", x: STAGE_W / 2 - 70, y: 130, w: 140, h: 140,
+          visible: true, locked: false, src: makeLibraryIconDataUrl("Rocket"), color: "#0F172A",
+        } as ImgEl;
+        next.push(currentIcon);
+      }
+
+      return next.map((e) => {
+      if (currentIcon && e.id === currentIcon.id) {
         if (mode === "icon-top") return { ...e, x: STAGE_W / 2 - e.w / 2, y: 120 } as ImgEl;
         if (mode === "icon-left") return { ...e, x: 180, y: STAGE_H / 2 - e.h / 2 } as ImgEl;
         if (mode === "icon-right") return { ...e, x: STAGE_W - 180 - e.w, y: STAGE_H / 2 - e.h / 2 } as ImgEl;
         if (mode === "text-only") return { ...e, visible: false } as ImgEl;
       }
-      if (title && e.id === title.id) {
+      if (currentTitle && e.id === currentTitle.id) {
         if (mode === "icon-top") return { ...e, x: STAGE_W / 2 - e.w / 2, y: 340, align: "center" } as TextEl;
         if (mode === "icon-left") return { ...e, x: 320, y: STAGE_H / 2 - e.h / 2, align: "left" } as TextEl;
         if (mode === "icon-right") return { ...e, x: 100, y: STAGE_H / 2 - e.h / 2, align: "right" } as TextEl;
         if (mode === "text-only") return { ...e, x: STAGE_W / 2 - e.w / 2, y: STAGE_H / 2 - e.h / 2, align: "center" } as TextEl;
       }
-      if (icon && mode === "text-only" && e.id === icon.id) return { ...e } as El;
+      if (currentIcon && mode === "text-only" && e.id === currentIcon.id) return { ...e } as El;
       return e;
-    }));
+      });
+    });
   };
 
   const addSlogan = () => {
@@ -2395,14 +2416,9 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
 
   const setBgAndPersist = (c: string) => {
     setBg(c);
+    touchAutosave();
     try { localStorage.setItem("rocket.editor.bg.v1", c); } catch {}
   };
-
-  const Section = ({ id, label, tone, children }: { id: string; label: string; tone: string; children: ReactNode }) => (
-    <QeSection id={id} label={label} tone={tone} open={!!qeOpen[id]} onToggle={() => toggleQe(id)}>
-      {children}
-    </QeSection>
-  );
 
   return (
     <aside className="hidden w-[17rem] min-w-[17rem] shrink-0 overflow-y-auto border-r border-neutral-200/80 bg-neutral-50/70 p-3 md:block">
@@ -2413,7 +2429,7 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
         </button>
       </div>
       <div className="space-y-2">
-        <Section id="title" label="Title" tone="bg-[#6C7BF4]">
+        <QeSection id="title" label="Title" tone="bg-[#6C7BF4]" open={!!qeOpen.title} onToggle={() => toggleQe("title")}>
           {title ? (
             <>
               <label className="block text-[11px] font-medium text-neutral-600">Logo Text</label>
@@ -2463,9 +2479,9 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
           ) : (
             <button onClick={addText} className="w-full rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-50">+ Add title</button>
           )}
-        </Section>
+        </QeSection>
 
-        <Section id="slogan" label="Slogan" tone="bg-[#6C7BF4]">
+        <QeSection id="slogan" label="Slogan" tone="bg-[#6C7BF4]" open={!!qeOpen.slogan} onToggle={() => toggleQe("slogan")}>
           {slogan ? (
             <>
               <textarea value={slogan.text} onChange={(e) => update(slogan.id, { text: e.target.value } as any)} rows={2} className="w-full resize-y rounded-md border border-neutral-200 px-2 py-1.5 text-sm" />
@@ -2481,9 +2497,9 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
           ) : (
             <button onClick={addSlogan} className="w-full rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-50">+ Add slogan</button>
           )}
-        </Section>
+        </QeSection>
 
-        <Section id="icon" label="Icon" tone="bg-[#EC5AA6]">
+        <QeSection id="icon" label="Icon" tone="bg-[#EC5AA6]" open={!!qeOpen.icon} onToggle={() => toggleQe("icon")}>
           <IconPicker
             label={icon ? "Replace icon" : "+ Add icon from library"}
             onPick={(svgDataUrl) => {
@@ -2521,9 +2537,9 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
           ) : (
             <p className="text-xs text-neutral-500">Pick an icon above, or add an image from the top toolbar.</p>
           )}
-        </Section>
+        </QeSection>
 
-        <Section id="layout" label="Layout" tone="bg-[#22C58C]">
+        <QeSection id="layout" label="Layout" tone="bg-[#22C58C]" open={!!qeOpen.layout} onToggle={() => toggleQe("layout")}>
           <div className="grid grid-cols-2 gap-2">
             {([
               ["icon-top", "Icon top"],
@@ -2534,9 +2550,9 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
               <button key={id} onClick={() => setLayout(id)} className="rounded-md border border-neutral-200 bg-white px-2 py-2 text-xs text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50">{label}</button>
             ))}
           </div>
-        </Section>
+        </QeSection>
 
-        <Section id="background" label="Background" tone="bg-neutral-500">
+        <QeSection id="background" label="Background" tone="bg-neutral-500" open={!!qeOpen.background} onToggle={() => toggleQe("background")}>
           <div className="flex items-center gap-2">
             <input type="color" value={bg} onChange={(e) => setBgAndPersist(e.target.value)} className="h-9 w-14 cursor-pointer rounded-md border border-neutral-200" />
             <input value={bg} onChange={(e) => setBgAndPersist(e.target.value)} className="flex-1 rounded-md border border-neutral-200 px-2 py-1.5 text-sm font-mono" />
@@ -2546,7 +2562,7 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
               <button key={c} onClick={() => setBgAndPersist(c)} className="h-6 w-6 rounded-md border border-neutral-200" style={{ background: c }} title={c} />
             ))}
           </div>
-        </Section>
+        </QeSection>
       </div>
     </aside>
   );
