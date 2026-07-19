@@ -2317,6 +2317,208 @@ const Inspector = ({ el, fonts, onChange }: { el: El; fonts: string[]; onChange:
 
 export default Editor;
 
+type QuickEditProps = {
+  els: El[];
+  fonts: string[];
+  bg: string;
+  setBg: (c: string) => void;
+  update: (id: string, patch: Partial<El>, opts?: { history?: boolean }) => void;
+  setEls: (updater: El[] | ((prev: El[]) => El[]), opts?: { history?: boolean; autosave?: boolean }) => void;
+  addText: () => void;
+  uidFn: () => string;
+  qeOpen: Record<string, boolean>;
+  toggleQe: (k: string) => void;
+  onClose: () => void;
+};
+
+function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn, qeOpen, toggleQe, onClose }: QuickEditProps) {
+  const texts = els.filter((e) => e.kind === "text") as TextEl[];
+  const title = texts[0];
+  const slogan = texts[1];
+  const icon = els.find((e) => e.kind === "image") as ImgEl | undefined;
+
+  const setLayout = (mode: "icon-top" | "icon-left" | "icon-right" | "text-only") => {
+    if (!title && !icon) return;
+    setEls((prev) => prev.map((e) => {
+      if (icon && e.id === icon.id) {
+        if (mode === "icon-top") return { ...e, x: STAGE_W / 2 - e.w / 2, y: 120 } as ImgEl;
+        if (mode === "icon-left") return { ...e, x: 180, y: STAGE_H / 2 - e.h / 2 } as ImgEl;
+        if (mode === "icon-right") return { ...e, x: STAGE_W - 180 - e.w, y: STAGE_H / 2 - e.h / 2 } as ImgEl;
+        if (mode === "text-only") return { ...e, visible: false } as ImgEl;
+      }
+      if (title && e.id === title.id) {
+        if (mode === "icon-top") return { ...e, x: STAGE_W / 2 - e.w / 2, y: 340, align: "center" } as TextEl;
+        if (mode === "icon-left") return { ...e, x: 320, y: STAGE_H / 2 - e.h / 2, align: "left" } as TextEl;
+        if (mode === "icon-right") return { ...e, x: 100, y: STAGE_H / 2 - e.h / 2, align: "right" } as TextEl;
+        if (mode === "text-only") return { ...e, x: STAGE_W / 2 - e.w / 2, y: STAGE_H / 2 - e.h / 2, align: "center" } as TextEl;
+      }
+      if (icon && mode === "text-only" && e.id === icon.id) return { ...e } as El;
+      return e;
+    }));
+  };
+
+  const addSlogan = () => {
+    const el: TextEl = {
+      id: uidFn(), kind: "text", x: 260, y: title ? title.y + title.h + 8 : 380, w: 280, h: 32,
+      visible: true, locked: false,
+      text: "Your slogan here", color: "#555555", fontSize: 18, fontWeight: 400, fontFamily: title?.fontFamily || "Inter", align: title?.align || "left",
+    };
+    setEls((prev) => [...prev, el]);
+  };
+
+  const setBgAndPersist = (c: string) => {
+    setBg(c);
+    try { localStorage.setItem("rocket.editor.bg.v1", c); } catch {}
+  };
+
+  const Section = ({ id, label, tone, children }: { id: string; label: string; tone: string; children: ReactNode }) => (
+    <div className="rounded-2xl border border-white/80 bg-white/95 shadow-sm">
+      <button
+        type="button"
+        onClick={() => toggleQe(id)}
+        className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold text-white ${tone}`}
+      >
+        <span>{label}</span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${qeOpen[id] ? "rotate-180" : ""}`} />
+      </button>
+      {qeOpen[id] && <div className="space-y-2.5 p-3">{children}</div>}
+    </div>
+  );
+
+  return (
+    <aside className="hidden w-[17rem] min-w-[17rem] shrink-0 overflow-y-auto border-r border-neutral-200/80 bg-neutral-50/70 p-3 md:block">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <p className="text-sm font-semibold text-neutral-900">Quick Edit</p>
+        <button onClick={onClose} title="Hide panel" className="rounded-md p-1 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-900">
+          <CloseIcon className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="space-y-2">
+        <Section id="title" label="Title" tone="bg-[#6C7BF4]">
+          {title ? (
+            <>
+              <label className="block text-[11px] font-medium text-neutral-600">Logo Text</label>
+              <textarea
+                value={title.text}
+                onChange={(e) => update(title.id, { text: e.target.value } as any)}
+                rows={2}
+                className="w-full resize-y rounded-md border border-neutral-200 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
+              />
+              <label className="block text-[11px] font-medium text-neutral-600">Font</label>
+              <input
+                list={FONT_DATALIST_ID}
+                value={title.fontFamily}
+                onChange={(e) => {
+                  const nextFont = e.target.value;
+                  if (fonts.includes(nextFont) || DEFAULT_FONTS.includes(nextFont)) {
+                    loadGoogleFont(nextFont, [400, 500, 600, 700, 800]);
+                  }
+                  update(title.id, { fontFamily: nextFont } as any);
+                }}
+                className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm"
+                placeholder="Search fonts"
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-medium text-neutral-600">Color</span>
+                <input type="color" value={title.color} onChange={(e) => update(title.id, { color: e.target.value } as any)} className="h-8 w-12 cursor-pointer rounded-md border border-neutral-200" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium text-neutral-600">Size</span>
+                  <input type="number" value={title.fontSize} onChange={(e) => update(title.id, { fontSize: +e.target.value } as any)} className="w-full rounded-md border border-neutral-200 px-2 py-1 text-sm" />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium text-neutral-600">Weight</span>
+                  <input type="number" step={100} min={100} max={900} value={title.fontWeight} onChange={(e) => update(title.id, { fontWeight: +e.target.value } as any)} className="w-full rounded-md border border-neutral-200 px-2 py-1 text-sm" />
+                </label>
+              </div>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium text-neutral-600">Align</span>
+                <div className="flex gap-1">
+                  {(["left","center","right"] as const).map((a) => (
+                    <button key={a} onClick={() => update(title.id, { align: a } as any)} className={`flex-1 rounded-md border px-2 py-1 text-xs capitalize ${title.align === a ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}>{a}</button>
+                  ))}
+                </div>
+              </label>
+            </>
+          ) : (
+            <button onClick={addText} className="w-full rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-50">+ Add title</button>
+          )}
+        </Section>
+
+        <Section id="slogan" label="Slogan" tone="bg-[#6C7BF4]">
+          {slogan ? (
+            <>
+              <textarea value={slogan.text} onChange={(e) => update(slogan.id, { text: e.target.value } as any)} rows={2} className="w-full resize-y rounded-md border border-neutral-200 px-2 py-1.5 text-sm" />
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-medium text-neutral-600">Color</span>
+                <input type="color" value={slogan.color} onChange={(e) => update(slogan.id, { color: e.target.value } as any)} className="h-8 w-12 cursor-pointer rounded-md border border-neutral-200" />
+                <label className="ml-auto block">
+                  <span className="sr-only">Size</span>
+                  <input type="number" value={slogan.fontSize} onChange={(e) => update(slogan.id, { fontSize: +e.target.value } as any)} className="w-20 rounded-md border border-neutral-200 px-2 py-1 text-sm" />
+                </label>
+              </div>
+            </>
+          ) : (
+            <button onClick={addSlogan} className="w-full rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-50">+ Add slogan</button>
+          )}
+        </Section>
+
+        <Section id="icon" label="Icon" tone="bg-[#EC5AA6]">
+          {icon ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-medium text-neutral-600">Overlay</span>
+                <input type="color" value={icon.color || "#000000"} onChange={(e) => update(icon.id, { color: e.target.value } as any)} className="h-8 w-12 cursor-pointer rounded-md border border-neutral-200" />
+                {icon.color && (
+                  <button onClick={() => update(icon.id, { color: undefined } as any)} className="ml-auto text-[11px] text-neutral-500 hover:text-neutral-900">Clear</button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium text-neutral-600">Width</span>
+                  <input type="number" value={Math.round(icon.w)} onChange={(e) => update(icon.id, { w: +e.target.value } as any)} className="w-full rounded-md border border-neutral-200 px-2 py-1 text-sm" />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium text-neutral-600">Height</span>
+                  <input type="number" value={Math.round(icon.h)} onChange={(e) => update(icon.id, { h: +e.target.value } as any)} className="w-full rounded-md border border-neutral-200 px-2 py-1 text-sm" />
+                </label>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-neutral-500">Add an image from the top toolbar to use as an icon.</p>
+          )}
+        </Section>
+
+        <Section id="layout" label="Layout" tone="bg-[#22C58C]">
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              ["icon-top", "Icon top"],
+              ["icon-left", "Icon left"],
+              ["icon-right", "Icon right"],
+              ["text-only", "Text only"],
+            ] as const).map(([id, label]) => (
+              <button key={id} onClick={() => setLayout(id)} className="rounded-md border border-neutral-200 bg-white px-2 py-2 text-xs text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50">{label}</button>
+            ))}
+          </div>
+        </Section>
+
+        <Section id="background" label="Background" tone="bg-neutral-500">
+          <div className="flex items-center gap-2">
+            <input type="color" value={bg} onChange={(e) => setBgAndPersist(e.target.value)} className="h-9 w-14 cursor-pointer rounded-md border border-neutral-200" />
+            <input value={bg} onChange={(e) => setBgAndPersist(e.target.value)} className="flex-1 rounded-md border border-neutral-200 px-2 py-1.5 text-sm font-mono" />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {["#FFFFFF","#F5F5F5","#111111","#0F172A","#6C7BF4","#EC5AA6","#22C58C","#F59E0B"].map((c) => (
+              <button key={c} onClick={() => setBgAndPersist(c)} className="h-6 w-6 rounded-md border border-neutral-200" style={{ background: c }} title={c} />
+            ))}
+          </div>
+        </Section>
+      </div>
+    </aside>
+  );
+}
+
 function ColorPickerButton({ value, onChange, swatches = [] }: { value: string; onChange: (c: string) => void; swatches?: string[] }) {
   const [hex, setHex] = useState(value || "#000000");
   useEffect(() => { setHex(value || "#000000"); }, [value]);
