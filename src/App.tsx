@@ -26,6 +26,7 @@ import Trash from "./pages/Trash.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import Studio from "./pages/Studio.tsx";
 import Brand from "./pages/Brand.tsx";
+import BrandLayout from "./pages/BrandLayout.tsx";
 import BrandHub from "./pages/BrandHub.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
@@ -126,7 +127,13 @@ const App = () => (
               <Route path="/studio/:id" element={<StudioRedirect />} />
               <Route path="/files" element={<Navigate to="/brands" replace />} />
               <Route path="/brands" element={<BrandHub />} />
-              <Route path="/brands/:id" element={<Brand />} />
+              <Route path="/brands/:id" element={<BrandLayout />}>
+                <Route index element={<Brand />} />
+                <Route path="brand-book" element={<BrandGuidelines />} />
+                <Route path="palette" element={<PaletteExplorer />} />
+                <Route path="fonts" element={<FontExplorer />} />
+                <Route path="settings" element={<ProjectDetail />} />
+              </Route>
               <Route path="/brand" element={<Navigate to="/brands" replace />} />
               <Route path="/brand/:id" element={<BrandIdRedirect />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />

@@ -1,0 +1,184 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, Navigate, NavLink, Outlet, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  Settings as SettingsIcon,
+  Image as ImageIcon,
+  BookOpen,
+  Palette as PaletteIcon,
+  Type,
+  Download,
+  Loader2,
+  Pencil,
+  Check as CheckIcon,
+  X as XIcon,
+} from "lucide-react";
+import { supabase as _sb } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { packAssetsZip } from "@/lib/exporters/zipPack";
+
+const supabase = _sb as any;
+
+const isMissingColumnError = (error: any, column: string) => {
+  const message = String(error?.message || error?.details || "").toLowerCase();
+  return message.includes(column.toLowerCase()) && (
+    message.includes("column") || message.includes("schema cache") || message.includes("could not find")
+  );
+};
+
+type NavKey = "logo-files" | "brand-book" | "palette" | "fonts" | "settings";
+
+export default function BrandLayout() {
+  const { id: projectId } = useParams();
+  const { toast } = useToast();
+  if (!projectId) return <Navigate to="/brands" replace />;
+
+  const [project, setProject] = useState<any>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [zipping, setZipping] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("projects").select("id,name,user_id").eq("id", projectId).maybeSingle();
+      if (!cancelled) setProject(data || null);
+    })();
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  const startRename = () => { setNameDraft(project?.name || ""); setRenaming(true); };
+  const cancelRename = () => { setRenaming(false); setNameDraft(""); };
+  const commitRename = async () => {
+    const name = nameDraft.trim();
+    if (!name || name === project?.name) { cancelRename(); return; }
+    setSavingName(true);
+    const { error } = await supabase.from("projects").update({ name }).eq("id", projectId);
+    setSavingName(false);
+    if (error) return toast({ title: "Rename failed", description: error.message, variant: "destructive" });
+    setProject((p: any) => ({ ...(p || {}), name }));
+    setRenaming(false);
+  };
+
+  const downloadBrandKit = async () => {
+    setZipping(true);
+    try {
+      let res = await supabase
+        .from("assets")
+        .select("id,title,asset_type,image_url,thumbnail_url,content,created_at")
+        .eq("project_id", projectId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (res.error && isMissingColumnError(res.error, "deleted_at")) {
+        res = await supabase
+          .from("assets")
+          .select("id,title,asset_type,image_url,thumbnail_url,content,created_at")
+          .eq("project_id", projectId)
+          .order("created_at", { ascending: false })
+          .limit(200);
+      }
+      const items = (res.data || []).map((a: any) => ({
+        title: a.title || "asset",
+        asset_type: a.asset_type,
+        content: a.content,
+        image_url: a.image_url || a.thumbnail_url,
+      }));
+      if (!items.length) {
+        toast({ title: "Nothing to download", description: "This brand kit has no files yet." });
+        return;
+      }
+      const safeName = String(project?.name || "brand-kit").replace(/[^a-z0-9-_]+/gi, "-").toLowerCase();
+      const result = await packAssetsZip(items, `${safeName}.zip`);
+      toast({ title: "Brand kit downloaded", description: `${result.included} files packed.` });
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setZipping(false);
+    }
+  };
+
+  const nav: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }>; to: string; end?: boolean }[] = useMemo(() => ([
+    { key: "logo-files", label: "Logo Files", icon: ImageIcon, to: `/brands/${projectId}`, end: true },
+    { key: "brand-book", label: "Brand Book", icon: BookOpen, to: `/brands/${projectId}/brand-book` },
+    { key: "palette", label: "Palette", icon: PaletteIcon, to: `/brands/${projectId}/palette` },
+    { key: "fonts", label: "Fonts", icon: Type, to: `/brands/${projectId}/fonts` },
+    { key: "settings", label: "Settings", icon: SettingsIcon, to: `/brands/${projectId}/settings` },
+  ]), [projectId]);
+
+  return (
+    <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-neutral-50">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-neutral-200 bg-white md:flex">
+        <div className="flex items-center gap-2 px-4 py-4">
+          <Link
+            to="/brands"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+            aria-label="Back to brands"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-xs font-semibold text-brand-foreground">
+            {String(project?.name || "B").trim().slice(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            {renaming ? (
+              <div className="flex items-center gap-1">
+                <input
+                  autoFocus
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") cancelRename(); }}
+                  className="min-w-0 flex-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-sm text-neutral-900 outline-none focus:border-brand"
+                />
+                <button onClick={commitRename} disabled={savingName} className="rounded-md p-1 text-emerald-600 hover:bg-emerald-50"><CheckIcon className="h-3.5 w-3.5" /></button>
+                <button onClick={cancelRename} className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100"><XIcon className="h-3.5 w-3.5" /></button>
+              </div>
+            ) : (
+              <button onClick={startRename} className="group flex w-full items-center gap-1 truncate text-left text-sm font-semibold text-brand" title="Rename brand">
+                <span className="truncate">{project?.name || "Untitled brand"}</span>
+                <Pencil className="h-3 w-3 shrink-0 opacity-0 transition group-hover:opacity-70" />
+              </button>
+            )}
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-2 pb-4">
+          {nav.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.key}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                    isActive
+                      ? "bg-neutral-100 font-medium text-neutral-900"
+                      : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
+                  }`
+                }
+              >
+                <Icon className="h-4 w-4" />
+                <span className="truncate">{item.label}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
+        <div className="border-t border-neutral-200 p-3">
+          <button
+            onClick={downloadBrandKit}
+            disabled={zipping}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
+          >
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Download brand kit
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <Outlet context={{ project, projectId, downloadBrandKit, zipping }} />
+      </main>
+    </div>
+  );
+}
