@@ -75,7 +75,7 @@ const SavedLogos = () => {
                 {a.editor_state?.kind === "logotype" ? (
                   <Logotype state={a.editor_state} fit="contain" />
                 ) : isCanvasAsset(a) ? (
-                  <CanvasAssetPreview asset={a} />
+                  <CanvasAssetPreview elements={(a.editor_state as any) || []} />
                 ) : a.image_url || a.thumbnail_url ? (
                   <img src={a.thumbnail_url || a.image_url} alt={a.title || "Logo"} className="max-h-full max-w-full object-contain" loading="lazy" />
                 ) : (
