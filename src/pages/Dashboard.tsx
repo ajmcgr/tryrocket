@@ -86,10 +86,13 @@ const Projects = () => {
     if (!user) return;
     setLoading(true);
     try {
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const ws = await ensureActiveWorkspaceId();
+      const scope = <T extends { eq: (col: string, v: any) => T }>(q: T): T => ws ? q.eq("workspace_id", ws) : q;
       const [projectsResult, foldersResult, assetsResult] = await Promise.all([
-        supabase.from("projects").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("folders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("assets").select("*").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
+        scope(supabase.from("projects").select("*").eq("user_id", user.id)).order("created_at", { ascending: false }),
+        scope(supabase.from("folders").select("*").eq("user_id", user.id)).order("created_at", { ascending: false }),
+        scope(supabase.from("assets").select("*").eq("user_id", user.id)).is("deleted_at", null).order("created_at", { ascending: false }),
       ]);
 
       const firstError = projectsResult.error || foldersResult.error || assetsResult.error;

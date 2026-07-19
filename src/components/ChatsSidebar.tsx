@@ -41,10 +41,14 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+    const ws = await ensureActiveWorkspaceId();
+    let q = supabase
       .from("chats")
       .select("id,title,pinned,updated_at")
-      .eq("user_id", user.id)
+      .eq("user_id", user.id);
+    if (ws) q = q.eq("workspace_id", ws);
+    const { data } = await q
       .order("pinned", { ascending: false })
       .order("updated_at", { ascending: false })
       .limit(200);
@@ -52,6 +56,11 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
   };
 
   useEffect(() => { load(); }, [user, tick, location.pathname]);
+  useEffect(() => {
+    const h = () => setTick((t) => t + 1);
+    window.addEventListener("workspace:changed", h);
+    return () => window.removeEventListener("workspace:changed", h);
+  }, []);
   useEffect(() => {
     const h = () => setTick(t => t + 1);
     window.addEventListener("chats:refresh", h);
