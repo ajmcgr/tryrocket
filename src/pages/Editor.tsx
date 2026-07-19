@@ -2085,56 +2085,6 @@ const Editor = () => {
             toggleQe={toggleQe}
             onClose={() => setShowQuickEdit(false)}
           />
-          <section className="rounded-[24px] border border-brand/15 bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Finish your design</p>
-            <p className="mt-1 text-sm font-semibold text-neutral-900">Make it part of your brand</p>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-              {isLogoDesign
-                ? assetMeta?.meta?.selected_as_direction
-                  ? "Your logo is guiding this brand. Complete the kit, then download everything together."
-                  : "First keep this logo. Rocket will use it to create the colours, typography, voice and guidelines around it."
-                : "Use this design as your brand style, then keep future work on-brand."}
-            </p>
-            {assetId ? (
-              <button
-                type="button"
-                onClick={() => void setAsBrandStyle()}
-                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground hover:bg-brand-hover"
-              >
-                {assetMeta?.meta?.selected_as_direction ? "Complete your brand kit" : isLogoDesign ? "Keep this logo" : "Use as brand style"}
-              </button>
-            ) : (
-              <Link to="/create" className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">
-                Create another design
-              </Link>
-            )}
-            {isLogoDesign ? (
-              <button
-                type="button"
-                onClick={() => void downloadLogoPack()}
-                disabled={downloadingLogoPack}
-                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {downloadingLogoPack ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                {downloadingLogoPack ? "Preparing logo pack…" : "Download logo pack"}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => exportImage("png")}
-                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-              >
-                <Download className="h-3.5 w-3.5" /> Download PNG
-              </button>
-            )}
-            {isLogoDesign && (
-              <p className="mt-2 text-center text-[11px] text-neutral-500">
-                {assetMeta?.meta?.selected_as_direction
-                  ? "Complete your brand kit whenever you are ready."
-                  : "Keep this logo to create matching colours, type and brand assets."}
-              </p>
-            )}
-          </section>
           <div className="rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-sm">
             <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Layers</p>
             <div className="max-h-[14rem] overflow-y-auto pr-1">
@@ -2178,7 +2128,9 @@ const Editor = () => {
                   <IconAction onClick={() => remove(selected.id)} label="Delete"><Trash2 className="h-3.5 w-3.5" /></IconAction>
                 </div>
               </div>
-              <Inspector el={selected} fonts={fontFamilies} onChange={(patch) => update(selected.id, patch as any)} />
+              {selected.kind !== "text" && selected.kind !== "image" && (
+                <Inspector el={selected} fonts={fontFamilies} onChange={(patch) => update(selected.id, patch as any)} />
+              )}
               <div className="border-t border-neutral-200 pt-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Position</p>
                 <div className="grid grid-cols-2 gap-2">
