@@ -61,15 +61,19 @@ const SiteHeader = () => {
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
   const initial = (user?.email?.[0] || "U").toUpperCase();
   return (
-    <header className={`sticky z-50 bg-white/80 backdrop-blur-xl transition-[top] duration-200 ${scrolled ? "top-0" : "top-2"}`}>
+    <header
+      className={`sticky z-50 bg-white transition-[top] duration-200 ${scrolled ? "top-0" : "top-2"}`}
+      style={{ borderBottom: "1px solid #e5e7eb" }}
+    >
       <div className="relative mx-auto flex h-16 max-w-4xl items-center px-6">
         <Logo size="md" />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
           {user ? (
             <>
               <Link to="/create" className="hover:text-neutral-900">Create</Link>
-              <Link to="/designs" className="hover:text-neutral-900">Designs</Link>
-              <Link to="/brands" className="hover:text-neutral-900">Brands</Link>
+              <Link to="/logos" className="hover:text-neutral-900">Logos</Link>
+              <Link to="/icons" className="hover:text-neutral-900">Icons</Link>
+              <Link to="/brands" className="hover:text-neutral-900">Brand Kits</Link>
               <Link to="/templates" className="hover:text-neutral-900">Templates</Link>
             </>
           ) : (
