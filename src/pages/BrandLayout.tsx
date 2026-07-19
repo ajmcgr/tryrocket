@@ -261,6 +261,14 @@ export default function BrandLayout() {
         } catch {}
       }
 
+      // --- Logo variants ---
+      for (const variant of ["regular", "inverse", "black"] as const) {
+        try {
+          const blob = await buildLogoVariantBlob(variant);
+          if (blob) logoFolder.file(`logo-${variant}.png`, blob);
+        } catch {}
+      }
+
       // --- Other assets ---
       const others = assets.filter((a) => !["logo", "logotype", "wordmark", "icon"].includes(a.asset_type));
       let otherCount = 0;
