@@ -96,18 +96,19 @@ const AppShell = () => {
           title="Logo Designer"
         >
           <Sparkles className="h-5 w-5 shrink-0" />
-          {!collapsed && <span className="text-sm font-medium">Logo Designer</span>}
+          {!collapsed && <span className="text-sm font-semibold">Logo Designer</span>}
         </Link>
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className={`mb-3 flex h-9 w-full items-center gap-2 rounded-xl text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 ${collapsed ? "justify-center px-0" : "px-3"}`}
+          className={`mb-3 flex h-9 w-full items-center gap-2 rounded-xl text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-900 ${collapsed ? "justify-center px-0" : "px-3"}`}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           {!collapsed && <span>Collapse</span>}
         </button>
+
         <nav className="flex flex-col gap-1" aria-label="Rocket studio">
           {studioNav.map((item) => {
             const Icon = item.icon;
