@@ -25,6 +25,80 @@ const isMissingColumnError = (error: any, column: string) => {
   );
 };
 
+// Try to detect and use alpha channel to render silhouettes of raster logos.
+// If the source PNG has no meaningful transparency, silhouette effects can't
+// be derived — we fall back to displaying the original logo on the variant's
+// background so cards never render as solid rectangles.
+async function loadImage(src: string): Promise<HTMLImageElement> {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Failed to load logo image"));
+    img.src = src;
+  });
+  return img;
+}
+
+function hasAlpha(img: HTMLImageElement): { alpha: boolean; canvas: HTMLCanvasElement } | null {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let transparentPixels = 0;
+    // Sample every 4th pixel for speed.
+    for (let i = 3; i < data.length; i += 16) {
+      if (data[i] < 250) transparentPixels++;
+      if (transparentPixels > 20) return { alpha: true, canvas };
+    }
+    return { alpha: false, canvas };
+  } catch {
+    return null;
+  }
+}
+
+function silhouetteDataUrl(img: HTMLImageElement, color: string): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+  ctx.globalCompositeOperation = "source-in";
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/png");
+}
+
+function useImageVariants(url: string | undefined) {
+  const [variants, setVariants] = useState<{ black?: string; white?: string; hasAlpha: boolean } | null>(null);
+  useEffect(() => {
+    if (!url) { setVariants(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const img = await loadImage(url);
+        if (cancelled) return;
+        const info = hasAlpha(img);
+        if (!info || !info.alpha) { setVariants({ hasAlpha: false }); return; }
+        setVariants({
+          hasAlpha: true,
+          black: silhouetteDataUrl(img, "#0A0A0A"),
+          white: silhouetteDataUrl(img, "#FFFFFF"),
+        });
+      } catch {
+        if (!cancelled) setVariants({ hasAlpha: false });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [url]);
+  return variants;
+}
+
+
 type Variant = {
   key: "regular" | "inverse" | "black" | "white";
   label: string;
@@ -155,6 +229,7 @@ export default function Brand() {
 
   const logoIsImage = !logoAsset?.editor_state && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
   const logoImageUrl = logoAsset?.image_url || logoAsset?.thumbnail_url;
+  const imageVariants = useImageVariants(logoIsImage ? logoImageUrl : undefined);
 
   const variants = useMemo<Record<Variant["key"], LogotypeState>>(
     () => ({
@@ -217,32 +292,30 @@ export default function Brand() {
           ) : logoIsImage ? (
             <div className="mx-auto max-w-5xl">
               <div className="grid gap-6 md:grid-cols-2">
-                {cards.map((v) => (
+                {cards.map((v) => {
+                  let src = logoImageUrl as string;
+                  if (imageVariants?.hasAlpha) {
+                    if (v.key === "black") src = imageVariants.black || src;
+                    else if (v.key === "white" || v.key === "inverse") src = imageVariants.white || src;
+                  }
+                  return (
                   <div key={v.key} className={`relative overflow-hidden rounded-2xl ${v.border ? `border ${v.border}` : ""} shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)]`} style={{ backgroundColor: v.bg }}>
                     <div className="flex aspect-[16/9] items-center justify-center px-10">
                       <img
-                        src={logoImageUrl}
+                        src={src}
                         alt={project?.name || "Logo"}
                         className="max-h-full max-w-full object-contain"
-                        style={
-                          v.key === "black"
-                            ? { filter: "brightness(0) saturate(0)" }
-                            : v.key === "white"
-                            ? { filter: "brightness(0) saturate(0) invert(1)" }
-                            : v.key === "inverse"
-                            ? { filter: "brightness(0) invert(1)" }
-                            : undefined
-                        }
                       />
                     </div>
                     <div className="pointer-events-none absolute left-4 top-4">
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${v.chipClass}`}>{v.label}</span>
                     </div>
-                    <a href={logoImageUrl} download={`${filenameFor(v)}.png`} target="_blank" rel="noreferrer" className={`absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition ${(v.bg === "#FFFFFF") ? "bg-neutral-900 text-white hover:bg-neutral-800" : "bg-white/95 text-neutral-900 hover:bg-white"}`}>
+                    <a href={src} download={`${filenameFor(v)}.png`} target="_blank" rel="noreferrer" className={`absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition ${(v.bg === "#FFFFFF") ? "bg-neutral-900 text-white hover:bg-neutral-800" : "bg-white/95 text-neutral-900 hover:bg-white"}`}>
                       <Download className="h-3.5 w-3.5" /> Download
                     </a>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               {logoAssets.length > 1 && (
                 <div className="mt-10">
