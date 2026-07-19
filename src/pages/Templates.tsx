@@ -58,7 +58,7 @@ const Templates = () => {
 
   const templateCreateHref = (design: any) => {
     const designType = String(design?.asset_type || "logo");
-    const prompt = `Create a distinctive ${designType.replaceAll("_", " ")} inspired by the ${design?.title || "selected"} template. Adapt it for my brand without reusing its name or content.`;
+    const prompt = `Create a distinctive ${designType.replace(/_/g, " ")} inspired by the ${design?.title || "selected"} template. Adapt it for my brand without reusing its name or content.`;
     return `/create?${new URLSearchParams({ asset_type: designType, prompt }).toString()}`;
   };
 

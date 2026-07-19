@@ -14,6 +14,9 @@ import VerifyEmail from "./pages/VerifyEmail.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Generate from "./pages/Generate.tsx";
+import CreateEntry from "./pages/CreateEntry.tsx";
+import SavedLogos from "./pages/SavedLogos.tsx";
+import IconDesigner from "./pages/IconDesigner.tsx";
 import Editor from "./pages/Editor.tsx";
 import Presenter from "./pages/Presenter.tsx";
 import Assets from "./pages/Assets.tsx";
@@ -125,7 +128,10 @@ const App = () => (
               <Route path="/assets" element={<Navigate to="/designs" replace />} />
               <Route path="/assets/:id" element={<AssetRouteRedirect />} />
               <Route path="/trash" element={<Trash />} />
-              <Route path="/create" element={<Generate />} />
+              <Route path="/create" element={<CreateEntry />} />
+              <Route path="/create/chat" element={<Generate />} />
+              <Route path="/logos" element={<SavedLogos />} />
+              <Route path="/icons" element={<IconDesigner />} />
               <Route path="/editor" element={<Editor />} />
               <Route path="/present" element={<Presenter />} />
               <Route path="/dashboard" element={<Navigate to="/projects" replace />} />

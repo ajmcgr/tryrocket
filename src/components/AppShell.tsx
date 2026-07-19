@@ -9,14 +9,15 @@ import CommandPalette from "./CommandPalette";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import {
   FolderKanban,
-  Grid2X2,
-  Heart,
   HelpCircle,
   Palette,
   PenTool,
   Settings,
   Share2,
   Sparkles,
+  Shapes,
+  LayoutTemplate,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,11 +41,13 @@ type StudioNavItem = {
 };
 
 const studioNav: StudioNavItem[] = [
-  { label: "Create", to: "/create", icon: Sparkles, tour: "nav-create" },
-  { label: "Designs", to: "/designs", icon: Grid2X2, tour: "nav-assets" },
-  { label: "Brand", to: "/brands", icon: Palette, tour: "nav-brand" },
+  { label: "Generate", to: "/create", icon: Sparkles, tour: "nav-create" },
+  { label: "Templates", to: "/templates", icon: LayoutTemplate },
+  { label: "Icons", to: "/icons", icon: Shapes },
+  { label: "Saved Logos", to: "/logos", icon: Star },
   { label: "Projects", to: "/projects", icon: FolderKanban },
   { label: "Editor", to: "/editor", icon: PenTool },
+  { label: "Brand Kit", to: "/brands", icon: Palette, tour: "nav-brand" },
 ];
 
 const AppShell = () => {
@@ -93,14 +96,6 @@ const AppShell = () => {
           })}
         </nav>
         <div className="mt-auto flex flex-col items-center gap-2">
-          <NavLink
-            to="/templates"
-            className={railItemClass}
-            aria-label="Templates"
-            title="Templates"
-          >
-            <Heart className="h-[18px] w-[18px]" strokeWidth={1.9} />
-          </NavLink>
           <NavLink
             to="/settings/profile"
             className={railItemClass}
