@@ -19,6 +19,7 @@ import {
   Star,
   Home,
   Wand2,
+  Coins,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -100,6 +101,17 @@ const AppShell = () => {
           })}
         </nav>
         <div className="mt-auto flex flex-col items-center gap-2">
+          <NavLink
+            to="/settings/billing"
+            className={railItemClass}
+            aria-label="Buy Credits"
+            title="Buy Credits"
+          >
+            <Coins className="h-[18px] w-[18px]" strokeWidth={1.9} />
+            <span className="pointer-events-none absolute left-12 hidden whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white shadow-lg group-hover:block">
+              Buy Credits
+            </span>
+          </NavLink>
           <NavLink
             to="/settings/profile"
             className={railItemClass}
