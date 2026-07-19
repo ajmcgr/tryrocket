@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, ChevronDown, Plus, Users } from "lucide-react";
+import { Check, ChevronDown, Plus, Users, Lock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
 import {
   createWorkspace,
   ensureActiveWorkspaceId,
@@ -23,6 +25,8 @@ import {
 const WorkspaceSwitcher = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isPro, loading: subLoading } = useSubscription();
+  const navigate = useNavigate();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeId, setActiveId] = useState<string | null>(getActiveWorkspaceIdSync());
   const [creating, setCreating] = useState(false);
@@ -59,6 +63,11 @@ const WorkspaceSwitcher = () => {
   };
 
   const create = async () => {
+    if (!isPro) {
+      toast({ title: "Pro plan required", description: "Upgrade to create additional workspaces.", variant: "destructive" });
+      navigate("/pricing");
+      return;
+    }
     const name = window.prompt("Workspace name")?.trim();
     if (!name) return;
     setCreating(true);
@@ -103,8 +112,15 @@ const WorkspaceSwitcher = () => {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={create} disabled={creating} className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
-          <Plus className="mr-2 h-4 w-4" /> New workspace
+        <DropdownMenuItem
+          onSelect={create}
+          disabled={creating || subLoading}
+          className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900"
+          title={!isPro ? "Pro plan required" : undefined}
+        >
+          {isPro ? <Plus className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4 text-neutral-400" />}
+          <span className="flex-1">New workspace</span>
+          {!isPro && <span className="ml-2 rounded bg-brand/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand">Pro</span>}
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
           <Link to="/settings/team"><Users className="mr-2 h-4 w-4" /> Manage team</Link>
