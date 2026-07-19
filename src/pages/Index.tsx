@@ -317,8 +317,8 @@ const Index = () => {
             {[
               {
                 icon: Zap,
-                accent: "from-indigo-500 to-indigo-700",
-                tint: "from-indigo-50 to-white",
+                accent: "bg-indigo-500",
+                tint: "bg-indigo-50",
                 title: "SaaS products",
                 desc: "Launch your next software empire with a complete brand system — positioning, identity, and launch materials ready in minutes.",
                 bullets: [
@@ -330,8 +330,8 @@ const Index = () => {
               },
               {
                 icon: Sparkles,
-                accent: "from-violet-600 to-fuchsia-500",
-                tint: "from-fuchsia-50 to-white",
+                accent: "bg-violet-600",
+                tint: "bg-fuchsia-50",
                 title: "AI tools",
                 desc: "Stand out in a sea of GPT wrappers. Rocket gives your AI product a sharp positioning and a brand that feels native to 2026.",
                 bullets: [
@@ -343,8 +343,8 @@ const Index = () => {
               },
               {
                 icon: ShoppingBag,
-                accent: "from-rose-500 to-pink-500",
-                tint: "from-rose-50 to-white",
+                accent: "bg-rose-500",
+                tint: "bg-rose-50",
                 title: "E-commerce stores",
                 desc: "Conversion-focused retail branding — from your logo and packaging palette to PDP copy that actually sells.",
                 bullets: [
@@ -356,8 +356,8 @@ const Index = () => {
               },
               {
                 icon: Smartphone,
-                accent: "from-sky-400 to-blue-600",
-                tint: "from-sky-50 to-white",
+                accent: "bg-sky-500",
+                tint: "bg-sky-50",
                 title: "Mobile apps",
                 desc: "App Store-ready branding. We generate your icon direction, screenshots, ASO copy, and the launch posts to back it.",
                 bullets: [
@@ -369,8 +369,8 @@ const Index = () => {
               },
               {
                 icon: Lightbulb,
-                accent: "from-blue-600 to-indigo-800",
-                tint: "from-blue-50 to-white",
+                accent: "bg-blue-600",
+                tint: "bg-blue-50",
                 title: "Side projects",
                 desc: "Turn weekend ideas into polished ventures. Rocket gives every side project the brand polish of a funded startup.",
                 bullets: [
@@ -385,7 +385,7 @@ const Index = () => {
               return (
                 <div
                   key={row.title}
-                  className="overflow-hidden rounded-3xl bg-white ring-1 ring-neutral-200/70 transition-shadow hover:shadow-[0_20px_60px_-20px_rgba(15,23,42,0.18)]"
+                  className="overflow-hidden rounded-3xl bg-white ring-1 ring-neutral-200/70"
                 >
                   <div className={`grid items-center gap-8 p-8 sm:p-12 md:grid-cols-2 md:gap-12 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}>
                     <div>
@@ -405,7 +405,7 @@ const Index = () => {
                         ))}
                       </ul>
                     </div>
-                    <div className={`relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br ${row.tint} ring-1 ring-neutral-200/70`}>
+                    <div className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${row.tint} ring-1 ring-neutral-200/70`}>
                       <UseCaseVisual kind={row.visual} accent={row.accent} />
                     </div>
                   </div>
