@@ -1,6 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles as SparklesIcon, Send, Image as ImageIcon, Shuffle } from "lucide-react";
+import { Sparkles as SparklesIcon, Send, Image as ImageIcon, Shuffle, Minus, Sticker, Palette, PenTool, Box, Smile, Check } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
+const STYLES = [
+  { id: "auto", label: "Auto", icon: Shuffle, suffix: "" },
+  { id: "minimal", label: "Minimal", icon: Minus, suffix: "minimalist flat vector logo, clean geometric lines, limited palette" },
+  { id: "sticker", label: "Sticker", icon: Sticker, suffix: "sticker-style logo with bold outline and vibrant fill" },
+  { id: "illustration", label: "Illustration", icon: Palette, suffix: "illustrated logo with rich color and detailed shading" },
+  { id: "line-art", label: "Line Art", icon: PenTool, suffix: "monoline line-art logo, single continuous stroke, no fill" },
+  { id: "3d", label: "3D/Geometric", icon: Box, suffix: "3D geometric logo with depth, gradients and soft shadows" },
+  { id: "cartoon", label: "Cartoon", icon: Smile, suffix: "cartoon-style mascot logo with friendly expression, bold outline" },
+] as const;
 
 const EXAMPLES = [
   "A modern SaaS startup called Nova",
@@ -14,13 +25,17 @@ const LogoDesigner = () => {
   const nav = useNavigate();
   const [prompt, setPrompt] = useState("");
   const [autoPrompt, setAutoPrompt] = useState(true);
+  const [style, setStyle] = useState<(typeof STYLES)[number]["id"]>("auto");
+  const active = STYLES.find((s) => s.id === style) || STYLES[0];
+  const ActiveIcon = active.icon;
 
   const go = (text: string) => {
     const t = text.trim();
     if (!t) return;
+    const styleSuffix = active.suffix ? ` ${active.suffix}.` : "";
     const finalPrompt = autoPrompt
-      ? `${t}. A polished, professional logo suitable for a real brand — crisp vector aesthetic, transparent background, no mockups.`
-      : t;
+      ? `${t}. A polished, professional logo suitable for a real brand — crisp vector aesthetic, transparent background, no mockups.${styleSuffix}`
+      : styleSuffix ? `${t}.${styleSuffix}` : t;
     const search = new URLSearchParams({ prompt: finalPrompt, asset_type: "logo", count: "6" });
     nav(`/create?${search.toString()}`);
   };
@@ -73,13 +88,29 @@ const LogoDesigner = () => {
           >
             <ImageIcon className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            aria-label="Auto style"
-            className="flex h-12 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-700 transition hover:bg-neutral-50"
-          >
-            <Shuffle className="h-4 w-4" /> Auto
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Style"
+                className="flex h-12 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-700 transition hover:bg-neutral-50"
+              >
+                <ActiveIcon className="h-4 w-4" /> {active.label}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-white">
+              {STYLES.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <DropdownMenuItem key={s.id} onSelect={() => setStyle(s.id)} className="flex items-center gap-2 text-sm">
+                    <Icon className="h-4 w-4" />
+                    <span className="flex-1">{s.label}</span>
+                    {s.id === style && <Check className="h-3.5 w-3.5" />}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <label className="hidden items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-600 sm:flex">
             <input
               type="checkbox"
