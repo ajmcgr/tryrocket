@@ -5,7 +5,7 @@ import {
   ArrowLeft, Sparkles, Palette, Type, MessageSquare, Layers, Shapes, Image as ImageIcon,
   Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check, Trash2, X,
   Share2, Facebook, Send, MessageCircle, MessageSquare as MessageSquareIcon, Mail, Link as LinkIcon, Lock,
-  Download, Loader2,
+  Download, Loader2, FileImage, Globe, ChevronRight,
 } from "lucide-react";
 const supabase = _sb as any;
 import { packAssetsZip } from "@/lib/exporters/zipPack";
