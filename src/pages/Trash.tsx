@@ -225,16 +225,16 @@ const Trash = () => {
           <p className="mt-1 text-sm text-neutral-500">Deleted items live here for 30 days before being purged automatically.</p>
         </div>
         <div className="flex items-center gap-2">
-          {(selected.size + selectedProjects.size) > 0 && (
+          {selected.size > 0 && (
             <>
-              <span className="text-xs text-neutral-500">{selected.size + selectedProjects.size} selected</span>
+              <span className="text-xs text-neutral-500">{selected.size} selected</span>
               <button onClick={bulkRestore} disabled={busy} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs hover:bg-neutral-50 disabled:opacity-60"><RotateCcw className="h-3.5 w-3.5" /> Restore</button>
               <button onClick={bulkDelete} disabled={busy} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
             </>
           )}
           <button
             onClick={() => setConfirmEmpty(true)}
-            disabled={busy || (assets.length + projects.length === 0)}
+            disabled={busy || assets.length === 0}
             className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40"
           >
             <Trash2 className="h-3.5 w-3.5" /> Empty trash
