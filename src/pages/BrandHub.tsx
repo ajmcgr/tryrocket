@@ -221,6 +221,36 @@ export default function BrandHub() {
     { assetType: "template", label: "Refresh a template", prompt: "Create a refreshed reusable template using our current approved brand direction." },
   ];
 
+  const updateProject = (id: string, patch: any) => {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  };
+
+  const toggleProjectPublic = async (project: any) => {
+    const isPublic = !project?.meta?.public;
+    const meta = { ...(project.meta || {}), public: isPublic };
+    const { error } = await supabase.from("projects").update({ meta }).eq("id", project.id);
+    if (error) {
+      toast({ title: "Couldn't update brand", description: error.message, variant: "destructive" });
+      return;
+    }
+    updateProject(project.id, { meta });
+    toast({ title: isPublic ? "Made brand public" : "Made brand private" });
+  };
+
+  const deleteProject = async (project: any) => {
+    if (!window.confirm(`Delete “${project.name || "Untitled brand"}" and all its files?`)) return;
+    const { error } = await supabase.from("projects").delete().eq("id", project.id);
+    if (error) {
+      toast({ title: "Couldn't delete brand", description: error.message, variant: "destructive" });
+      return;
+    }
+    setProjects((prev) => prev.filter((p) => p.id !== project.id));
+    setAllDesigns((prev) => prev.filter((d) => d.project_id !== project.id));
+    toast({ title: "Brand deleted" });
+  };
+
+  const remixProject = (project: any) => navigate(`/create?project=${project.id}`);
+
   const projectDesignCount = (projectId: string) => allDesigns.filter((design) => design.project_id === projectId).length;
 
   const projectKitProgress = (projectId: string) => {
