@@ -30,6 +30,7 @@ import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
 import LogoFiles from "./pages/LogoFiles.tsx";
 import WebsiteTemplates from "./pages/WebsiteTemplates.tsx";
+import PaletteExplorer from "./pages/PaletteExplorer.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
 import Templates from "./pages/Templates.tsx";
 import Insights from "./pages/Insights.tsx";
@@ -128,6 +129,7 @@ const App = () => (
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/projects/:id/logo-files" element={<LogoFiles />} />
               <Route path="/projects/:id/websites" element={<WebsiteTemplates />} />
+              <Route path="/projects/:id/palettes" element={<PaletteExplorer />} />
               <Route path="/designs" element={<Assets />} />
               <Route path="/designs/:id" element={<AssetRouteRedirect />} />
               <Route path="/assets" element={<Navigate to="/designs" replace />} />
