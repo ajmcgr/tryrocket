@@ -27,6 +27,8 @@ import type { AppShellOutletContext } from "@/components/AppShell";
 import { defaultLogotypeState, LOGOTYPE_FONTS, pickLogotypeText, type LogotypeState, loadGoogleFont } from "@/lib/logotype";
 import { isBrandAsset } from "@/lib/assetExperience";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { renderToStaticMarkup } from "react-dom/server";
+import * as LucideIcons from "lucide-react";
 const supabase = _sb as any;
 
 type Base = {
