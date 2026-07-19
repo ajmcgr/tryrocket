@@ -60,7 +60,7 @@ const Pricing = () => {
 
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 antialiased">
+    <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
 
       <section className="border-b border-neutral-200/60">

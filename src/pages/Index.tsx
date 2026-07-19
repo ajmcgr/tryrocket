@@ -186,7 +186,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 antialiased">
+    <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
 
       {/* Hero */}
