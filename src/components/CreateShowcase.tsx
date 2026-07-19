@@ -1,4 +1,6 @@
+import { Link } from "react-router-dom";
 import { BookOpen, Star, ArrowRight, Shapes, Sparkles, Palette } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/showcase/logo.png";
 import guidelinesAsset from "@/assets/showcase/guidelines.png";
 import iconsAsset from "@/assets/showcase/icons.png";
@@ -17,6 +19,8 @@ const ShowcaseCard = ({
   description,
   bullets,
   meta,
+  ctaText,
+  ctaLink,
   image,
   imageAlt,
   accent,
@@ -28,14 +32,16 @@ const ShowcaseCard = ({
   description: string;
   bullets: string[];
   meta: string;
+  ctaText: string;
+  ctaLink: string;
   image: string;
   imageAlt: string;
   accent: "blue" | "coral" | "violet";
 }) => {
   const accents = {
-    blue: "from-blue-500/10 to-blue-600/5 ring-blue-100",
-    coral: "from-orange-500/10 to-orange-600/5 ring-orange-100",
-    violet: "from-violet-500/10 to-violet-600/5 ring-violet-100",
+    blue: "bg-blue-50/70 ring-blue-100",
+    coral: "bg-orange-50/70 ring-orange-100",
+    violet: "bg-violet-50/70 ring-violet-100",
   };
   const dotAccents = {
     blue: "bg-blue-500",
@@ -46,16 +52,16 @@ const ShowcaseCard = ({
   return (
     <article
       style={{ animationDelay: `${i * 100}ms` }}
-      className="group grid animate-fade-in grid-cols-1 gap-8 rounded-[2rem] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_-12px_rgba(15,23,42,0.08)] ring-1 ring-neutral-200/70 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_4px_rgba(15,23,42,0.04),0_24px_48px_-16px_rgba(15,23,42,0.18)] hover:ring-neutral-300/80 sm:p-10 lg:grid-cols-2 lg:items-center lg:gap-12 lg:p-12"
+      className="grid animate-fade-in grid-cols-1 gap-8 rounded-[2rem] bg-white p-6 ring-1 ring-neutral-200/70 sm:p-10 lg:grid-cols-2 lg:items-center lg:gap-12 lg:p-12"
     >
       <div
-        className={`order-first flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${accents[accent]} ring-1 ring-inset lg:aspect-[5/4]`}
+        className={`order-first flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl ${accents[accent]} ring-1 ring-inset lg:aspect-[5/4]`}
       >
         <img
           src={image}
           alt={imageAlt}
           loading="lazy"
-          className="h-full w-full object-contain p-6 transition-transform duration-500 group-hover:scale-[1.02] sm:p-10"
+          className="h-full w-full object-contain p-6 sm:p-10"
         />
       </div>
 
@@ -70,7 +76,12 @@ const ShowcaseCard = ({
         <p className="mt-4 text-lg leading-relaxed text-neutral-600">
           {description}
         </p>
-        <ul className="mt-6 space-y-3">
+        <Button asChild className="mt-7">
+          <Link to={ctaLink}>
+            {ctaText} <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </Button>
+        <ul className="mt-7 space-y-3">
           {bullets.map((b) => (
             <li key={b} className="flex items-start gap-3 text-[15px] text-neutral-700">
               <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${dotAccents[accent]}`} />
