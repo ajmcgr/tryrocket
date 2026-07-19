@@ -26,36 +26,6 @@ import { matchesDesignQuery, rankDesignsByRelevance } from "@/lib/searchRelevanc
 const supabase = _sb as any;
 const LOGO_TYPES = ["logo", "logotype", "wordmark", "brandmark"] as const;
 
-const SAVED_STYLES = [
-  "Modern", "Minimal", "Luxury", "Technology", "Startup", "AI", "Consumer", "Enterprise", "Fintech", "Healthcare", "Education",
-] as const;
-
-type SavedStyle = "all" | typeof SAVED_STYLES[number];
-
-const matchesSavedStyle = (asset: any, style: SavedStyle) => {
-  if (style === "all") return true;
-  const declaredStyle = String(
-    asset?.meta?.template_style || asset?.meta?.templateStyle || asset?.meta?.style || "",
-  ).toLowerCase();
-  const searchable = [asset?.title, asset?.prompt, asset?.content, declaredStyle]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  const terms: Record<Exclude<SavedStyle, "all">, string[]> = {
-    Modern: ["modern", "contemporary"],
-    Minimal: ["minimal", "clean", "simple"],
-    Luxury: ["luxury", "premium", "elegant"],
-    Technology: ["technology", "tech", "software", "digital"],
-    Startup: ["startup", "saas", "founder"],
-    AI: [" ai", "artificial intelligence", "machine learning"],
-    Consumer: ["consumer", "retail", "lifestyle", "food", "beauty"],
-    Enterprise: ["enterprise", "b2b", "business"],
-    Fintech: ["fintech", "finance", "bank", "payment"],
-    Healthcare: ["healthcare", "health", "medical", "wellness"],
-    Education: ["education", "learning", "school", "academy"],
-  };
-  return terms[style].some((term) => searchable.includes(term));
-};
 
 const SavedLogos = () => {
   const { user } = useAuth();
@@ -64,12 +34,11 @@ const SavedLogos = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<SavedStyle>("all");
   const [view, setView] = useState<CollectionView>("card");
   const [sort, setSort] = useState<DesignSort>("date");
   const [visibleCount, setVisibleCount] = useState(60);
 
-  useEffect(() => { setVisibleCount(60); }, [filter, query, view, sort]);
+  useEffect(() => { setVisibleCount(60); }, [query, view, sort]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,14 +64,11 @@ const SavedLogos = () => {
 
   const filtered = useMemo(() => {
     const q = query.trim();
-    const visible = items.filter((asset) => {
-      if (!matchesSavedStyle(asset, filter)) return false;
-      return matchesDesignQuery(asset, q);
-    });
+    const visible = items.filter((asset) => matchesDesignQuery(asset, q));
     return q
       ? rankDesignsByRelevance(visible, q)
       : sortByOption(visible, sort, (asset) => asset.title, (asset) => asset.created_at);
-  }, [items, filter, query, sort]);
+  }, [items, query, sort]);
 
   const visibleItems = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const hasMore = filtered.length > visibleItems.length;
@@ -186,15 +152,6 @@ const SavedLogos = () => {
             placeholder="Search saved logos…"
             className="h-9 w-full min-w-0 rounded-lg border border-neutral-200 bg-white pl-8 pr-3 text-sm outline-none focus:border-neutral-400 sm:w-72"
           />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button onClick={() => setFilter("all")} className={`rounded-full border px-3 py-1 text-xs transition ${filter === "all" ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}>All</button>
-          {SAVED_STYLES.map((style) => (
-            <button key={style} onClick={() => setFilter(style)} className={`rounded-full border px-3 py-1 text-xs transition ${filter === style ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"}`}>
-              {style}
-            </button>
-          ))}
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
