@@ -7,7 +7,6 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
-  ExternalLink,
   Heart,
 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
@@ -271,30 +270,31 @@ const Templates = () => {
       ) : view === "card" ? (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((design) => (
-            <div key={design.id} className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md">
-              <a href="#" onClick={(e) => openTemplateInEditor(design, e)} className="block cursor-pointer">
-                <div className="aspect-square w-full overflow-hidden bg-neutral-50">
-                  <DesignPreview design={design} />
-                </div>
-              </a>
+            <div
+              key={design.id}
+              onClick={() => void openTemplateInEditor(design)}
+              className="group cursor-pointer overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
+            >
+              <div className="aspect-square w-full overflow-hidden bg-neutral-50">
+                <DesignPreview design={design} />
+              </div>
               <div className="border-t border-neutral-100 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-neutral-900">{design.title}</div>
                     <div className="mt-0.5 truncate text-[11px] text-neutral-500">by {design.creator_username || "Rocket creator"}</div>
                   </div>
-                  <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 transition group-hover:text-neutral-700" />
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="truncate text-[11px] text-neutral-500">{(design.asset_type || "Design").replace(/_/g, " ")}</span>
                   <span className="shrink-0 text-[10px] text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <button type="button" onClick={(e) => openTemplateInEditor(design, e)} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Edit</button>
-                  <button type="button" onClick={(e) => void saveTemplateToSaved(design, e)} title="Save to Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Edit</button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void saveTemplateToSaved(design, e); }} title="Save to Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <Heart className="h-3.5 w-3.5" />
                   </button>
-                  <Link to={templateCreateHref(design)} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Remix</Link>
+                  <Link to={templateCreateHref(design)} onClick={(e) => e.stopPropagation()} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Remix</Link>
                 </div>
               </div>
             </div>
@@ -305,23 +305,23 @@ const Templates = () => {
           {filtered.map((design) => (
             <div
               key={design.id}
-              className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 last:border-b-0"
+              onClick={() => void openTemplateInEditor(design)}
+              className="flex cursor-pointer items-center gap-3 border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 last:border-b-0"
             >
-              <a href="#" onClick={(e) => openTemplateInEditor(design, e)} className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-50 cursor-pointer">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-50">
                 <DesignPreview design={design} />
-              </a>
-              <a href="#" onClick={(e) => openTemplateInEditor(design, e)} className="min-w-0 flex-1 cursor-pointer">
+              </div>
+              <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-neutral-900">{design.title}</div>
                 <div className="truncate text-xs text-neutral-500">
                   {(design.asset_type || "Design").replace(/_/g, " ")} · by {design.creator_username || "Rocket creator"}
                 </div>
-              </a>
-              <button type="button" onClick={(e) => openTemplateInEditor(design, e)} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Edit</button>
-              <button type="button" onClick={(e) => void saveTemplateToSaved(design, e)} title="Save to Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+              </div>
+              <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Edit</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); void saveTemplateToSaved(design, e); }} title="Save to Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Heart className="h-3.5 w-3.5" />
               </button>
               <div className="shrink-0 text-xs text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</div>
-              <ExternalLink className="h-4 w-4 shrink-0 text-neutral-400" />
             </div>
           ))}
         </div>
