@@ -49,10 +49,10 @@ const IconDesigner = () => {
     <div className="relative flex min-h-[calc(100vh-3.5rem)] flex-col">
       {/* Centered hero */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 pb-40 text-center">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center text-[#EE5FA6]">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center text-[#1676e3]">
           <SparklesIcon className="h-10 w-10" strokeWidth={1.6} />
         </div>
-        <span className="rounded-full bg-[#EE5FA6] px-4 py-1.5 text-sm font-medium text-white shadow-sm">
+        <span className="rounded-full bg-[#1676e3] px-4 py-1.5 text-sm font-medium text-white shadow-sm">
           Rocket Icon Generator
         </span>
 
