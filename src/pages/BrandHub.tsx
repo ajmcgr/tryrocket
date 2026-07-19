@@ -102,8 +102,14 @@ export default function BrandHub() {
         for (const select of selects) {
           let q = supabase.from("projects").select(select).eq("user_id", user.id);
           if (workspaceId) q = q.eq("workspace_id", workspaceId);
-          let result = await q.order("created_at", { ascending: false }).limit(100);
+          let result = await q.is("deleted_at", null).order("created_at", { ascending: false }).limit(100);
           if (!result.error) return result.data || [];
+          if (isMissingColumnError(result.error, "deleted_at")) {
+            let q2 = supabase.from("projects").select(select).eq("user_id", user.id);
+            if (workspaceId) q2 = q2.eq("workspace_id", workspaceId);
+            result = await q2.order("created_at", { ascending: false }).limit(100);
+            if (!result.error) return result.data || [];
+          }
           if (workspaceId && isMissingColumnError(result.error, "workspace_id")) {
             result = await supabase
               .from("projects")
