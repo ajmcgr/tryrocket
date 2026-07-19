@@ -76,9 +76,10 @@ const AppShell = () => {
   }, [collapsed]);
 
   const sidebarItemClass = ({ isActive }: { isActive: boolean }) =>
-    `group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium transition ${collapsed ? "justify-center px-0" : "px-3"} ${isActive
+    `group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-semibold transition ${collapsed ? "justify-center px-0" : "px-3"} ${isActive
       ? "bg-neutral-900 text-white shadow-sm"
-      : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"}`;
+      : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950"}`;
+
 
   const sidebarWidth = collapsed ? 68 : 220;
 
