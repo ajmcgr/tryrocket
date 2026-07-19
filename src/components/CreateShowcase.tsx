@@ -88,8 +88,6 @@ const ShowcaseCard = ({
 const CARDS = [
   {
     id: "logos",
-    eyebrow: "Logos",
-    eyebrowIcon: Shapes,
     title: "Logo marks & wordmarks",
     description:
       "Generate distinctive logo directions from a URL or a few words. Get a mark, matching logotype, color palette, and typography in one pass — then refine the winner in the editor.",
@@ -108,8 +106,6 @@ const CARDS = [
   },
   {
     id: "icons",
-    eyebrow: "Icons",
-    eyebrowIcon: Sparkles,
     title: "App icons & glyphs",
     description:
       "Create crisp app icons, favicons, and custom glyph sets that match your logo system. Pick a style, generate a batch, and save the winners directly to your brand kit.",
@@ -128,8 +124,6 @@ const CARDS = [
   },
   {
     id: "brand-kits",
-    eyebrow: "Brand Kits",
-    eyebrowIcon: Palette,
     title: "Complete brand kits",
     description:
       "Turn any logo into a full brand kit: canonical colors, typography, templates, and organized files. One project, one source of truth for every launch asset.",
