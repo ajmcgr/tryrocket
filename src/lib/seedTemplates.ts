@@ -257,4 +257,8 @@ export function buildSeedTemplates() {
   return out;
 }
 
-export const SEED_TEMPLATES = buildSeedTemplates();
+import { ICON_SEED_TEMPLATES } from "./seedIconTemplates";
+
+// Show icon-based logos first so /templates leads with actual logos, then
+// fall back to the wordmark variants.
+export const SEED_TEMPLATES = [...ICON_SEED_TEMPLATES, ...buildSeedTemplates()];
