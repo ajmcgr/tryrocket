@@ -1,104 +1,64 @@
+# Finish: Workspace Isolation, Pro Gating, Trash Polish
 
-# Rocket V4 — UX & Product Architecture Upgrade
+## 1) Workspace Data Isolation
 
-Additive evolution on top of the current codebase. No routes removed, no DB tables changed destructively, no API contract broken. Everything below layers on existing surfaces.
+### Migration
+Add `workspace_id uuid references workspaces(id) on delete cascade` to:
+- `assets`
+- `projects`
+- `folders`
+- `chats` (and/or `messages` if scoped per-chat only, chats sufficient)
+- `notifications`
+- `uploads` (if separate; otherwise covered by assets)
 
-## Guiding rules (applied to every change)
-- Preserve: auth, billing, credits, projects, assets, editor, URL analysis, logo gen, asset gen, sharing, export, existing routes, existing schemas.
-- Language shift only in UI copy: "Results" → "Current Deliverable", "Generated Assets" → "Deliverables", "AI Output" → "Creative Direction".
-- Left prompt panel stays. Chat stays attached to the active project.
-- LLM keeps returning structured data; Rocket renders the visual (already true — extend, don't rewrite).
+Steps per table:
+1. `ALTER TABLE ... ADD COLUMN workspace_id uuid REFERENCES public.workspaces(id) ON DELETE CASCADE;`
+2. Backfill: for each row, set `workspace_id` to the user's personal workspace (lookup by `user_id` → `workspace_members` where role='owner' and workspace type='personal', fallback to first membership).
+3. `ALTER TABLE ... ALTER COLUMN workspace_id SET NOT NULL;`
+4. `CREATE INDEX ... ON (workspace_id);`
+5. Replace RLS SELECT/INSERT/UPDATE/DELETE policies to require `workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid())` via a `public.is_workspace_member(_ws uuid)` SECURITY DEFINER function to avoid recursion.
+6. Re-issue GRANTs (unchanged set).
 
----
+### Frontend
+- Add `useActiveWorkspaceId()` helper (already exists as `ensureActiveWorkspaceId`). Ensure every query calls `.eq("workspace_id", ws)`.
+- Files to patch (based on prior work): `Dashboard.tsx`, `Designs.tsx` (or `Projects.tsx`), `Assets.tsx`, `SavedLogos.tsx`, `Trash.tsx`, `ProjectDetail.tsx`, `Generate.tsx` (chats + messages), `ChatsSidebar.tsx`, `NotificationsBell.tsx`, `Brand.tsx`, `Templates.tsx` save paths, `HomeHub.tsx` recents.
+- All inserts already pass `workspace_id`; audit and add where missing.
+- Subscribe to `workspace:changed` custom event → refetch lists.
 
-## Phase 1 — Studio Layout (biggest visible change, lowest risk)
+## 2) Pro-only Workspace Gating
 
-New three-pane layout used by `/create` and a new `/studio/:projectId` view. Old `/create` behavior kept as default when no project is active.
+### Backend
+- Edge function `get-subscription` (existing Stripe): return `{ plan: "free" | "pro" | "business" }`.
+- New helper `useSubscription()` hook caches for session.
 
-```text
-┌────────────┬──────────────────────────────┬────────────┐
-│ Left       │ Center                       │ Right      │
-│ Conversat. │ BrandContextStrip            │ Properties │
-│ History    │ ─────────────────            │ Layers     │
-│ Pinned     │ CurrentDeliverable (large)   │ Export     │
-│ Uploads    │ VariationStrip (filmstrip)   │ Settings   │
-│ Prompt     │ RelatedAssets (family)       │            │
-└────────────┴──────────────────────────────┴────────────┘
-```
+### UI
+- `WorkspaceSwitcher.tsx`: disable "Create workspace" and "Invite members" when `plan === "free"`. Show lock icon + tooltip "Pro plan required" linking to `/pricing`.
+- `Pricing.tsx` + `Index.tsx` marketing: move "Workspaces & multi-seat" bullet from Free → Pro column; FAQ update.
+- Server-side guard: RLS on `workspaces` insert requires `has_pro_plan(auth.uid())` SECURITY DEFINER function that reads `subscriptions` table.
 
-Files (new):
-- `src/components/studio/StudioLayout.tsx` — 3-pane shell, responsive collapse to current single-column on mobile.
-- `src/components/studio/CurrentDeliverable.tsx` — wraps existing `AssetVisual` at large size + action bar (Open in Editor, Download, Export, Duplicate, Version History, Create Variation, Save).
-- `src/components/studio/VariationStrip.tsx` — horizontal filmstrip of sibling assets (reuses sibling query already in `AssetDetail.tsx`). Click swaps `CurrentDeliverable`.
-- `src/components/studio/RelatedAssetsRail.tsx` — grouped by category (Brand / Social / Launch / Marketing / Presentations / Website).
-- `src/components/studio/RightInspector.tsx` — thin wrapper that shows Properties/Layers/Export tabs; when the asset is a canvas asset, delegates to existing editor panels.
+## 3) Trash Polish
 
-Files (touched, additively):
-- `src/pages/Generate.tsx` — mount inside `StudioLayout` when `?project=<id>` is present; unchanged otherwise.
-- `src/components/AppShell.tsx` — no structural change; sidebar routes list already includes `/create`.
+`Trash.tsx`:
+- Multi-select rows (checkbox + shift-click range).
+- Bulk **Restore** and bulk **Delete forever** buttons in a sticky action bar.
+- **Empty trash** button opens AlertDialog confirming permanent deletion of all items >0.
+- Show "Auto-deletes in N days" per row based on `deleted_at + 30d`.
 
-## Phase 2 — Persistent Brand Context
+### Auto-purge
+- Migration: add `pg_cron` job (or scheduled edge function) `purge-trash` that runs daily:
+  ```sql
+  DELETE FROM assets WHERE deleted_at < now() - interval '30 days';
+  DELETE FROM projects WHERE deleted_at < now() - interval '30 days';
+  ```
+- If pg_cron unavailable, create Supabase scheduled edge function `purge-trash` with daily schedule.
 
-Brand Context already exists per-asset (`asset.meta.brand_context`) and is rendered by `BrandContextStrip`. Promote it to project scope.
+## Technical notes
+- Use one migration file per concern (isolation, pro-guard) to keep review sane.
+- All new SECURITY DEFINER functions get `SET search_path = public`.
+- Grant statements included for every altered table (existing grants persist through ADD COLUMN, but re-verify).
+- Frontend query audit uses ripgrep: `rg "from\\(\"(assets|projects|folders|chats|notifications)\"\\)" src/` and confirm each call chains `.eq("workspace_id", ...)`.
 
-- Add `src/lib/brandContext.ts`: `getProjectBrandContext(projectId)` and `setProjectBrandContext(projectId, ctx)` that read/write `projects.meta.brand_context` (json column already present — additive key).
-- On any new generation inside a project, merge project context into the request payload (already partially wired; make it authoritative).
-- `BrandContextStrip` gets a `scope="project"` variant pinned above `CurrentDeliverable`.
-- Refresh button reuses the existing `scrape-url` edge function.
-
-No migration required — uses the existing `meta jsonb` column.
-
-## Phase 3 — Conversational refinement bound to project
-
-Chat already persists per session in `Generate.tsx`. Bind it to project.
-
-- Persist chat turns in `localStorage` keyed by `rocket:chat:<projectId>` (fallback to `rocket:chat:global`).
-- Left panel gets: New Chat, Pinned toggle per thread, Uploads (existing upload path), Prompt (existing composer).
-- Refinement prompts ("make icon smaller", "generate favicon", "dark version") route to the existing `regenerate-asset` / `rewrite-field` edge functions with the currently-selected `CurrentDeliverable` as target.
-- No new backend.
-
-## Phase 4 — Asset Family & Variation semantics
-
-Assets already have `parent_id` / `family_id` fields in meta. Formalize:
-
-- `src/lib/assetFamily.ts`: `getSiblings(assetId)`, `getFamily(rootId)`, `createVariation(assetId, overrides)`.
-- "Create Variation" in `CurrentDeliverable` calls `regenerate-asset` with `mode: "variation"` and links `parent_id`.
-- `VariationStrip` queries siblings; selecting one updates the URL `?asset=<id>` so refresh restores state.
-
-## Phase 5 — Category grouping in Projects
-
-- `src/pages/ProjectDetail.tsx`: group asset list by `meta.category` (Brand / Social / Launch / Marketing / Presentations / Website / Press). Fallback bucket "Other" for legacy assets. Ordering by category, not creation date.
-- Add lightweight category chip picker on each asset card (updates `meta.category` inline via existing update path).
-
-## Phase 6 — Copy & chrome polish
-
-- Replace strings across `Generate.tsx`, `ProjectDetail.tsx`, `AssetDetail.tsx`, `Assets.tsx`: "Results"→"Current Deliverable", "Generated"→"Deliverable", "AI Output"→"Creative Direction".
-- Increase preview sizes in center pane; reduce surrounding chrome padding.
-- Keep existing motion; no new animation library.
-
-## Phase 7 — "Create complete brand" macro (stretch)
-
-- Add one button in Studio: "Generate full brand system" → sequentially triggers existing edge functions in this order: logo → logotype → color system → typography → icons → brand guidelines → social kit → launch kit → press kit → pitch deck.
-- Uses `generate-asset` with the project's Brand Context. Each result appears in `RelatedAssetsRail` under its category as it completes.
-- Progress shown in the left panel's "Generation progress" area.
-
----
-
-## What is explicitly NOT changing
-- No DB migrations (all new data goes into existing `meta jsonb` columns).
-- No edge function contract changes (only new call sites).
-- No route removals. `/create`, `/editor`, `/projects`, `/assets`, share/export routes all remain.
-- No visual identity change (brand blue `#1676e3` stays).
-- No auth/billing/credits touch.
-
-## Rollout order (each shippable independently)
-1. Studio layout scaffold + mount inside `/create` when `?project=` present.
-2. Persistent project Brand Context + strip.
-3. Current Deliverable + Variation Strip wired to existing sibling logic.
-4. Project-scoped chat history.
-5. Category grouping in ProjectDetail.
-6. Copy polish pass.
-7. Full-brand macro (stretch, only if credits allow).
-
-## Credit-awareness note
-User has ~58 credits remaining. Phases 1–5 are pure frontend refactor (no AI calls). Phase 7 is the only credit-consuming addition and is guarded behind explicit user click.
+## Out of scope (ask before doing)
+- Migrating existing production rows where users have multiple workspaces (backfill assumes personal).
+- Cross-workspace move/copy UI.
+- Per-seat billing meter.
