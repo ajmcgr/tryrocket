@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { assetHref, isBrandAsset, isDesignAsset, normalizeAssetType } from "@/lib/assetExperience";
 import BrandCover from "@/components/brand/BrandCover";
 import { ArrowRight, Check, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { Logotype } from "@/components/Logotype";
 
 const supabase = _sb as any;
 
@@ -228,42 +229,53 @@ export default function BrandHub() {
     return KIT_ESSENTIALS.filter((essential) => essential.types.some((type) => types.has(type))).length;
   };
 
-  if (!loading && !activeProject && !params.get("direction")) {
+  if (!activeProject && !params.get("direction")) {
     return (
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Brands</h1>
-            <p className="mt-1 max-w-2xl text-sm text-neutral-500">Each brand keeps its direction, designs and download-ready kit together.</p>
+            <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand you've saved.</p>
           </div>
           <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
             <Plus className="h-4 w-4" /> Create a brand
           </Link>
         </div>
 
-        {projects.length ? (
-          <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="animate-pulse rounded-2xl border border-neutral-200 bg-white">
+                <div className="aspect-square rounded-t-2xl bg-neutral-100" />
+                <div className="p-4"><div className="h-3.5 w-2/3 rounded bg-neutral-100" /></div>
+              </div>
+            ))}
+          </section>
+        ) : projects.length ? (
+          <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {projects.map((project) => {
-              const designCount = projectDesignCount(project.id);
-              const essentials = projectKitProgress(project.id);
-              const ready = essentials === KIT_ESSENTIALS.length;
+              const logo = allDesigns.find((d) => d.project_id === project.id && ["logo","logotype","wordmark"].includes(normalizeAssetType(d.asset_type)));
+              const preview = logo?.image_url;
+              const logoState = logo?.editor_state?.kind === "logotype" ? logo.editor_state : null;
               return (
                 <Link
                   key={project.id}
                   to={`/brands/${project.id}`}
-                  className="group rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
+                  className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-sm font-semibold text-white">
-                      {String(project.name || "B").trim().slice(0, 2).toUpperCase()}
-                    </div>
-                    <ArrowRight className="mt-1 h-4 w-4 text-neutral-400 transition group-hover:text-neutral-900" />
+                  <div className="flex aspect-square items-center justify-center bg-neutral-50 p-6">
+                    {logoState ? (
+                      <Logotype state={logoState} fit="contain" />
+                    ) : preview ? (
+                      <img src={preview} alt="" className="max-h-full max-w-full object-contain" loading="lazy" />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-neutral-900 text-lg font-semibold text-white">
+                        {String(project.name || "B").trim().slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
                   </div>
-                  <h2 className="mt-5 truncate text-lg font-semibold text-neutral-900">{project.name}</h2>
-                  <p className="mt-1 text-sm text-neutral-500">{designCount} {designCount === 1 ? "design" : "designs"}</p>
-                  <div className="mt-5 flex items-center justify-between border-t border-neutral-100 pt-4 text-xs">
-                    <span className={ready ? "font-medium text-emerald-700" : "text-neutral-500"}>{ready ? "Ready to download" : `${essentials}/5 kit essentials`}</span>
-                    <span className="font-medium text-neutral-900">Open brand</span>
+                  <div className="border-t border-neutral-100 p-4">
+                    <div className="truncate text-sm font-medium text-neutral-900">{project.name || "Untitled brand"}</div>
                   </div>
                 </Link>
               );
@@ -271,8 +283,8 @@ export default function BrandHub() {
           </section>
         ) : (
           <section className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-14 text-center">
-            <h2 className="text-lg font-semibold text-neutral-900">Create your first brand</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">Start with a logo, then Rocket will help you build the colours, type and voice around it.</p>
+            <h2 className="text-lg font-semibold text-neutral-900">No brands yet</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">Start with a logo, then Rocket builds the colours, type and voice around it.</p>
             <Link to="/create" className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
               <Plus className="h-4 w-4" /> Create a brand
             </Link>

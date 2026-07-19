@@ -19,11 +19,15 @@ import {
   Type,
   Download,
   Loader2,
+  Pencil,
+  Check as CheckIcon,
+  X as XIcon,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng, logotypeToSvg } from "@/components/Logotype";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,38 +101,73 @@ async function downloadPdf(state: LogotypeState, filename: string, bg: string) {
 export default function Brand() {
   const { id: projectId } = useParams();
   const { toast } = useToast();
+  const { user } = useAuth();
   if (!projectId) return <Navigate to="/brands" replace />;
 
   const [project, setProject] = useState<any>(null);
   const [logoAsset, setLogoAsset] = useState<any>(null);
+  const [logoAssets, setLogoAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [section, setSection] = useState<string>("logo-files");
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [{ data: proj }, { data: assets }] = await Promise.all([
-        supabase.from("projects").select("id,name,brand_color").eq("id", projectId).maybeSingle(),
+      const [{ data: proj }, { data: pAssets }] = await Promise.all([
+        supabase.from("projects").select("id,name,brand_color,user_id").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
-          .select("id,title,asset_type,editor_state,image_url,created_at")
+          .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
           .eq("project_id", projectId)
           .in("asset_type", ["logo", "logotype", "wordmark"])
-          .order("created_at", { ascending: true })
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
           .limit(50),
       ]);
       if (cancelled) return;
       setProject(proj || null);
-      const withState = (assets || []).find((a: any) => a?.editor_state?.kind === "logotype");
-      setLogoAsset(withState || (assets || [])[0] || null);
+      let logos = (pAssets || []).filter(Boolean);
+      // Fallback: if the project has no logos, pull the user's most recent logos so the
+      // brand kit still shows their generated work instead of an empty state.
+      if (!logos.length && user?.id) {
+        const { data: userLogos } = await supabase
+          .from("assets")
+          .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
+          .eq("user_id", user.id)
+          .in("asset_type", ["logo", "logotype", "wordmark"])
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(24);
+        logos = (userLogos || []).filter(Boolean);
+      }
+      if (cancelled) return;
+      setLogoAssets(logos);
+      const withState = logos.find((a: any) => a?.editor_state?.kind === "logotype");
+      setLogoAsset(withState || logos[0] || null);
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, user?.id]);
+
+  const startRename = () => { setNameDraft(project?.name || ""); setRenaming(true); };
+  const cancelRename = () => { setRenaming(false); setNameDraft(""); };
+  const commitRename = async () => {
+    const name = nameDraft.trim();
+    if (!name || name === project?.name) { cancelRename(); return; }
+    setSavingName(true);
+    const { error } = await supabase.from("projects").update({ name }).eq("id", projectId);
+    setSavingName(false);
+    if (error) return toast({ title: "Rename failed", description: error.message, variant: "destructive" });
+    setProject((p: any) => ({ ...(p || {}), name }));
+    setRenaming(false);
+  };
 
   const brandColor = useMemo(() => {
     const c = String(project?.brand_color || "").trim();
@@ -139,6 +178,9 @@ export default function Brand() {
     if (logoAsset?.editor_state?.kind === "logotype") return logoAsset.editor_state as LogotypeState;
     return defaultLogotypeState(project?.name || logoAsset?.title || "Brand");
   }, [logoAsset, project]);
+
+  const logoIsImage = !logoAsset?.editor_state && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
+  const logoImageUrl = logoAsset?.image_url || logoAsset?.thumbnail_url;
 
   const variants = useMemo<Record<Variant["key"], LogotypeState>>(
     () => ({
@@ -210,7 +252,24 @@ export default function Brand() {
             {String(project?.name || "B").trim().slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-brand">{project?.name || "Brand"}</div>
+            {renaming ? (
+              <div className="flex items-center gap-1">
+                <input
+                  autoFocus
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") cancelRename(); }}
+                  className="min-w-0 flex-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-sm text-neutral-900 outline-none focus:border-brand"
+                />
+                <button onClick={commitRename} disabled={savingName} className="rounded-md p-1 text-emerald-600 hover:bg-emerald-50"><CheckIcon className="h-3.5 w-3.5" /></button>
+                <button onClick={cancelRename} className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100"><XIcon className="h-3.5 w-3.5" /></button>
+              </div>
+            ) : (
+              <button onClick={startRename} className="group flex w-full items-center gap-1 truncate text-left text-sm font-semibold text-brand" title="Rename brand">
+                <span className="truncate">{project?.name || "Untitled brand"}</span>
+                <Pencil className="h-3 w-3 shrink-0 opacity-0 transition group-hover:opacity-70" />
+              </button>
+            )}
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto px-2 pb-6">
@@ -263,7 +322,7 @@ export default function Brand() {
       {/* Main */}
       <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
-          <h1 className="text-lg font-semibold text-neutral-900">Logo Files</h1>
+          <h1 className="text-lg font-semibold text-neutral-900">{project?.name ? `${project.name} · Logo Files` : "Logo Files"}</h1>
         </header>
 
         <div className="px-6 py-8">
@@ -280,6 +339,42 @@ export default function Brand() {
               >
                 Generate a logo
               </Link>
+            </div>
+          ) : logoIsImage ? (
+            <div className="mx-auto max-w-5xl">
+              <div className="grid gap-6 md:grid-cols-2">
+                {cards.map((v) => (
+                  <div key={v.key} className={`relative overflow-hidden rounded-2xl ${v.border ? `border ${v.border}` : ""} shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)]`} style={{ backgroundColor: v.bg }}>
+                    <div className="flex aspect-[16/9] items-center justify-center px-10">
+                      <img src={logoImageUrl} alt={project?.name || "Logo"} className="max-h-full max-w-full object-contain" style={v.key === "inverse" || v.key === "white" ? { filter: "invert(1) hue-rotate(180deg)" } : undefined} />
+                    </div>
+                    <div className="pointer-events-none absolute left-4 top-4">
+                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${v.chipClass}`}>{v.label}</span>
+                    </div>
+                    <a href={logoImageUrl} download={`${filenameFor(v)}.png`} target="_blank" rel="noreferrer" className={`absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition ${(v.bg === "#FFFFFF") ? "bg-neutral-900 text-white hover:bg-neutral-800" : "bg-white/95 text-neutral-900 hover:bg-white"}`}>
+                      <Download className="h-3.5 w-3.5" /> Download
+                    </a>
+                  </div>
+                ))}
+              </div>
+              {logoAssets.length > 1 && (
+                <div className="mt-10">
+                  <h2 className="text-sm font-semibold text-neutral-700">All saved logos ({logoAssets.length})</h2>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {logoAssets.map((a) => (
+                      <button key={a.id} onClick={() => setLogoAsset(a)} className={`overflow-hidden rounded-xl border bg-white transition hover:shadow-sm ${logoAsset?.id === a.id ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
+                        <div className="flex aspect-square items-center justify-center bg-neutral-50 p-3">
+                          {a?.editor_state?.kind === "logotype" ? (
+                            <Logotype state={a.editor_state} fit="contain" />
+                          ) : (a.image_url || a.thumbnail_url) ? (
+                            <img src={a.image_url || a.thumbnail_url} alt="" className="max-h-full max-w-full object-contain" loading="lazy" />
+                          ) : null}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
