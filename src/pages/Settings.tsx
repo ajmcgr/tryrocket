@@ -340,7 +340,7 @@ export const AccountSettings = () => {
     </section>
     <section className="rounded-2xl border border-neutral-200 bg-white p-6">
       <h2 className="text-base font-semibold">Product tour</h2>
-      <p className="mt-1 text-sm text-neutral-600">Replay the guided walkthrough of Create, Projects, Designs, and Insights.</p>
+      <p className="mt-1 text-sm text-neutral-600">Replay the guided walkthrough of Home, Wizard, Logo Designer, Templates, Saved, Editor, and Brand Kit.</p>
       <button
         onClick={() => window.dispatchEvent(new CustomEvent("rocket:start-tour"))}
         className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50"
