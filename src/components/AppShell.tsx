@@ -8,7 +8,6 @@ import NotificationsBell from "./NotificationsBell";
 import CommandPalette from "./CommandPalette";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import {
-  FolderKanban,
   HelpCircle,
   Palette,
   PenTool,

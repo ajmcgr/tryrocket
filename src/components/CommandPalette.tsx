@@ -14,7 +14,7 @@ import {
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Sparkles, LayoutGrid, FolderOpen, LineChart, Settings, CreditCard,
+  Sparkles, LayoutGrid, LineChart, Settings, CreditCard,
   LogOut, FileText, Palette, Bell, BookOpen,
 } from "lucide-react";
 
