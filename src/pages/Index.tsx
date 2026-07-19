@@ -27,7 +27,7 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
     return (
       <div className="absolute inset-6 flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <div className={`h-6 w-6 rounded-md bg-gradient-to-br ${accent}`} />
+          <div className={`h-6 w-6 rounded-md ${accent}`} />
           <div className="h-2 w-20 rounded-full bg-neutral-200" />
           <div className="ml-auto flex gap-1.5">
             {[0, 1, 2].map((k) => <div key={k} className="h-1.5 w-1.5 rounded-full bg-neutral-300" />)}
@@ -39,7 +39,7 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
           </div>
           <div className="col-span-2 flex flex-col gap-2 rounded-xl bg-white p-3 ring-1 ring-neutral-200/70">
             <div className="h-2 w-24 rounded-full bg-neutral-200" />
-            <div className={`h-16 rounded-lg bg-gradient-to-br ${accent} opacity-90`} />
+            <div className={`h-16 rounded-lg ${accent} opacity-90`} />
             <div className="flex gap-2">
               <div className="h-8 flex-1 rounded-lg bg-neutral-100" />
               <div className="h-8 flex-1 rounded-lg bg-neutral-100" />
@@ -56,11 +56,11 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
         <div className="self-start max-w-[70%] rounded-2xl rounded-bl-md bg-white px-4 py-2.5 text-xs text-neutral-700 ring-1 ring-neutral-200/70">
           Summarize my Q3 launch wins ✨
         </div>
-        <div className={`self-end max-w-[80%] rounded-2xl rounded-br-md bg-gradient-to-br ${accent} px-4 py-2.5 text-xs text-white shadow-sm`}>
+        <div className={`self-end max-w-[80%] rounded-2xl rounded-br-md ${accent} px-4 py-2.5 text-xs text-white`}>
           You shipped 4 features, gained 1,284 users, and trended #2 on Product Hunt.
         </div>
         <div className="self-start flex items-center gap-1.5 rounded-2xl bg-white px-3 py-2 ring-1 ring-neutral-200/70">
-          {[0, 1, 2].map((k) => <span key={k} className="h-1.5 w-1.5 animate-pulse rounded-full bg-neutral-400" style={{ animationDelay: `${k * 150}ms` }} />)}
+          {[0, 1, 2].map((k) => <span key={k} className="h-1.5 w-1.5 rounded-full bg-neutral-400" />)}
         </div>
       </div>
     );
@@ -70,12 +70,12 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
       <div className="absolute inset-6 grid grid-cols-2 gap-3">
         {[0, 1, 2, 3].map((k) => (
           <div key={k} className="flex flex-col rounded-xl bg-white p-2.5 ring-1 ring-neutral-200/70">
-            <div className={`h-14 rounded-lg bg-gradient-to-br ${accent} opacity-${80 - k * 10}`} />
+            <div className={`h-14 rounded-lg ${accent} opacity-${80 - k * 10}`} />
             <div className="mt-2 h-1.5 w-16 rounded-full bg-neutral-200" />
             <div className="mt-1.5 h-1.5 w-10 rounded-full bg-neutral-100" />
             <div className="mt-auto flex items-center justify-between pt-2">
               <div className="h-2 w-8 rounded-full bg-neutral-300" />
-              <div className={`h-5 w-5 rounded-full bg-gradient-to-br ${accent}`} />
+              <div className={`h-5 w-5 rounded-full ${accent}`} />
             </div>
           </div>
         ))}
@@ -85,13 +85,13 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
   if (kind === "mobile") {
     return (
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative h-[88%] w-[46%] rounded-[2rem] bg-neutral-900 p-2 shadow-xl">
+        <div className="relative h-[88%] w-[46%] rounded-[2rem] bg-neutral-900 p-2">
           <div className="flex h-full flex-col gap-2 rounded-[1.5rem] bg-white p-3">
             <div className="mx-auto mt-1 h-1 w-10 rounded-full bg-neutral-900" />
-            <div className={`mt-2 h-10 w-10 rounded-xl bg-gradient-to-br ${accent}`} />
+            <div className={`mt-2 h-10 w-10 rounded-xl ${accent}`} />
             <div className="h-2 w-20 rounded-full bg-neutral-200" />
             <div className="h-1.5 w-16 rounded-full bg-neutral-100" />
-            <div className={`mt-2 h-20 rounded-xl bg-gradient-to-br ${accent} opacity-90`} />
+            <div className={`mt-2 h-20 rounded-xl ${accent} opacity-90`} />
             <div className="space-y-1.5">
               <div className="h-1.5 w-full rounded-full bg-neutral-100" />
               <div className="h-1.5 w-3/4 rounded-full bg-neutral-100" />
@@ -107,7 +107,7 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
       {["Idea", "Build", "Ship"].map((c, k) => (
         <div key={c} className="flex flex-col gap-2 rounded-xl bg-white p-2.5 ring-1 ring-neutral-200/70">
           <div className="flex items-center gap-1.5">
-            <span className={`h-1.5 w-1.5 rounded-full bg-gradient-to-br ${accent}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${accent}`} />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">{c}</span>
           </div>
           {Array.from({ length: 3 - (k === 2 ? 1 : 0) }).map((_, j) => (
@@ -317,8 +317,8 @@ const Index = () => {
             {[
               {
                 icon: Zap,
-                accent: "from-indigo-500 to-indigo-700",
-                tint: "from-indigo-50 to-white",
+                accent: "bg-indigo-500",
+                tint: "bg-indigo-50",
                 title: "SaaS products",
                 desc: "Launch your next software empire with a complete brand system — positioning, identity, and launch materials ready in minutes.",
                 bullets: [
@@ -330,8 +330,8 @@ const Index = () => {
               },
               {
                 icon: Sparkles,
-                accent: "from-violet-600 to-fuchsia-500",
-                tint: "from-fuchsia-50 to-white",
+                accent: "bg-violet-600",
+                tint: "bg-fuchsia-50",
                 title: "AI tools",
                 desc: "Stand out in a sea of GPT wrappers. Rocket gives your AI product a sharp positioning and a brand that feels native to 2026.",
                 bullets: [
@@ -343,8 +343,8 @@ const Index = () => {
               },
               {
                 icon: ShoppingBag,
-                accent: "from-rose-500 to-pink-500",
-                tint: "from-rose-50 to-white",
+                accent: "bg-rose-500",
+                tint: "bg-rose-50",
                 title: "E-commerce stores",
                 desc: "Conversion-focused retail branding — from your logo and packaging palette to PDP copy that actually sells.",
                 bullets: [
@@ -356,8 +356,8 @@ const Index = () => {
               },
               {
                 icon: Smartphone,
-                accent: "from-sky-400 to-blue-600",
-                tint: "from-sky-50 to-white",
+                accent: "bg-sky-500",
+                tint: "bg-sky-50",
                 title: "Mobile apps",
                 desc: "App Store-ready branding. We generate your icon direction, screenshots, ASO copy, and the launch posts to back it.",
                 bullets: [
@@ -369,8 +369,8 @@ const Index = () => {
               },
               {
                 icon: Lightbulb,
-                accent: "from-blue-600 to-indigo-800",
-                tint: "from-blue-50 to-white",
+                accent: "bg-blue-600",
+                tint: "bg-blue-50",
                 title: "Side projects",
                 desc: "Turn weekend ideas into polished ventures. Rocket gives every side project the brand polish of a funded startup.",
                 bullets: [
@@ -385,7 +385,7 @@ const Index = () => {
               return (
                 <div
                   key={row.title}
-                  className="overflow-hidden rounded-3xl bg-white ring-1 ring-neutral-200/70 transition-shadow hover:shadow-[0_20px_60px_-20px_rgba(15,23,42,0.18)]"
+                  className="overflow-hidden rounded-3xl bg-white ring-1 ring-neutral-200/70"
                 >
                   <div className={`grid items-center gap-8 p-8 sm:p-12 md:grid-cols-2 md:gap-12 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}>
                     <div>
@@ -405,7 +405,7 @@ const Index = () => {
                         ))}
                       </ul>
                     </div>
-                    <div className={`relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br ${row.tint} ring-1 ring-neutral-200/70`}>
+                    <div className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${row.tint} ring-1 ring-neutral-200/70`}>
                       <UseCaseVisual kind={row.visual} accent={row.accent} />
                     </div>
                   </div>
