@@ -77,7 +77,7 @@ export default function BuyCreditsMenu({ collapsed }: Props) {
 
   if (!user) return null;
 
-  const triggerClass = `group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium transition text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`;
+  const triggerClass = `group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-semibold transition text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -89,9 +89,10 @@ export default function BuyCreditsMenu({ collapsed }: Props) {
           title="Buy credits"
         >
           <Coins className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-          {!collapsed && <span className="truncate font-body">Buy credits</span>}
+          {!collapsed && <span className="truncate">Buy credits</span>}
         </button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent
         side="top"
         align="start"
