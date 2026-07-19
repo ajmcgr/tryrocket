@@ -325,7 +325,6 @@ export default function Brand() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </>
   );
 }
