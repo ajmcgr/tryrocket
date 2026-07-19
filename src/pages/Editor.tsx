@@ -1484,18 +1484,18 @@ const Editor = () => {
           <DropdownMenuSub>
             <DropdownMenuSubTrigger disabled={!assetId}>
               <FolderPlus className="mr-2 h-4 w-4" />
-              Move
+              Add to brand kit
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-64">
               <DropdownMenuItem onClick={() => void createProjectAndAssign()}>
                 <FolderPlus className="mr-2 h-4 w-4" />
-                New project…
+                New brand kit…
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {loadingProjects ? (
                 <DropdownMenuItem disabled>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading projects…
+                  Loading brand kits…
                 </DropdownMenuItem>
               ) : projectOptions.length > 0 ? (
                 projectOptions.map((project) => (
@@ -1507,13 +1507,13 @@ const Editor = () => {
                   </DropdownMenuItem>
                 ))
               ) : (
-                <DropdownMenuItem disabled>No projects yet</DropdownMenuItem>
+                <DropdownMenuItem disabled>No brand kits yet</DropdownMenuItem>
               )}
               {assetMeta?.project_id && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => void assignProject(null)}>
-                    Remove from project
+                    Remove from brand kit
                   </DropdownMenuItem>
                 </>
               )}
