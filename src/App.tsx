@@ -143,7 +143,8 @@ const App = () => (
               <Route path="/assets/:id" element={<AssetRouteRedirect />} />
               <Route path="/trash" element={<Trash />} />
               <Route path="/create" element={<CreateEntry />} />
-              <Route path="/create/generate" element={<LogoStudio />} />
+              <Route path="/wizard" element={<LogoStudio />} />
+              <Route path="/create/generate" element={<Navigate to="/wizard" replace />} />
               <Route path="/create/chat" element={<Generate />} />
               <Route path="/saved" element={<SavedLogos />} />
               <Route path="/logos" element={<LogoDesigner />} />
