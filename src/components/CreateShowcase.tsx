@@ -1,4 +1,4 @@
-import { Rocket, Mail, Quote, TrendingUp, Users, CheckCircle2, BookOpen, LayoutTemplate, Image as ImageIcon, Component, Shapes, Star, BarChart3 } from "lucide-react";
+import { BookOpen, Star } from "lucide-react";
 import logoAsset from "@/assets/showcase/logo.png";
 import guidelinesAsset from "@/assets/showcase/guidelines.png";
 import templatesAsset from "@/assets/showcase/templates.png";
