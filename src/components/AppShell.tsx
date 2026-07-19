@@ -123,7 +123,7 @@ const AppShell = () => {
       <div className="min-h-screen lg:pl-[68px]">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
-          <Logo to="/create" size="sm" className="shrink-0" />
+          <Logo to="/create" size="md" className="shrink-0" />
           {headerLeft && <div className="ml-2 flex shrink-0 items-center gap-2">{headerLeft}</div>}
           <div className="ml-4 hidden items-center gap-1 md:flex lg:hidden">
             {studioNav.slice(0, 3).map((item) => (
