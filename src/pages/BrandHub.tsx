@@ -68,7 +68,7 @@ export default function BrandHub() {
       setLoading(true);
       const [{ data: a }, { data: p }] = await Promise.all([
         supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").eq("user_id", user.id).order("created_at", { ascending: false }).limit(400),
-        supabase.from("projects").select("id,name,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
+        supabase.from("projects").select("id,name,meta,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
       const loadedProjects = (p || []).filter(Boolean);
