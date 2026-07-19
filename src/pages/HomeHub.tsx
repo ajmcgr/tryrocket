@@ -1,17 +1,17 @@
 import { Link } from "react-router-dom";
-import { LayoutGrid, Package, Sparkles as SparklesIcon } from "lucide-react";
+import { LayoutGrid, Package, Sparkles as SparklesIcon, Palette } from "lucide-react";
 
 /**
- * Logged-in landing page — three big colored cards routing to Rocket's
+ * Logged-in landing page — four big colored cards routing to Rocket's
  * primary logo-first surfaces.
  */
 const HomeHub = () => {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10 sm:px-6">
-      <div className="grid w-full max-w-6xl gap-6 md:grid-cols-3">
+      <div className="grid w-full max-w-6xl gap-6 md:grid-cols-4">
         <HubCard
           to="/create/generate"
-          title="Generate"
+          title="Wizard"
           subtitle="Auto-generate hundreds of logos"
           bg="bg-[#7B8CF7]"
           hover="hover:bg-[#6B7CE7]"
@@ -24,6 +24,14 @@ const HomeHub = () => {
           bg="bg-[#4CD9A0]"
           hover="hover:bg-[#3AC48D]"
           icon={<Package className="h-6 w-6" />}
+        />
+        <HubCard
+          to="/logos"
+          title="Logo Designer"
+          subtitle="Design a logo from a brief"
+          bg="bg-[#1676e3]"
+          hover="hover:bg-[#1268c9]"
+          icon={<Palette className="h-6 w-6" />}
         />
         <HubCard
           to="/icons"
