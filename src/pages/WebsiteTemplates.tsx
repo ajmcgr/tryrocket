@@ -6,6 +6,7 @@ import { Logotype } from "@/components/Logotype";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 

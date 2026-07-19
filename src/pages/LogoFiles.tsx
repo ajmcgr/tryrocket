@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 
