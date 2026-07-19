@@ -53,8 +53,8 @@ const studioNav: StudioNavItem[] = [
   { label: "Wizard", to: "/wizard", icon: Wand2, tour: "nav-wizard" },
   { label: "Templates", to: "/templates", icon: LayoutTemplate, tour: "nav-templates" },
   { label: "Saved", to: "/saved", icon: Star, tour: "nav-saved" },
-  { label: "Editor", to: "/editor", icon: PenTool, tour: "nav-editor" },
   { label: "Brand Kit", to: "/brands", icon: Palette, tour: "nav-brand" },
+  { label: "Editor", to: "/editor", icon: PenTool, tour: "nav-editor" },
   { label: "Trash", to: "/trash", icon: Trash2, tour: "nav-trash" },
 ];
 
