@@ -4,7 +4,7 @@ import { assetHref } from "@/lib/assetExperience";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes } from "lucide-react";
+import { ArrowRight, ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes, LayoutGrid, List as ListIcon, Heart, MoreHorizontal, Copy } from "lucide-react";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
@@ -470,6 +470,10 @@ const Generate = () => {
   });
   const [projectBrandContext, setProjectBrandContext] = useState<any>(null);
   const [ignoreSavedStyle, setIgnoreSavedStyle] = useState(false);
+  const [resultsView, setResultsView] = useState<"grid" | "list">(() => {
+    try { return (localStorage.getItem("rocket.generate.view") as "grid" | "list") || "grid"; } catch { return "grid"; }
+  });
+  useEffect(() => { try { localStorage.setItem("rocket.generate.view", resultsView); } catch {} }, [resultsView]);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
   const [pendingPrompts, setPendingPrompts] = useState<{ text: string; at: string }[]>([]);
@@ -1091,45 +1095,87 @@ const Generate = () => {
           </div>
 
           {/* Right: results panel — Brandmark-style clean grid */}
-          <div className="rounded-2xl bg-transparent">
+          <div className="bg-transparent">
             {chatAssets.length === 0 ? (
               <p className="text-sm text-neutral-500">No designs yet.</p>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {chatAssets.map((a) => (
-                  <div
-                    key={a.id}
-                    className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
-                  >
-                    <Link to={assetHref(a)} target="_blank" rel="noopener noreferrer" className="block">
-                      {a.image_url ? (
-                        <div className="aspect-square w-full bg-white">
-                          <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain p-6" />
-                        </div>
-                      ) : (
-                        <AssetCardThumb asset={a} />
-                      )}
-                    </Link>
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 p-3 opacity-0 transition group-hover:opacity-100">
-                      <Link
-                        to={assetHref(a)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="pointer-events-auto inline-flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-neutral-800 shadow ring-1 ring-neutral-200 hover:bg-neutral-50"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => void useAsMyBrand(a.id)}
-                        className="pointer-events-auto inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground shadow hover:bg-brand-hover"
-                      >
-                        Save
-                      </button>
-                    </div>
+              <>
+                <div className="mb-4 flex items-center justify-end">
+                  <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white p-0.5 text-neutral-500">
+                    <button
+                      type="button"
+                      onClick={() => setResultsView("list")}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${resultsView === "list" ? "bg-neutral-900 text-white" : "hover:text-neutral-900"}`}
+                      title="List view"
+                    >
+                      <ListIcon className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setResultsView("grid")}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${resultsView === "grid" ? "bg-neutral-900 text-white" : "hover:text-neutral-900"}`}
+                      title="Grid view"
+                    >
+                      <LayoutGrid className="h-3.5 w-3.5" /> Grid
+                    </button>
                   </div>
-                ))}
-              </div>
+                </div>
+                <div className={resultsView === "list" ? "flex flex-col gap-5" : "grid grid-cols-1 gap-5 md:grid-cols-2"}>
+                  {chatAssets.map((a) => (
+                    <div
+                      key={a.id}
+                      className="group relative overflow-hidden rounded-3xl bg-neutral-50 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ring-1 ring-neutral-100 transition hover:shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)]"
+                    >
+                      <Link to={assetHref(a)} target="_blank" rel="noopener noreferrer" className="block">
+                        {a.image_url ? (
+                          <div className="flex aspect-[4/3] w-full items-center justify-center">
+                            <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain p-10" />
+                          </div>
+                        ) : (
+                          <div className="aspect-[4/3] w-full">
+                            <AssetCardThumb asset={a} />
+                          </div>
+                        )}
+                      </Link>
+                      {/* Hover action bar — Brandmark style */}
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center pb-4 opacity-0 transition group-hover:opacity-100">
+                        <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-white p-1 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.25)] ring-1 ring-neutral-100">
+                          <Link
+                            to={assetHref(a)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
+                          >
+                            <Wand2 className="h-3.5 w-3.5" /> Edit
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => { setPrompt(`Variants of "${a.title || "this design"}"`); }}
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
+                          >
+                            <Layers className="h-3.5 w-3.5" /> Variants
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void useAsMyBrand(a.id)}
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
+                          >
+                            <Heart className="h-3.5 w-3.5" /> Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { try { navigator.clipboard.writeText(a.image_url || ""); } catch {} }}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                            title="More"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
