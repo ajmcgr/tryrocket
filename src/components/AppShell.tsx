@@ -64,23 +64,24 @@ const AppShell = () => {
   const [headerCenter, setHeaderCenter] = useState<ReactNode | null>(null);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
 
-  const railItemClass = ({ isActive }: { isActive: boolean }) =>
-    `group relative flex h-10 w-10 items-center justify-center rounded-xl transition ${isActive
+  const sidebarItemClass = ({ isActive }: { isActive: boolean }) =>
+    `group flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition ${isActive
       ? "bg-neutral-900 text-white shadow-sm"
       : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"}`;
 
   return (
     <div className="app-shell min-h-screen bg-[#f5f7fb] text-neutral-900">
-      <aside className="fixed inset-y-0 left-0 z-50 hidden w-[68px] flex-col items-center border-r border-neutral-200 bg-white py-3 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-50 hidden w-[220px] flex-col border-r border-neutral-200 bg-white py-3 px-3 lg:flex">
         <Link
           to="/logos"
-          className="mb-7 flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-sm transition hover:bg-brand-hover"
+          className="mb-6 flex h-10 w-full items-center gap-3 rounded-xl bg-brand px-3 text-brand-foreground shadow-sm transition hover:bg-brand-hover"
           aria-label="Logo Designer"
           title="Logo Designer"
         >
-          <Sparkles className="h-5 w-5" />
+          <Sparkles className="h-5 w-5 shrink-0" />
+          <span className="text-sm font-medium">Logo Designer</span>
         </Link>
-        <nav className="flex flex-col items-center gap-2" aria-label="Rocket studio">
+        <nav className="flex flex-col gap-1" aria-label="Rocket studio">
           {studioNav.map((item) => {
             const Icon = item.icon;
             return (
@@ -88,49 +89,47 @@ const AppShell = () => {
                 key={item.label}
                 to={item.to}
                 data-tour={item.tour}
-                className={railItemClass}
+                className={sidebarItemClass}
                 aria-label={item.label}
                 title={item.label}
               >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
-                <span className="pointer-events-none absolute left-12 hidden whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white shadow-lg group-hover:block">
-                  {item.label}
-                </span>
+                <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+                <span className="truncate">{item.label}</span>
               </NavLink>
             );
           })}
         </nav>
-        <div className="mt-auto flex flex-col items-center gap-2">
+        <div className="mt-auto flex flex-col gap-1">
           <NavLink
             to="/settings/billing"
-            className={railItemClass}
+            className={sidebarItemClass}
             aria-label="Buy Credits"
             title="Buy Credits"
           >
-            <Coins className="h-[18px] w-[18px]" strokeWidth={1.9} />
-            <span className="pointer-events-none absolute left-12 hidden whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white shadow-lg group-hover:block">
-              Buy Credits
-            </span>
+            <Coins className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+            <span className="truncate">Buy Credits</span>
           </NavLink>
           <NavLink
             to="/settings/profile"
-            className={railItemClass}
+            className={sidebarItemClass}
             aria-label="Settings"
             title="Settings"
           >
-            <Settings className="h-[18px] w-[18px]" strokeWidth={1.9} />
+            <Settings className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+            <span className="truncate">Settings</span>
           </NavLink>
           <a
             href="mailto:alex@tryrocket.ai"
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950"
+            className="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950"
             aria-label="Email support"
             title="Email support"
           >
-            <HelpCircle className="h-[18px] w-[18px]" strokeWidth={1.9} />
+            <HelpCircle className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+            <span className="truncate">Help</span>
           </a>
         </div>
       </aside>
-      <div className="min-h-screen lg:pl-[68px]">
+      <div className="min-h-screen lg:pl-[220px]">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
           <Logo to="/create" size="md" className="shrink-0" />
