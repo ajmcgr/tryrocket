@@ -16,6 +16,7 @@ import {
   Globe,
   Lock,
   Shuffle,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -132,6 +133,11 @@ const SavedLogos = () => {
 
   const edit = (a: any) => window.open(`/editor?id=${a.id}`, "_blank", "noopener,noreferrer");
   const remix = (a: any) => navigate(`/create?remix=${a.id}`);
+  const trash = async (a: any) => {
+    await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", a.id);
+    setItems((prev) => prev.filter((x) => x.id !== a.id));
+    toast({ title: "Moved to Trash" });
+  };
 
   const DesignPreview = ({ asset }: { asset: any }) => {
     const isLogotype = asset?.editor_state?.kind === "logotype";
@@ -252,6 +258,9 @@ const SavedLogos = () => {
                   <button type="button" onClick={(e) => { e.stopPropagation(); void unfavourite(a); }} title="Remove from Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <StarOff className="h-3.5 w-3.5" />
                   </button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void trash(a); }} title="Move to Trash" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -284,6 +293,9 @@ const SavedLogos = () => {
               </button>
               <button type="button" onClick={(e) => { e.stopPropagation(); void unfavourite(a); }} title="Remove from Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <StarOff className="h-3.5 w-3.5" />
+              </button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); void trash(a); }} title="Move to Trash" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">
+                <Trash2 className="h-3.5 w-3.5" />
               </button>
               <div className="shrink-0 text-xs text-neutral-400">{new Date(a.updated_at || a.created_at).toLocaleDateString()}</div>
             </div>

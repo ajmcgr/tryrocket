@@ -20,6 +20,7 @@ import {
   Star,
   Home,
   Wand2,
+  Trash2,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -54,6 +55,7 @@ const studioNav: StudioNavItem[] = [
   { label: "Saved", to: "/saved", icon: Star, tour: "nav-saved" },
   { label: "Editor", to: "/editor", icon: PenTool, tour: "nav-editor" },
   { label: "Brand Kit", to: "/brands", icon: Palette, tour: "nav-brand" },
+  { label: "Trash", to: "/trash", icon: Trash2, tour: "nav-trash" },
 ];
 
 const AppShell = () => {
@@ -76,7 +78,7 @@ const AppShell = () => {
   }, [collapsed]);
 
   const sidebarItemClass = ({ isActive }: { isActive: boolean }) =>
-    `group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-semibold transition ${collapsed ? "justify-center px-0" : "px-3"} ${isActive
+    `group flex h-10 w-full items-center gap-3 rounded-xl font-body text-sm font-medium transition ${collapsed ? "justify-center px-0" : "px-3"} ${isActive
       ? "bg-neutral-900 text-white shadow-sm"
       : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950"}`;
 
@@ -85,73 +87,6 @@ const AppShell = () => {
 
   return (
     <div className="app-shell min-h-screen bg-[#f5f7fb] text-neutral-900">
-      <aside
-        className="fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-neutral-200 bg-white py-3 px-3 font-body lg:flex transition-[width] duration-200"
-        style={{ width: sidebarWidth }}
-      >
-        <Link
-          to="/logos"
-          className={`mb-3 flex h-10 w-full items-center gap-3 rounded-xl bg-brand text-brand-foreground shadow-sm transition hover:bg-brand-hover ${collapsed ? "justify-center px-0" : "px-3"}`}
-          aria-label="Logo Designer"
-          title="Logo Designer"
-        >
-          <Sparkles className="h-5 w-5 shrink-0" />
-          {!collapsed && <span className="text-sm font-semibold">Logo Designer</span>}
-        </Link>
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          className={`mb-3 flex h-9 w-full items-center gap-2 rounded-xl text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-900 ${collapsed ? "justify-center px-0" : "px-3"}`}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          {!collapsed && <span>Collapse</span>}
-        </button>
-
-        <nav className="flex flex-col gap-1" aria-label="Rocket studio">
-          {studioNav.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.label}
-                to={item.to}
-                data-tour={item.tour}
-                className={sidebarItemClass}
-                aria-label={item.label}
-                title={item.label}
-              >
-                <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </NavLink>
-            );
-          })}
-        </nav>
-        <div className="mt-auto flex flex-col gap-1">
-          <BuyCreditsMenu collapsed={collapsed} />
-          <NavLink
-            to="/settings/profile"
-            className={sidebarItemClass}
-            aria-label="Settings"
-            title="Settings"
-          >
-            <Settings className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-            {!collapsed && <span className="truncate">Settings</span>}
-          </NavLink>
-          <a
-            href="mailto:alex@tryrocket.ai"
-            className={`flex h-10 w-full items-center gap-3 rounded-xl text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`}
-            aria-label="Email support"
-            title="Email support"
-          >
-            <HelpCircle className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-            {!collapsed && <span className="truncate">Help</span>}
-          </a>
-
-        </div>
-      </aside>
-      <div className="min-h-screen transition-[padding] duration-200" style={{ paddingLeft: `var(--rocket-sidebar, 0px)` }}>
-        <style>{`@media (min-width: 1024px){.app-shell{--rocket-sidebar:${sidebarWidth}px}}`}</style>
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
           <Logo to="/create" size="md" className="shrink-0" />
@@ -219,6 +154,64 @@ const AppShell = () => {
           </div>
         </div>
       </header>
+      <aside
+        className="fixed bottom-0 left-0 top-14 z-40 hidden flex-col border-r border-neutral-200 bg-white py-3 px-3 font-body lg:flex transition-[width] duration-200"
+        style={{ width: sidebarWidth }}
+      >
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          className={`mb-3 flex h-9 w-full items-center gap-2 rounded-xl font-body text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-900 ${collapsed ? "justify-center px-0" : "px-3"}`}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          {!collapsed && <span>Collapse</span>}
+        </button>
+
+        <nav className="flex flex-col gap-1" aria-label="Rocket studio">
+          {studioNav.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                data-tour={item.tour}
+                className={sidebarItemClass}
+                aria-label={item.label}
+                title={item.label}
+              >
+                <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </NavLink>
+            );
+          })}
+        </nav>
+        <div className="mt-auto flex flex-col gap-1">
+          <BuyCreditsMenu collapsed={collapsed} />
+          <NavLink
+            to="/settings/profile"
+            className={sidebarItemClass}
+            aria-label="Settings"
+            title="Settings"
+          >
+            <Settings className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+            {!collapsed && <span className="truncate">Settings</span>}
+          </NavLink>
+          <a
+            href="mailto:alex@tryrocket.ai"
+            className={`flex h-10 w-full items-center gap-3 rounded-xl font-body text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`}
+            aria-label="Email support"
+            title="Email support"
+          >
+            <HelpCircle className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+            {!collapsed && <span className="truncate">Help</span>}
+          </a>
+
+        </div>
+      </aside>
+      <div className="min-h-screen transition-[padding] duration-200" style={{ paddingLeft: `var(--rocket-sidebar, 0px)` }}>
+        <style>{`@media (min-width: 1024px){.app-shell{--rocket-sidebar:${sidebarWidth}px}}`}</style>
       <OnboardingTour />
       <CommandPalette />
       <ShareExportModal

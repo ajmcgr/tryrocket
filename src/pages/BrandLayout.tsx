@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, NavLink, Outlet, useParams } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
-  Settings as SettingsIcon,
   Image as ImageIcon,
   BookOpen,
   Palette as PaletteIcon,
@@ -26,7 +24,7 @@ const isMissingColumnError = (error: any, column: string) => {
   );
 };
 
-type NavKey = "logo-files" | "brand-book" | "palette" | "fonts" | "settings";
+type NavKey = "logo-files" | "palette" | "fonts" | "brand-book";
 
 export default function BrandLayout() {
   const { id: projectId } = useParams();
@@ -101,26 +99,15 @@ export default function BrandLayout() {
 
   const nav: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }>; to: string; end?: boolean }[] = useMemo(() => ([
     { key: "logo-files", label: "Logo Files", icon: ImageIcon, to: `/brands/${projectId}`, end: true },
-    { key: "brand-book", label: "Brand Book", icon: BookOpen, to: `/brands/${projectId}/brand-book` },
     { key: "palette", label: "Palette", icon: PaletteIcon, to: `/brands/${projectId}/palette` },
     { key: "fonts", label: "Fonts", icon: Type, to: `/brands/${projectId}/fonts` },
-    { key: "settings", label: "Settings", icon: SettingsIcon, to: `/brands/${projectId}/settings` },
+    { key: "brand-book", label: "Brand Book", icon: BookOpen, to: `/brands/${projectId}/brand-book` },
   ]), [projectId]);
 
   return (
-    <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-neutral-50">
+    <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-neutral-50 font-body">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-neutral-200 bg-white md:flex">
         <div className="flex items-center gap-2 px-4 py-4">
-          <Link
-            to="/brands"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-            aria-label="Back to brands"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-xs font-semibold text-brand-foreground">
-            {String(project?.name || "B").trim().slice(0, 2).toUpperCase()}
-          </div>
           <div className="min-w-0 flex-1">
             {renaming ? (
               <div className="flex items-center gap-1">
@@ -135,7 +122,7 @@ export default function BrandLayout() {
                 <button onClick={cancelRename} className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100"><XIcon className="h-3.5 w-3.5" /></button>
               </div>
             ) : (
-              <button onClick={startRename} className="group flex w-full items-center gap-1 truncate text-left text-sm font-semibold text-brand" title="Rename brand">
+              <button onClick={startRename} className="group flex w-full items-center gap-1 truncate text-left text-base font-semibold text-neutral-900" title="Rename brand">
                 <span className="truncate">{project?.name || "Untitled brand"}</span>
                 <Pencil className="h-3 w-3 shrink-0 opacity-0 transition group-hover:opacity-70" />
               </button>

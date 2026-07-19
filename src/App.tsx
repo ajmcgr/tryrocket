@@ -132,7 +132,6 @@ const App = () => (
                 <Route path="brand-book" element={<BrandGuidelines />} />
                 <Route path="palette" element={<PaletteExplorer />} />
                 <Route path="fonts" element={<FontExplorer />} />
-                <Route path="settings" element={<ProjectDetail />} />
               </Route>
               <Route path="/brand" element={<Navigate to="/brands" replace />} />
               <Route path="/brand/:id" element={<BrandIdRedirect />} />

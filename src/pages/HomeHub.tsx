@@ -7,7 +7,7 @@ import { Wand2, LayoutTemplate, Sparkles as SparklesIcon, Shapes } from "lucide-
  */
 const HomeHub = () => {
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10 sm:px-6">
+    <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10 font-body sm:px-6">
       <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
         <HubCard
           to="/wizard"
@@ -63,11 +63,11 @@ const HubCard = ({
 }) => (
   <Link
     to={to}
-    className={`group flex aspect-[5/4] flex-col justify-between rounded-3xl p-8 text-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition ${bg} ${hover}`}
+    className={`group flex aspect-[5/4] flex-col justify-between rounded-3xl p-8 font-body text-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition ${bg} ${hover}`}
   >
     <div className="flex items-start justify-between">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h2>
+        <h2 className="font-body text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h2>
         <p className="mt-1.5 max-w-[16rem] text-sm/6 text-white/85">{subtitle}</p>
       </div>
       <span className="opacity-90 transition group-hover:scale-110">{icon}</span>

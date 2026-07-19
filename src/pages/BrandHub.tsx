@@ -303,8 +303,8 @@ export default function BrandHub() {
     return (
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Brands</h1>
-          <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand you've saved.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Brand Kits</h1>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand kit you've saved.</p>
         </div>
 
         {loading ? (
@@ -324,11 +324,11 @@ export default function BrandHub() {
               const logoState = logo?.editor_state?.kind === "logotype" ? logo.editor_state : null;
               const designCount = designsByProject.get(project.id)?.length || 0;
               return (
-                <Link
-                  key={project.id}
-                  to={`/brands/${project.id}`}
-                  className="group block overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
-                >
+                <div key={project.id} className="group relative">
+                  <Link
+                    to={`/brands/${project.id}`}
+                    className="block overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
+                  >
                   <div className="flex aspect-square items-center justify-center bg-neutral-50 p-6">
                     {logoState ? (
                       <Logotype state={logoState} fit="contain" />
@@ -348,7 +348,22 @@ export default function BrandHub() {
                       </p>
                     </div>
                   </div>
-                </Link>
+                  </Link>
+                  <button
+                    type="button"
+                    title="Move to Trash"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      await supabase.from("projects").update({ deleted_at: new Date().toISOString() }).eq("id", project.id);
+                      setProjects((prev) => prev.filter((p) => p.id !== project.id));
+                      toast({ title: "Moved to Trash" });
+                    }}
+                    className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 bg-white/90 text-red-600 opacity-0 backdrop-blur transition group-hover:opacity-100 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               );
             })}
           </section>

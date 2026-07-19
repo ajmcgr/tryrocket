@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Check, Loader2 } from "lucide-react";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype } from "@/components/Logotype";
 import {
@@ -11,7 +11,6 @@ import {
 } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 
@@ -32,7 +31,7 @@ export default function FontExplorer() {
     (async () => {
       setLoading(true);
       const [{ data: proj }, { data: assets }] = await Promise.all([
-        supabase.from("projects").select("id,name,brand_color").eq("id", projectId).maybeSingle(),
+        supabase.from("projects").select("id,name,meta").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,created_at")
@@ -56,7 +55,7 @@ export default function FontExplorer() {
   }, [logoAsset, project]);
 
   const brandColor = useMemo(() => {
-    const c = String(project?.brand_color || "").trim();
+    const c = String(project?.meta?.brand_color || "").trim();
     return /^#[0-9a-f]{3,8}$/i.test(c) ? c : "#0A0A0A";
   }, [project]);
 
@@ -70,25 +69,29 @@ export default function FontExplorer() {
     [filter],
   );
 
-  const currentFont = (baseState.font || "").toLowerCase();
+  const projectFont = String(project?.meta?.font || "").toLowerCase();
+  const currentFont = projectFont || (baseState.font || "").toLowerCase();
 
   const applyFont = async (family: string) => {
-    if (!logoAsset?.id) {
-      toast({ title: "Save a logo first", description: "Generate or save a logo before applying fonts." });
-      return;
-    }
     setApplyingKey(family);
-    const nextState: LogotypeState = { ...baseState, font: family };
+    // Save font on the project so it persists even without a saved logo,
+    // and update the logo asset editor_state when one is present.
+    const nextMeta = { ...(project?.meta || {}), font: family };
     const { error } = await supabase
-      .from("assets")
-      .update({ editor_state: nextState })
-      .eq("id", logoAsset.id);
+      .from("projects")
+      .update({ meta: nextMeta })
+      .eq("id", projectId);
+    if (!error && logoAsset?.id) {
+      const nextState: LogotypeState = { ...baseState, font: family };
+      await supabase.from("assets").update({ editor_state: nextState }).eq("id", logoAsset.id);
+      setLogoAsset((prev: any) => (prev ? { ...prev, editor_state: nextState } : prev));
+    }
     setApplyingKey(null);
     if (error) {
       toast({ title: "Failed to apply", description: error.message, variant: "destructive" });
       return;
     }
-    setLogoAsset((prev: any) => (prev ? { ...prev, editor_state: nextState } : prev));
+    setProject((prev: any) => (prev ? { ...prev, meta: nextMeta } : prev));
     toast({ title: `${family} applied` });
     try { window.dispatchEvent(new CustomEvent("rocket:notify", { detail: { kind: "logo_updated", projectId } })); } catch {}
   };
@@ -103,29 +106,14 @@ export default function FontExplorer() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mb-6 flex items-center gap-3">
-        {projectId ? (
-          <Link
-            to={`/brands/${projectId}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition hover:bg-neutral-50"
-            aria-label="Back to brand kit"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        ) : null}
-        <div className="flex-1">
+      <div className="mb-6">
+        <div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Font Explorer</h1>
           <p className="mt-0.5 text-sm text-neutral-500">
             Try your logo across curated typefaces. Apply one to update your logo.
           </p>
         </div>
       </div>
-
-      {projectId ? (
-        <div className="mb-6">
-          <ProjectNavigation projectId={projectId} active="downloads" />
-        </div>
-      ) : null}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (

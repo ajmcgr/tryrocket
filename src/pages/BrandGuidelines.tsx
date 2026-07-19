@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Download, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
@@ -8,7 +8,6 @@ import { Logotype } from "@/components/Logotype";
 import { defaultLogotypeState, LOGOTYPE_FONTS, loadGoogleFont, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 
@@ -49,7 +48,7 @@ export default function BrandGuidelines() {
     (async () => {
       setLoading(true);
       const [{ data: proj }, { data: assets }] = await Promise.all([
-        supabase.from("projects").select("id,name,tagline,brand_color").eq("id", projectId).maybeSingle(),
+        supabase.from("projects").select("id,name,tagline,meta").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,created_at")
@@ -70,14 +69,18 @@ export default function BrandGuidelines() {
   useEffect(() => { LOGOTYPE_FONTS.forEach((f) => loadGoogleFont(f.family, f.weights)); }, []);
 
   const brandColor = useMemo(() => {
-    const c = String(project?.brand_color || "").trim();
+    const c = String(project?.meta?.brand_color || "").trim();
     return /^#[0-9a-f]{3,8}$/i.test(c) ? c : "#0A0A0A";
   }, [project]);
 
   const baseState = useMemo<LogotypeState>(() => {
-    if (logoAsset?.editor_state?.kind === "logotype") return logoAsset.editor_state as LogotypeState;
-    return defaultLogotypeState(project?.name || "Brand");
-  }, [logoAsset, project]);
+    const base = logoAsset?.editor_state?.kind === "logotype"
+      ? (logoAsset.editor_state as LogotypeState)
+      : defaultLogotypeState(project?.name || "Brand");
+    // Mirror any brand-level overrides (palette + font) applied from the explorers.
+    const font = project?.meta?.font || base.font;
+    return { ...base, font, color: brandColor };
+  }, [logoAsset, project, brandColor]);
 
   const isDark = luminance(brandColor) < 0.4;
   const onBrandText = isDark ? "#ffffff" : "#0A0A0A";
@@ -92,7 +95,7 @@ export default function BrandGuidelines() {
     ];
   }, [brandColor]);
 
-  const currentFont = baseState.font || "Inter";
+  const currentFont = project?.meta?.font || baseState.font || "Inter";
   const fontMeta = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === currentFont.toLowerCase());
 
   const download = async () => {
@@ -135,17 +138,8 @@ export default function BrandGuidelines() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-6 flex items-center gap-3">
-        {projectId ? (
-          <Link
-            to={`/brands/${projectId}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition hover:bg-neutral-50"
-            aria-label="Back to brand kit"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        ) : null}
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Brand Guidelines</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Brand Book</h1>
           <p className="mt-0.5 text-sm text-neutral-500">
             A one-page brand book that pulls together your logo, colors, and typography.
           </p>
@@ -168,12 +162,6 @@ export default function BrandGuidelines() {
         </button>
       </div>
 
-      {projectId ? (
-        <div className="mb-6">
-          <ProjectNavigation projectId={projectId} active="downloads" />
-        </div>
-      ) : null}
-
       {loading ? (
         <Skeleton className="aspect-[8.5/11] w-full rounded-2xl" />
       ) : (
@@ -186,7 +174,7 @@ export default function BrandGuidelines() {
             {/* Header */}
             <div className="flex items-start justify-between border-b border-neutral-200 pb-6">
               <div>
-                <div className="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Brand Guidelines</div>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Brand Book</div>
                 <div className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">{project?.name || "Brand"}</div>
                 {project?.tagline ? (
                   <div className="mt-1 text-sm text-neutral-500">{project.tagline}</div>
@@ -250,7 +238,7 @@ export default function BrandGuidelines() {
 
             {/* Footer */}
             <div className="mt-10 flex items-center justify-between border-t border-neutral-200 pt-4 text-[10px] uppercase tracking-[0.3em] text-neutral-400">
-              <span>{project?.name || "Brand"} · Brand Guidelines</span>
+              <span>{project?.name || "Brand"} · Brand Book</span>
               <span>Made with Rocket</span>
             </div>
           </div>
