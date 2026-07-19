@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
+import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype } from "@/components/Logotype";
 import { defaultLogotypeState, LOGOTYPE_FONTS, loadGoogleFont, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 
