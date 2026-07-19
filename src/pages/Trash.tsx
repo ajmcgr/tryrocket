@@ -152,38 +152,30 @@ const Trash = () => {
 
   const bulkRestore = async () => {
     const ids = [...selected];
-    const pids = [...selectedProjects];
-    if (!ids.length && !pids.length) return;
+    if (!ids.length) return;
     setBusy(true);
-    if (ids.length) await supabase.from("assets").update({ deleted_at: null }).in("id", ids);
-    if (pids.length) await supabase.from("projects").update({ deleted_at: null }).in("id", pids);
+    await supabase.from("assets").update({ deleted_at: null }).in("id", ids);
     setAssets((prev) => prev.filter((x) => !ids.includes(x.id)));
-    setProjects((prev) => prev.filter((x) => !pids.includes(x.id)));
-    setSelected(new Set()); setSelectedProjects(new Set());
+    setSelected(new Set());
     setBusy(false);
-    toast({ title: `Restored ${ids.length + pids.length} item${ids.length + pids.length === 1 ? "" : "s"}` });
+    toast({ title: `Restored ${ids.length} item${ids.length === 1 ? "" : "s"}` });
   };
   const bulkDelete = async () => {
     const ids = [...selected];
-    const pids = [...selectedProjects];
-    if (!ids.length && !pids.length) return;
-    if (!confirm(`Permanently delete ${ids.length + pids.length} item(s)? This can't be undone.`)) return;
+    if (!ids.length) return;
+    if (!confirm(`Permanently delete ${ids.length} item(s)? This can't be undone.`)) return;
     setBusy(true);
-    if (ids.length) await supabase.from("assets").delete().in("id", ids);
-    if (pids.length) await supabase.from("projects").delete().in("id", pids);
+    await supabase.from("assets").delete().in("id", ids);
     setAssets((prev) => prev.filter((x) => !ids.includes(x.id)));
-    setProjects((prev) => prev.filter((x) => !pids.includes(x.id)));
-    setSelected(new Set()); setSelectedProjects(new Set());
+    setSelected(new Set());
     setBusy(false);
   };
   const emptyTrash = async () => {
     setBusy(true);
     const assetIds = assets.map((a) => a.id);
-    const projectIds = projects.map((p) => p.id);
     if (assetIds.length) await supabase.from("assets").delete().in("id", assetIds);
-    if (projectIds.length) await supabase.from("projects").delete().in("id", projectIds);
-    setAssets([]); setProjects([]);
-    setSelected(new Set()); setSelectedProjects(new Set());
+    setAssets([]);
+    setSelected(new Set());
     setConfirmEmpty(false); setBusy(false);
     toast({ title: "Trash emptied" });
   };
