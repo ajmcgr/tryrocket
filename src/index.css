@@ -67,6 +67,9 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
     color-scheme: light;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2 {
