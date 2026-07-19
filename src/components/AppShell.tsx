@@ -66,8 +66,9 @@ const AppShell = () => {
   const [headerCenter, setHeaderCenter] = useState<ReactNode | null>(null);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("rocket:sidebar-collapsed") === "1";
+    if (typeof window === "undefined") return true;
+    const stored = window.localStorage.getItem("rocket:sidebar-collapsed");
+    return stored === null ? true : stored === "1";
   });
   useEffect(() => {
     if (typeof window === "undefined") return;
