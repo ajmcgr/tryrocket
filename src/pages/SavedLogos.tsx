@@ -12,7 +12,7 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
-  HeartOff,
+  StarOff,
   Globe,
   Lock,
   Shuffle,
@@ -84,7 +84,8 @@ const SavedLogos = () => {
       if (ws) q = q.eq("workspace_id", ws);
       const { data } = await q.is("deleted_at", null).order("created_at", { ascending: false }).limit(200);
       if (!cancelled) {
-        setItems((data || []).filter((asset: any) => LOGO_TYPES.includes(String(asset?.asset_type || "").toLowerCase() as any) || Boolean(asset?.meta?.saved_at)));
+        // Only items the user has explicitly saved (via Save button or by opening/editing in /editor).
+        setItems((data || []).filter((asset: any) => Boolean(asset?.meta?.saved_at)));
         setLoading(false);
       }
     })();
@@ -112,11 +113,8 @@ const SavedLogos = () => {
   const unfavourite = async (a: any) => {
     const meta = { ...(a.meta || {}) };
     delete meta.saved_at;
-    const nextType = String(a.asset_type || "").toLowerCase();
-    const isLogoType = ["logo", "logotype", "wordmark", "brandmark"].includes(nextType);
     await supabase.from("assets").update({ meta }).eq("id", a.id);
-    if (isLogoType) updateItem(a.id, { meta });
-    else setItems((prev) => prev.filter((x) => x.id !== a.id));
+    setItems((prev) => prev.filter((x) => x.id !== a.id));
     toast({ title: "Removed from Saved" });
   };
 
@@ -248,7 +246,7 @@ const SavedLogos = () => {
                     {a?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
                   </button>
                   <button type="button" onClick={(e) => { e.stopPropagation(); void unfavourite(a); }} title="Remove from Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
-                    <HeartOff className="h-3.5 w-3.5" />
+                    <StarOff className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
@@ -281,7 +279,7 @@ const SavedLogos = () => {
                 {a?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
               </button>
               <button type="button" onClick={(e) => { e.stopPropagation(); void unfavourite(a); }} title="Remove from Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
-                <HeartOff className="h-3.5 w-3.5" />
+                <StarOff className="h-3.5 w-3.5" />
               </button>
               <div className="shrink-0 text-xs text-neutral-400">{new Date(a.updated_at || a.created_at).toLocaleDateString()}</div>
             </div>
