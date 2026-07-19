@@ -124,26 +124,29 @@ export default function Brand() {
           .from("assets")
           .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
           .eq("project_id", projectId)
-          .in("asset_type", ["logo", "logotype", "wordmark"])
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
-          .limit(50),
+          .limit(100),
       ]);
       if (cancelled) return;
       setProject(proj || null);
-      let logos = (pAssets || []).filter(Boolean);
-      // Fallback: if the project has no logos, pull the user's most recent logos so the
-      // brand kit still shows their generated work instead of an empty state.
+      const isLogo = (a: any) => {
+        const t = String(a?.asset_type || "").toLowerCase();
+        if (["logo", "logotype", "wordmark", "brandmark"].includes(t)) return true;
+        if (a?.editor_state?.kind === "logotype") return true;
+        return false;
+      };
+      let logos = (pAssets || []).filter(Boolean).filter(isLogo);
+      // Fallback: if this project has no logos, pull the user's most recent logos.
       if (!logos.length && user?.id) {
         const { data: userLogos } = await supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
           .eq("user_id", user.id)
-          .in("asset_type", ["logo", "logotype", "wordmark"])
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
-          .limit(24);
-        logos = (userLogos || []).filter(Boolean);
+          .limit(60);
+        logos = (userLogos || []).filter(Boolean).filter(isLogo);
       }
       if (cancelled) return;
       setLogoAssets(logos);
@@ -218,22 +221,12 @@ export default function Brand() {
   };
 
   const nav: NavItem[] = [
-    { key: "settings", label: "Settings", icon: SettingsIcon, to: `/projects/${projectId}` },
     { key: "logo-files", label: "Logo Files", icon: ImageIcon },
     { key: "brand-guides", label: "Brand Guides", icon: BookOpen, to: `/projects/${projectId}/guidelines` },
     { key: "websites", label: "Websites", icon: Globe, to: `/projects/${projectId}/websites` },
-    { key: "profile-icons", label: "Profile Icons", icon: UserCircle2, disabled: true },
-    { key: "mockup-designs", label: "Mockup Designs", icon: Layers, disabled: true },
-    { key: "business-cards", label: "Business Cards", icon: CreditCard, disabled: true },
-    { key: "facebook-covers", label: "Facebook Covers", icon: Facebook, disabled: true },
-    { key: "instagram-posts", label: "Instagram Posts", icon: Instagram, to: `/projects/${projectId}/social` },
-    { key: "instagram-stories", label: "Instagram Stories", icon: Instagram, to: `/projects/${projectId}/social` },
-    { key: "presentations", label: "Presentations", icon: Presentation, disabled: true },
-    { key: "animations", label: "Animations", icon: Film, disabled: true },
-    { key: "qr-code", label: "QR Code", icon: QrCode, disabled: true },
-    { key: "invoices", label: "Invoices", icon: FileText, disabled: true },
     { key: "palette", label: "Palette", icon: PaletteIcon, to: `/projects/${projectId}/palettes` },
     { key: "fonts", label: "Fonts", icon: Type, to: `/projects/${projectId}/fonts` },
+    { key: "settings", label: "Settings", icon: SettingsIcon, to: `/projects/${projectId}` },
   ];
 
   return (
