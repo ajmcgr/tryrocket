@@ -126,8 +126,15 @@ const SavedLogos = () => {
   const togglePublic = async (a: any) => {
     const isPublic = !a?.meta?.public;
     const meta = { ...(a.meta || {}), public: isPublic };
-    await supabase.from("assets").update({ meta }).eq("id", a.id);
-    updateItem(a.id, { meta });
+    // Templates page lists assets where share_token is not null, so mint/clear it here.
+    const patch: any = { meta };
+    if (isPublic) {
+      patch.share_token = a.share_token ?? (crypto as any).randomUUID?.() ?? undefined;
+    } else {
+      patch.share_token = null;
+    }
+    await supabase.from("assets").update(patch).eq("id", a.id);
+    updateItem(a.id, { meta, share_token: patch.share_token });
     toast({ title: isPublic ? "Made public" : "Made private" });
   };
 
