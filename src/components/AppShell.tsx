@@ -45,12 +45,12 @@ type StudioNavItem = {
 
 const studioNav: StudioNavItem[] = [
   { label: "Home", to: "/create", icon: Home, tour: "nav-create" },
-  { label: "Wizard", to: "/create/generate", icon: Wand2 },
-  { label: "Logo Designer", to: "/logos", icon: Sparkles },
-  { label: "Icon Designer", to: "/icons", icon: Shapes },
-  { label: "Templates", to: "/templates", icon: LayoutTemplate },
-  { label: "Saved", to: "/saved", icon: Star },
-  { label: "Editor", to: "/editor", icon: PenTool },
+  { label: "Wizard", to: "/create/generate", icon: Wand2, tour: "nav-wizard" },
+  { label: "Logo Designer", to: "/logos", icon: Sparkles, tour: "nav-logos" },
+  { label: "Icon Designer", to: "/icons", icon: Shapes, tour: "nav-icons" },
+  { label: "Templates", to: "/templates", icon: LayoutTemplate, tour: "nav-templates" },
+  { label: "Saved", to: "/saved", icon: Star, tour: "nav-saved" },
+  { label: "Editor", to: "/editor", icon: PenTool, tour: "nav-editor" },
   { label: "Brand Kit", to: "/brands", icon: Palette, tour: "nav-brand" },
 ];
 
