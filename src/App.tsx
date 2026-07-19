@@ -29,6 +29,7 @@ import BrandHub from "./pages/BrandHub.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
 import LogoFiles from "./pages/LogoFiles.tsx";
+import WebsiteTemplates from "./pages/WebsiteTemplates.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
 import Templates from "./pages/Templates.tsx";
 import Insights from "./pages/Insights.tsx";
