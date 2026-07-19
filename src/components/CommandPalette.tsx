@@ -14,7 +14,7 @@ import {
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  Sparkles, LayoutGrid, FolderOpen, LineChart, Settings, CreditCard,
+  Sparkles, LayoutGrid, LineChart, Settings, CreditCard,
   LogOut, FileText, Palette, Bell, BookOpen,
 } from "lucide-react";
 
@@ -86,9 +86,7 @@ const CommandPalette = () => {
         <CommandEmpty>No matches.</CommandEmpty>
         <CommandGroup heading="Actions">
           <CommandItem onSelect={() => go("/create")}><Sparkles /> Create new design</CommandItem>
-          <CommandItem onSelect={() => go("/projects/new")}><FolderOpen /> New project</CommandItem>
           <CommandItem onSelect={() => go("/designs")}><LayoutGrid /> Browse all designs</CommandItem>
-          <CommandItem onSelect={() => go("/projects")}><FolderOpen /> Browse projects</CommandItem>
           <CommandItem onSelect={() => go("/insights")}><LineChart /> Insights</CommandItem>
           <CommandItem onSelect={() => go("/notifications")}><Bell /> Notifications</CommandItem>
         </CommandGroup>

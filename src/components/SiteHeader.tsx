@@ -68,7 +68,6 @@ const SiteHeader = () => {
           {user ? (
             <>
               <Link to="/create" className="hover:text-neutral-900">Create</Link>
-              <Link to="/projects" className="hover:text-neutral-900">Projects</Link>
               <Link to="/designs" className="hover:text-neutral-900">Designs</Link>
               <Link to="/brands" className="hover:text-neutral-900">Brands</Link>
               <Link to="/templates" className="hover:text-neutral-900">Templates</Link>
