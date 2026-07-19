@@ -29,6 +29,15 @@ import { useToast } from "@/hooks/use-toast";
 
 const supabase = _sb as any;
 
+const isMissingColumnError = (error: any, column: string) => {
+  const message = String(error?.message || error?.details || "").toLowerCase();
+  return message.includes(column.toLowerCase()) && (
+    message.includes("column")
+    || message.includes("schema cache")
+    || message.includes("could not find")
+  );
+};
+
 type NavItem = {
   key: string;
   label: string;
@@ -109,16 +118,32 @@ export default function Brand() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [{ data: proj }, { data: pAssets }] = await Promise.all([
-        supabase.from("projects").select("id,name,brand_color,user_id").eq("id", projectId).maybeSingle(),
-        supabase
+      const loadProject = async () => {
+        let result = await supabase.from("projects").select("id,name,brand_color,user_id").eq("id", projectId).maybeSingle();
+        if (result.error && isMissingColumnError(result.error, "brand_color")) {
+          result = await supabase.from("projects").select("id,name,user_id").eq("id", projectId).maybeSingle();
+        }
+        return result.data || null;
+      };
+      const loadAssets = async () => {
+        let result = await supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
           .eq("project_id", projectId)
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
-          .limit(100),
-      ]);
+          .limit(100);
+        if (result.error && isMissingColumnError(result.error, "deleted_at")) {
+          result = await supabase
+            .from("assets")
+            .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
+            .eq("project_id", projectId)
+            .order("created_at", { ascending: false })
+            .limit(100);
+        }
+        return result.data || [];
+      };
+      const [proj, pAssets] = await Promise.all([loadProject(), loadAssets()]);
       if (cancelled) return;
       setProject(proj || null);
       const isLogo = (a: any) => {
