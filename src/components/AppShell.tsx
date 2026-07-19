@@ -99,14 +99,6 @@ const AppShell = () => {
         </nav>
         <div className="mt-auto flex flex-col items-center gap-2">
           <NavLink
-            to="/templates"
-            className={railItemClass}
-            aria-label="Templates"
-            title="Templates"
-          >
-            <Heart className="h-[18px] w-[18px]" strokeWidth={1.9} />
-          </NavLink>
-          <NavLink
             to="/settings/profile"
             className={railItemClass}
             aria-label="Settings"
