@@ -7,7 +7,6 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
-  ExternalLink,
   Heart,
 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
