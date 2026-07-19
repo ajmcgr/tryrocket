@@ -57,6 +57,9 @@ const Templates = () => {
   const [filter, setFilter] = useState<TemplateStyle>("all");
   const [view, setView] = useState<CollectionView>("card");
   const [sort, setSort] = useState<DesignSort>("date");
+  const [visibleCount, setVisibleCount] = useState(60);
+
+  useEffect(() => { setVisibleCount(60); }, [filter, query, view, sort]);
 
   const templateCreateHref = (design: any) => {
     const designType = String(design?.asset_type || "logo");
@@ -186,6 +189,9 @@ const Templates = () => {
       : sortByOption(visible, sort, (design) => design.title, (design) => design.created_at);
   }, [designs, filter, query, sort]);
 
+  const visibleItems = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = filtered.length > visibleItems.length;
+
   const DesignPreview = ({ design }: { design: any }) => {
     const isLogotype = design?.editor_state?.kind === "logotype";
     const isCanvas = isCanvasAsset(design);
@@ -269,7 +275,7 @@ const Templates = () => {
         </div>
       ) : view === "card" ? (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((design) => (
+          {visibleItems.map((design) => (
             <div
               key={design.id}
               onClick={() => void openTemplateInEditor(design)}
@@ -302,7 +308,7 @@ const Templates = () => {
         </div>
       ) : (
         <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-          {filtered.map((design) => (
+          {visibleItems.map((design) => (
             <div
               key={design.id}
               onClick={() => void openTemplateInEditor(design)}
@@ -324,6 +330,17 @@ const Templates = () => {
               <div className="shrink-0 text-xs text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</div>
             </div>
           ))}
+        </div>
+      )}
+      {!loading && hasMore && (
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((n) => n + 60)}
+            className="rounded-full border border-neutral-200 bg-white px-5 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            Load more ({filtered.length - visibleItems.length} remaining)
+          </button>
         </div>
       )}
     </div>
