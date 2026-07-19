@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export type AppShellOutletContext = {
+  setHeaderLeft: (node: ReactNode | null) => void;
   setHeaderCenter: (node: ReactNode | null) => void;
   setHeaderActions: (node: ReactNode | null) => void;
 };
@@ -60,6 +61,7 @@ const AppShell = () => {
   const initial = (user?.email?.[0] || "U").toUpperCase();
   const avatarUrl = (user as any)?.user_metadata?.avatar_url as string | undefined;
   const [shareOpen, setShareOpen] = useState(false);
+  const [headerLeft, setHeaderLeft] = useState<ReactNode | null>(null);
   const [headerCenter, setHeaderCenter] = useState<ReactNode | null>(null);
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
 
@@ -122,6 +124,7 @@ const AppShell = () => {
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/85 backdrop-blur-xl">
         <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
           <Logo to="/create" size="sm" className="shrink-0" />
+          {headerLeft && <div className="ml-2 flex shrink-0 items-center gap-2">{headerLeft}</div>}
           <div className="ml-4 hidden items-center gap-1 md:flex lg:hidden">
             {studioNav.slice(0, 3).map((item) => (
               <NavLink
@@ -194,7 +197,7 @@ const AppShell = () => {
         onCreateShareLink={async () => (typeof window !== "undefined" ? window.location.origin : "https://tryrocket.ai")}
       />
       <main className="w-full">
-        <Outlet context={{ setHeaderCenter, setHeaderActions }} />
+        <Outlet context={{ setHeaderLeft, setHeaderCenter, setHeaderActions }} />
       </main>
       </div>
     </div>

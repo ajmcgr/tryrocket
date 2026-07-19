@@ -26,12 +26,11 @@ const SavedLogos = () => {
         .from("assets")
         .select("id,title,asset_type,image_url,thumbnail_url,editor_state,meta,prompt,created_at,updated_at")
         .eq("user_id", user.id)
-        .in("asset_type", LOGO_TYPES as unknown as string[])
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
-        .limit(240);
+        .limit(500);
       if (!cancelled) {
-        setItems(data || []);
+        setItems((data || []).filter((asset: any) => LOGO_TYPES.includes(String(asset?.asset_type || "").toLowerCase() as any) || Boolean(asset?.meta?.saved_at)));
         setLoading(false);
       }
     })();

@@ -85,57 +85,66 @@ const Projects = () => {
   const load = async () => {
     if (!user) return;
     setLoading(true);
+    try {
+      const [projectsResult, foldersResult, assetsResult] = await Promise.all([
+        supabase.from("projects").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("folders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("assets").select("*").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
+      ]);
 
-    const [{ data: projectRows }, { data: folderRows }, { data: assetRows }] = await Promise.all([
-      supabase.from("projects").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("folders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("assets").select("*").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
-    ]);
-
-    const list = (projectRows || []).filter(Boolean);
-    const folderList = (folderRows || []).filter(Boolean);
-    const items = (assetRows || []).filter(Boolean);
-
-    setProjects(list);
-    setFolders(folderList);
-    setAllAssets(items);
-
-    const nextCounts: Record<string, number> = {};
-    const nextFolderCounts: Record<string, number> = {};
-    const nextImages: Record<string, string> = {};
-    const nextLogotypes: Record<string, any> = {};
-    const nextFolderImages: Record<string, string> = {};
-    const nextFolderLogotypes: Record<string, any> = {};
-
-    items.forEach((asset: any) => {
-      if (!asset) return;
-      const img = asset.thumbnail_url || asset.image_url;
-
-      if (asset.project_id) {
-        nextCounts[asset.project_id] = (nextCounts[asset.project_id] || 0) + 1;
-        if (img && !nextImages[asset.project_id]) nextImages[asset.project_id] = img;
-        if (!img && asset.editor_state?.kind === "logotype" && !nextLogotypes[asset.project_id]) {
-          nextLogotypes[asset.project_id] = asset.editor_state;
-        }
+      const firstError = projectsResult.error || foldersResult.error || assetsResult.error;
+      if (firstError) {
+        toast({ title: "Projects could not load", description: firstError.message, variant: "destructive" });
       }
 
-      const folderId = getDesignFolderId(asset);
-      if (folderId) {
-        nextFolderCounts[folderId] = (nextFolderCounts[folderId] || 0) + 1;
-        if (img && !nextFolderImages[folderId]) nextFolderImages[folderId] = img;
-        if (!img && asset.editor_state?.kind === "logotype" && !nextFolderLogotypes[folderId]) {
-          nextFolderLogotypes[folderId] = asset.editor_state;
-        }
-      }
-    });
+      const list = (projectsResult.data || []).filter(Boolean);
+      const folderList = (foldersResult.data || []).filter(Boolean);
+      const items = (assetsResult.data || []).filter(Boolean);
 
-    setCounts(nextCounts);
-    setFolderCounts(nextFolderCounts);
-    setLatestImages(nextImages);
-    setLatestLogotypes(nextLogotypes);
-    setLatestFolderImages(nextFolderImages);
-    setLatestFolderLogotypes(nextFolderLogotypes);
-    setLoading(false);
+      setProjects(list);
+      setFolders(folderList);
+      setAllAssets(items);
+
+      const nextCounts: Record<string, number> = {};
+      const nextFolderCounts: Record<string, number> = {};
+      const nextImages: Record<string, string> = {};
+      const nextLogotypes: Record<string, any> = {};
+      const nextFolderImages: Record<string, string> = {};
+      const nextFolderLogotypes: Record<string, any> = {};
+
+      items.forEach((asset: any) => {
+        if (!asset) return;
+        const img = asset.thumbnail_url || asset.image_url;
+
+        if (asset.project_id) {
+          nextCounts[asset.project_id] = (nextCounts[asset.project_id] || 0) + 1;
+          if (img && !nextImages[asset.project_id]) nextImages[asset.project_id] = img;
+          if (!img && asset.editor_state?.kind === "logotype" && !nextLogotypes[asset.project_id]) {
+            nextLogotypes[asset.project_id] = asset.editor_state;
+          }
+        }
+
+        const folderId = getDesignFolderId(asset);
+        if (folderId) {
+          nextFolderCounts[folderId] = (nextFolderCounts[folderId] || 0) + 1;
+          if (img && !nextFolderImages[folderId]) nextFolderImages[folderId] = img;
+          if (!img && asset.editor_state?.kind === "logotype" && !nextFolderLogotypes[folderId]) {
+            nextFolderLogotypes[folderId] = asset.editor_state;
+          }
+        }
+      });
+
+      setCounts(nextCounts);
+      setFolderCounts(nextFolderCounts);
+      setLatestImages(nextImages);
+      setLatestLogotypes(nextLogotypes);
+      setLatestFolderImages(nextFolderImages);
+      setLatestFolderLogotypes(nextFolderLogotypes);
+    } catch (error: any) {
+      toast({ title: "Projects could not load", description: error?.message || "Try refreshing the page.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [user]);
