@@ -215,16 +215,12 @@ const SavedLogos = () => {
           {filtered.map((a) => (
             <div
               key={a.id}
-              className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
+              onClick={() => edit(a)}
+              className="group cursor-pointer overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
             >
-              <button
-                type="button"
-                onClick={() => edit(a)}
-                className="flex aspect-square w-full items-center justify-center bg-neutral-50 p-4"
-                aria-label="Open in editor"
-              >
+              <div className="flex aspect-square w-full items-center justify-center bg-neutral-50 p-4">
                 <DesignPreview asset={a} />
-              </button>
+              </div>
               <div className="border-t border-neutral-100 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -236,14 +232,14 @@ const SavedLogos = () => {
                   {a?.meta?.public ? <Globe className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" /> : null}
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <button type="button" onClick={() => edit(a)} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Edit</button>
-                  <button type="button" onClick={() => remix(a)} title="Remix" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Edit</button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <Shuffle className="h-3.5 w-3.5" />
                   </button>
-                  <button type="button" onClick={() => togglePublic(a)} title={a?.meta?.public ? "Make private" : "Make public"} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void togglePublic(a); }} title={a?.meta?.public ? "Make private" : "Make public"} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     {a?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
                   </button>
-                  <button type="button" onClick={() => unfavourite(a)} title="Remove from Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void unfavourite(a); }} title="Remove from Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <HeartOff className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -256,28 +252,29 @@ const SavedLogos = () => {
           {filtered.map((a) => (
             <div
               key={a.id}
-              className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 last:border-b-0"
+              onClick={() => edit(a)}
+              className="flex cursor-pointer items-center gap-3 border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 last:border-b-0"
             >
-              <button type="button" onClick={() => edit(a)} className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-50 cursor-pointer">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-50">
                 <DesignPreview asset={a} />
-              </button>
-              <button type="button" onClick={() => edit(a)} className="min-w-0 flex-1 cursor-pointer text-left">
+              </div>
+              <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-neutral-900">{a.title || "Untitled logo"}</div>
                 <div className="truncate text-xs text-neutral-500">
                   {(a.asset_type || "Design").replace(/_/g, " ")} · {new Date(a.updated_at || a.created_at).toLocaleDateString()}
                 </div>
-              </button>
-              <button type="button" onClick={() => edit(a)} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Edit</button>
-              <button type="button" onClick={() => remix(a)} title="Remix" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+              </div>
+              <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Edit</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Shuffle className="h-3.5 w-3.5" />
               </button>
-              <button type="button" onClick={() => togglePublic(a)} title={a?.meta?.public ? "Make private" : "Make public"} className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+              <button type="button" onClick={(e) => { e.stopPropagation(); void togglePublic(a); }} title={a?.meta?.public ? "Make private" : "Make public"} className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 {a?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
               </button>
-              <button type="button" onClick={() => unfavourite(a)} title="Remove from Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+              <button type="button" onClick={(e) => { e.stopPropagation(); void unfavourite(a); }} title="Remove from Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <HeartOff className="h-3.5 w-3.5" />
               </button>
-              <ExternalLink className="h-4 w-4 shrink-0 text-neutral-400" />
+              <div className="shrink-0 text-xs text-neutral-400">{new Date(a.updated_at || a.created_at).toLocaleDateString()}</div>
             </div>
           ))}
         </div>
