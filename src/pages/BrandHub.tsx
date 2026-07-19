@@ -250,7 +250,7 @@ export default function BrandHub() {
               return (
                 <Link
                   key={project.id}
-                  to={`/brands?project=${project.id}`}
+                  to={`/brands/${project.id}`}
                   className="group rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-4">
