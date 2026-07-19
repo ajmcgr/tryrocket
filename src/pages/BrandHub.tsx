@@ -49,7 +49,7 @@ const KIT_ESSENTIALS = [
 
 export default function BrandHub() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  
   const { toast } = useToast();
   const [params] = useSearchParams();
   const [loading, setLoading] = useState(true);
