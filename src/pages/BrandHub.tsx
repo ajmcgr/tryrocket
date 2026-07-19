@@ -67,7 +67,7 @@ export default function BrandHub() {
     (async () => {
       setLoading(true);
       const [{ data: a }, { data: p }] = await Promise.all([
-        supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").eq("user_id", user.id).order("created_at", { ascending: false }).limit(400),
+        supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
         supabase.from("projects").select("id,name,meta,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
@@ -253,6 +253,26 @@ export default function BrandHub() {
 
   const projectDesignCount = (projectId: string) => allDesigns.filter((design) => design.project_id === projectId).length;
 
+  // Pre-index designs by project once, so card rendering is O(P) not O(P*A).
+  const designsByProject = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const d of allDesigns) {
+      if (!d?.project_id) continue;
+      let bucket = map.get(d.project_id);
+      if (!bucket) { bucket = []; map.set(d.project_id, bucket); }
+      bucket.push(d);
+    }
+    return map;
+  }, [allDesigns]);
+  const projectLogos = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const [pid, list] of designsByProject.entries()) {
+      const hit = list.find((d) => ["logo","logotype","wordmark"].includes(normalizeAssetType(d.asset_type)));
+      if (hit) map.set(pid, hit);
+    }
+    return map;
+  }, [designsByProject]);
+
   const projectKitProgress = (projectId: string) => {
     const types = new Set(allDesigns
       .filter((design) => design.project_id === projectId)
@@ -280,9 +300,10 @@ export default function BrandHub() {
         ) : projects.length ? (
           <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {projects.map((project) => {
-              const logo = allDesigns.find((d) => d.project_id === project.id && ["logo","logotype","wordmark"].includes(normalizeAssetType(d.asset_type)));
+              const logo = projectLogos.get(project.id);
               const preview = logo?.image_url;
               const logoState = logo?.editor_state?.kind === "logotype" ? logo.editor_state : null;
+              const designCount = designsByProject.get(project.id)?.length || 0;
               return (
                 <Link
                   key={project.id}
@@ -305,7 +326,7 @@ export default function BrandHub() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-neutral-900">{project.name || "Untitled brand"}</p>
                         <p className="mt-0.5 truncate text-[11px] text-neutral-500">
-                          {projectDesignCount(project.id)} design{projectDesignCount(project.id) === 1 ? "" : "s"}
+                          {designCount} design{designCount === 1 ? "" : "s"}
                         </p>
                       </div>
                       {project?.meta?.public ? <Globe className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" /> : null}
