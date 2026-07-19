@@ -121,6 +121,13 @@ function logotypeStateToCanvasText(state: LogotypeState): TextEl {
   };
 }
 
+function makeLibraryIconDataUrl(name = "Rocket"): string {
+  const Comp = (LucideIcons as any)[name] || (LucideIcons as any).Rocket;
+  const markup = renderToStaticMarkup(<Comp size={64} strokeWidth={1.75} color="currentColor" />)
+    .replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" style="color:#0F172A" ');
+  return svgToDataUrl(markup);
+}
+
 function deriveLogotypeState(asset: any): LogotypeState | null {
   if (asset?.editor_state?.kind === "logotype") {
     return asset.editor_state as LogotypeState;
@@ -325,7 +332,7 @@ const TEMPLATES: { id: string; name: string; bg: string; build: () => El[] }[] =
 const Editor = () => {
   const { toast } = useToast();
   const nav = useNavigate();
-  const { setHeaderCenter, setHeaderActions } = useOutletContext<AppShellOutletContext>();
+  const { setHeaderLeft, setHeaderCenter } = useOutletContext<AppShellOutletContext>();
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -539,6 +546,7 @@ const Editor = () => {
       }
       previewBackfillRef.current = null;
       setAssetMeta({ title: a.title || "Untitled", project_id: a.project_id || null, asset_type: a.asset_type || null, image_url: a.image_url || null, thumbnail_url: a.thumbnail_url || null, meta: a.meta || {} });
+      setBg(a.meta?.editor_bg || a.meta?.background || "#ffffff");
       if (a.editor_state && Array.isArray(a.editor_state)) {
         const next = normalizeCanvasElements(a.editor_state);
         lastPersistedStateRef.current = JSON.stringify(next);
@@ -691,7 +699,7 @@ const Editor = () => {
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       const thumbnail_url = await captureThumbnail();
-      const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString() };
+      const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString(), editor_bg: bg };
       const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
       const { error } = await supabase.from("assets").update(updatePayload).eq("id", assetId);
@@ -702,7 +710,7 @@ const Editor = () => {
       setTimeout(() => setSaveStatus((s) => s === "saved" ? "idle" : s), 1500);
     }, 800);
     return () => clearTimeout(t);
-  }, [assetId, assetMeta?.meta, autosaveTick, captureThumbnail, els]);
+  }, [assetId, assetMeta?.meta, autosaveTick, bg, captureThumbnail, els]);
 
   useEffect(() => {
     if (!isRenamingTitle) setTitleDraft(displayTitle);
@@ -1061,7 +1069,7 @@ const Editor = () => {
     if (assetId) {
       const serializedState = JSON.stringify(els);
       const thumbnail_url = await captureThumbnail();
-      const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString() };
+      const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString(), editor_bg: bg };
       const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
       const { error } = await supabase.from("assets").update(updatePayload).eq("id", assetId);
@@ -1119,6 +1127,7 @@ const Editor = () => {
     const t = TEMPLATES.find((x) => x.id === id); if (!t) return;
     setBg(t.bg);
     setEls(t.build());
+    setAutosaveTick((tick) => tick + 1);
     setSelectedId(null);
   };
 
@@ -1132,7 +1141,7 @@ const Editor = () => {
     else if (selected.kind === "rect" || selected.kind === "circle" || selected.kind === "triangle" || selected.kind === "star") update(selected.id, { fill: color } as any);
     else if (selected.kind === "line") update(selected.id, { color } as any);
     else if (selected.kind === "image") update(selected.id, { color } as any);
-    else setBg(color);
+    else { setBg(color); setAutosaveTick((tick) => tick + 1); }
   };
 
   const applyFontToSelected = (fontFamily: string) => {
@@ -1405,7 +1414,7 @@ const Editor = () => {
   };
 
   useEffect(() => {
-    setHeaderActions(
+    setHeaderLeft(
       <DropdownMenu onOpenChange={(open) => { if (open) void fetchProjectsForMenu(); }}>
         <DropdownMenuTrigger asChild>
           <button
@@ -1416,7 +1425,7 @@ const Editor = () => {
             <ChevronDown className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuContent align="start" className="w-72">
           <DropdownMenuItem onClick={startNewDesign}>
             <FilePlus className="mr-2 h-4 w-4" />
             Create new design
@@ -1540,7 +1549,7 @@ const Editor = () => {
         </DropdownMenuContent>
       </DropdownMenu>
     );
-    return () => setHeaderActions(null);
+    return () => setHeaderLeft(null);
   }, [
     assetId,
     assetMeta?.project_id,
@@ -1560,7 +1569,7 @@ const Editor = () => {
     saveAsNew,
     saveStatus,
     saveVersion,
-    setHeaderActions,
+    setHeaderLeft,
     showGrid,
     startNewDesign,
     undo,
