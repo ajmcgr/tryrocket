@@ -6,6 +6,7 @@ import {
   Twitter, Linkedin, Instagram, Hash, Rocket as RocketIcon, Megaphone, Newspaper, Plus, Check, Trash2, X,
   Share2, Facebook, Send, MessageCircle, MessageSquare as MessageSquareIcon, Mail, Link as LinkIcon, Lock,
   Download, Loader2, FileImage, Globe, ChevronRight, Type as TypeIcon,
+  BookOpen,
 } from "lucide-react";
 const supabase = _sb as any;
 import { packAssetsZip } from "@/lib/exporters/zipPack";
@@ -379,7 +380,7 @@ const BrandKitHub = () => {
         <ProjectNavigation projectId={id!} active="downloads" />
       </div>
 
-      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           to={`/projects/${id}/logo-files`}
           className="group flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-neutral-300 hover:shadow-md"
@@ -442,6 +443,19 @@ const BrandKitHub = () => {
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold text-neutral-900">Social Media Kit</span>
             <span className="block text-xs text-neutral-500">Ready-to-post covers, headers &amp; thumbnails.</span>
+          </span>
+          <ChevronRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" />
+        </Link>
+        <Link
+          to={`/projects/${id}/guidelines`}
+          className="group flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-neutral-300 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-white">
+            <BookOpen className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-neutral-900">Brand Guidelines</span>
+            <span className="block text-xs text-neutral-500">One-page brand book: logo, palette &amp; type.</span>
           </span>
           <ChevronRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" />
         </Link>
