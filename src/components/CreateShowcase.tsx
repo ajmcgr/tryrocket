@@ -60,11 +60,7 @@ const ShowcaseCard = ({
       </div>
 
       <div>
-        <Tag>
-          <EyebrowIcon className="h-3.5 w-3.5" />
-          {eyebrow}
-        </Tag>
-        <h3 className="mt-5 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl lg:text-5xl">
+        <h3 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl lg:text-5xl">
           {title}
         </h3>
         <p className="mt-4 text-lg leading-relaxed text-neutral-600">
