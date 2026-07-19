@@ -76,9 +76,10 @@ const AppShell = () => {
   }, [collapsed]);
 
   const sidebarItemClass = ({ isActive }: { isActive: boolean }) =>
-    `group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium transition ${collapsed ? "justify-center px-0" : "px-3"} ${isActive
+    `group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-semibold transition ${collapsed ? "justify-center px-0" : "px-3"} ${isActive
       ? "bg-neutral-900 text-white shadow-sm"
-      : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"}`;
+      : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950"}`;
+
 
   const sidebarWidth = collapsed ? 68 : 220;
 
@@ -95,18 +96,19 @@ const AppShell = () => {
           title="Logo Designer"
         >
           <Sparkles className="h-5 w-5 shrink-0" />
-          {!collapsed && <span className="text-sm font-medium">Logo Designer</span>}
+          {!collapsed && <span className="text-sm font-semibold">Logo Designer</span>}
         </Link>
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className={`mb-3 flex h-9 w-full items-center gap-2 rounded-xl text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 ${collapsed ? "justify-center px-0" : "px-3"}`}
+          className={`mb-3 flex h-9 w-full items-center gap-2 rounded-xl text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-900 ${collapsed ? "justify-center px-0" : "px-3"}`}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           {!collapsed && <span>Collapse</span>}
         </button>
+
         <nav className="flex flex-col gap-1" aria-label="Rocket studio">
           {studioNav.map((item) => {
             const Icon = item.icon;
@@ -138,13 +140,14 @@ const AppShell = () => {
           </NavLink>
           <a
             href="mailto:alex@tryrocket.ai"
-            className={`flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`}
+            className={`flex h-10 w-full items-center gap-3 rounded-xl text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`}
             aria-label="Email support"
             title="Email support"
           >
             <HelpCircle className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
             {!collapsed && <span className="truncate">Help</span>}
           </a>
+
         </div>
       </aside>
       <div className="min-h-screen transition-[padding] duration-200" style={{ paddingLeft: `var(--rocket-sidebar, 0px)` }}>
