@@ -2412,13 +2412,8 @@ function QuickEditPanel({ els, fonts, bg, setBg, touchAutosave, update, setEls, 
   };
 
   return (
-    <aside className="hidden w-[17rem] min-w-[17rem] shrink-0 overflow-y-auto border-r border-neutral-200/80 bg-neutral-50/70 p-3 md:block">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <p className="text-sm font-semibold text-neutral-900">Quick Edit</p>
-        <button onClick={onClose} title="Hide panel" className="rounded-md p-1 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-900">
-          <CloseIcon className="h-4 w-4" />
-        </button>
-      </div>
+    <section className="rounded-[24px] border border-white/80 bg-white/90 p-3 shadow-sm">
+      <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Quick Edit</p>
       <div className="space-y-2">
         <QeSection id="title" label="Title" tone="bg-[#6C7BF4]" open={!!qeOpen.title} onToggle={() => toggleQe("title")}>
           {title ? (
@@ -2555,7 +2550,7 @@ function QuickEditPanel({ els, fonts, bg, setBg, touchAutosave, update, setEls, 
           </div>
         </QeSection>
       </div>
-    </aside>
+    </section>
   );
 }
 
