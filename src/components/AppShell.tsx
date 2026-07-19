@@ -51,7 +51,6 @@ const studioNav: StudioNavItem[] = [
   { label: "Templates", to: "/templates", icon: LayoutTemplate },
   { label: "Saved", to: "/saved", icon: Star },
   { label: "Editor", to: "/editor", icon: PenTool },
-  { label: "Projects", to: "/projects", icon: FolderKanban },
   { label: "Brand Kit", to: "/brands", icon: Palette, tour: "nav-brand" },
 ];
 

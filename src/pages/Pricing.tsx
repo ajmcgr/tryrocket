@@ -98,7 +98,7 @@ const Pricing = () => {
                 </div>
               </div>
               <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to={user ? "/projects" : "/signup"}>{user ? "Go to projects" : "Sign up free"}</Link>
+                <Link to={user ? "/create" : "/signup"}>{user ? "Go to Rocket" : "Sign up free"}</Link>
               </Button>
             </div>
 

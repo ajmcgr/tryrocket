@@ -116,7 +116,7 @@ const App = () => (
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/invite/:token" element={<AcceptInvite />} />
             <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-              <Route path="/projects" element={<Dashboard />} />
+              <Route path="/projects" element={<Navigate to="/create" replace />} />
               <Route path="/projects/new" element={<ProjectWizard />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/insights" element={<Insights />} />
@@ -150,7 +150,7 @@ const App = () => (
               <Route path="/icons" element={<IconDesigner />} />
               <Route path="/editor" element={<Editor />} />
               <Route path="/present" element={<Presenter />} />
-              <Route path="/dashboard" element={<Navigate to="/projects" replace />} />
+              <Route path="/dashboard" element={<Navigate to="/create" replace />} />
               <Route path="/generate" element={<Navigate to="/create" replace />} />
               <Route path="/rocket/:id" element={<AssetRouteRedirect />} />
               <Route path="/settings" element={<SettingsLayout />}>
