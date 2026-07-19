@@ -8,7 +8,6 @@ import {
   Download, Loader2, FileImage, Globe, ChevronRight, Type as TypeIcon,
   BookOpen,
 } from "lucide-react";
-const supabase = _sb as any;
 import { downloadCompleteBrandKit } from "@/lib/brandKitDownload";
 import { exportAsset } from "@/lib/exporters";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +24,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+const supabase = _sb as any;
 
 // A hub "item" maps a Looka-style asset slot to a generator entry-point.
 // asset_type values reuse existing Rocket types where possible; new visual
