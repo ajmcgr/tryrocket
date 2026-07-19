@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { RotateCcw, Trash2, ArrowLeft, Search, LayoutGrid, List, ArrowUpDown } from "lucide-react";
+import { RotateCcw, Trash2, ArrowLeft, Search, LayoutGrid, List, ArrowUpDown, CheckSquare, Square, AlertTriangle } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
@@ -111,17 +111,36 @@ const Trash = () => {
   const [filter, setFilter] = useState<string>("all");
   const [view, setView] = useState<CollectionView>("card");
   const [sort, setSort] = useState<DesignSort>("date");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
+  const [confirmEmpty, setConfirmEmpty] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
+    const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+    const ws = await ensureActiveWorkspaceId();
+    const scope = (q: any) => (ws ? q.eq("workspace_id", ws) : q);
     const [a, p] = await Promise.all([
-      supabase.from("assets").select("*").eq("user_id", user.id).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(200),
-      supabase.from("projects").select("id,name,description,deleted_at").eq("user_id", user.id).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(200),
+      scope(supabase.from("assets").select("*").eq("user_id", user.id)).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(500),
+      scope(supabase.from("projects").select("id,name,description,deleted_at").eq("user_id", user.id)).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(500),
     ]);
+    // Client-side purge of items older than 30 days (best-effort).
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const expiredAssetIds = (a.data || []).filter((x: any) => new Date(x.deleted_at).getTime() < cutoff).map((x: any) => x.id);
+    const expiredProjectIds = (p.data || []).filter((x: any) => new Date(x.deleted_at).getTime() < cutoff).map((x: any) => x.id);
+    if (expiredAssetIds.length) await supabase.from("assets").delete().in("id", expiredAssetIds);
+    if (expiredProjectIds.length) await supabase.from("projects").delete().in("id", expiredProjectIds);
     setAssets(a.data || []); setProjects(p.data || []); setLoading(false);
+    setSelected(new Set()); setSelectedProjects(new Set());
   };
   useEffect(() => { load(); }, [user]);
+
+  const daysRemaining = (deletedAt: string) => {
+    const diff = 30 - Math.floor((Date.now() - new Date(deletedAt).getTime()) / (24 * 60 * 60 * 1000));
+    return Math.max(0, diff);
+  };
 
   const restoreAsset = async (id: string) => {
     const { error } = await supabase.from("assets").update({ deleted_at: null }).eq("id", id);
@@ -146,6 +165,47 @@ const Trash = () => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
     if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     setProjects((prev) => prev.filter(x => x.id !== id));
+  };
+
+  const toggle = (id: string) => setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleProject = (id: string) => setSelectedProjects((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const bulkRestore = async () => {
+    const ids = [...selected];
+    const pids = [...selectedProjects];
+    if (!ids.length && !pids.length) return;
+    setBusy(true);
+    if (ids.length) await supabase.from("assets").update({ deleted_at: null }).in("id", ids);
+    if (pids.length) await supabase.from("projects").update({ deleted_at: null }).in("id", pids);
+    setAssets((prev) => prev.filter((x) => !ids.includes(x.id)));
+    setProjects((prev) => prev.filter((x) => !pids.includes(x.id)));
+    setSelected(new Set()); setSelectedProjects(new Set());
+    setBusy(false);
+    toast({ title: `Restored ${ids.length + pids.length} item${ids.length + pids.length === 1 ? "" : "s"}` });
+  };
+  const bulkDelete = async () => {
+    const ids = [...selected];
+    const pids = [...selectedProjects];
+    if (!ids.length && !pids.length) return;
+    if (!confirm(`Permanently delete ${ids.length + pids.length} item(s)? This can't be undone.`)) return;
+    setBusy(true);
+    if (ids.length) await supabase.from("assets").delete().in("id", ids);
+    if (pids.length) await supabase.from("projects").delete().in("id", pids);
+    setAssets((prev) => prev.filter((x) => !ids.includes(x.id)));
+    setProjects((prev) => prev.filter((x) => !pids.includes(x.id)));
+    setSelected(new Set()); setSelectedProjects(new Set());
+    setBusy(false);
+  };
+  const emptyTrash = async () => {
+    setBusy(true);
+    const assetIds = assets.map((a) => a.id);
+    const projectIds = projects.map((p) => p.id);
+    if (assetIds.length) await supabase.from("assets").delete().in("id", assetIds);
+    if (projectIds.length) await supabase.from("projects").delete().in("id", projectIds);
+    setAssets([]); setProjects([]);
+    setSelected(new Set()); setSelectedProjects(new Set());
+    setConfirmEmpty(false); setBusy(false);
+    toast({ title: "Trash emptied" });
   };
 
   const filtered = useMemo(() => {
