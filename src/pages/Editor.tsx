@@ -2602,3 +2602,82 @@ function ColorPickerButton({ value, onChange, swatches = [] }: { value: string; 
     </Popover>
   );
 }
+
+const ICON_LIBRARY: string[] = [
+  "Rocket","Star","Heart","Sparkles","Zap","Flame","Sun","Moon","Cloud","CloudRain",
+  "Bolt","Award","Trophy","Crown","Gem","Diamond","Anchor","Compass","Map","MapPin",
+  "Globe","Leaf","Trees","Flower","Feather","Bird","Cat","Dog","Fish","Bug",
+  "Camera","Music","Headphones","Mic","Play","Pause","Video","Film","Image","Palette",
+  "Brush","PenTool","Pencil","Type","Bookmark","BookOpen","Book","GraduationCap","Lightbulb","Brain",
+  "Cpu","Code","Terminal","Bot","Wand","WandSparkles","Puzzle","Package","Gift","ShoppingBag",
+  "ShoppingCart","CreditCard","DollarSign","TrendingUp","BarChart3","PieChart","Target","Crosshair","Shield","Lock",
+  "Key","Fingerprint","Eye","Coffee","Pizza","Utensils","Wine","Cake","Apple","Cherry",
+  "Home","Building2","Store","Rocket","Plane","Car","Bike","Train","Ship","Truck",
+  "Phone","Mail","MessageCircle","Send","Share2","Users","User","UserPlus","Handshake","Smile",
+];
+
+function svgToDataUrl(svg: string): string {
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+
+function IconPicker({ label, onPick }: { label: string; onPick: (svgDataUrl: string) => void }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const uniq = Array.from(new Set(ICON_LIBRARY));
+    if (!s) return uniq;
+    return uniq.filter((n) => n.toLowerCase().includes(s));
+  }, [q]);
+  const renderIcon = (name: string): string | null => {
+    const Comp = (LucideIcons as any)[name];
+    if (!Comp) return null;
+    try {
+      const markup = renderToStaticMarkup(
+        <Comp size={64} strokeWidth={1.75} color="currentColor" />
+      );
+      // Ensure viewBox & currentColor render on dark/light bg
+      return markup.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" style="color:#0F172A" ');
+    } catch { return null; }
+  };
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className="w-full rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs font-medium text-neutral-700 hover:border-neutral-400 hover:bg-white">
+          {label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-2">
+        <input
+          autoFocus
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search icons..."
+          className="mb-2 w-full rounded-md border border-neutral-200 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
+        />
+        <div className="grid max-h-64 grid-cols-6 gap-1 overflow-y-auto">
+          {filtered.slice(0, 120).map((name) => {
+            const Comp = (LucideIcons as any)[name];
+            if (!Comp) return null;
+            return (
+              <button
+                key={name}
+                title={name}
+                onClick={() => {
+                  const svg = renderIcon(name);
+                  if (svg) { onPick(svgToDataUrl(svg)); setOpen(false); }
+                }}
+                className="grid h-10 w-10 place-items-center rounded-md border border-transparent text-neutral-800 hover:border-neutral-300 hover:bg-neutral-100"
+              >
+                <Comp size={20} strokeWidth={1.75} />
+              </button>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="col-span-6 py-6 text-center text-xs text-neutral-500">No icons match "{q}"</p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
