@@ -126,9 +126,26 @@ export function extractNameFromPrompt(prompt: string, urlHint?: string | null): 
   const fromUrl = extractNameFromUrl(prompt) || extractNameFromUrl(urlHint || undefined);
   if (fromUrl) return fromUrl;
 
+  // Highest priority: explicit quoted brand name, or "say/read/spell X".
+  // These are the user's unambiguous signals and must beat generic "for ..." matches
+  // like "for a real brand" in surrounding descriptive copy.
+  const explicit = [
+    /(?:text\s+(?:to\s+)?(?:exactly\s+)?(?:say|read|spell)|should\s+(?:say|read|spell)|say|spell|reads?)\s*[:\-]?\s*['"“”‘’]([^'"“”‘’\n]{1,40})['"“”‘’]/i,
+    /['"“”‘’]([A-Za-z][A-Za-z0-9 &.\-]{0,39})['"“”‘’]/,
+    /(?:text\s+(?:to\s+)?(?:exactly\s+)?(?:say|read|spell)|should\s+(?:say|read|spell)|say|spell|reads?)\s*[:\-]?\s*([A-Za-z][A-Za-z0-9 &.\-]{0,39})\b/i,
+  ];
+  for (const pattern of explicit) {
+    const match = prompt.match(pattern)?.[1];
+    const cleaned = normalizeLogotypeText(match, urlHint);
+    if (cleaned) return cleaned;
+  }
+
   const patterns = [
-    /\b(?:for|called|named|brand(?:ed)? as)\s+([A-Za-z][A-Za-z0-9 -]{1,40})\b/i,
+    /\b(?:called|named|brand(?:ed)? as)\s+([A-Za-z][A-Za-z0-9 -]{1,40})\b/i,
     /\b([A-Za-z][A-Za-z0-9 -]{1,40})\s+(?:logotype|wordmark|word mark|text logo)\b/i,
+    // "for X" is a weak signal — keep it last so it doesn't swallow generic phrases
+    // like "for a real brand", "for my startup", "for this project" in descriptive copy.
+    /\bfor\s+([A-Za-z][A-Za-z0-9 -]{1,40})\b/i,
   ];
   for (const pattern of patterns) {
     const match = prompt.match(pattern)?.[1];
