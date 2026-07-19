@@ -2374,17 +2374,9 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
   };
 
   const Section = ({ id, label, tone, children }: { id: string; label: string; tone: string; children: ReactNode }) => (
-    <div className="rounded-2xl border border-white/80 bg-white/95 shadow-sm">
-      <button
-        type="button"
-        onClick={() => toggleQe(id)}
-        className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold text-white ${tone}`}
-      >
-        <span>{label}</span>
-        <ChevronDown className={`h-4 w-4 transition-transform ${qeOpen[id] ? "rotate-180" : ""}`} />
-      </button>
-      {qeOpen[id] && <div className="space-y-2.5 p-3">{children}</div>}
-    </div>
+    <QeSection id={id} label={label} tone={tone} open={!!qeOpen[id]} onToggle={() => toggleQe(id)}>
+      {children}
+    </QeSection>
   );
 
   return (
