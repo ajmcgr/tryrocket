@@ -413,6 +413,14 @@ const Editor = () => {
   const [bg, setBg] = useState<string>(() => {
     try { return localStorage.getItem("rocket.editor.bg.v1") || "#ffffff"; } catch { return "#ffffff"; }
   });
+  const [showQuickEdit, setShowQuickEdit] = useState<boolean>(() => {
+    try { return localStorage.getItem("rocket.editor.quickedit.v1") !== "0"; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("rocket.editor.quickedit.v1", showQuickEdit ? "1" : "0"); } catch {}
+  }, [showQuickEdit]);
+  const [qeOpen, setQeOpen] = useState<Record<string, boolean>>({ title: true, slogan: false, icon: false, layout: false, background: false });
+  const toggleQe = (k: string) => setQeOpen((prev) => ({ ...prev, [k]: !prev[k] }));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [extraSelectedIds, setExtraSelectedIds] = useState<Set<string>>(new Set());
   const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
