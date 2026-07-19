@@ -7,6 +7,7 @@ import OnboardingTour from "./OnboardingTour";
 import NotificationsBell from "./NotificationsBell";
 import CommandPalette from "./CommandPalette";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
+import BuyCreditsMenu from "./BuyCreditsMenu";
 import {
   HelpCircle,
   Palette,
@@ -19,7 +20,6 @@ import {
   Star,
   Home,
   Wand2,
-  Coins,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -85,7 +85,7 @@ const AppShell = () => {
   return (
     <div className="app-shell min-h-screen bg-[#f5f7fb] text-neutral-900">
       <aside
-        className="fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-neutral-200 bg-white py-3 px-3 lg:flex transition-[width] duration-200"
+        className="fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-neutral-200 bg-white py-3 px-3 font-body lg:flex transition-[width] duration-200"
         style={{ width: sidebarWidth }}
       >
         <Link
@@ -126,15 +126,7 @@ const AppShell = () => {
           })}
         </nav>
         <div className="mt-auto flex flex-col gap-1">
-          <NavLink
-            to="/settings/billing"
-            className={sidebarItemClass}
-            aria-label="Buy Credits"
-            title="Buy Credits"
-          >
-            <Coins className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-            {!collapsed && <span className="truncate">Buy Credits</span>}
-          </NavLink>
+          <BuyCreditsMenu collapsed={collapsed} />
           <NavLink
             to="/settings/profile"
             className={sidebarItemClass}
