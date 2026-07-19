@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng, logotypeToSvg } from "@/components/Logotype";
@@ -266,6 +266,24 @@ export default function Brand() {
     }
   };
 
+  const removeFromKit = async (assetId: string) => {
+    if (!confirm("Remove this file from the brand kit? It will stay in your Saved library.")) return;
+    const { error } = await supabase.from("assets").update({ project_id: null }).eq("id", assetId);
+    if (error) {
+      toast({ title: "Could not remove", description: error.message, variant: "destructive" });
+      return;
+    }
+    setLogoAssets((prev) => {
+      const next = prev.filter((a) => a.id !== assetId);
+      if (logoAsset?.id === assetId) {
+        const withState = next.find((a: any) => a?.editor_state?.kind === "logotype");
+        setLogoAsset(withState || next[0] || null);
+      }
+      return next;
+    });
+    toast({ title: "Removed from brand kit" });
+  };
+
   return (
     <>
         <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:py-10">
@@ -322,15 +340,25 @@ export default function Brand() {
                   <h2 className="text-sm font-semibold text-neutral-700">All saved logos ({logoAssets.length})</h2>
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {logoAssets.map((a) => (
-                      <button key={a.id} onClick={() => setLogoAsset(a)} className={`overflow-hidden rounded-xl border bg-white transition hover:shadow-sm ${logoAsset?.id === a.id ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
-                        <div className="flex aspect-square items-center justify-center bg-neutral-50 p-3">
-                          {a?.editor_state?.kind === "logotype" ? (
-                            <Logotype state={a.editor_state} fit="contain" />
-                          ) : (a.image_url || a.thumbnail_url) ? (
-                            <img src={a.image_url || a.thumbnail_url} alt="" className="max-h-full max-w-full object-contain" loading="lazy" />
-                          ) : null}
-                        </div>
-                      </button>
+                      <div key={a.id} className={`group relative overflow-hidden rounded-xl border bg-white transition hover:shadow-sm ${logoAsset?.id === a.id ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
+                        <button onClick={() => setLogoAsset(a)} className="block w-full">
+                          <div className="flex aspect-square items-center justify-center bg-neutral-50 p-3">
+                            {a?.editor_state?.kind === "logotype" ? (
+                              <Logotype state={a.editor_state} fit="contain" />
+                            ) : (a.image_url || a.thumbnail_url) ? (
+                              <img src={a.image_url || a.thumbnail_url} alt="" className="max-h-full max-w-full object-contain" loading="lazy" />
+                            ) : null}
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          title="Remove from brand kit"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFromKit(a.id); }}
+                          className="absolute right-1.5 top-1.5 rounded-full bg-white/95 p-1 text-neutral-500 opacity-0 shadow-sm transition hover:text-red-600 group-hover:opacity-100"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
