@@ -2467,6 +2467,20 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
         </Section>
 
         <Section id="icon" label="Icon" tone="bg-[#EC5AA6]">
+          <IconPicker
+            label={icon ? "Replace icon" : "+ Add icon from library"}
+            onPick={(svgDataUrl) => {
+              if (icon) {
+                update(icon.id, { src: svgDataUrl } as any);
+              } else {
+                const el: ImgEl = {
+                  id: uidFn(), kind: "image", x: STAGE_W / 2 - 120, y: 140, w: 240, h: 240,
+                  visible: true, locked: false, src: svgDataUrl, color: "#0F172A",
+                };
+                setEls((prev) => [...prev, el]);
+              }
+            }}
+          />
           {icon ? (
             <>
               <div className="flex items-center gap-2">
@@ -2488,7 +2502,7 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
               </div>
             </>
           ) : (
-            <p className="text-xs text-neutral-500">Add an image from the top toolbar to use as an icon.</p>
+            <p className="text-xs text-neutral-500">Pick an icon above, or add an image from the top toolbar.</p>
           )}
         </Section>
 
