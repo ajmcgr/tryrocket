@@ -8,6 +8,7 @@ import { Logotype } from "@/components/Logotype";
 import { defaultLogotypeState, LOGOTYPE_FONTS, loadGoogleFont, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { loadBrandMeta } from "@/lib/brandMeta";
 
 const supabase = _sb as any;
 
@@ -48,7 +49,7 @@ export default function BrandGuidelines() {
     (async () => {
       setLoading(true);
       const [{ data: proj }, { data: assets }] = await Promise.all([
-        supabase.from("projects").select("id,name,tagline,meta").eq("id", projectId).maybeSingle(),
+        supabase.from("projects").select("id,name,tagline").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,created_at")
@@ -69,18 +70,19 @@ export default function BrandGuidelines() {
   useEffect(() => { LOGOTYPE_FONTS.forEach((f) => loadGoogleFont(f.family, f.weights)); }, []);
 
   const brandColor = useMemo(() => {
-    const c = String(project?.meta?.brand_color || "").trim();
+    const meta = loadBrandMeta(projectId);
+    const c = String(meta.brand_color || "").trim();
     return /^#[0-9a-f]{3,8}$/i.test(c) ? c : "#0A0A0A";
-  }, [project]);
+  }, [project, projectId]);
 
   const baseState = useMemo<LogotypeState>(() => {
     const base = logoAsset?.editor_state?.kind === "logotype"
       ? (logoAsset.editor_state as LogotypeState)
       : defaultLogotypeState(project?.name || "Brand");
-    // Mirror any brand-level overrides (palette + font) applied from the explorers.
-    const font = project?.meta?.font || base.font;
+    const meta = loadBrandMeta(projectId);
+    const font = meta.font || base.font;
     return { ...base, font, color: brandColor };
-  }, [logoAsset, project, brandColor]);
+  }, [logoAsset, project, brandColor, projectId]);
 
   const isDark = luminance(brandColor) < 0.4;
   const onBrandText = isDark ? "#ffffff" : "#0A0A0A";
@@ -95,7 +97,7 @@ export default function BrandGuidelines() {
     ];
   }, [brandColor]);
 
-  const currentFont = project?.meta?.font || baseState.font || "Inter";
+  const currentFont = loadBrandMeta(projectId).font || baseState.font || "Inter";
   const fontMeta = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === currentFont.toLowerCase());
 
   const download = async () => {
