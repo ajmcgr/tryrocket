@@ -26,36 +26,6 @@ import { matchesDesignQuery, rankDesignsByRelevance } from "@/lib/searchRelevanc
 const supabase = _sb as any;
 const LOGO_TYPES = ["logo", "logotype", "wordmark", "brandmark"] as const;
 
-const SAVED_STYLES = [
-  "Modern", "Minimal", "Luxury", "Technology", "Startup", "AI", "Consumer", "Enterprise", "Fintech", "Healthcare", "Education",
-] as const;
-
-type SavedStyle = "all" | typeof SAVED_STYLES[number];
-
-const matchesSavedStyle = (asset: any, style: SavedStyle) => {
-  if (style === "all") return true;
-  const declaredStyle = String(
-    asset?.meta?.template_style || asset?.meta?.templateStyle || asset?.meta?.style || "",
-  ).toLowerCase();
-  const searchable = [asset?.title, asset?.prompt, asset?.content, declaredStyle]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  const terms: Record<Exclude<SavedStyle, "all">, string[]> = {
-    Modern: ["modern", "contemporary"],
-    Minimal: ["minimal", "clean", "simple"],
-    Luxury: ["luxury", "premium", "elegant"],
-    Technology: ["technology", "tech", "software", "digital"],
-    Startup: ["startup", "saas", "founder"],
-    AI: [" ai", "artificial intelligence", "machine learning"],
-    Consumer: ["consumer", "retail", "lifestyle", "food", "beauty"],
-    Enterprise: ["enterprise", "b2b", "business"],
-    Fintech: ["fintech", "finance", "bank", "payment"],
-    Healthcare: ["healthcare", "health", "medical", "wellness"],
-    Education: ["education", "learning", "school", "academy"],
-  };
-  return terms[style].some((term) => searchable.includes(term));
-};
 
 const SavedLogos = () => {
   const { user } = useAuth();
