@@ -447,17 +447,10 @@ const Index = () => {
                 <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {[
-                    "Brand Guidelines",
-                    "Brand Templates",
-                    "Logos",
-                    "Colors",
+                    "Logo/Icon Files",
+                    "Palette",
                     "Fonts",
-                    "Brand voice",
-                    "Photos",
-                    "Components",
-                    "Graphics",
-                    "Icons",
-                    "Launch Copy",
+                    "Brand Book",
                   ].map((item) => (
                     <span key={item} className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
                       {item}
@@ -500,17 +493,10 @@ const Index = () => {
                 <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {[
-                    "Brand Guidelines",
-                    "Brand Templates",
-                    "Logos",
-                    "Colors",
+                    "Logo/Icon Files",
+                    "Palette",
                     "Fonts",
-                    "Brand voice",
-                    "Photos",
-                    "Components",
-                    "Graphics",
-                    "Icons",
-                    "Launch Copy",
+                    "Brand Book",
                   ].map((item) => (
                     <span key={item} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-700 ring-1 ring-neutral-200">
                       {item}
