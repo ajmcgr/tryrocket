@@ -127,6 +127,7 @@ const App = () => (
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
               <Route path="/projects/:id/hub" element={<BrandKitHub />} />
               <Route path="/projects/:id/logo-files" element={<LogoFiles />} />
+              <Route path="/projects/:id/websites" element={<WebsiteTemplates />} />
               <Route path="/designs" element={<Assets />} />
               <Route path="/designs/:id" element={<AssetRouteRedirect />} />
               <Route path="/assets" element={<Navigate to="/designs" replace />} />
