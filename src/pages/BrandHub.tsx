@@ -69,8 +69,8 @@ export default function BrandHub() {
         supabase.from("projects").select("id,name,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
       ]);
       if (cancel) return;
-      const loadedProjects = p || [];
-      const all = a || [];
+      const loadedProjects = (p || []).filter(Boolean);
+      const all = (a || []).filter(Boolean);
       setAllDesigns(all);
       setAssets(all.filter(isBrandAsset));
       setProjects(loadedProjects);
@@ -88,13 +88,14 @@ export default function BrandHub() {
 
   const filtered = useMemo(() => {
     if (selectedProjectId === "all") return assets;
-    return assets.filter((a) => a.project_id === selectedProjectId);
+    return assets.filter((a) => a?.project_id === selectedProjectId);
   }, [assets, selectedProjectId]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, any[]>();
     for (const c of CATEGORIES) map.set(c.key, []);
     for (const a of filtered) {
+      if (!a) continue;
       const t = normalizeAssetType(a.asset_type);
       const cat = CATEGORIES.find((c) => c.types.includes(t));
       if (cat) map.get(cat.key)!.push(a);
@@ -117,8 +118,8 @@ export default function BrandHub() {
   }, [allDesigns, selectedProject]);
 
   const missingEssentials = useMemo(() => {
-    const availableTypes = new Set(selectedProjectDesigns.map((design) => normalizeAssetType(design.asset_type)));
-    if (selectedStyle?.project_id === selectedProject?.id) {
+    const availableTypes = new Set(selectedProjectDesigns.map((design) => normalizeAssetType(design?.asset_type)));
+    if (selectedStyle && selectedProject && selectedStyle.project_id === selectedProject.id) {
       availableTypes.add(normalizeAssetType(selectedStyle.asset_type));
     }
     return KIT_ESSENTIALS.filter((essential) => !essential.types.some((type) => availableTypes.has(type)));

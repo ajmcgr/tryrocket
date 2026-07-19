@@ -92,9 +92,9 @@ const Projects = () => {
       supabase.from("assets").select("*").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
     ]);
 
-    const list = projectRows || [];
-    const folderList = folderRows || [];
-    const items = assetRows || [];
+    const list = (projectRows || []).filter(Boolean);
+    const folderList = (folderRows || []).filter(Boolean);
+    const items = (assetRows || []).filter(Boolean);
 
     setProjects(list);
     setFolders(folderList);
@@ -108,6 +108,7 @@ const Projects = () => {
     const nextFolderLogotypes: Record<string, any> = {};
 
     items.forEach((asset: any) => {
+      if (!asset) return;
       const img = asset.thumbnail_url || asset.image_url;
 
       if (asset.project_id) {
