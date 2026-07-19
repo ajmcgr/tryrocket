@@ -26,6 +26,7 @@ import Trash from "./pages/Trash.tsx";
 import ProjectDetail from "./pages/ProjectDetail.tsx";
 import Studio from "./pages/Studio.tsx";
 import Brand from "./pages/Brand.tsx";
+import BrandLayout from "./pages/BrandLayout.tsx";
 import BrandHub from "./pages/BrandHub.tsx";
 import BrandKit from "./pages/BrandKit.tsx";
 import BrandKitHub from "./pages/BrandKitHub.tsx";
