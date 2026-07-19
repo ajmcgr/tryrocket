@@ -126,7 +126,13 @@ const App = () => (
               <Route path="/studio/:id" element={<StudioRedirect />} />
               <Route path="/files" element={<Navigate to="/brands" replace />} />
               <Route path="/brands" element={<BrandHub />} />
-              <Route path="/brands/:id" element={<Brand />} />
+              <Route path="/brands/:id" element={<BrandLayout />}>
+                <Route index element={<Brand />} />
+                <Route path="brand-book" element={<BrandGuidelines />} />
+                <Route path="palette" element={<PaletteExplorer />} />
+                <Route path="fonts" element={<FontExplorer />} />
+                <Route path="settings" element={<ProjectDetail />} />
+              </Route>
               <Route path="/brand" element={<Navigate to="/brands" replace />} />
               <Route path="/brand/:id" element={<BrandIdRedirect />} />
               <Route path="/projects/:id/brand-kit" element={<BrandKit />} />
