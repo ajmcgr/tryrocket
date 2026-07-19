@@ -8,7 +8,7 @@ import { LayoutGrid, Package, Sparkles as SparklesIcon, Palette } from "lucide-r
 const HomeHub = () => {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10 sm:px-6">
-      <div className="grid w-full max-w-6xl gap-6 md:grid-cols-4">
+      <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
         <HubCard
           to="/create/generate"
           title="Wizard"
