@@ -168,15 +168,6 @@ const CreateShowcase = () => {
           ))}
         </div>
 
-        <div className="mt-16 flex justify-center sm:mt-20">
-          <a
-            href="/create"
-            className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground transition hover:bg-brand-hover"
-          >
-            Start creating your logo
-            <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
       </div>
     </section>
   );
