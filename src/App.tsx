@@ -32,6 +32,7 @@ import LogoFiles from "./pages/LogoFiles.tsx";
 import WebsiteTemplates from "./pages/WebsiteTemplates.tsx";
 import PaletteExplorer from "./pages/PaletteExplorer.tsx";
 import FontExplorer from "./pages/FontExplorer.tsx";
+import SocialKit from "./pages/SocialKit.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
 import Templates from "./pages/Templates.tsx";
 import Insights from "./pages/Insights.tsx";
@@ -132,6 +133,7 @@ const App = () => (
               <Route path="/projects/:id/websites" element={<WebsiteTemplates />} />
               <Route path="/projects/:id/palettes" element={<PaletteExplorer />} />
               <Route path="/projects/:id/fonts" element={<FontExplorer />} />
+              <Route path="/projects/:id/social" element={<SocialKit />} />
               <Route path="/designs" element={<Assets />} />
               <Route path="/designs/:id" element={<AssetRouteRedirect />} />
               <Route path="/assets" element={<Navigate to="/designs" replace />} />
