@@ -56,7 +56,7 @@ function downloadBlob(blob: Blob, name: string) {
 }
 
 async function downloadPng(state: LogotypeState, filename: string) {
-  const dataUrl = await logotypeToPng(state, 3);
+  const dataUrl = await logotypeToPng(state, 4);
   const res = await fetch(dataUrl);
   downloadBlob(await res.blob(), `${filename}.png`);
 }
@@ -67,7 +67,7 @@ function downloadSvg(state: LogotypeState, filename: string) {
 }
 
 async function downloadPdf(state: LogotypeState, filename: string, bg: string) {
-  const dataUrl = await logotypeToPng(state, 3);
+  const dataUrl = await logotypeToPng(state, 4);
   // Load into an Image to read dimensions.
   const img = new Image();
   await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = dataUrl; });
@@ -166,6 +166,12 @@ export default function LogoFiles() {
           </p>
         </div>
       </div>
+
+      {projectId ? (
+        <div className="mb-6">
+          <ProjectNavigation projectId={projectId} active="downloads" />
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="grid gap-6 md:grid-cols-2">
