@@ -1807,6 +1807,29 @@ const Editor = () => {
         <p className="mt-1 text-xs text-neutral-500">Open Rocket on a larger screen to design.</p>
       </div>
       <div className="relative flex min-w-0 flex-1 overflow-hidden">
+      {showQuickEdit ? (
+        <QuickEditPanel
+          els={els}
+          fonts={fontFamilies}
+          bg={bg}
+          setBg={setBg}
+          update={update}
+          setEls={setEls}
+          addText={addText}
+          uidFn={uid}
+          qeOpen={qeOpen}
+          toggleQe={toggleQe}
+          onClose={() => setShowQuickEdit(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowQuickEdit(true)}
+          className="absolute left-3 top-3 z-20 hidden items-center gap-1.5 rounded-full border border-neutral-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-white md:inline-flex"
+        >
+          <PanelLeftOpen className="h-3.5 w-3.5" /> Quick Edit
+        </button>
+      )}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
       {/* Top pill */}
       <aside className="pointer-events-auto mx-auto mt-4 hidden w-fit max-w-[calc(100%-2rem)] flex-nowrap items-center justify-center gap-1.5 overflow-x-auto rounded-full border border-white/80 bg-white/88 px-2 py-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl md:flex">
