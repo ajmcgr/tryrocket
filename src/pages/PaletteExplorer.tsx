@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Check, Loader2 } from "lucide-react";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype } from "@/components/Logotype";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 
@@ -49,7 +48,7 @@ export default function PaletteExplorer() {
     (async () => {
       setLoading(true);
       const [{ data: proj }, { data: assets }] = await Promise.all([
-        supabase.from("projects").select("id,name,brand_color").eq("id", projectId).maybeSingle(),
+        supabase.from("projects").select("id,name,meta").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,created_at")
@@ -76,42 +75,28 @@ export default function PaletteExplorer() {
     if (!projectId) return;
     setApplyingKey(p.key);
     const brand = p.colors[2] || p.colors[1];
-    const { error } = await supabase.from("projects").update({ brand_color: brand }).eq("id", projectId);
+    const nextMeta = { ...(project?.meta || {}), brand_color: brand, palette: p.colors, palette_key: p.key };
+    const { error } = await supabase.from("projects").update({ meta: nextMeta }).eq("id", projectId);
     setApplyingKey(null);
     if (error) {
       toast({ title: "Failed to apply", description: error.message, variant: "destructive" });
       return;
     }
-    setProject((prev: any) => (prev ? { ...prev, brand_color: brand } : prev));
+    setProject((prev: any) => (prev ? { ...prev, meta: nextMeta } : prev));
     toast({ title: `${p.name} palette applied`, description: `Brand color set to ${brand}.` });
     try { window.dispatchEvent(new CustomEvent("rocket:notify", { detail: { kind: "brand_updated", projectId } })); } catch {}
   };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mb-6 flex items-center gap-3">
-        {projectId ? (
-          <Link
-            to={`/brands/${projectId}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition hover:bg-neutral-50"
-            aria-label="Back to brand kit"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        ) : null}
-        <div className="flex-1">
+      <div className="mb-6">
+        <div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Palette Explorer</h1>
           <p className="mt-0.5 text-sm text-neutral-500">
             Try your logo in a range of curated palettes. Apply one to set it as your brand color.
           </p>
         </div>
       </div>
-
-      {projectId ? (
-        <div className="mb-6">
-          <ProjectNavigation projectId={projectId} active="downloads" />
-        </div>
-      ) : null}
 
       {loading ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -123,7 +108,7 @@ export default function PaletteExplorer() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {PALETTES.map((p) => {
             const [bg, fg, accent, accent2] = p.colors;
-            const isCurrent = (project?.brand_color || "").toLowerCase() === accent.toLowerCase();
+            const isCurrent = String(project?.meta?.brand_color || "").toLowerCase() === accent.toLowerCase();
             const state: LogotypeState = { ...baseState, color: fg };
             return (
               <div

@@ -303,8 +303,8 @@ export default function BrandHub() {
     return (
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Brands</h1>
-          <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand you've saved.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Brand Kits</h1>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand kit you've saved.</p>
         </div>
 
         {loading ? (
