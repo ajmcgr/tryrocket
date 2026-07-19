@@ -53,9 +53,9 @@ const LogoStudio = () => {
       <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-[0_20px_60px_-20px_rgba(15,23,42,0.15)] md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_88px]">
         {/* Left: prompt / intro */}
         <div className="flex flex-col justify-center gap-4 bg-[#1676e3] p-10 text-white sm:p-12">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Brand Wizard</h1>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Wizard</h1>
           <p className="max-w-xs text-sm/6 text-white/85">
-            The best brand names are short, memorable and easy to Google.
+            The best brands are memorable and easy to recognize.
           </p>
         </div>
 
