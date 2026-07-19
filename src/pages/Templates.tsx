@@ -197,7 +197,7 @@ const Templates = () => {
                   <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 transition group-hover:text-neutral-700" />
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="truncate text-[11px] text-neutral-500">{design.asset_type?.replaceAll("_", " ") || "Design"}</span>
+                  <span className="truncate text-[11px] text-neutral-500">{(design.asset_type || "Design").replace(/_/g, " ")}</span>
                   <span className="shrink-0 text-[10px] text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="mt-3 flex gap-2">
@@ -221,7 +221,7 @@ const Templates = () => {
               <Link to={`/editor?id=${design.id}`} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-neutral-900">{design.title}</div>
                 <div className="truncate text-xs text-neutral-500">
-                  {(design.asset_type?.replaceAll("_", " ") || "Design")} · by {design.creator_username || "Rocket creator"}
+                  {(design.asset_type || "Design").replace(/_/g, " ")} · by {design.creator_username || "Rocket creator"}
                 </div>
               </Link>
               <Link to={templateCreateHref(design)} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Use</Link>
