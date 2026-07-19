@@ -7,6 +7,7 @@ import OnboardingTour from "./OnboardingTour";
 import NotificationsBell from "./NotificationsBell";
 import CommandPalette from "./CommandPalette";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
+import BuyCreditsMenu from "./BuyCreditsMenu";
 import {
   HelpCircle,
   Palette,
@@ -19,7 +20,6 @@ import {
   Star,
   Home,
   Wand2,
-  Coins,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
