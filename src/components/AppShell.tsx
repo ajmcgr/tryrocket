@@ -10,7 +10,6 @@ import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import {
   FolderKanban,
   Grid2X2,
-  Heart,
   HelpCircle,
   Palette,
   PenTool,
