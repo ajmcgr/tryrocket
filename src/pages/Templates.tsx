@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   Search,
@@ -61,6 +62,37 @@ const Templates = () => {
     const designType = String(design?.asset_type || "logo");
     const prompt = `Create a distinctive ${designType.replace(/_/g, " ")} inspired by the ${design?.title || "selected"} template. Adapt it for my brand without reusing its name or content.`;
     return `/create?${new URLSearchParams({ asset_type: designType, prompt }).toString()}`;
+  };
+
+  const openTemplateInEditor = async (design: any, event?: React.MouseEvent) => {
+    event?.preventDefault();
+    // Non-seed designs already have a real row — open directly.
+    if (!design?._seed) {
+      window.open(`/editor?id=${design.id}`, "_blank", "noopener,noreferrer");
+      return;
+    }
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth?.user;
+      if (!user) {
+        toast({ title: "Sign in to use templates", variant: "destructive" });
+        return;
+      }
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const workspace_id = await ensureActiveWorkspaceId();
+      const { data, error } = await supabase.from("assets").insert({
+        user_id: user.id,
+        workspace_id,
+        asset_type: design.asset_type || "logo",
+        title: design.title || "Template",
+        editor_state: design.editor_state,
+        meta: { ...(design.meta || {}), from_template: true, kind: "logotype" },
+      } as any).select("id").single();
+      if (error || !data?.id) throw error || new Error("Couldn't open template");
+      window.open(`/editor?id=${data.id}`, "_blank", "noopener,noreferrer");
+    } catch (err: any) {
+      toast({ title: "Couldn't open template", description: err?.message, variant: "destructive" });
+    }
   };
 
   useEffect(() => {
@@ -185,19 +217,11 @@ const Templates = () => {
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((design) => (
             <div key={design.id} className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md">
-              {design._seed ? (
-                <Link to={templateCreateHref(design)} className="block">
-                  <div className="aspect-square w-full overflow-hidden bg-neutral-50">
-                    <DesignPreview design={design} />
-                  </div>
-                </Link>
-              ) : (
-              <Link to={`/editor?id=${design.id}`} target="_blank" rel="noopener noreferrer" className="block">
+              <a href="#" onClick={(e) => openTemplateInEditor(design, e)} className="block cursor-pointer">
                 <div className="aspect-square w-full overflow-hidden bg-neutral-50">
                   <DesignPreview design={design} />
                 </div>
-              </Link>
-              )}
+              </a>
               <div className="border-t border-neutral-100 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -211,10 +235,8 @@ const Templates = () => {
                   <span className="shrink-0 text-[10px] text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <Link to={templateCreateHref(design)} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Use template</Link>
-                  {!design._seed && (
-                    <Link to={`/editor?id=${design.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Preview</Link>
-                  )}
+                  <button type="button" onClick={(e) => openTemplateInEditor(design, e)} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Use template</button>
+                  <Link to={templateCreateHref(design)} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Remix</Link>
                 </div>
               </div>
             </div>
@@ -227,24 +249,16 @@ const Templates = () => {
               key={design.id}
               className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 transition hover:bg-neutral-50 last:border-b-0"
             >
-              {(() => {
-                const href = design._seed ? templateCreateHref(design) : `/editor?id=${design.id}`;
-                const target = design._seed ? undefined : "_blank";
-                return (
-                  <>
-                    <Link to={href} target={target} rel={target ? "noopener noreferrer" : undefined} className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-50">
-                      <DesignPreview design={design} />
-                    </Link>
-                    <Link to={href} target={target} rel={target ? "noopener noreferrer" : undefined} className="min-w-0 flex-1">
+              <a href="#" onClick={(e) => openTemplateInEditor(design, e)} className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-50 cursor-pointer">
+                <DesignPreview design={design} />
+              </a>
+              <a href="#" onClick={(e) => openTemplateInEditor(design, e)} className="min-w-0 flex-1 cursor-pointer">
                 <div className="truncate text-sm font-medium text-neutral-900">{design.title}</div>
                 <div className="truncate text-xs text-neutral-500">
                   {(design.asset_type || "Design").replace(/_/g, " ")} · by {design.creator_username || "Rocket creator"}
                 </div>
-                    </Link>
-                  </>
-                );
-              })()}
-              <Link to={templateCreateHref(design)} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Use</Link>
+              </a>
+              <button type="button" onClick={(e) => openTemplateInEditor(design, e)} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Use</button>
               <div className="shrink-0 text-xs text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</div>
               <ExternalLink className="h-4 w-4 shrink-0 text-neutral-400" />
             </div>
