@@ -470,6 +470,10 @@ const Generate = () => {
   });
   const [projectBrandContext, setProjectBrandContext] = useState<any>(null);
   const [ignoreSavedStyle, setIgnoreSavedStyle] = useState(false);
+  const [resultsView, setResultsView] = useState<"grid" | "list">(() => {
+    try { return (localStorage.getItem("rocket.generate.view") as "grid" | "list") || "grid"; } catch { return "grid"; }
+  });
+  useEffect(() => { try { localStorage.setItem("rocket.generate.view", resultsView); } catch {} }, [resultsView]);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
   const [pendingPrompts, setPendingPrompts] = useState<{ text: string; at: string }[]>([]);
