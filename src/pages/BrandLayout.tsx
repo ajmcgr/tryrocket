@@ -408,7 +408,7 @@ export default function BrandLayout() {
   };
 
   const nav: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }>; to: string; end?: boolean }[] = useMemo(() => ([
-    { key: "logo-files", label: "Logo Files", icon: ImageIcon, to: `/brands/${projectId}`, end: true },
+    { key: "logo-files", label: "Logo/Icon Files", icon: ImageIcon, to: `/brands/${projectId}`, end: true },
     { key: "palette", label: "Palette", icon: PaletteIcon, to: `/brands/${projectId}/palette` },
     { key: "fonts", label: "Fonts", icon: Type, to: `/brands/${projectId}/fonts` },
     { key: "brand-book", label: "Brand Book", icon: BookOpen, to: `/brands/${projectId}/brand-book` },

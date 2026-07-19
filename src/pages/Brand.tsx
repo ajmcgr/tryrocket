@@ -195,9 +195,9 @@ export default function Brand() {
     <>
         <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:py-10">
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Logo Files</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Logo/Icon Files</h1>
             <p className="mt-1 text-sm text-neutral-500">
-              Download your logo in the right variant for every context — light, dark, inverse and monochrome.
+              Download your logo or icon in the right variant for every context — light, dark, inverse and monochrome.
             </p>
           </div>
           {loading ? (

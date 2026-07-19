@@ -389,7 +389,7 @@ const BrandKitHub = () => {
             <FileImage className="h-5 w-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-neutral-900">Logo Files</span>
+            <span className="block text-sm font-semibold text-neutral-900">Logo/Icon Files</span>
             <span className="block text-xs text-neutral-500">Regular, Inverse, Black &amp; White — PNG, SVG, PDF.</span>
           </span>
           <ChevronRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" />
