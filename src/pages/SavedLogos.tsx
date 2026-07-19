@@ -152,7 +152,7 @@ const SavedLogos = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Saved logos</h1>
-          <p className="mt-1 text-sm text-neutral-500">Every logo concept you've generated.</p>
+          <p className="mt-1 text-sm text-neutral-500">Every logo concept you've generated or saved.</p>
         </div>
       </div>
 
