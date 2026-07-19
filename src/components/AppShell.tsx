@@ -120,14 +120,14 @@ const AppShell = () => {
           >
             <Settings className="h-[18px] w-[18px]" strokeWidth={1.9} />
           </NavLink>
-          <Link
-            to="/faq"
+          <a
+            href="mailto:alex@tryrocket.ai"
             className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950"
-            aria-label="Support"
-            title="Support"
+            aria-label="Email support"
+            title="Email support"
           >
             <HelpCircle className="h-[18px] w-[18px]" strokeWidth={1.9} />
-          </Link>
+          </a>
         </div>
       </aside>
       <div className="min-h-screen lg:pl-[68px]">
