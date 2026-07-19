@@ -232,14 +232,9 @@ export default function BrandHub() {
   if (!activeProject && !params.get("direction")) {
     return (
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Brands</h1>
-            <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand you've saved.</p>
-          </div>
-          <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
-            <Plus className="h-4 w-4" /> Create a brand
-          </Link>
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Brands</h1>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand you've saved.</p>
         </div>
 
         {loading ? (
@@ -285,9 +280,6 @@ export default function BrandHub() {
           <section className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-14 text-center">
             <h2 className="text-lg font-semibold text-neutral-900">No brands yet</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">Start with a logo, then Rocket builds the colours, type and voice around it.</p>
-            <Link to="/create" className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
-              <Plus className="h-4 w-4" /> Create a brand
-            </Link>
           </section>
         )}
       </div>
