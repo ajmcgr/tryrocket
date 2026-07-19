@@ -123,22 +123,14 @@ export default function Brand() {
       setProject(proj || null);
       const isLogo = (a: any) => {
         const t = String(a?.asset_type || "").toLowerCase();
-        if (["logo", "logotype", "wordmark", "brandmark"].includes(t)) return true;
+        if (["logo", "logotype", "wordmark", "brandmark", "icon", "app_icon", "favicon", "graphic", "photo", "image"].includes(t)) return true;
         if (a?.editor_state?.kind === "logotype") return true;
+        // Anything visual saved into this project counts as its logo mark.
+        if (a?.image_url || a?.thumbnail_url) return true;
         return false;
       };
       let logos = (pAssets || []).filter(Boolean).filter(isLogo);
-      // Fallback: if this project has no logos, pull the user's most recent logos.
-      if (!logos.length && user?.id) {
-        const { data: userLogos } = await supabase
-          .from("assets")
-          .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
-          .eq("user_id", user.id)
-          .is("deleted_at", null)
-          .order("created_at", { ascending: false })
-          .limit(60);
-        logos = (userLogos || []).filter(Boolean).filter(isLogo);
-      }
+      // No cross-project fallback: only show what's actually in this brand kit.
       if (cancelled) return;
       setLogoAssets(logos);
       const withState = logos.find((a: any) => a?.editor_state?.kind === "logotype");
