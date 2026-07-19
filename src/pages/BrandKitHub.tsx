@@ -39,9 +39,9 @@ type Item = {
 };
 type Group = { id: string; label: string; description: string; items: Item[] };
 
-const has = (types: string[]) => (a: any) => types.includes(a.asset_type);
+const has = (types: string[]) => (a: any) => Boolean(a) && types.includes(a.asset_type);
 const titleMatch = (re: RegExp, type = "graphic") => (a: any) =>
-  a.asset_type === type && typeof a.title === "string" && re.test(a.title);
+  Boolean(a) && a.asset_type === type && typeof a.title === "string" && re.test(a.title);
 
 const GROUPS: Group[] = [
   {
@@ -304,7 +304,7 @@ const BrandKitHub = () => {
         supabase.from("projects").select("*,share_token").eq("id", id).maybeSingle(),
         supabase.from("assets").select("id,title,asset_type,image_url,thumbnail_url,content,created_at,meta").eq("project_id", id).order("created_at", { ascending: false }),
       ]);
-      setProject(p.data); setAssets(a.data || []); setLoading(false);
+      setProject(p.data); setAssets((a.data || []).filter(Boolean)); setLoading(false);
     })();
   }, [id]);
 
@@ -316,7 +316,7 @@ const BrandKitHub = () => {
 
   const brandKitEssentials = useMemo(() => BRAND_KIT_ESSENTIALS.map((essential) => ({
     ...essential,
-    asset: assets.find((asset) => essential.types.includes(asset.asset_type)) || null,
+    asset: assets.find((asset) => asset && essential.types.includes(asset.asset_type)) || null,
   })), [assets]);
   const completeEssentialCount = brandKitEssentials.filter((essential) => essential.asset).length;
   const brandKitReady = completeEssentialCount === BRAND_KIT_ESSENTIALS.length;
