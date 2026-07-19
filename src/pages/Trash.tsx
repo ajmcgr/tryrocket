@@ -105,14 +105,12 @@ const Trash = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [assets, setAssets] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [view, setView] = useState<CollectionView>("card");
   const [sort, setSort] = useState<DesignSort>("date");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
   const [confirmEmpty, setConfirmEmpty] = useState(false);
   const [busy, setBusy] = useState(false);
 
