@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/showcase/logo.png";
 import guidelinesAsset from "@/assets/showcase/guidelines.png";
@@ -149,11 +149,7 @@ const CreateShowcase = () => {
     <section id="create" className="overflow-hidden border-t border-neutral-200/60 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-28 sm:py-32">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand/5 px-3 py-1 text-xs font-semibold text-brand">
-            <Star className="h-3.5 w-3.5" />
-            Your brand, from scratch
-          </span>
-          <h2 className="mt-6 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
+          <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             What can you create<br /> with <span className="italic">Rocket?</span>
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-neutral-600 sm:text-xl">
