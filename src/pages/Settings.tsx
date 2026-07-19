@@ -419,7 +419,7 @@ export const BillingSettings = () => {
         <h2 className="text-base font-semibold">Credit packs</h2>
         <p className="mt-1 text-sm text-neutral-600">One-time top ups. Credits never expire.</p>
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {PACKS.map((p) => (
+          {CREDIT_PACKS.map((p) => (
             <button key={p.id} onClick={() => checkout(p.id)} disabled={loading === p.id} className="rounded-xl border border-neutral-200 bg-white p-4 text-left transition hover:border-neutral-900">
               <div className="text-base font-semibold">{p.credits.toLocaleString()} Credits</div>
               <div className="mt-1 text-lg font-semibold">{p.price}</div>
