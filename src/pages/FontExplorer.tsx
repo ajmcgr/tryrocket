@@ -11,6 +11,7 @@ import {
 } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 
@@ -119,6 +120,12 @@ export default function FontExplorer() {
           </p>
         </div>
       </div>
+
+      {projectId ? (
+        <div className="mb-6">
+          <ProjectNavigation projectId={projectId} active="downloads" />
+        </div>
+      ) : null}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (

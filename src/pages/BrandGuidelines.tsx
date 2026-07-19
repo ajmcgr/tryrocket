@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
+import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype } from "@/components/Logotype";
 import { defaultLogotypeState, LOGOTYPE_FONTS, loadGoogleFont, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 
@@ -38,6 +40,7 @@ export default function BrandGuidelines() {
   const [logoAsset, setLogoAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [busyPdf, setBusyPdf] = useState(false);
   const pageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -110,6 +113,25 @@ export default function BrandGuidelines() {
     }
   };
 
+  const downloadPdf = async () => {
+    if (!pageRef.current) return;
+    setBusyPdf(true);
+    try {
+      const dataUrl = await toPng(pageRef.current, { pixelRatio: 3, cacheBust: true, backgroundColor: "#ffffff" });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      pdf.addImage(dataUrl, "PNG", 0, 0, pageW, pageH);
+      const safe = (project?.name || "brand").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      pdf.save(`${safe}-brand-guidelines.pdf`);
+      toast({ title: "Brand guidelines PDF downloaded" });
+    } catch (e: any) {
+      toast({ title: "PDF export failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setBusyPdf(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-6 flex items-center gap-3">
@@ -129,14 +151,28 @@ export default function BrandGuidelines() {
           </p>
         </div>
         <button
+          onClick={downloadPdf}
+          disabled={busyPdf || loading}
+          className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50"
+        >
+          {busyPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          Download PDF
+        </button>
+        <button
           onClick={download}
           disabled={busy || loading}
           className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          Download PNG
+          PNG
         </button>
       </div>
+
+      {projectId ? (
+        <div className="mb-6">
+          <ProjectNavigation projectId={projectId} active="downloads" />
+        </div>
+      ) : null}
 
       {loading ? (
         <Skeleton className="aspect-[8.5/11] w-full rounded-2xl" />
