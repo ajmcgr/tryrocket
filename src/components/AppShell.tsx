@@ -86,7 +86,7 @@ const AppShell = () => {
   const sidebarWidth = collapsed ? 68 : 220;
 
   return (
-    <div className="app-shell min-h-screen bg-[#f5f7fb] font-body text-neutral-900 antialiased">
+    <div className="app-shell min-h-screen bg-[#f5f7fb] font-body text-neutral-900">
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.06)]">
         <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
           <Logo to="/create" size="md" className="shrink-0" />

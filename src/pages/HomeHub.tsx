@@ -7,7 +7,7 @@ import { Wand2, LayoutTemplate, Sparkles as SparklesIcon, Shapes } from "lucide-
  */
 const HomeHub = () => {
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10 font-body antialiased sm:px-6">
+    <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10 font-body sm:px-6">
       <div className="grid w-full max-w-4xl grid-cols-2 gap-6">
         <HubCard
           to="/wizard"

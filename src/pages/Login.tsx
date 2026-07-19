@@ -86,7 +86,7 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-neutral-900 antialiased">
+    <div className="flex min-h-screen flex-col bg-white text-neutral-900">
       <SiteHeader />
       <main className="flex flex-1 items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
