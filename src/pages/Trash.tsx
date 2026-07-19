@@ -147,21 +147,8 @@ const Trash = () => {
     if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     setAssets((prev) => prev.filter(x => x.id !== id));
   };
-  const restoreProject = async (id: string) => {
-    const { error } = await supabase.from("projects").update({ deleted_at: null }).eq("id", id);
-    if (error) return toast({ title: "Restore failed", description: error.message, variant: "destructive" });
-    setProjects((prev) => prev.filter(x => x.id !== id));
-    toast({ title: "Project restored" });
-  };
-  const purgeProject = async (id: string) => {
-    if (!confirm("Permanently delete this project? Its designs stay in Trash unless deleted separately.")) return;
-    const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
-    setProjects((prev) => prev.filter(x => x.id !== id));
-  };
 
   const toggle = (id: string) => setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const toggleProject = (id: string) => setSelectedProjects((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const bulkRestore = async () => {
     const ids = [...selected];
