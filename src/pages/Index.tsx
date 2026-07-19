@@ -421,17 +421,20 @@ const Index = () => {
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-medium tracking-tight sm:text-5xl">Simple, credit-based pricing</h2>
-            <p className="mt-4 text-lg text-neutral-600">Start free. Upgrade when you're ready to ship.</p>
+            <p className="mt-4 text-lg text-neutral-600">Try any plan free for 7 days. Cancel anytime.</p>
           </div>
           <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Free */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-8">
-              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Free</div>
+            {/* Starter */}
+            <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
+              <div className="absolute -top-3 right-6 rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">
+                7-day free trial
+              </div>
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Starter</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-medium tracking-tight">$0</span>
+                <span className="text-5xl font-medium tracking-tight">$12</span>
                 <span className="text-neutral-500">/month</span>
               </div>
-              <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
+              <p className="mt-2 text-sm text-neutral-600">Free for 7 days, then $12/month.</p>
               <ul className="mt-6 space-y-3 text-sm">
                 {["100 credits / month", "All output types", "Save & edit brands", "Limited project history"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
@@ -463,7 +466,7 @@ const Index = () => {
                 </div>
               </div>
               <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to="/signup">Sign up free</Link>
+                <Link to="/signup?next=%2Fpricing%3Fbuy%3Dstarter">Start 7-day free trial</Link>
               </Button>
             </div>
 
