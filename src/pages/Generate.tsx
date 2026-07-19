@@ -938,67 +938,37 @@ const Generate = () => {
     }
   };
 
-  const useAsMyBrand = async (designId: string) => {
+  const saveToSaved = async (designId: string) => {
     if (!user) return;
     const { data: chosen, error: chosenError } = await supabase
       .from("assets")
-      .select("id,project_id,meta,asset_type")
+      .select("id,project_id,meta,asset_type,title")
       .eq("id", designId)
       .eq("user_id", user.id)
       .is("deleted_at", null)
       .maybeSingle();
     if (chosenError || !chosen) {
-      toast({ title: "Could not set your brand", description: chosenError?.message || "Design not found.", variant: "destructive" });
+      toast({ title: "Could not save", description: chosenError?.message || "Design not found.", variant: "destructive" });
       return;
     }
-
-    let previousStylesQuery = supabase
-      .from("assets")
-      .select("id,meta")
-      .eq("user_id", user.id)
-      .is("deleted_at", null)
-      .contains("meta", { selected_as_direction: true });
-    previousStylesQuery = chosen.project_id
-      ? previousStylesQuery.eq("project_id", chosen.project_id)
-      : previousStylesQuery.is("project_id", null);
-    const { data: previousStyles, error: previousError } = await previousStylesQuery;
-    if (previousError) {
-      toast({ title: "Could not set your brand", description: previousError.message, variant: "destructive" });
-      return;
-    }
-
-    const resetResults = await Promise.all((previousStyles || []).filter((style) => style.id !== chosen.id).map((style) =>
-      supabase.from("assets").update({ meta: { ...(style.meta || {}), selected_as_direction: false } }).eq("id", style.id),
-    ));
-    const resetError = resetResults.find((result) => result.error)?.error;
-    if (resetError) {
-      toast({ title: "Could not set your brand", description: resetError.message, variant: "destructive" });
-      return;
-    }
-
     const { error: updateError } = await supabase.from("assets").update({
       meta: {
         ...(chosen.meta || {}),
-        direction_feedback: "kept",
-        selected_as_direction: true,
-        selected_as_direction_at: new Date().toISOString(),
+        saved_at: new Date().toISOString(),
+        saved_from_chat: true,
       },
     }).eq("id", chosen.id);
     if (updateError) {
-      toast({ title: "Could not set your brand", description: updateError.message, variant: "destructive" });
+      toast({ title: "Could not save", description: updateError.message, variant: "destructive" });
       return;
     }
-
-    const isLogo = ["logo", "logotype", "wordmark"].includes(String(chosen.asset_type || "").toLowerCase());
-    toast({
-      title: isLogo ? "Logo chosen — build your brand kit next" : "Direction chosen",
-      description: isLogo
-        ? "Rocket will use this logo for your colours, typography, voice and guidelines."
-        : "Complete your brand kit to make this style reusable.",
-    });
-    const next = new URLSearchParams({ direction: chosen.id });
-    if (chosen.project_id) next.set("project", chosen.project_id);
-    nav(`/brands?${next.toString()}`);
+    toast({ title: "Saved", description: "Added to Saved." });
+    window.dispatchEvent(new CustomEvent("rocket:notify", { detail: {
+      kind: "asset",
+      title: "Logo saved",
+      body: chosen.title || "Added to Saved.",
+      href: "/saved",
+    }}));
   };
 
   useEffect(() => {
@@ -1157,7 +1127,7 @@ const Generate = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => void useAsMyBrand(a.id)}
+                            onClick={() => void saveToSaved(a.id)}
                             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
                           >
                             <Heart className="h-3.5 w-3.5" /> Save
