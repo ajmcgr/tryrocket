@@ -10,17 +10,10 @@ import { Button } from "@/components/ui/button";
 const supabase = _sb as any;
 
 const OUTPUT_TYPES = [
-  "Brand Guidelines",
-  "Brand Templates",
-  "Logos",
-  "Colors",
+  "Logo/Icon Files",
+  "Palette",
   "Fonts",
-  "Brand voice",
-  "Photos",
-  "Components",
-  "Graphics",
-  "Icons",
-  "Launch Copy",
+  "Brand Book",
 ];
 
 const Pricing = () => {

@@ -160,9 +160,9 @@ export default function LogoFiles() {
           </Link>
         ) : null}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Logo Files</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Logo/Icon Files</h1>
           <p className="mt-0.5 text-sm text-neutral-500">
-            Download your logo in the right variant for every context.
+            Download your logo or icon in the right variant for every context.
           </p>
         </div>
       </div>
