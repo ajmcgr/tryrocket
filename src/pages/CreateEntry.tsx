@@ -1,11 +1,11 @@
 import { useSearchParams } from "react-router-dom";
 import Generate from "./Generate";
-import LogoStudio from "./LogoStudio";
+import HomeHub from "./HomeHub";
 
 /**
- * Logo-first entry point for /create. Shows the LogoStudio form on a cold
- * landing, and hands off to the existing Generate flow whenever any
- * generation intent is expressed in the URL (prompt/chat/asset_type/etc).
+ * Logged-in landing at /create. Shows Brandmark-style hub (Generate /
+ * Templates / Icon Designer) on a cold landing, and hands off to the existing
+ * Generate flow whenever any generation intent is expressed in the URL.
  */
 const CreateEntry = () => {
   const [params] = useSearchParams();
@@ -17,7 +17,7 @@ const CreateEntry = () => {
     params.get("project") ||
     params.get("direction");
   if (hasIntent) return <Generate />;
-  return <LogoStudio />;
+  return <HomeHub />;
 };
 
 export default CreateEntry;
