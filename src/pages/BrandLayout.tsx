@@ -71,21 +71,6 @@ export default function BrandLayout() {
     setRenaming(false);
   };
 
-  const safeBrandFile = () => {
-    const brandName = String(project?.name || "brand-kit");
-    return brandName.replace(/[^a-z0-9-_]+/gi, "-").toLowerCase() || "brand-kit";
-  };
-
-  const triggerDownload = (blob: Blob, filename: string) => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-  };
-
   const loadImage = (url: string): Promise<HTMLImageElement> =>
     new Promise((resolve, reject) => {
       const img = new Image();
@@ -95,33 +80,25 @@ export default function BrandLayout() {
       img.src = url;
     });
 
-  const downloadLogoVariant = async (variant: "regular" | "inverse" | "black") => {
-    if (!primaryLogoUrl) {
-      toast({ title: "No logo yet", description: "Save a logo to this brand kit first.", variant: "destructive" });
-      return;
+  const buildLogoVariantBlob = async (variant: "regular" | "inverse" | "black") => {
+    if (!primaryLogoUrl) return null;
+    const img = await loadImage(primaryLogoUrl);
+    const w = img.naturalWidth || 1024;
+    const h = img.naturalHeight || 1024;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0, w, h);
+    if (variant !== "regular") {
+      ctx.globalCompositeOperation = "source-in";
+      ctx.fillStyle = variant === "inverse" ? "#ffffff" : "#000000";
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = "source-over";
     }
-    try {
-      const img = await loadImage(primaryLogoUrl);
-      const w = img.naturalWidth || 1024;
-      const h = img.naturalHeight || 1024;
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, w, h);
-      if (variant !== "regular") {
-        ctx.globalCompositeOperation = "source-in";
-        ctx.fillStyle = variant === "inverse" ? "#ffffff" : "#000000";
-        ctx.fillRect(0, 0, w, h);
-        ctx.globalCompositeOperation = "source-over";
-      }
-      const blob: Blob = await new Promise((resolve) =>
-        canvas.toBlob((b) => resolve(b as Blob), "image/png"),
-      );
-      triggerDownload(blob, `${safeBrandFile()}-logo-${variant}.png`);
-    } catch (e: any) {
-      toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
-    }
+    return new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/png"),
+    );
   };
 
   const buildBrandBookCanvas = async () => {
@@ -232,25 +209,13 @@ export default function BrandLayout() {
     return canvas;
   };
 
-  const downloadBrandBook = async (fmt: "pdf" | "png") => {
-    try {
-      const canvas = await buildBrandBookCanvas();
-      if (fmt === "png") {
-        const blob: Blob = await new Promise((resolve) =>
-          canvas.toBlob((b) => resolve(b as Blob), "image/png"),
-        );
-        triggerDownload(blob, `${safeBrandFile()}-brand-book.png`);
-      } else {
-        const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const imgData = canvas.toDataURL("image/png");
-        pdf.addImage(imgData, "PNG", 0, 0, pageW, pageH);
-        pdf.save(`${safeBrandFile()}-brand-book.pdf`);
-      }
-    } catch (e: any) {
-      toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
-    }
+  const buildBrandBookPdfBlob = async (canvas: HTMLCanvasElement) => {
+    const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgData = canvas.toDataURL("image/png");
+    pdf.addImage(imgData, "PNG", 0, 0, pageW, pageH);
+    return pdf.output("blob") as Blob;
   };
 
   const downloadBrandKit = async () => {
