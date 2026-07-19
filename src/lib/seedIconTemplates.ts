@@ -118,6 +118,61 @@ const SEEDS: IconSpec[] = [
   { name: "MAISON", tagline: "House of craft", style: "Luxury", icon: "diamond", font: "Playfair Display", weight: 500, letterSpacing: 0.06, transform: "uppercase", color: "#111111", bg: "#FFFFFF" },
   { name: "AUREUS", tagline: "Golden standard", style: "Luxury", icon: "star", font: "DM Serif Display", weight: 400, letterSpacing: 0.06, transform: "uppercase", color: "#111111", bg: "#F5E6C8" },
   { name: "NOIR", tagline: "After dark", style: "Luxury", icon: "moon", font: "Fraunces", weight: 500, letterSpacing: 0.04, transform: "uppercase", color: "#F5F5F5", bg: "#0A0A0A" },
+
+  // Additional seeds — Startup / SaaS
+  { name: "Cascade", tagline: "Flow forward", style: "Startup", icon: "waves", font: "Manrope", weight: 700, color: "#FFFFFF", bg: "#0369A1" },
+  { name: "Pilot", tagline: "Steer the ship", style: "Startup", icon: "arrow-right", font: "Space Grotesk", weight: 700, color: "#0F172A", bg: "#FDE68A" },
+  { name: "Cadence", tagline: "Find your rhythm", style: "Startup", icon: "waves", font: "Figtree", weight: 700, color: "#0F172A", bg: "#FFFFFF" },
+  { name: "Beam", tagline: "Straight to the point", style: "Startup", icon: "bolt", font: "Onest", weight: 700, color: "#FFFFFF", bg: "#7C3AED" },
+  { name: "Prime", tagline: "First in class", style: "Startup", icon: "star", font: "Geist", weight: 700, letterSpacing: -0.02, color: "#FFFFFF", bg: "#0F172A" },
+  { name: "Uplift", tagline: "Rise together", style: "Startup", icon: "arrow-up", font: "Plus Jakarta Sans", weight: 700, color: "#065F46", bg: "#D1FAE5" },
+
+  // Additional seeds — AI
+  { name: "Sable AI", tagline: "Quiet intelligence", style: "AI", icon: "moon", font: "Sora", weight: 700, color: "#F5F5F5", bg: "#0A0A0A" },
+  { name: "Vertex", tagline: "Peak reasoning", style: "AI", icon: "triangle", font: "Space Grotesk", weight: 700, color: "#0F172A", bg: "#F0F9FF" },
+  { name: "Halo AI", tagline: "Circle of insight", style: "AI", icon: "ring", font: "Manrope", weight: 800, color: "#FFFFFF", bg: "#1E293B" },
+  { name: "Kite", tagline: "Ride the model", style: "AI", icon: "diamond", font: "Figtree", weight: 700, color: "#0F172A", bg: "#FBCFE8" },
+  { name: "Ember AI", tagline: "Warm the machine", style: "AI", icon: "flame", font: "Fraunces", weight: 600, color: "#FFFFFF", bg: "#B45309" },
+
+  // Additional seeds — Fintech
+  { name: "Tally", tagline: "Count what counts", style: "Fintech", icon: "dot-grid", font: "IBM Plex Sans", weight: 700, color: "#0F172A", bg: "#FFFFFF" },
+  { name: "Steel", tagline: "Money, hardened", style: "Fintech", icon: "cube", font: "Space Grotesk", weight: 700, transform: "uppercase", letterSpacing: 0.04, color: "#F8FAFC", bg: "#1F2937" },
+  { name: "Ivy Capital", tagline: "Grow steadily", style: "Fintech", icon: "leaf", font: "Fraunces", weight: 600, color: "#065F46", bg: "#F0FDF4" },
+  { name: "Orbit Pay", tagline: "Payments in motion", style: "Fintech", icon: "orbit", font: "Manrope", weight: 800, color: "#FFFFFF", bg: "#4338CA" },
+
+  // Additional seeds — Healthcare
+  { name: "Clover", tagline: "Lucky health", style: "Healthcare", icon: "leaf", font: "Figtree", weight: 700, color: "#166534", bg: "#DCFCE7" },
+  { name: "Serene", tagline: "Peace of mind", style: "Healthcare", icon: "moon", font: "Spectral", weight: 600, color: "#1E3A8A", bg: "#EFF6FF" },
+  { name: "Cardia", tagline: "Heart-led care", style: "Healthcare", icon: "heart", font: "Crimson Pro", weight: 600, color: "#FFFFFF", bg: "#9F1239" },
+  { name: "Salve", tagline: "Everyday relief", style: "Healthcare", icon: "cross", font: "Fraunces", weight: 600, color: "#0F172A", bg: "#FFFFFF" },
+
+  // Additional seeds — Education
+  { name: "Ink & Idea", tagline: "Write to learn", style: "Education", icon: "square", font: "Playfair Display", weight: 700, color: "#0F172A", bg: "#FEF3C7" },
+  { name: "Quill", tagline: "Words that stick", style: "Education", icon: "leaf", font: "Fraunces", weight: 600, color: "#F8FAFC", bg: "#0F172A" },
+  { name: "Beacon Prep", tagline: "Ready for anything", style: "Education", icon: "sun", font: "DM Serif Display", weight: 400, color: "#0F172A", bg: "#FFFFFF" },
+
+  // Additional seeds — Consumer / Lifestyle
+  { name: "Roam", tagline: "Go anywhere", style: "Consumer", icon: "mountain", font: "Bricolage Grotesque", weight: 700, color: "#F8FAFC", bg: "#334155" },
+  { name: "Peach", tagline: "Fresh always", style: "Consumer", icon: "circle", font: "Fraunces", weight: 700, color: "#7F1D1D", bg: "#FED7AA" },
+  { name: "Harbor", tagline: "Come home", style: "Consumer", icon: "waves", font: "DM Serif Display", weight: 400, color: "#F8FAFC", bg: "#0C4A6E" },
+
+  // Additional seeds — Enterprise
+  { name: "Bastion", tagline: "Defense at scale", style: "Enterprise", icon: "shield", font: "Space Grotesk", weight: 700, transform: "uppercase", letterSpacing: 0.06, color: "#F8FAFC", bg: "#111827" },
+  { name: "Axiom", tagline: "Foundational truth", style: "Enterprise", icon: "cube", font: "IBM Plex Sans", weight: 700, color: "#0F172A", bg: "#E5E7EB" },
+
+  // Additional seeds — Technology
+  { name: "Kilowatt", tagline: "Raw compute", style: "Technology", icon: "bolt", font: "JetBrains Mono", weight: 700, color: "#FDE68A", bg: "#0B0B0B" },
+  { name: "Nimbus", tagline: "Cloud native", style: "Technology", icon: "cloud", font: "Sora", weight: 700, color: "#0F172A", bg: "#E0F2FE" },
+  { name: "Sprocket", tagline: "The right fit", style: "Technology", icon: "gear", font: "IBM Plex Mono", weight: 700, color: "#0F172A", bg: "#FAFAF9" },
+  { name: "Uplink", tagline: "Always connected", style: "Technology", icon: "wifi", font: "Space Grotesk", weight: 700, color: "#FFFFFF", bg: "#1E40AF" },
+
+  // Additional seeds — Modern / Minimal / Luxury
+  { name: "Fold", tagline: "Layered by design", style: "Modern", icon: "rounded-square", font: "Bricolage Grotesque", weight: 700, color: "#0F172A", bg: "#FEF3C7" },
+  { name: "Halcyon Co", tagline: "Modern calm", style: "Modern", icon: "ring", font: "Onest", weight: 700, color: "#F8FAFC", bg: "#0F172A" },
+  { name: "orb", tagline: "round is enough", style: "Minimal", icon: "circle", font: "Geist", weight: 500, transform: "lowercase", color: "#0B0B0B", bg: "#FFFFFF" },
+  { name: "grid", tagline: "structure first", style: "Minimal", icon: "dot-grid", font: "IBM Plex Mono", weight: 500, transform: "lowercase", color: "#0B0B0B", bg: "#F5F5F5" },
+  { name: "REGALIA", tagline: "Signature pieces", style: "Luxury", icon: "star", font: "Playfair Display", weight: 500, letterSpacing: 0.08, transform: "uppercase", color: "#F5E6C8", bg: "#0A0A0A" },
+  { name: "OBSIDIAN", tagline: "Sharpened elegance", style: "Luxury", icon: "diamond", font: "DM Serif Display", weight: 400, letterSpacing: 0.08, transform: "uppercase", color: "#F5F5F5", bg: "#111111" },
 ];
 
 function iconPath(kind: IconKind, color: string): string {
