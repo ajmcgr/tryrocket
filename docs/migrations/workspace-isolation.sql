@@ -77,10 +77,21 @@ END $$;
 DROP POLICY IF EXISTS "assets_workspace_read"   ON public.assets;
 DROP POLICY IF EXISTS "assets_workspace_write"  ON public.assets;
 
-DROP FUNCTION IF EXISTS public.is_workspace_member(uuid, uuid);
-DROP FUNCTION IF EXISTS public.has_pro_plan(uuid);
-DROP FUNCTION IF EXISTS public.create_workspace(text);
-DROP FUNCTION IF EXISTS public.purge_old_trash();
+-- CASCADE drops any lingering dependent policies from earlier migrations that
+-- referenced the old parameter names (e.g. is_workspace_member(_ws, _uid)).
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT p.oid::regprocedure::text AS sig
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname IN ('is_workspace_member','has_pro_plan','create_workspace','purge_old_trash')
+  LOOP
+    EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig || ' CASCADE';
+  END LOOP;
+END $$;
 
 CREATE FUNCTION public.is_workspace_member(_workspace_id uuid, _user_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
