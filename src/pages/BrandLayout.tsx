@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, NavLink, Outlet, useParams } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   Image as ImageIcon,
   BookOpen,
   Palette as PaletteIcon,
