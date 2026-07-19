@@ -164,12 +164,8 @@ const CARDS = [
 
 const CreateShowcase = () => {
   return (
-    <section id="create" className="relative overflow-hidden border-t border-neutral-200/60 bg-gradient-to-b from-white via-neutral-50/60 to-white">
-      {/* Soft decorative blobs */}
-      <div aria-hidden className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[980px] -translate-x-1/2 rounded-full bg-indigo-100/40 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute bottom-0 right-0 h-[380px] w-[520px] rounded-full bg-violet-100/40 blur-3xl" />
-
-      <div className="relative mx-auto max-w-7xl px-6 py-28 sm:py-32">
+    <section id="create" className="overflow-hidden border-t border-neutral-200/60 bg-white">
+      <div className="mx-auto max-w-7xl px-6 py-28 sm:py-32">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand/5 px-3 py-1 text-xs font-semibold text-brand">
             <Star className="h-3.5 w-3.5" />
