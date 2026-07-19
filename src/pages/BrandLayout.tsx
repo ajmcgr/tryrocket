@@ -15,14 +15,6 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import JSZip from "jszip";
 import { loadBrandMeta } from "@/lib/brandMeta";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { jsPDF } from "jspdf";
 
 const supabase = _sb as any;
@@ -79,21 +71,6 @@ export default function BrandLayout() {
     setRenaming(false);
   };
 
-  const safeBrandFile = () => {
-    const brandName = String(project?.name || "brand-kit");
-    return brandName.replace(/[^a-z0-9-_]+/gi, "-").toLowerCase() || "brand-kit";
-  };
-
-  const triggerDownload = (blob: Blob, filename: string) => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-  };
-
   const loadImage = (url: string): Promise<HTMLImageElement> =>
     new Promise((resolve, reject) => {
       const img = new Image();
@@ -103,33 +80,25 @@ export default function BrandLayout() {
       img.src = url;
     });
 
-  const downloadLogoVariant = async (variant: "regular" | "inverse" | "black") => {
-    if (!primaryLogoUrl) {
-      toast({ title: "No logo yet", description: "Save a logo to this brand kit first.", variant: "destructive" });
-      return;
+  const buildLogoVariantBlob = async (variant: "regular" | "inverse" | "black") => {
+    if (!primaryLogoUrl) return null;
+    const img = await loadImage(primaryLogoUrl);
+    const w = img.naturalWidth || 1024;
+    const h = img.naturalHeight || 1024;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0, w, h);
+    if (variant !== "regular") {
+      ctx.globalCompositeOperation = "source-in";
+      ctx.fillStyle = variant === "inverse" ? "#ffffff" : "#000000";
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = "source-over";
     }
-    try {
-      const img = await loadImage(primaryLogoUrl);
-      const w = img.naturalWidth || 1024;
-      const h = img.naturalHeight || 1024;
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, w, h);
-      if (variant !== "regular") {
-        ctx.globalCompositeOperation = "source-in";
-        ctx.fillStyle = variant === "inverse" ? "#ffffff" : "#000000";
-        ctx.fillRect(0, 0, w, h);
-        ctx.globalCompositeOperation = "source-over";
-      }
-      const blob: Blob = await new Promise((resolve) =>
-        canvas.toBlob((b) => resolve(b as Blob), "image/png"),
-      );
-      triggerDownload(blob, `${safeBrandFile()}-logo-${variant}.png`);
-    } catch (e: any) {
-      toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
-    }
+    return new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/png"),
+    );
   };
 
   const buildBrandBookCanvas = async () => {
@@ -240,25 +209,13 @@ export default function BrandLayout() {
     return canvas;
   };
 
-  const downloadBrandBook = async (fmt: "pdf" | "png") => {
-    try {
-      const canvas = await buildBrandBookCanvas();
-      if (fmt === "png") {
-        const blob: Blob = await new Promise((resolve) =>
-          canvas.toBlob((b) => resolve(b as Blob), "image/png"),
-        );
-        triggerDownload(blob, `${safeBrandFile()}-brand-book.png`);
-      } else {
-        const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const imgData = canvas.toDataURL("image/png");
-        pdf.addImage(imgData, "PNG", 0, 0, pageW, pageH);
-        pdf.save(`${safeBrandFile()}-brand-book.pdf`);
-      }
-    } catch (e: any) {
-      toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
-    }
+  const buildBrandBookPdfBlob = async (canvas: HTMLCanvasElement) => {
+    const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgData = canvas.toDataURL("image/png");
+    pdf.addImage(imgData, "PNG", 0, 0, pageW, pageH);
+    return pdf.output("blob") as Blob;
   };
 
   const downloadBrandKit = async () => {
@@ -301,6 +258,14 @@ export default function BrandLayout() {
           const ext = ct.includes("svg") ? "svg" : ct.includes("jpeg") ? "jpg" : ct.includes("webp") ? "webp" : "png";
           logoFolder.file(`${safeFile(a.title || "logo")}.${ext}`, bytes);
           logoCount += 1;
+        } catch {}
+      }
+
+      // --- Logo variants ---
+      for (const variant of ["regular", "inverse", "black"] as const) {
+        try {
+          const blob = await buildLogoVariantBlob(variant);
+          if (blob) logoFolder.file(`logo-${variant}.png`, blob);
         } catch {}
       }
 
@@ -353,6 +318,7 @@ export default function BrandLayout() {
       );
 
       // --- Brand Book ---
+      const brandBookFolder = zip.folder("brand-book")!;
       const brandBook = [
         `# ${brandName} — Brand Book`,
         "",
@@ -372,7 +338,18 @@ export default function BrandLayout() {
         "- Do not stretch, recolor, or rotate the logo.",
         "- Use the inverse variant on dark or photographic backgrounds.",
       ].join("\n");
-      zip.folder("brand-book")!.file("brand-book.md", `${brandBook}\n`);
+      brandBookFolder.file("brand-book.md", `${brandBook}\n`);
+
+      // --- Brand Book exports ---
+      try {
+        const bbCanvas = await buildBrandBookCanvas();
+        const bbPng = await new Promise<Blob | null>((resolve) =>
+          bbCanvas.toBlob((b) => resolve(b), "image/png"),
+        );
+        if (bbPng) brandBookFolder.file("brand-book.png", bbPng);
+        const bbPdf = await buildBrandBookPdfBlob(bbCanvas);
+        brandBookFolder.file("brand-book.pdf", bbPdf);
+      } catch {}
 
       // --- README ---
       zip.file(
@@ -382,10 +359,10 @@ export default function BrandLayout() {
           `Generated ${new Date().toISOString()}`,
           "",
           "Contents:",
-          `  /logo-files    ${logoCount} file(s)`,
+          `  /logo-files    ${logoCount} file(s) + logo variants`,
           `  /palette       palette.txt`,
           `  /fonts         fonts.txt`,
-          `  /brand-book    brand-book.md`,
+          `  /brand-book    brand-book.md, brand-book.png, brand-book.pdf`,
           otherCount ? `  /assets        ${otherCount} file(s)` : "",
         ].filter(Boolean).join("\n") + "\n",
       );
@@ -398,7 +375,7 @@ export default function BrandLayout() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-      const total = logoCount + otherCount + 3; // + palette, fonts, brand book
+      const total = logoCount + otherCount + 5 + (primaryLogoUrl ? 3 : 0); // palette, fonts, md/png/pdf brand book + logo variants
       toast({ title: "Brand kit downloaded", description: `${total} files packed.` });
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
@@ -462,47 +439,14 @@ export default function BrandLayout() {
           })}
         </nav>
         <div className="border-t border-neutral-200 p-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                disabled={zipping}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
-              >
-                {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                Download brand kit
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-white">
-              <DropdownMenuLabel>Logo</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => downloadLogoVariant("regular")}>
-                Regular
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadLogoVariant("inverse")}>
-                Inverse
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadLogoVariant("black")}>
-                Black
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Brand Book</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => downloadBrandBook("pdf")}>
-                PDF
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadBrandBook("png")}>
-                PNG
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={downloadBrandKit}>
-                Full brand kit
-                <span className="ml-auto text-xs text-neutral-500">.zip</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <button
+            onClick={downloadBrandKit}
+            disabled={zipping}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
+          >
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Download brand kit
+          </button>
         </div>
       </aside>
 
