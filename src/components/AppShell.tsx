@@ -18,6 +18,7 @@ import {
   Shapes,
   LayoutTemplate,
   Star,
+  Home,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,12 +42,13 @@ type StudioNavItem = {
 };
 
 const studioNav: StudioNavItem[] = [
-  { label: "Generate", to: "/create", icon: Sparkles, tour: "nav-create" },
+  { label: "Home", to: "/create", icon: Home, tour: "nav-create" },
+  { label: "Generate", to: "/create/generate", icon: Sparkles },
+  { label: "Icon Designer", to: "/icons", icon: Shapes },
   { label: "Templates", to: "/templates", icon: LayoutTemplate },
-  { label: "Icons", to: "/icons", icon: Shapes },
   { label: "Saved Logos", to: "/logos", icon: Star },
-  { label: "Projects", to: "/projects", icon: FolderKanban },
   { label: "Editor", to: "/editor", icon: PenTool },
+  { label: "Projects", to: "/projects", icon: FolderKanban },
   { label: "Brand Kit", to: "/brands", icon: Palette, tour: "nav-brand" },
 ];
 
