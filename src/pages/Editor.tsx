@@ -2069,8 +2069,22 @@ const Editor = () => {
       </div>
 
       {/* Right */}
-      <aside className="w-[15.5rem] min-w-[15.5rem] max-w-[15.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
+      <aside className="w-[17.5rem] min-w-[17.5rem] max-w-[17.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
         <div className="space-y-3">
+          <QuickEditPanel
+            els={els}
+            fonts={fontFamilies}
+            bg={bg}
+            setBg={setBg}
+            touchAutosave={() => setAutosaveTick((tick) => tick + 1)}
+            update={update}
+            setEls={setEls}
+            addText={addText}
+            uidFn={uid}
+            qeOpen={qeOpen}
+            toggleQe={toggleQe}
+            onClose={() => setShowQuickEdit(false)}
+          />
           <section className="rounded-[24px] border border-brand/15 bg-white p-4 shadow-sm">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Finish your design</p>
             <p className="mt-1 text-sm font-semibold text-neutral-900">Make it part of your brand</p>
