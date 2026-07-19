@@ -68,7 +68,7 @@ const SavedLogos = () => {
     return q
       ? rankDesignsByRelevance(visible, q)
       : sortByOption(visible, sort, (asset) => asset.title, (asset) => asset.created_at);
-  }, [items, filter, query, sort]);
+  }, [items, query, sort]);
 
   const visibleItems = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const hasMore = filtered.length > visibleItems.length;
