@@ -27,7 +27,7 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
     return (
       <div className="absolute inset-6 flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <div className={`h-6 w-6 rounded-md bg-gradient-to-br ${accent}`} />
+          <div className={`h-6 w-6 rounded-md ${accent}`} />
           <div className="h-2 w-20 rounded-full bg-neutral-200" />
           <div className="ml-auto flex gap-1.5">
             {[0, 1, 2].map((k) => <div key={k} className="h-1.5 w-1.5 rounded-full bg-neutral-300" />)}
@@ -39,7 +39,7 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
           </div>
           <div className="col-span-2 flex flex-col gap-2 rounded-xl bg-white p-3 ring-1 ring-neutral-200/70">
             <div className="h-2 w-24 rounded-full bg-neutral-200" />
-            <div className={`h-16 rounded-lg bg-gradient-to-br ${accent} opacity-90`} />
+            <div className={`h-16 rounded-lg ${accent} opacity-90`} />
             <div className="flex gap-2">
               <div className="h-8 flex-1 rounded-lg bg-neutral-100" />
               <div className="h-8 flex-1 rounded-lg bg-neutral-100" />
@@ -56,11 +56,11 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
         <div className="self-start max-w-[70%] rounded-2xl rounded-bl-md bg-white px-4 py-2.5 text-xs text-neutral-700 ring-1 ring-neutral-200/70">
           Summarize my Q3 launch wins ✨
         </div>
-        <div className={`self-end max-w-[80%] rounded-2xl rounded-br-md bg-gradient-to-br ${accent} px-4 py-2.5 text-xs text-white shadow-sm`}>
+        <div className={`self-end max-w-[80%] rounded-2xl rounded-br-md ${accent} px-4 py-2.5 text-xs text-white`}>
           You shipped 4 features, gained 1,284 users, and trended #2 on Product Hunt.
         </div>
         <div className="self-start flex items-center gap-1.5 rounded-2xl bg-white px-3 py-2 ring-1 ring-neutral-200/70">
-          {[0, 1, 2].map((k) => <span key={k} className="h-1.5 w-1.5 animate-pulse rounded-full bg-neutral-400" style={{ animationDelay: `${k * 150}ms` }} />)}
+          {[0, 1, 2].map((k) => <span key={k} className="h-1.5 w-1.5 rounded-full bg-neutral-400" />)}
         </div>
       </div>
     );
@@ -70,12 +70,12 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
       <div className="absolute inset-6 grid grid-cols-2 gap-3">
         {[0, 1, 2, 3].map((k) => (
           <div key={k} className="flex flex-col rounded-xl bg-white p-2.5 ring-1 ring-neutral-200/70">
-            <div className={`h-14 rounded-lg bg-gradient-to-br ${accent} opacity-${80 - k * 10}`} />
+            <div className={`h-14 rounded-lg ${accent} opacity-${80 - k * 10}`} />
             <div className="mt-2 h-1.5 w-16 rounded-full bg-neutral-200" />
             <div className="mt-1.5 h-1.5 w-10 rounded-full bg-neutral-100" />
             <div className="mt-auto flex items-center justify-between pt-2">
               <div className="h-2 w-8 rounded-full bg-neutral-300" />
-              <div className={`h-5 w-5 rounded-full bg-gradient-to-br ${accent}`} />
+              <div className={`h-5 w-5 rounded-full ${accent}`} />
             </div>
           </div>
         ))}
@@ -85,13 +85,13 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
   if (kind === "mobile") {
     return (
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative h-[88%] w-[46%] rounded-[2rem] bg-neutral-900 p-2 shadow-xl">
+        <div className="relative h-[88%] w-[46%] rounded-[2rem] bg-neutral-900 p-2">
           <div className="flex h-full flex-col gap-2 rounded-[1.5rem] bg-white p-3">
             <div className="mx-auto mt-1 h-1 w-10 rounded-full bg-neutral-900" />
-            <div className={`mt-2 h-10 w-10 rounded-xl bg-gradient-to-br ${accent}`} />
+            <div className={`mt-2 h-10 w-10 rounded-xl ${accent}`} />
             <div className="h-2 w-20 rounded-full bg-neutral-200" />
             <div className="h-1.5 w-16 rounded-full bg-neutral-100" />
-            <div className={`mt-2 h-20 rounded-xl bg-gradient-to-br ${accent} opacity-90`} />
+            <div className={`mt-2 h-20 rounded-xl ${accent} opacity-90`} />
             <div className="space-y-1.5">
               <div className="h-1.5 w-full rounded-full bg-neutral-100" />
               <div className="h-1.5 w-3/4 rounded-full bg-neutral-100" />
@@ -107,7 +107,7 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
       {["Idea", "Build", "Ship"].map((c, k) => (
         <div key={c} className="flex flex-col gap-2 rounded-xl bg-white p-2.5 ring-1 ring-neutral-200/70">
           <div className="flex items-center gap-1.5">
-            <span className={`h-1.5 w-1.5 rounded-full bg-gradient-to-br ${accent}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${accent}`} />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">{c}</span>
           </div>
           {Array.from({ length: 3 - (k === 2 ? 1 : 0) }).map((_, j) => (
