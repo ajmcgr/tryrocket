@@ -17,7 +17,7 @@ import {
   Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
   Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, Check, Loader2, Upload,
   History, FilePlus, Pencil, ChevronDown, Settings2, Grid3X3, Printer, FolderPlus,
-  Maximize2, Minimize2, Paintbrush, ClipboardPaste, X as CloseIcon, PanelLeftOpen,
+  Maximize2, Minimize2, Paintbrush, ClipboardPaste,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
@@ -1818,30 +1818,6 @@ const Editor = () => {
         <p className="mt-1 text-xs text-neutral-500">Open Rocket on a larger screen to design.</p>
       </div>
       <div className="relative flex min-w-0 flex-1 overflow-hidden">
-      {showQuickEdit ? (
-        <QuickEditPanel
-          els={els}
-          fonts={fontFamilies}
-          bg={bg}
-          setBg={setBg}
-          touchAutosave={() => setAutosaveTick((tick) => tick + 1)}
-          update={update}
-          setEls={setEls}
-          addText={addText}
-          uidFn={uid}
-          qeOpen={qeOpen}
-          toggleQe={toggleQe}
-          onClose={() => setShowQuickEdit(false)}
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setShowQuickEdit(true)}
-          className="absolute left-3 top-3 z-20 hidden items-center gap-1.5 rounded-full border border-neutral-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-white md:inline-flex"
-        >
-          <PanelLeftOpen className="h-3.5 w-3.5" /> Quick Edit
-        </button>
-      )}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
       {/* Top pill */}
       <aside className="pointer-events-auto mx-auto mt-4 hidden w-fit max-w-[calc(100%-2rem)] flex-nowrap items-center justify-center gap-1.5 overflow-x-auto rounded-full border border-white/80 bg-white/88 px-2 py-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl md:flex">
@@ -2093,8 +2069,22 @@ const Editor = () => {
       </div>
 
       {/* Right */}
-      <aside className="w-[15.5rem] min-w-[15.5rem] max-w-[15.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
+      <aside className="w-[17.5rem] min-w-[17.5rem] max-w-[17.5rem] overflow-y-auto border-l border-neutral-200/80 bg-neutral-50/70 p-2.5">
         <div className="space-y-3">
+          <QuickEditPanel
+            els={els}
+            fonts={fontFamilies}
+            bg={bg}
+            setBg={setBg}
+            touchAutosave={() => setAutosaveTick((tick) => tick + 1)}
+            update={update}
+            setEls={setEls}
+            addText={addText}
+            uidFn={uid}
+            qeOpen={qeOpen}
+            toggleQe={toggleQe}
+            onClose={() => setShowQuickEdit(false)}
+          />
           <section className="rounded-[24px] border border-brand/15 bg-white p-4 shadow-sm">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Finish your design</p>
             <p className="mt-1 text-sm font-semibold text-neutral-900">Make it part of your brand</p>
@@ -2422,13 +2412,8 @@ function QuickEditPanel({ els, fonts, bg, setBg, touchAutosave, update, setEls, 
   };
 
   return (
-    <aside className="hidden w-[17rem] min-w-[17rem] shrink-0 overflow-y-auto border-r border-neutral-200/80 bg-neutral-50/70 p-3 md:block">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <p className="text-sm font-semibold text-neutral-900">Quick Edit</p>
-        <button onClick={onClose} title="Hide panel" className="rounded-md p-1 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-900">
-          <CloseIcon className="h-4 w-4" />
-        </button>
-      </div>
+    <section className="rounded-[24px] border border-white/80 bg-white/90 p-3 shadow-sm">
+      <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500">Quick Edit</p>
       <div className="space-y-2">
         <QeSection id="title" label="Title" tone="bg-[#6C7BF4]" open={!!qeOpen.title} onToggle={() => toggleQe("title")}>
           {title ? (
@@ -2565,7 +2550,7 @@ function QuickEditPanel({ els, fonts, bg, setBg, touchAutosave, update, setEls, 
           </div>
         </QeSection>
       </div>
-    </aside>
+    </section>
   );
 }
 
