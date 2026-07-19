@@ -1,19 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  Settings as SettingsIcon,
-  Image as ImageIcon,
-  BookOpen,
-  Globe,
-  Palette as PaletteIcon,
-  Type,
-  Download,
-  Loader2,
-  Pencil,
-  Check as CheckIcon,
-  X as XIcon,
-} from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng, logotypeToSvg } from "@/components/Logotype";
@@ -36,14 +23,6 @@ const isMissingColumnError = (error: any, column: string) => {
     || message.includes("schema cache")
     || message.includes("could not find")
   );
-};
-
-type NavItem = {
-  key: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  to?: string;
-  disabled?: boolean;
 };
 
 type Variant = {
@@ -110,9 +89,6 @@ export default function Brand() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [section, setSection] = useState<string>("logo-files");
-  const [renaming, setRenaming] = useState(false);
-  const [nameDraft, setNameDraft] = useState("");
-  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -166,19 +142,6 @@ export default function Brand() {
       cancelled = true;
     };
   }, [projectId, user?.id]);
-
-  const startRename = () => { setNameDraft(project?.name || ""); setRenaming(true); };
-  const cancelRename = () => { setRenaming(false); setNameDraft(""); };
-  const commitRename = async () => {
-    const name = nameDraft.trim();
-    if (!name || name === project?.name) { cancelRename(); return; }
-    setSavingName(true);
-    const { error } = await supabase.from("projects").update({ name }).eq("id", projectId);
-    setSavingName(false);
-    if (error) return toast({ title: "Rename failed", description: error.message, variant: "destructive" });
-    setProject((p: any) => ({ ...(p || {}), name }));
-    setRenaming(false);
-  };
 
   const brandColor = useMemo(() => {
     const c = String(project?.brand_color || "").trim();
