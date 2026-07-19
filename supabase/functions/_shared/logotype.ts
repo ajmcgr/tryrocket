@@ -47,6 +47,15 @@ const GENERIC_BRAND_NAMES = new Set([
   "startup",
   "company",
   "product",
+  "real brand",
+  "a real brand",
+  "my brand",
+  "my startup",
+  "my company",
+  "my product",
+  "this brand",
+  "this project",
+  "the brand",
 ]);
 
 const DOMAIN_PREFIXES = ["try", "get", "use", "join", "go"];
