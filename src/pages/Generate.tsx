@@ -5,6 +5,7 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes, LayoutGrid, List as ListIcon, Heart, MoreHorizontal, Copy } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
@@ -1132,14 +1133,67 @@ const Generate = () => {
                           >
                             <Heart className="h-3.5 w-3.5" /> Save
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => { try { navigator.clipboard.writeText(a.image_url || ""); } catch {} }}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-                            title="More"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                                title="More"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const url = a.image_url || "";
+                                  if (!url) return;
+                                  const link = document.createElement("a");
+                                  link.href = url;
+                                  link.download = `${(a.title || "design").replace(/[^a-z0-9-_]+/gi, "-")}.png`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  link.remove();
+                                }}
+                              >
+                                Download
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(a.image_url || "");
+                                    toast({ title: "Link copied" });
+                                  } catch {}
+                                }}
+                              >
+                                Copy image link
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => { setPrompt(`Variants of "${a.title || "this design"}"`); }}
+                              >
+                                Generate variants
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => void saveToSaved(a.id)}>
+                                Save to Saved
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600"
+                                onClick={async () => {
+                                  if (!confirm("Delete this design?")) return;
+                                  try {
+                                    await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", a.id);
+                                    setChatAssets((prev) => prev.filter((x) => x.id !== a.id));
+                                    toast({ title: "Moved to Trash" });
+                                  } catch (e: any) {
+                                    toast({ title: "Delete failed", description: e?.message, variant: "destructive" });
+                                  }
+                                }}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     </div>
