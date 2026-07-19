@@ -419,47 +419,14 @@ export default function BrandLayout() {
           })}
         </nav>
         <div className="border-t border-neutral-200 p-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                disabled={zipping}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
-              >
-                {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                Download brand kit
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-white">
-              <DropdownMenuLabel>Logo</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => downloadLogoVariant("regular")}>
-                Regular
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadLogoVariant("inverse")}>
-                Inverse
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadLogoVariant("black")}>
-                Black
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Brand Book</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => downloadBrandBook("pdf")}>
-                PDF
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadBrandBook("png")}>
-                PNG
-                <span className="ml-auto text-xs text-neutral-500">Download</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={downloadBrandKit}>
-                Full brand kit
-                <span className="ml-auto text-xs text-neutral-500">.zip</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <button
+            onClick={downloadBrandKit}
+            disabled={zipping}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
+          >
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Download brand kit
+          </button>
         </div>
       </aside>
 
