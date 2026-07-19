@@ -7,13 +7,17 @@
 ALTER TABLE public.assets       ADD COLUMN IF NOT EXISTS workspace_id uuid REFERENCES public.workspaces(id) ON DELETE CASCADE;
 ALTER TABLE public.projects     ADD COLUMN IF NOT EXISTS workspace_id uuid REFERENCES public.workspaces(id) ON DELETE CASCADE;
 ALTER TABLE public.chats        ADD COLUMN IF NOT EXISTS workspace_id uuid REFERENCES public.workspaces(id) ON DELETE CASCADE;
-ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS workspace_id uuid REFERENCES public.workspaces(id) ON DELETE CASCADE;
+DO $$ BEGIN
+  IF to_regclass('public.notifications') IS NOT NULL THEN
+    EXECUTE 'ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS workspace_id uuid REFERENCES public.workspaces(id) ON DELETE CASCADE';
+    EXECUTE 'CREATE INDEX IF NOT EXISTS notifications_workspace_idx ON public.notifications(workspace_id)';
+  END IF;
+END $$;
 -- folders already has workspace_id per 20260713170000_design_folders.sql
 
 CREATE INDEX IF NOT EXISTS assets_workspace_idx        ON public.assets(workspace_id);
 CREATE INDEX IF NOT EXISTS projects_workspace_idx      ON public.projects(workspace_id);
 CREATE INDEX IF NOT EXISTS chats_workspace_idx         ON public.chats(workspace_id);
-CREATE INDEX IF NOT EXISTS notifications_workspace_idx ON public.notifications(workspace_id);
 
 -- 2) Backfill existing rows into each user's personal workspace --------------
 -- Assumes personal workspaces exist; if not, create them first.
@@ -53,12 +57,18 @@ WITH primary_ws AS (
 UPDATE public.chats a SET workspace_id = p.workspace_id
 FROM primary_ws p WHERE a.user_id = p.user_id AND a.workspace_id IS NULL;
 
-WITH primary_ws AS (
-  SELECT DISTINCT ON (owner_id) owner_id AS user_id, id AS workspace_id
-  FROM public.workspaces ORDER BY owner_id, created_at ASC
-)
-UPDATE public.notifications a SET workspace_id = p.workspace_id
-FROM primary_ws p WHERE a.user_id = p.user_id AND a.workspace_id IS NULL;
+DO $$ BEGIN
+  IF to_regclass('public.notifications') IS NOT NULL THEN
+    EXECUTE $sql$
+      WITH primary_ws AS (
+        SELECT DISTINCT ON (owner_id) owner_id AS user_id, id AS workspace_id
+        FROM public.workspaces ORDER BY owner_id, created_at ASC
+      )
+      UPDATE public.notifications a SET workspace_id = p.workspace_id
+      FROM primary_ws p WHERE a.user_id = p.user_id AND a.workspace_id IS NULL
+    $sql$;
+  END IF;
+END $$;
 
 -- 3) Security-definer helpers -----------------------------------------------
 CREATE OR REPLACE FUNCTION public.is_workspace_member(_workspace_id uuid, _user_id uuid)
