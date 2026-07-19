@@ -25,13 +25,14 @@ const SavedLogos = () => {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const ws = await ensureActiveWorkspaceId();
+      let q = supabase
         .from("assets")
         .select("id,title,asset_type,image_url,thumbnail_url,editor_state,meta,prompt,created_at,updated_at")
-        .eq("user_id", user.id)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(500);
+        .eq("user_id", user.id);
+      if (ws) q = q.eq("workspace_id", ws);
+      const { data } = await q.is("deleted_at", null).order("created_at", { ascending: false }).limit(500);
       if (!cancelled) {
         setItems((data || []).filter((asset: any) => LOGO_TYPES.includes(String(asset?.asset_type || "").toLowerCase() as any) || Boolean(asset?.meta?.saved_at)));
         setLoading(false);

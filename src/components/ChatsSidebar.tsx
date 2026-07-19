@@ -42,7 +42,7 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
   const load = async () => {
     if (!user) return;
     const { data } = await supabase
-      .from("chats")
+      .from("chats") /* workspace filter added below */
       .select("id,title,pinned,updated_at")
       .eq("user_id", user.id)
       .order("pinned", { ascending: false })

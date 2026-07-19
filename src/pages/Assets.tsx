@@ -172,10 +172,13 @@ const Assets = () => {
   const load = async () => {
     if (!user) return;
     setLoading(true);
+    const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+    const ws = await ensureActiveWorkspaceId();
+    const scope = (q: any) => ws ? q.eq("workspace_id", ws) : q;
     const [a, p, f] = await Promise.all([
-      supabase.from("assets").select("*").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(200),
-      supabase.from("projects").select("id,name").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(100),
-      supabase.from("folders").select("id,name").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+      scope(supabase.from("assets").select("*").eq("user_id", user.id)).is("deleted_at", null).order("created_at", { ascending: false }).limit(200),
+      scope(supabase.from("projects").select("id,name").eq("user_id", user.id)).is("deleted_at", null).order("created_at", { ascending: false }).limit(100),
+      scope(supabase.from("folders").select("id,name").eq("user_id", user.id)).order("created_at", { ascending: false }).limit(100),
     ]);
     const { data, error } = a;
     if (error) toast({ title: "Failed to load designs", description: error.message, variant: "destructive" });
