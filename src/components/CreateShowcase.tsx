@@ -39,13 +39,15 @@ const ShowcaseCard = ({
     violet: "bg-violet-500",
   };
 
+  const reversed = i % 2 !== 0;
+
   return (
     <article
       style={{ animationDelay: `${i * 100}ms` }}
       className="grid animate-fade-in grid-cols-1 gap-8 rounded-[2rem] bg-white p-6 ring-1 ring-neutral-200/70 sm:p-10 lg:grid-cols-2 lg:items-center lg:gap-12 lg:p-12"
     >
       <div
-        className={`order-first flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl ${accents[accent]} ring-1 ring-inset lg:aspect-[5/4]`}
+        className={`flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl ${accents[accent]} ring-1 ring-inset lg:aspect-[5/4] ${reversed ? "lg:order-2" : "lg:order-1"}`}
       >
         <img
           src={image}
@@ -55,7 +57,7 @@ const ShowcaseCard = ({
         />
       </div>
 
-      <div>
+      <div className={reversed ? "lg:order-1" : "lg:order-2"}>
         <h3 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl lg:text-5xl">
           {title}
         </h3>
