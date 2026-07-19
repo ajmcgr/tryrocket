@@ -105,14 +105,12 @@ const Trash = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [assets, setAssets] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [view, setView] = useState<CollectionView>("card");
   const [sort, setSort] = useState<DesignSort>("date");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
   const [confirmEmpty, setConfirmEmpty] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -122,18 +120,13 @@ const Trash = () => {
     const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
     const ws = await ensureActiveWorkspaceId();
     const scope = (q: any) => (ws ? q.eq("workspace_id", ws) : q);
-    const [a, p] = await Promise.all([
-      scope(supabase.from("assets").select("*").eq("user_id", user.id)).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(500),
-      scope(supabase.from("projects").select("id,name,description,deleted_at").eq("user_id", user.id)).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(500),
-    ]);
+    const a = await scope(supabase.from("assets").select("*").eq("user_id", user.id)).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(500);
     // Client-side purge of items older than 30 days (best-effort).
     const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const expiredAssetIds = (a.data || []).filter((x: any) => new Date(x.deleted_at).getTime() < cutoff).map((x: any) => x.id);
-    const expiredProjectIds = (p.data || []).filter((x: any) => new Date(x.deleted_at).getTime() < cutoff).map((x: any) => x.id);
     if (expiredAssetIds.length) await supabase.from("assets").delete().in("id", expiredAssetIds);
-    if (expiredProjectIds.length) await supabase.from("projects").delete().in("id", expiredProjectIds);
-    setAssets(a.data || []); setProjects(p.data || []); setLoading(false);
-    setSelected(new Set()); setSelectedProjects(new Set());
+    setAssets(a.data || []); setLoading(false);
+    setSelected(new Set());
   };
   useEffect(() => { load(); }, [user]);
 
@@ -154,56 +147,35 @@ const Trash = () => {
     if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     setAssets((prev) => prev.filter(x => x.id !== id));
   };
-  const restoreProject = async (id: string) => {
-    const { error } = await supabase.from("projects").update({ deleted_at: null }).eq("id", id);
-    if (error) return toast({ title: "Restore failed", description: error.message, variant: "destructive" });
-    setProjects((prev) => prev.filter(x => x.id !== id));
-    toast({ title: "Project restored" });
-  };
-  const purgeProject = async (id: string) => {
-    if (!confirm("Permanently delete this project? Its designs stay in Trash unless deleted separately.")) return;
-    const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) return toast({ title: "Delete failed", description: error.message, variant: "destructive" });
-    setProjects((prev) => prev.filter(x => x.id !== id));
-  };
 
   const toggle = (id: string) => setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const toggleProject = (id: string) => setSelectedProjects((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const bulkRestore = async () => {
     const ids = [...selected];
-    const pids = [...selectedProjects];
-    if (!ids.length && !pids.length) return;
+    if (!ids.length) return;
     setBusy(true);
-    if (ids.length) await supabase.from("assets").update({ deleted_at: null }).in("id", ids);
-    if (pids.length) await supabase.from("projects").update({ deleted_at: null }).in("id", pids);
+    await supabase.from("assets").update({ deleted_at: null }).in("id", ids);
     setAssets((prev) => prev.filter((x) => !ids.includes(x.id)));
-    setProjects((prev) => prev.filter((x) => !pids.includes(x.id)));
-    setSelected(new Set()); setSelectedProjects(new Set());
+    setSelected(new Set());
     setBusy(false);
-    toast({ title: `Restored ${ids.length + pids.length} item${ids.length + pids.length === 1 ? "" : "s"}` });
+    toast({ title: `Restored ${ids.length} item${ids.length === 1 ? "" : "s"}` });
   };
   const bulkDelete = async () => {
     const ids = [...selected];
-    const pids = [...selectedProjects];
-    if (!ids.length && !pids.length) return;
-    if (!confirm(`Permanently delete ${ids.length + pids.length} item(s)? This can't be undone.`)) return;
+    if (!ids.length) return;
+    if (!confirm(`Permanently delete ${ids.length} item(s)? This can't be undone.`)) return;
     setBusy(true);
-    if (ids.length) await supabase.from("assets").delete().in("id", ids);
-    if (pids.length) await supabase.from("projects").delete().in("id", pids);
+    await supabase.from("assets").delete().in("id", ids);
     setAssets((prev) => prev.filter((x) => !ids.includes(x.id)));
-    setProjects((prev) => prev.filter((x) => !pids.includes(x.id)));
-    setSelected(new Set()); setSelectedProjects(new Set());
+    setSelected(new Set());
     setBusy(false);
   };
   const emptyTrash = async () => {
     setBusy(true);
     const assetIds = assets.map((a) => a.id);
-    const projectIds = projects.map((p) => p.id);
     if (assetIds.length) await supabase.from("assets").delete().in("id", assetIds);
-    if (projectIds.length) await supabase.from("projects").delete().in("id", projectIds);
-    setAssets([]); setProjects([]);
-    setSelected(new Set()); setSelectedProjects(new Set());
+    setAssets([]);
+    setSelected(new Set());
     setConfirmEmpty(false); setBusy(false);
     toast({ title: "Trash emptied" });
   };
@@ -253,16 +225,16 @@ const Trash = () => {
           <p className="mt-1 text-sm text-neutral-500">Deleted items live here for 30 days before being purged automatically.</p>
         </div>
         <div className="flex items-center gap-2">
-          {(selected.size + selectedProjects.size) > 0 && (
+          {selected.size > 0 && (
             <>
-              <span className="text-xs text-neutral-500">{selected.size + selectedProjects.size} selected</span>
+              <span className="text-xs text-neutral-500">{selected.size} selected</span>
               <button onClick={bulkRestore} disabled={busy} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs hover:bg-neutral-50 disabled:opacity-60"><RotateCcw className="h-3.5 w-3.5" /> Restore</button>
               <button onClick={bulkDelete} disabled={busy} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
             </>
           )}
           <button
             onClick={() => setConfirmEmpty(true)}
-            disabled={busy || (assets.length + projects.length === 0)}
+            disabled={busy || assets.length === 0}
             className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40"
           >
             <Trash2 className="h-3.5 w-3.5" /> Empty trash
@@ -310,35 +282,6 @@ const Trash = () => {
         </div>
       </div>
 
-      {projects.length > 0 && (
-        <section className="mt-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-neutral-800">Projects <span className="text-neutral-400">({projects.length})</span></h2>
-            <button
-              onClick={() => setSelectedProjects((prev) => prev.size === projects.length ? new Set() : new Set(projects.map((p) => p.id)))}
-              className="text-xs text-neutral-500 hover:text-neutral-800"
-            >
-              {selectedProjects.size === projects.length ? "Deselect all" : "Select all"}
-            </button>
-          </div>
-          <ul className="mt-3 divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white">
-            {projects.map(p => (
-              <li key={p.id} className="flex items-center gap-3 p-3">
-                <button onClick={() => toggleProject(p.id)} className="text-neutral-400 hover:text-neutral-800">
-                  {selectedProjects.has(p.id) ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
-                </button>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-neutral-900">{p.name}</div>
-                  {p.description && <div className="truncate text-xs text-neutral-500">{p.description}</div>}
-                  <div className="mt-0.5 text-[10px] text-neutral-400">Deleted {new Date(p.deleted_at).toLocaleString()} · {daysRemaining(p.deleted_at)}d left</div>
-                </div>
-                <button onClick={() => restoreProject(p.id)} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs hover:bg-neutral-50"><RotateCcw className="h-3 w-3" /> Restore</button>
-                <button onClick={() => purgeProject(p.id)} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1 text-xs text-red-600 hover:bg-red-50"><Trash2 className="h-3 w-3" /> Delete forever</button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {loading ? (
         <AssetGridSkeleton />
@@ -415,7 +358,7 @@ const Trash = () => {
               <div className="flex-1">
                 <h3 className="text-base font-semibold text-neutral-900">Empty trash?</h3>
                 <p className="mt-1 text-sm text-neutral-600">
-                  This will permanently delete {assets.length + projects.length} item{assets.length + projects.length === 1 ? "" : "s"}. This action cannot be undone.
+                  This will permanently delete {assets.length} item{assets.length === 1 ? "" : "s"}. This action cannot be undone.
                 </p>
               </div>
             </div>
