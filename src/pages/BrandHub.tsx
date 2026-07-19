@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { assetHref, isBrandAsset, isDesignAsset, normalizeAssetType } from "@/lib/assetExperience";
 import { ensureActiveWorkspaceId } from "@/lib/workspace";
 import BrandCover from "@/components/brand/BrandCover";
-import { ArrowRight, Check, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2, Shuffle, Globe, Lock, HeartOff } from "lucide-react";
+import { ArrowRight, Check, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { Logotype } from "@/components/Logotype";
 
 const supabase = _sb as any;
