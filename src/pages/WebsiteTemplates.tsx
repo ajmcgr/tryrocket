@@ -262,6 +262,12 @@ export default function WebsiteTemplates() {
         </div>
       </div>
 
+      {projectId ? (
+        <div className="mb-6">
+          <ProjectNavigation projectId={projectId} active="downloads" />
+        </div>
+      ) : null}
+
       <div className="mb-4 flex flex-wrap gap-2">
         {categories.map((c) => (
           <button
