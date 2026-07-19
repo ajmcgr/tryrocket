@@ -8,6 +8,7 @@ import {
   List,
   ArrowUpDown,
   Heart,
+  Shuffle,
 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
@@ -300,7 +301,9 @@ const Templates = () => {
                   <button type="button" onClick={(e) => { e.stopPropagation(); void saveTemplateToSaved(design, e); }} title="Save to Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <Heart className="h-3.5 w-3.5" />
                   </button>
-                  <Link to={templateCreateHref(design)} onClick={(e) => e.stopPropagation()} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Remix</Link>
+                  <Link to={templateCreateHref(design)} onClick={(e) => e.stopPropagation()} title="Remix" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                    <Shuffle className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               </div>
             </div>
