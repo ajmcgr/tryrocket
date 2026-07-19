@@ -2319,6 +2319,22 @@ const Inspector = ({ el, fonts, onChange }: { el: El; fonts: string[]; onChange:
 
 export default Editor;
 
+function QeSection({ id, label, tone, open, onToggle, children }: { id: string; label: string; tone: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-white/80 bg-white/95 shadow-sm">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold text-white ${tone}`}
+      >
+        <span>{label}</span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="space-y-2.5 p-3">{children}</div>}
+    </div>
+  );
+}
+
 type QuickEditProps = {
   els: El[];
   fonts: string[];
@@ -2374,17 +2390,9 @@ function QuickEditPanel({ els, fonts, bg, setBg, update, setEls, addText, uidFn,
   };
 
   const Section = ({ id, label, tone, children }: { id: string; label: string; tone: string; children: ReactNode }) => (
-    <div className="rounded-2xl border border-white/80 bg-white/95 shadow-sm">
-      <button
-        type="button"
-        onClick={() => toggleQe(id)}
-        className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-semibold text-white ${tone}`}
-      >
-        <span>{label}</span>
-        <ChevronDown className={`h-4 w-4 transition-transform ${qeOpen[id] ? "rotate-180" : ""}`} />
-      </button>
-      {qeOpen[id] && <div className="space-y-2.5 p-3">{children}</div>}
-    </div>
+    <QeSection id={id} label={label} tone={tone} open={!!qeOpen[id]} onToggle={() => toggleQe(id)}>
+      {children}
+    </QeSection>
   );
 
   return (
