@@ -9,7 +9,7 @@ import {
   BookOpen,
 } from "lucide-react";
 const supabase = _sb as any;
-import { packAssetsZip } from "@/lib/exporters/zipPack";
+import { downloadCompleteBrandKit } from "@/lib/brandKitDownload";
 import { exportAsset } from "@/lib/exporters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -216,22 +216,21 @@ const BrandKitHub = () => {
   };
 
   const downloadZip = async () => {
-    if (!assets.length) return;
+    if (!id) return;
     if (!brandKitReady) {
       toast({ title: "Complete your brand kit first", description: "Add the remaining essentials, then download the complete kit." });
       return;
     }
     setZipping(true);
     try {
-      const base = (project?.name || "brand-kit").replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "brand-kit";
-      const result = await packAssetsZip(assets, `${base}-brand-kit.zip`);
+      const result = await downloadCompleteBrandKit({ supabase, projectId: id, project });
       await markDesignsDownloaded(assets);
       setDownloaded(true);
       toast({
         title: "Brand kit downloaded",
         description: result.skipped.length
-          ? `${result.included} files downloaded. See README.txt for ${result.skipped.length} design${result.skipped.length === 1 ? "" : "s"} that could not be included.`
-          : "Your files are ready. Create your next on-brand design whenever you are ready.",
+          ? `${result.included} files packed. See README.txt for ${result.skipped.length} skipped export${result.skipped.length === 1 ? "" : "s"}.`
+          : `${result.included} files packed across Logo/Icon Files, Palette, Fonts, and Brand Book.`,
       });
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || "Could not build ZIP.", variant: "destructive" });
