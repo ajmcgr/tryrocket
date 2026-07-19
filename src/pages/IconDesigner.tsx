@@ -118,14 +118,14 @@ const IconDesigner = () => {
               type="checkbox"
               checked={autoPrompt}
               onChange={(e) => setAutoPrompt(e.target.checked)}
-              className="h-3.5 w-3.5 accent-[#EE5FA6]"
-            />
-            Auto Prompt
+            className="h-3.5 w-3.5 accent-[#1676e3]"
+          />
+          Auto Prompt
           </label>
           <button
             type="submit"
             disabled={!prompt.trim()}
-            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[#EE5FA6] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E14C97] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[#1676e3] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0d5ec5] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Send className="h-4 w-4" /> Generate
           </button>
