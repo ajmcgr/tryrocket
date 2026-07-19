@@ -17,7 +17,7 @@ import {
   Minus, StickyNote, Table as TableIcon, Triangle as TriangleIcon, Star as StarIcon,
   Undo2, Redo2, Copy, Keyboard, LayoutTemplate, Sparkles, Check, Loader2, Upload,
   History, FilePlus, Pencil, ChevronDown, Settings2, Grid3X3, Printer, FolderPlus,
-  Maximize2, Minimize2, Paintbrush, ClipboardPaste,
+  Maximize2, Minimize2, Paintbrush, ClipboardPaste, X as CloseIcon, PanelLeftOpen,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
