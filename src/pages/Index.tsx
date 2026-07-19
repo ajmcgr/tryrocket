@@ -16,7 +16,7 @@ const FAQS = [
   { q: "Can I edit designs like Canva?", a: "Yes. Multi-select (Shift-click + marquee), drag-resize, colour overlays for logos and images, image uploads with resize, layers on the right, Quick Edit for title/slogan/icon/layout/background, and export to PNG/SVG/PDF/ZIP." },
   { q: "How long does a generation take?", a: "Most logo batches land in 30–60 seconds. Chat history persists per project so you can scroll back and iterate." },
   { q: "Can I regenerate individual pieces?", a: "Yes. Every result has Edit, Save, Variants and Remix. Regenerating one design costs 1 credit, and you can steer it with feedback like 'more minimal' or 'brighter'." },
-  { q: "What's a credit?", a: "Credits power every generation. Free plan includes 100/month, Pro includes 3,000. Top up anytime — packs never expire." },
+  { q: "What's a credit?", a: "Credits power every generation. Starter includes 500/month, Pro includes 3,000. Every plan starts with a 7-day free trial. Top up anytime — packs never expire." },
   { q: "How does sharing and export work?", a: "Every design opens in the editor via a shareable link (new tab). Export PNG, SVG, PDF, or a full ZIP of your Brand Kit. Pro adds password-protected share links and PDF/Markdown brand guidelines." },
   { q: "What's included in Pro?", a: "3,000 credits/month, workspaces & multi-seat, password-protected share links, brand guideline exports, and priority AI capacity. 7 days free, cancel anytime." },
   { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You keep access until the end of the period." },
@@ -421,19 +421,22 @@ const Index = () => {
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-medium tracking-tight sm:text-5xl">Simple, credit-based pricing</h2>
-            <p className="mt-4 text-lg text-neutral-600">Start free. Upgrade when you're ready to ship.</p>
+            <p className="mt-4 text-lg text-neutral-600">Try any plan free for 7 days. Cancel anytime.</p>
           </div>
           <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Free */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-8">
-              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Free</div>
+            {/* Starter */}
+            <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
+              <div className="absolute -top-3 right-6 rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">
+                7-day free trial
+              </div>
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Starter</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-medium tracking-tight">$0</span>
+                <span className="text-5xl font-medium tracking-tight">$12</span>
                 <span className="text-neutral-500">/month</span>
               </div>
-              <p className="mt-2 text-sm text-neutral-600">No credit card required.</p>
+              <p className="mt-2 text-sm text-neutral-600">Free for 7 days, then $12/month.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {["100 credits / month", "All output types", "Save & edit brands", "Limited project history"].map((f) => (
+                {["500 credits / month", "All output types", "Save & edit brands", "Full project history"].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
                     <span className="text-neutral-700">{f}</span>
@@ -463,7 +466,7 @@ const Index = () => {
                 </div>
               </div>
               <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to="/signup">Sign up free</Link>
+                <Link to="/signup?next=%2Fpricing%3Fbuy%3Dstarter">Start 7-day free trial</Link>
               </Button>
             </div>
 
