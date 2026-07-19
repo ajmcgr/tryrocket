@@ -150,8 +150,8 @@ const SavedLogos = () => {
     <div className="mx-auto max-w-7xl px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Saved logos</h1>
-          <p className="mt-1 text-sm text-neutral-500">Every logo concept you've generated or saved.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Saved Designs</h1>
+          <p className="mt-1 text-sm text-neutral-500">Every logo or icon concept you've generated or saved.</p>
         </div>
       </div>
 
