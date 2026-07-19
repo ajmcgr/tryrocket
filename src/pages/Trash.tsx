@@ -252,6 +252,22 @@ const Trash = () => {
           <h1 className="text-3xl font-semibold tracking-tight">Trash</h1>
           <p className="mt-1 text-sm text-neutral-500">Deleted items live here for 30 days before being purged automatically.</p>
         </div>
+        <div className="flex items-center gap-2">
+          {(selected.size + selectedProjects.size) > 0 && (
+            <>
+              <span className="text-xs text-neutral-500">{selected.size + selectedProjects.size} selected</span>
+              <button onClick={bulkRestore} disabled={busy} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs hover:bg-neutral-50 disabled:opacity-60"><RotateCcw className="h-3.5 w-3.5" /> Restore</button>
+              <button onClick={bulkDelete} disabled={busy} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
+            </>
+          )}
+          <button
+            onClick={() => setConfirmEmpty(true)}
+            disabled={busy || (assets.length + projects.length === 0)}
+            className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Empty trash
+          </button>
+        </div>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -296,14 +312,25 @@ const Trash = () => {
 
       {projects.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-sm font-semibold text-neutral-800">Projects <span className="text-neutral-400">({projects.length})</span></h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-neutral-800">Projects <span className="text-neutral-400">({projects.length})</span></h2>
+            <button
+              onClick={() => setSelectedProjects((prev) => prev.size === projects.length ? new Set() : new Set(projects.map((p) => p.id)))}
+              className="text-xs text-neutral-500 hover:text-neutral-800"
+            >
+              {selectedProjects.size === projects.length ? "Deselect all" : "Select all"}
+            </button>
+          </div>
           <ul className="mt-3 divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white">
             {projects.map(p => (
               <li key={p.id} className="flex items-center gap-3 p-3">
+                <button onClick={() => toggleProject(p.id)} className="text-neutral-400 hover:text-neutral-800">
+                  {selectedProjects.has(p.id) ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
+                </button>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-neutral-900">{p.name}</div>
                   {p.description && <div className="truncate text-xs text-neutral-500">{p.description}</div>}
-                  <div className="mt-0.5 text-[10px] text-neutral-400">Deleted {new Date(p.deleted_at).toLocaleString()}</div>
+                  <div className="mt-0.5 text-[10px] text-neutral-400">Deleted {new Date(p.deleted_at).toLocaleString()} · {daysRemaining(p.deleted_at)}d left</div>
                 </div>
                 <button onClick={() => restoreProject(p.id)} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs hover:bg-neutral-50"><RotateCcw className="h-3 w-3" /> Restore</button>
                 <button onClick={() => purgeProject(p.id)} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1 text-xs text-red-600 hover:bg-red-50"><Trash2 className="h-3 w-3" /> Delete forever</button>
@@ -323,9 +350,21 @@ const Trash = () => {
           </p>
         </div>
       ) : view === "card" ? (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <>
+        <div className="mt-6 flex items-center justify-between">
+          <button
+            onClick={() => setSelected((prev) => prev.size === filtered.length ? new Set() : new Set(filtered.map((a: any) => a.id)))}
+            className="text-xs text-neutral-500 hover:text-neutral-800"
+          >
+            {selected.size === filtered.length && filtered.length > 0 ? "Deselect all" : "Select all"}
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((a) => (
-            <div key={a.id} className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md">
+            <div key={a.id} className={`group relative overflow-hidden rounded-2xl border bg-white transition hover:shadow-md ${selected.has(a.id) ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
+              <button onClick={() => toggle(a.id)} className="absolute left-2 top-2 z-10 rounded-md bg-white/90 p-1 text-neutral-500 shadow-sm backdrop-blur hover:text-neutral-900">
+                {selected.has(a.id) ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
+              </button>
               <div className="aspect-square w-full overflow-hidden bg-neutral-50">
                 <AssetPreview a={a} />
               </div>
@@ -333,7 +372,7 @@ const Trash = () => {
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-neutral-900">{a.title || "Untitled"}</div>
                   <div className="mt-0.5 truncate text-[11px] text-neutral-500">
-                    {ASSET_TYPE_LABELS[a.asset_type] || a.asset_type} · deleted {new Date(a.deleted_at).toLocaleDateString()}
+                    {ASSET_TYPE_LABELS[a.asset_type] || a.asset_type} · {daysRemaining(a.deleted_at)}d left
                   </div>
                 </div>
                 <div className="mt-2 flex items-center gap-1.5">
@@ -344,23 +383,47 @@ const Trash = () => {
             </div>
           ))}
         </div>
+        </>
       ) : (
         <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
           {filtered.map((a) => (
             <div key={a.id} className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-b-0">
+              <button onClick={() => toggle(a.id)} className="text-neutral-400 hover:text-neutral-800">
+                {selected.has(a.id) ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
+              </button>
               <div className="h-14 w-14 overflow-hidden rounded-lg bg-neutral-50">
                 <AssetPreview a={a} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-neutral-900">{a.title || "Untitled"}</div>
                 <div className="truncate text-xs text-neutral-500">
-                  {(ASSET_TYPE_LABELS[a.asset_type] || a.asset_type)} · deleted {new Date(a.deleted_at).toLocaleDateString()}
+                  {(ASSET_TYPE_LABELS[a.asset_type] || a.asset_type)} · deleted {new Date(a.deleted_at).toLocaleDateString()} · {daysRemaining(a.deleted_at)}d left
                 </div>
               </div>
               <button onClick={() => restoreAsset(a.id)} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs hover:bg-neutral-50"><RotateCcw className="h-3 w-3" /> Restore</button>
               <button onClick={() => purgeAsset(a.id)} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1 text-xs text-red-600 hover:bg-red-50"><Trash2 className="h-3 w-3" /> Delete forever</button>
             </div>
           ))}
+        </div>
+      )}
+
+      {confirmEmpty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !busy && setConfirmEmpty(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-red-50 p-2"><AlertTriangle className="h-5 w-5 text-red-600" /></div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-neutral-900">Empty trash?</h3>
+                <p className="mt-1 text-sm text-neutral-600">
+                  This will permanently delete {assets.length + projects.length} item{assets.length + projects.length === 1 ? "" : "s"}. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setConfirmEmpty(false)} disabled={busy} className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50 disabled:opacity-60">Cancel</button>
+              <button onClick={emptyTrash} disabled={busy} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60">Empty trash</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
