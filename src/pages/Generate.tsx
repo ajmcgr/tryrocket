@@ -4,7 +4,7 @@ import { assetHref } from "@/lib/assetExperience";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes, LayoutGrid, List as ListIcon, Heart, MoreHorizontal, Copy } from "lucide-react";
+import { ArrowRight, ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes, LayoutGrid, List as ListIcon, Star, MoreHorizontal, Copy } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { Logotype } from "@/components/Logotype";
@@ -1131,7 +1131,7 @@ const Generate = () => {
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); void saveToSaved(a.id); }}
                             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
                           >
-                            <Heart className="h-3.5 w-3.5" /> Save
+                            <Star className={`h-3.5 w-3.5 ${a?.meta?.saved_at ? "fill-amber-400 text-amber-400" : ""}`} /> {a?.meta?.saved_at ? "Saved" : "Save"}
                           </button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

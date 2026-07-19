@@ -699,7 +699,13 @@ const Editor = () => {
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       const thumbnail_url = await captureThumbnail();
-      const nextMeta = { ...(assetMeta?.meta || {}), edited_at: new Date().toISOString(), editor_bg: bg };
+      const prevMeta = (assetMeta?.meta || {}) as any;
+      const nextMeta = {
+        ...prevMeta,
+        edited_at: new Date().toISOString(),
+        editor_bg: bg,
+        saved_at: prevMeta.saved_at || new Date().toISOString(),
+      };
       const updatePayload: Record<string, unknown> = { editor_state: els as any, meta: nextMeta };
       if (thumbnail_url) updatePayload.thumbnail_url = thumbnail_url;
       const { error } = await supabase.from("assets").update(updatePayload).eq("id", assetId);
