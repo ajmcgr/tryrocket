@@ -8,7 +8,14 @@ export type BrandableAsset = {
   title?: string | null;
   project_id?: string | null;
   user_id?: string | null;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
   meta?: any;
+};
+
+const assetCoverUrl = (asset: BrandableAsset) => {
+  const meta = asset?.meta || {};
+  return asset.image_url || asset.thumbnail_url || meta.image_url || meta.thumbnail_url || meta.cover_url || null;
 };
 
 const isMissingColumnError = (error: any, column: string) => {
@@ -28,6 +35,9 @@ export async function addAssetToBrand(assetId: string, projectId: string): Promi
     .eq("id", projectId)
     .maybeSingle();
   const workspaceId = project?.workspace_id || await ensureActiveWorkspaceId();
+  if (workspaceId && !project?.workspace_id) {
+    await supabase.from("projects").update({ workspace_id: workspaceId }).eq("id", projectId);
+  }
   const patch: any = { project_id: projectId };
   if (workspaceId) patch.workspace_id = workspaceId;
 
@@ -61,6 +71,10 @@ export async function createBrandFromAsset(
     error = retry.error;
   }
   if (error || !data) throw error || new Error("Failed to create brand");
+  const cover_url = assetCoverUrl(asset);
+  if (cover_url) {
+    await supabase.from("projects").update({ cover_url }).eq("id", data.id);
+  }
   await addAssetToBrand(asset.id, data.id);
   return data.id as string;
 }
