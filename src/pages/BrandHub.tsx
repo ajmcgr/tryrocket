@@ -267,7 +267,8 @@ export default function BrandHub() {
   const projectLogos = useMemo(() => {
     const map = new Map<string, any>();
     for (const [pid, list] of designsByProject.entries()) {
-      const hit = list.find((d) => ["logo","logotype","wordmark"].includes(normalizeAssetType(d.asset_type)));
+      const isMark = (d: any) => ["logo","logotype","wordmark","brandmark","icon","app_icon","favicon","graphic","photo","image"].includes(normalizeAssetType(d.asset_type)) || d?.editor_state?.kind === "logotype";
+      const hit = list.find(isMark) || list.find((d: any) => d?.image_url || d?.editor_state);
       if (hit) map.set(pid, hit);
     }
     return map;
