@@ -120,6 +120,7 @@ const Pricing = () => {
                   "Export tools",
                   "Priority generation",
                   "Full design history",
+                  "Team workspaces (multi-seat)",
                   "Early access to new generators",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
