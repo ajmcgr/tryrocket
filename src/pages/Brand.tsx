@@ -220,7 +220,20 @@ export default function Brand() {
                 {cards.map((v) => (
                   <div key={v.key} className={`relative overflow-hidden rounded-2xl ${v.border ? `border ${v.border}` : ""} shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)]`} style={{ backgroundColor: v.bg }}>
                     <div className="flex aspect-[16/9] items-center justify-center px-10">
-                      <img src={logoImageUrl} alt={project?.name || "Logo"} className="max-h-full max-w-full object-contain" style={v.key === "inverse" || v.key === "white" ? { filter: "invert(1) hue-rotate(180deg)" } : undefined} />
+                      <img
+                        src={logoImageUrl}
+                        alt={project?.name || "Logo"}
+                        className="max-h-full max-w-full object-contain"
+                        style={
+                          v.key === "black"
+                            ? { filter: "brightness(0) saturate(0)" }
+                            : v.key === "white"
+                            ? { filter: "brightness(0) saturate(0) invert(1)" }
+                            : v.key === "inverse"
+                            ? { filter: "brightness(0) invert(1)" }
+                            : undefined
+                        }
+                      />
                     </div>
                     <div className="pointer-events-none absolute left-4 top-4">
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${v.chipClass}`}>{v.label}</span>
