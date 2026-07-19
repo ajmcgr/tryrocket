@@ -4,17 +4,29 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { assetHref, isBrandAsset, isDesignAsset, normalizeAssetType } from "@/lib/assetExperience";
+import { ensureActiveWorkspaceId } from "@/lib/workspace";
 import BrandCover from "@/components/brand/BrandCover";
 import { ArrowRight, Check, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2, Shuffle, Globe, Lock, HeartOff } from "lucide-react";
 import { Logotype } from "@/components/Logotype";
 
 const supabase = _sb as any;
 
+const MARK_TYPES = new Set(["logo", "logotype", "wordmark", "brandmark", "icon", "app_icon", "favicon", "graphic", "photo", "image"]);
+
+const isMissingColumnError = (error: any, column: string) => {
+  const message = String(error?.message || error?.details || "").toLowerCase();
+  return message.includes(column.toLowerCase()) && (
+    message.includes("column")
+    || message.includes("schema cache")
+    || message.includes("could not find")
+  );
+};
+
 type Category = { key: string; label: string; types: string[] };
 
 const CATEGORIES: Category[] = [
   { key: "guidelines", label: "Guidelines", types: ["brand_guidelines"] },
-  { key: "logos", label: "Logos", types: ["logo", "logotype", "wordmark"] }, // shown as "quick link" tile
+  { key: "logos", label: "Logos", types: ["logo", "logotype", "wordmark", "brandmark", "icon", "app_icon", "favicon", "graphic"] }, // shown as "quick link" tile
   { key: "colors", label: "Colors", types: ["color_system"] },
   { key: "fonts", label: "Fonts", types: ["font_system", "typography_system"] },
   { key: "voice", label: "Brand voice", types: ["brand_voice", "tone_of_voice"] },
@@ -28,7 +40,7 @@ const CATEGORIES: Category[] = [
 const CORE_CATEGORY_KEYS = new Set(["logos", "colors", "fonts", "voice"]);
 
 const KIT_ESSENTIALS = [
-  { key: "logo", label: "Logo", types: ["logo", "logotype", "wordmark"], prompt: (name: string) => `A polished logotype for ${name}.` },
+  { key: "logo", label: "Logo", types: ["logo", "logotype", "wordmark", "brandmark", "icon", "app_icon", "favicon", "graphic"], prompt: (name: string) => `A polished logo mark for ${name}.` },
   { key: "colors", label: "Colours", types: ["color_system"], prompt: (name: string) => `A cohesive color system for ${name}.` },
   { key: "fonts", label: "Typography", types: ["font_system", "typography_system"], prompt: (name: string) => `A font pairing for ${name}.` },
   { key: "voice", label: "Brand voice", types: ["brand_voice", "tone_of_voice"], prompt: (name: string) => `Brand voice and tone guidelines for ${name}.` },
@@ -50,12 +62,13 @@ export default function BrandHub() {
 
   const refreshAssets = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    let q = supabase
       .from("assets")
-      .select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta")
+      .select("id,title,asset_type,project_id,content,image_url,thumbnail_url,editor_state,prompt,created_at,meta")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(400);
+    const { data } = await q;
     const all = data || [];
     setAllDesigns(all);
     setAssets(all.filter(isBrandAsset));
@@ -66,10 +79,44 @@ export default function BrandHub() {
     let cancel = false;
     (async () => {
       setLoading(true);
-      const [{ data: a }, { data: p }] = await Promise.all([
-        supabase.from("assets").select("id,title,asset_type,project_id,content,image_url,editor_state,prompt,created_at,meta").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
-        supabase.from("projects").select("id,name,meta,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
-      ]);
+      const workspaceId = await ensureActiveWorkspaceId();
+      const loadAssets = async () => {
+        let q = supabase
+          .from("assets")
+          .select("id,title,asset_type,project_id,content,image_url,thumbnail_url,editor_state,prompt,created_at,meta")
+          .eq("user_id", user.id);
+        if (workspaceId) q = q.eq("workspace_id", workspaceId);
+        let result = await q.order("created_at", { ascending: false }).limit(400);
+        if (result.error && workspaceId && isMissingColumnError(result.error, "workspace_id")) {
+          result = await supabase
+            .from("assets")
+            .select("id,title,asset_type,project_id,content,image_url,thumbnail_url,editor_state,prompt,created_at,meta")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(400);
+        }
+        return result.data || [];
+      };
+      const loadProjects = async () => {
+        const selects = ["id,name,meta,created_at", "id,name,created_at"];
+        for (const select of selects) {
+          let q = supabase.from("projects").select(select).eq("user_id", user.id);
+          if (workspaceId) q = q.eq("workspace_id", workspaceId);
+          let result = await q.order("created_at", { ascending: false }).limit(100);
+          if (!result.error) return result.data || [];
+          if (workspaceId && isMissingColumnError(result.error, "workspace_id")) {
+            result = await supabase
+              .from("projects")
+              .select(select)
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+              .limit(100);
+            if (!result.error) return result.data || [];
+          }
+        }
+        return [];
+      };
+      const [a, p] = await Promise.all([loadAssets(), loadProjects()]);
       if (cancel) return;
       const loadedProjects = (p || []).filter(Boolean);
       const all = (a || []).filter(Boolean);
@@ -129,7 +176,7 @@ export default function BrandHub() {
 
   const choosingDirection = Boolean(params.get("direction") && selectedStyle && selectedProject);
   const showKitSetup = choosingDirection && missingEssentials.length > 0;
-  const selectedStyleIsLogo = ["logo", "logotype", "wordmark"].includes(normalizeAssetType(selectedStyle?.asset_type));
+  const selectedStyleIsLogo = MARK_TYPES.has(normalizeAssetType(selectedStyle?.asset_type));
   const brandKitComplete = Boolean(selectedProject && missingEssentials.length === 0);
   const completedEssentialCount = KIT_ESSENTIALS.length - missingEssentials.length;
   const completeKitHref = selectedProject && selectedStyle
@@ -267,7 +314,7 @@ export default function BrandHub() {
   const projectLogos = useMemo(() => {
     const map = new Map<string, any>();
     for (const [pid, list] of designsByProject.entries()) {
-      const isMark = (d: any) => ["logo","logotype","wordmark","brandmark","icon","app_icon","favicon","graphic","photo","image"].includes(normalizeAssetType(d.asset_type)) || d?.editor_state?.kind === "logotype";
+      const isMark = (d: any) => MARK_TYPES.has(normalizeAssetType(d.asset_type)) || d?.editor_state?.kind === "logotype";
       const hit = list.find(isMark) || list.find((d: any) => d?.image_url || d?.editor_state);
       if (hit) map.set(pid, hit);
     }
@@ -302,7 +349,7 @@ export default function BrandHub() {
           <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {projects.map((project) => {
               const logo = projectLogos.get(project.id);
-              const preview = logo?.image_url;
+              const preview = logo?.thumbnail_url || logo?.image_url;
               const logoState = logo?.editor_state?.kind === "logotype" ? logo.editor_state : null;
               const designCount = designsByProject.get(project.id)?.length || 0;
               return (

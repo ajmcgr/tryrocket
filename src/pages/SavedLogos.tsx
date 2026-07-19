@@ -110,6 +110,10 @@ const SavedLogos = () => {
     setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   };
 
+  const markAssignedToBrand = (assetId: string, projectId: string) => {
+    updateItem(assetId, { project_id: projectId });
+  };
+
   const unfavourite = async (a: any) => {
     const meta = { ...(a.meta || {}) };
     delete meta.saved_at;
@@ -241,7 +245,7 @@ const SavedLogos = () => {
                   <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <Shuffle className="h-3.5 w-3.5" />
                   </button>
-                  <BrandFromAssetMenu asset={a} />
+                  <BrandFromAssetMenu asset={a} onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)} />
                   <button type="button" onClick={(e) => { e.stopPropagation(); void togglePublic(a); }} title={a?.meta?.public ? "Make private" : "Make public"} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     {a?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
                   </button>
@@ -274,7 +278,7 @@ const SavedLogos = () => {
               <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Shuffle className="h-3.5 w-3.5" />
               </button>
-              <BrandFromAssetMenu asset={a} className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50" />
+              <BrandFromAssetMenu asset={a} onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)} className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50" />
               <button type="button" onClick={(e) => { e.stopPropagation(); void togglePublic(a); }} title={a?.meta?.public ? "Make private" : "Make public"} className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 {a?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
               </button>

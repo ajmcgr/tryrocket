@@ -11,9 +11,31 @@ export type BrandableAsset = {
   meta?: any;
 };
 
+const isMissingColumnError = (error: any, column: string) => {
+  const message = String(error?.message || error?.details || "").toLowerCase();
+  return message.includes(column.toLowerCase()) && (
+    message.includes("column")
+    || message.includes("schema cache")
+    || message.includes("could not find")
+  );
+};
+
 /** Attach an asset to an existing brand kit (project). Returns projectId. */
 export async function addAssetToBrand(assetId: string, projectId: string): Promise<string> {
-  const { error } = await supabase.from("assets").update({ project_id: projectId }).eq("id", assetId);
+  const { data: project } = await supabase
+    .from("projects")
+    .select("workspace_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  const workspaceId = project?.workspace_id || await ensureActiveWorkspaceId();
+  const patch: any = { project_id: projectId };
+  if (workspaceId) patch.workspace_id = workspaceId;
+
+  let { error } = await supabase.from("assets").update(patch).eq("id", assetId);
+  if (error && isMissingColumnError(error, "workspace_id")) {
+    const retry = await supabase.from("assets").update({ project_id: projectId }).eq("id", assetId);
+    error = retry.error;
+  }
   if (error) throw error;
   return projectId;
 }
@@ -32,7 +54,12 @@ export async function createBrandFromAsset(
   const name = (opts.name || asset.title || "Untitled brand").toString().trim() || "Untitled brand";
   const row: any = { user_id: opts.userId, name };
   if (workspace_id) row.workspace_id = workspace_id;
-  const { data, error } = await supabase.from("projects").insert(row).select("id").single();
+  let { data, error } = await supabase.from("projects").insert(row).select("id").single();
+  if (error && workspace_id && isMissingColumnError(error, "workspace_id")) {
+    const retry = await supabase.from("projects").insert({ user_id: opts.userId, name }).select("id").single();
+    data = retry.data;
+    error = retry.error;
+  }
   if (error || !data) throw error || new Error("Failed to create brand");
   await addAssetToBrand(asset.id, data.id);
   return data.id as string;
@@ -43,6 +70,15 @@ export async function listBrandKits(userId: string): Promise<Array<{ id: string;
   const workspace_id = await ensureActiveWorkspaceId();
   let q = supabase.from("projects").select("id,name,created_at").eq("user_id", userId);
   if (workspace_id) q = q.eq("workspace_id", workspace_id);
-  const { data } = await q.order("created_at", { ascending: false }).limit(100);
+  let { data, error } = await q.order("created_at", { ascending: false }).limit(100);
+  if (error && workspace_id && isMissingColumnError(error, "workspace_id")) {
+    const retry = await supabase
+      .from("projects")
+      .select("id,name,created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    data = retry.data;
+  }
   return (data || []) as Array<{ id: string; name: string }>;
 }
