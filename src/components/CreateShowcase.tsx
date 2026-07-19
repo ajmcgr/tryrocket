@@ -7,8 +7,6 @@ import iconsAsset from "@/assets/showcase/icons.png";
 
 const ShowcaseCard = ({
   i,
-  eyebrow,
-  eyebrowIcon: EyebrowIcon,
   title,
   description,
   bullets,
@@ -20,8 +18,6 @@ const ShowcaseCard = ({
   accent,
 }: {
   i: number;
-  eyebrow: string;
-  eyebrowIcon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
   bullets: string[];
