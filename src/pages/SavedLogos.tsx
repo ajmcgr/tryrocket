@@ -34,7 +34,6 @@ const SavedLogos = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<SavedStyle>("all");
   const [view, setView] = useState<CollectionView>("card");
   const [sort, setSort] = useState<DesignSort>("date");
   const [visibleCount, setVisibleCount] = useState(60);
