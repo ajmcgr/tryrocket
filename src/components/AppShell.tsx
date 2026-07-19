@@ -9,7 +9,6 @@ import CommandPalette from "./CommandPalette";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 import {
   FolderKanban,
-  Grid2X2,
   HelpCircle,
   Palette,
   PenTool,
