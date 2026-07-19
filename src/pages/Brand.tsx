@@ -193,11 +193,13 @@ export default function Brand() {
 
   return (
     <>
-        <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
-          <h1 className="text-lg font-semibold text-neutral-900">{project?.name ? `${project.name} · Logo Files` : "Logo Files"}</h1>
-        </header>
-
-        <div className="px-6 py-8">
+        <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:py-10">
+          <div className="mb-8">
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Logo Files</h1>
+            <p className="mt-1 text-sm text-neutral-500">
+              Download your logo in the right variant for every context — light, dark, inverse and monochrome.
+            </p>
+          </div>
           {loading ? (
             <div className="flex h-64 items-center justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
