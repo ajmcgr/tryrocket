@@ -1,15 +1,9 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Star, ArrowRight, Shapes, Sparkles, Palette } from "lucide-react";
+import { Star, ArrowRight, Shapes, Sparkles, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/showcase/logo.png";
 import guidelinesAsset from "@/assets/showcase/guidelines.png";
 import iconsAsset from "@/assets/showcase/icons.png";
-
-const Tag = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-600">
-    {children}
-  </span>
-);
 
 const ShowcaseCard = ({
   i,
