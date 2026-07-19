@@ -310,32 +310,6 @@ export const AccountSettings = () => {
   const nav = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
   const { user } = useAuth();
-  const [refCode, setRefCode] = useState<string | null>(null);
-  const [refCount, setRefCount] = useState<number>(0);
-  const [creatingCode, setCreatingCode] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase.from("referral_codes").select("code").eq("owner_user_id", user.id).maybeSingle();
-      if (data?.code) setRefCode(data.code);
-      const { count } = await supabase.from("referrals").select("id", { count: "exact", head: true }).eq("referrer_user_id", user.id);
-      setRefCount(count || 0);
-    })();
-  }, [user]);
-
-  const generateCode = async () => {
-    if (!user) return;
-    setCreatingCode(true);
-    const code = (user.email?.split("@")[0] || "friend").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) + Math.random().toString(36).slice(2, 6);
-    const { error } = await supabase.from("referral_codes").insert({ code, owner_user_id: user.id });
-    setCreatingCode(false);
-    if (error) { toast({ title: "Couldn't create code", description: error.message, variant: "destructive" }); return; }
-    setRefCode(code);
-  };
-
-  const refUrl = refCode ? `${window.location.origin}/?ref=${refCode}` : null;
-  const copyRef = async () => { if (refUrl) { await navigator.clipboard.writeText(refUrl); toast({ title: "Referral link copied" }); } };
 
   const deleteAccount = async () => {
     if (!confirm("Permanently delete your account? This cannot be undone.")) return;
