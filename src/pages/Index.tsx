@@ -302,24 +302,6 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="border-y border-neutral-200/60 bg-neutral-50/70">
-        <div className="mx-auto grid max-w-5xl gap-6 px-6 py-12 text-left sm:grid-cols-3">
-          {[
-            ["1", "Generate directions", "Get a logo mark, wordmark and icon concepts from one short brief."],
-            ["2", "Choose and refine", "Open a favourite in the editor to adjust type, colour, layout and more."],
-            ["3", "Download or build", "Export your logo pack, or turn the chosen direction into a complete Brand Kit."],
-          ].map(([number, title, description]) => (
-            <div key={number} className="flex gap-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-semibold text-white">{number}</span>
-              <div>
-                <h2 className="font-semibold text-neutral-900">{title}</h2>
-                <p className="mt-1 text-sm leading-relaxed text-neutral-600">{description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* What you can create */}
       <CreateShowcase />
 
