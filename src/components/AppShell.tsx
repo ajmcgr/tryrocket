@@ -17,6 +17,9 @@ import {
   Settings,
   Share2,
   Sparkles,
+  Shapes,
+  LayoutTemplate,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,11 +43,13 @@ type StudioNavItem = {
 };
 
 const studioNav: StudioNavItem[] = [
-  { label: "Create", to: "/create", icon: Sparkles, tour: "nav-create" },
-  { label: "Designs", to: "/designs", icon: Grid2X2, tour: "nav-assets" },
-  { label: "Brand", to: "/brands", icon: Palette, tour: "nav-brand" },
+  { label: "Generate", to: "/create", icon: Sparkles, tour: "nav-create" },
+  { label: "Templates", to: "/templates", icon: LayoutTemplate },
+  { label: "Icons", to: "/icons", icon: Shapes },
+  { label: "Saved Logos", to: "/logos", icon: Star },
   { label: "Projects", to: "/projects", icon: FolderKanban },
   { label: "Editor", to: "/editor", icon: PenTool },
+  { label: "Brand Kit", to: "/brands", icon: Palette, tour: "nav-brand" },
 ];
 
 const AppShell = () => {
