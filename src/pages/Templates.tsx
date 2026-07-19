@@ -8,6 +8,7 @@ import {
   List,
   ArrowUpDown,
   ExternalLink,
+  Heart,
 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
@@ -92,6 +93,60 @@ const Templates = () => {
       window.open(`/editor?id=${data.id}`, "_blank", "noopener,noreferrer");
     } catch (err: any) {
       toast({ title: "Couldn't open template", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const saveTemplateToSaved = async (design: any, event?: React.MouseEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth?.user;
+      if (!user) {
+        toast({ title: "Sign in to save templates", variant: "destructive" });
+        return;
+      }
+      if (!design?._seed && design?.id) {
+        // Real asset — check if it already belongs to this user.
+        const { data: existing } = await supabase
+          .from("assets")
+          .select("id,meta")
+          .eq("id", design.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (existing?.id) {
+          await supabase.from("assets").update({
+            meta: { ...(existing.meta || {}), saved_at: new Date().toISOString(), saved_from_template: true },
+          }).eq("id", existing.id);
+          toast({ title: "Saved", description: "Added to Saved." });
+          window.dispatchEvent(new CustomEvent("rocket:notify", { detail: { kind: "asset", title: "Template saved", body: design.title || "Added to Saved.", href: "/saved" }}));
+          return;
+        }
+      }
+      // Otherwise clone the template into the user's assets.
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const workspace_id = await ensureActiveWorkspaceId();
+      const { error } = await supabase.from("assets").insert({
+        user_id: user.id,
+        workspace_id,
+        asset_type: design.asset_type || "logo",
+        title: design.title || "Template",
+        editor_state: design.editor_state,
+        image_url: design.image_url || null,
+        thumbnail_url: design.thumbnail_url || null,
+        meta: {
+          ...(design.meta || {}),
+          from_template: true,
+          saved_from_template: true,
+          saved_at: new Date().toISOString(),
+          kind: design.editor_state?.kind || (design.image_url ? undefined : "logotype"),
+        },
+      } as any);
+      if (error) throw error;
+      toast({ title: "Saved", description: "Added to Saved." });
+      window.dispatchEvent(new CustomEvent("rocket:notify", { detail: { kind: "asset", title: "Template saved", body: design.title || "Added to Saved.", href: "/saved" }}));
+    } catch (err: any) {
+      toast({ title: "Could not save", description: err?.message, variant: "destructive" });
     }
   };
 
@@ -236,6 +291,9 @@ const Templates = () => {
                 </div>
                 <div className="mt-3 flex gap-2">
                   <button type="button" onClick={(e) => openTemplateInEditor(design, e)} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Use template</button>
+                  <button type="button" onClick={(e) => void saveTemplateToSaved(design, e)} title="Save to Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                    <Heart className="h-3.5 w-3.5" />
+                  </button>
                   <Link to={templateCreateHref(design)} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Remix</Link>
                 </div>
               </div>
@@ -259,6 +317,9 @@ const Templates = () => {
                 </div>
               </a>
               <button type="button" onClick={(e) => openTemplateInEditor(design, e)} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Use</button>
+              <button type="button" onClick={(e) => void saveTemplateToSaved(design, e)} title="Save to Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                <Heart className="h-3.5 w-3.5" />
+              </button>
               <div className="shrink-0 text-xs text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</div>
               <ExternalLink className="h-4 w-4 shrink-0 text-neutral-400" />
             </div>
