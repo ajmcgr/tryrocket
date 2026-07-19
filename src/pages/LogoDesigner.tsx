@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useState, useRef, type FormEvent, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles as SparklesIcon, Send, Image as ImageIcon, Shuffle, Minus, Sticker, Palette, PenTool, Box, Smile, Check } from "lucide-react";
+import { Sparkles as SparklesIcon, Send, Image as ImageIcon, Shuffle, Minus, Sticker, Palette, PenTool, Box, Smile, Check, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 const STYLES = [
@@ -28,6 +28,21 @@ const LogoDesigner = () => {
   const [style, setStyle] = useState<(typeof STYLES)[number]["id"]>("auto");
   const active = STYLES.find((s) => s.id === style) || STYLES[0];
   const ActiveIcon = active.icon;
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [refImage, setRefImage] = useState<{ name: string; dataUrl: string } | null>(null);
+
+  const onPickFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      setRefImage({ name: f.name, dataUrl });
+      try { sessionStorage.setItem("rocket:ref-image", dataUrl); } catch {}
+    };
+    reader.readAsDataURL(f);
+  };
 
   const go = (text: string) => {
     const t = text.trim();
@@ -37,6 +52,7 @@ const LogoDesigner = () => {
       ? `${t}. A polished, professional logo suitable for a real brand — crisp vector aesthetic, transparent background, no mockups.${styleSuffix}`
       : styleSuffix ? `${t}.${styleSuffix}` : t;
     const search = new URLSearchParams({ prompt: finalPrompt, asset_type: "logo", count: "4" });
+    if (refImage) search.set("has_reference", "1");
     nav(`/create?${search.toString()}`);
   };
 
@@ -75,15 +91,26 @@ const LogoDesigner = () => {
         className="sticky bottom-0 left-0 right-0 border-t border-neutral-200 bg-white/95 px-4 py-4 backdrop-blur-md"
       >
         <div className="mx-auto flex max-w-4xl items-center gap-2">
+          {refImage && (
+            <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-2 py-1">
+              <img src={refImage.dataUrl} alt="reference" className="h-8 w-8 rounded object-cover" />
+              <span className="max-w-[120px] truncate text-xs text-neutral-600">{refImage.name}</span>
+              <button type="button" onClick={() => { setRefImage(null); try { sessionStorage.removeItem("rocket:ref-image"); } catch {} }} className="rounded p-1 text-neutral-500 hover:bg-neutral-100" aria-label="Remove reference">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           <input
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Describe your logo or business/brand…"
             className="h-12 flex-1 rounded-xl border border-neutral-200 bg-white px-4 text-sm outline-none focus:border-neutral-400"
           />
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPickFile} />
           <button
             type="button"
             aria-label="Upload reference"
+            onClick={() => fileRef.current?.click()}
             className="flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-600 transition hover:bg-neutral-50"
           >
             <ImageIcon className="h-4 w-4" />
