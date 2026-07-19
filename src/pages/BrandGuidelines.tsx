@@ -48,7 +48,7 @@ export default function BrandGuidelines() {
     (async () => {
       setLoading(true);
       const [{ data: proj }, { data: assets }] = await Promise.all([
-        supabase.from("projects").select("id,name,tagline,meta").eq("id", projectId).maybeSingle(),
+        supabase.from("projects").select("id,name,tagline").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,created_at")

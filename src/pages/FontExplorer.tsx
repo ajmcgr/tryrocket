@@ -11,6 +11,7 @@ import {
 } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { loadBrandMeta, saveBrandMeta, type BrandMeta } from "@/lib/brandMeta";
 
 const supabase = _sb as any;
 
@@ -24,6 +25,7 @@ export default function FontExplorer() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const [applyingKey, setApplyingKey] = useState<string | null>(null);
+  const [brandMeta, setBrandMeta] = useState<BrandMeta>({});
 
   useEffect(() => {
     if (!projectId) return;
@@ -31,7 +33,7 @@ export default function FontExplorer() {
     (async () => {
       setLoading(true);
       const [{ data: proj }, { data: assets }] = await Promise.all([
-        supabase.from("projects").select("id,name,meta").eq("id", projectId).maybeSingle(),
+        supabase.from("projects").select("id,name").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,created_at")
@@ -42,6 +44,7 @@ export default function FontExplorer() {
       ]);
       if (cancelled) return;
       setProject(proj || null);
+      setBrandMeta(loadBrandMeta(projectId));
       const withState = (assets || []).find((a: any) => a.editor_state?.kind === "logotype");
       setLogoAsset(withState || (assets || [])[0] || null);
       setLoading(false);
@@ -55,9 +58,9 @@ export default function FontExplorer() {
   }, [logoAsset, project]);
 
   const brandColor = useMemo(() => {
-    const c = String(project?.meta?.brand_color || "").trim();
+    const c = String(brandMeta.brand_color || "").trim();
     return /^#[0-9a-f]{3,8}$/i.test(c) ? c : "#0A0A0A";
-  }, [project]);
+  }, [brandMeta]);
 
   useEffect(() => {
     // Pre-load all fonts we might render.
@@ -69,29 +72,20 @@ export default function FontExplorer() {
     [filter],
   );
 
-  const projectFont = String(project?.meta?.font || "").toLowerCase();
+  const projectFont = String(brandMeta.font || "").toLowerCase();
   const currentFont = projectFont || (baseState.font || "").toLowerCase();
 
   const applyFont = async (family: string) => {
+    if (!projectId) return;
     setApplyingKey(family);
-    // Save font on the project so it persists even without a saved logo,
-    // and update the logo asset editor_state when one is present.
-    const nextMeta = { ...(project?.meta || {}), font: family };
-    const { error } = await supabase
-      .from("projects")
-      .update({ meta: nextMeta })
-      .eq("id", projectId);
-    if (!error && logoAsset?.id) {
+    const next = saveBrandMeta(projectId, { font: family });
+    setBrandMeta(next);
+    if (logoAsset?.id) {
       const nextState: LogotypeState = { ...baseState, font: family };
-      await supabase.from("assets").update({ editor_state: nextState }).eq("id", logoAsset.id);
+      try { await supabase.from("assets").update({ editor_state: nextState }).eq("id", logoAsset.id); } catch {}
       setLogoAsset((prev: any) => (prev ? { ...prev, editor_state: nextState } : prev));
     }
     setApplyingKey(null);
-    if (error) {
-      toast({ title: "Failed to apply", description: error.message, variant: "destructive" });
-      return;
-    }
-    setProject((prev: any) => (prev ? { ...prev, meta: nextMeta } : prev));
     toast({ title: `${family} applied` });
     try { window.dispatchEvent(new CustomEvent("rocket:notify", { detail: { kind: "logo_updated", projectId } })); } catch {}
   };
