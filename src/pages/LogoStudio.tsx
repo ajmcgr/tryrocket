@@ -52,7 +52,7 @@ const LogoStudio = () => {
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10">
       <div className="grid w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-[0_20px_60px_-20px_rgba(15,23,42,0.15)] md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_88px]">
         {/* Left: prompt / intro */}
-        <div className="flex flex-col justify-center gap-4 bg-[#7B8CF7] p-10 text-white sm:p-12">
+        <div className="flex flex-col justify-center gap-4 bg-[#1676e3] p-10 text-white sm:p-12">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Brand Name</h1>
           <p className="max-w-xs text-sm/6 text-white/85">
             The best brand names are short, memorable and easy to Google.
@@ -101,7 +101,7 @@ const LogoStudio = () => {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What do you do? (optional)"
             rows={2}
-            className="rounded-xl border-neutral-200"
+            className="rounded-xl border-neutral-200 bg-white text-neutral-900 placeholder:text-neutral-400"
           />
           <div className="flex flex-wrap gap-1.5 pt-1">
             {STYLE_OPTIONS.map((s) => {
@@ -128,7 +128,7 @@ const LogoStudio = () => {
           onClick={(e) => submit(e as unknown as FormEvent)}
           disabled={!brand.trim()}
           aria-label="Generate logo concepts"
-          className="group flex items-center justify-center bg-[#4CD9A0] text-white transition hover:bg-[#3AC48D] disabled:cursor-not-allowed disabled:opacity-60"
+          className="group flex items-center justify-center bg-[#ff7a45] text-white transition hover:bg-[#f2632a] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <ArrowRight className="h-8 w-8 transition group-hover:translate-x-0.5" strokeWidth={2.4} />
         </button>
