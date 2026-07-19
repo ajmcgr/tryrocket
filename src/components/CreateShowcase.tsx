@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/showcase/logo.png";
 import guidelinesAsset from "@/assets/showcase/guidelines.png";
