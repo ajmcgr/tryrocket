@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { CREDIT_PACKS } from "@/lib/credits";
 import { Check, Loader2, Plug, Cloud, Unplug } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -15,12 +16,6 @@ const TABS = [
   { to: "/settings/notifications", label: "Notifications" },
   { to: "/settings/account", label: "Account" },
   { to: "/settings/billing", label: "Billing" },
-];
-
-const PACKS = [
-  { id: "pack_500", credits: 500, price: "$5" },
-  { id: "pack_1500", credits: 1500, price: "$10" },
-  { id: "pack_5000", credits: 5000, price: "$25" },
 ];
 
 export const SettingsLayout = () => {
