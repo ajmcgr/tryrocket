@@ -120,18 +120,13 @@ const Trash = () => {
     const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
     const ws = await ensureActiveWorkspaceId();
     const scope = (q: any) => (ws ? q.eq("workspace_id", ws) : q);
-    const [a, p] = await Promise.all([
-      scope(supabase.from("assets").select("*").eq("user_id", user.id)).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(500),
-      scope(supabase.from("projects").select("id,name,description,deleted_at").eq("user_id", user.id)).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(500),
-    ]);
+    const a = await scope(supabase.from("assets").select("*").eq("user_id", user.id)).not("deleted_at", "is", null).order("deleted_at", { ascending: false }).limit(500);
     // Client-side purge of items older than 30 days (best-effort).
     const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const expiredAssetIds = (a.data || []).filter((x: any) => new Date(x.deleted_at).getTime() < cutoff).map((x: any) => x.id);
-    const expiredProjectIds = (p.data || []).filter((x: any) => new Date(x.deleted_at).getTime() < cutoff).map((x: any) => x.id);
     if (expiredAssetIds.length) await supabase.from("assets").delete().in("id", expiredAssetIds);
-    if (expiredProjectIds.length) await supabase.from("projects").delete().in("id", expiredProjectIds);
-    setAssets(a.data || []); setProjects(p.data || []); setLoading(false);
-    setSelected(new Set()); setSelectedProjects(new Set());
+    setAssets(a.data || []); setLoading(false);
+    setSelected(new Set());
   };
   useEffect(() => { load(); }, [user]);
 
