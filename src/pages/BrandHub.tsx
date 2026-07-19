@@ -98,7 +98,7 @@ export default function BrandHub() {
         return result.data || [];
       };
       const loadProjects = async () => {
-        const selects = ["id,name,meta,created_at", "id,name,created_at"];
+        const selects = ["id,name,meta,cover_url,created_at", "id,name,meta,created_at", "id,name,cover_url,created_at", "id,name,created_at"];
         for (const select of selects) {
           let q = supabase.from("projects").select(select).eq("user_id", user.id);
           if (workspaceId) q = q.eq("workspace_id", workspaceId);
@@ -349,7 +349,7 @@ export default function BrandHub() {
           <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {projects.map((project) => {
               const logo = projectLogos.get(project.id);
-              const preview = logo?.thumbnail_url || logo?.image_url;
+              const preview = logo?.thumbnail_url || logo?.image_url || project?.cover_url;
               const logoState = logo?.editor_state?.kind === "logotype" ? logo.editor_state : null;
               const designCount = designsByProject.get(project.id)?.length || 0;
               return (
