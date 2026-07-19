@@ -10,17 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const FAQS = [
-  { q: "What does Rocket actually generate?", a: "Start with logo directions: a logo mark, matching logotype, icon, colours and typography. Choose a direction, refine it in the editor, then download your logo files or continue into a matching Brand Kit." },
-  { q: "How is Rocket organized?", a: "Projects hold your designs, brand kit, and uploads. Designs are editable canvas files. The Brand Kit holds one canonical logo, palette, typeface, and more per project. Templates give you a starting point in one click." },
-  { q: "How does the Brand Kit work?", a: "Each project has one canonical item per category (logo, colors, typography, design system…). Swap or remove any item — Remove moves it to Trash and you can restore within 30 days. Pull extras from any other project via '+ New'." },
-  { q: "Can I edit designs like Canva?", a: "Yes. Multi-select (Shift-click + marquee), drag-resize, color overlays for logos and images, image uploads with resize, layers on the right, and export to PNG/SVG/PDF/ZIP. Brand colors appear as one-click swatches in the toolbar." },
-  { q: "How long does a generation take?", a: "About 30–60 seconds. /create keeps your full chat history per project — prompts and responses persist so you can scroll back and iterate." },
-  { q: "Can I regenerate individual pieces?", a: "Yes. Every design has Copy, Edit, and Regenerate. Regenerating a single design costs 1 credit, and you can leave feedback to steer the next pass." },
-  { q: "What's a credit?", a: "Credits power every generation. Text designs cost 1; images cost more. Free plan gets 100/month, Pro gets 3,000. Top up anytime — packs never expire." },
-  { q: "Where can I launch from Rocket?", a: "We pre-fill submissions for Product Hunt, BetaList, There's An AI For That, Hacker News, Peerlist, Uneed, Alternative.me, G2, Indie Hackers, and one-click handoff to Launch." },
-  { q: "Do you support sharing and exports?", a: "Yes. Every design has a share link that opens in the editor; projects share a full Brand Kit view. Export PNG, SVG, PDF, or a ZIP of your kit. Pro adds Markdown / PDF brand guidelines and password-protected share links." },
-  { q: "Is there a free trial of Pro?", a: "7 days free on Pro, no card required to start on Free." },
-  { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You'll keep access until the end of the period." },
+  { q: "What does Rocket generate?", a: "Rocket is a logo-first design tool. Start with logo directions — a logo mark, matching wordmark, icon, colours and typography — then refine your favourite in the editor and roll it into a Brand Kit." },
+  { q: "What are the main workflows?", a: "Wizard (guided chat that generates logo directions from a URL or idea), Logo Designer & Icon Designer (batch generate marks and app icons in a chosen style), Templates (200+ ready-made logo and icon starters), and Saved (every design you star or open in the editor)." },
+  { q: "How does the Brand Kit work?", a: "Every Brand Kit holds one canonical item per category — logo, colours, typography, design system, and more. Swap or remove any item; Remove sends it to Trash and you can restore within 30 days. Add extras from any saved design via 'Use in brand kit'." },
+  { q: "Can I edit designs like Canva?", a: "Yes. Multi-select (Shift-click + marquee), drag-resize, colour overlays for logos and images, image uploads with resize, layers on the right, Quick Edit for title/slogan/icon/layout/background, and export to PNG/SVG/PDF/ZIP." },
+  { q: "How long does a generation take?", a: "Most logo batches land in 30–60 seconds. Chat history persists per project so you can scroll back and iterate." },
+  { q: "Can I regenerate individual pieces?", a: "Yes. Every result has Edit, Save, Variants and Remix. Regenerating one design costs 1 credit, and you can steer it with feedback like 'more minimal' or 'brighter'." },
+  { q: "What's a credit?", a: "Credits power every generation. Free plan includes 100/month, Pro includes 3,000. Top up anytime — packs never expire." },
+  { q: "How does sharing and export work?", a: "Every design opens in the editor via a shareable link (new tab). Export PNG, SVG, PDF, or a full ZIP of your Brand Kit. Pro adds password-protected share links and PDF/Markdown brand guidelines." },
+  { q: "What's included in Pro?", a: "3,000 credits/month, workspaces & multi-seat, password-protected share links, brand guideline exports, and priority AI capacity. 7 days free, cancel anytime." },
+  { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You keep access until the end of the period." },
 ];
 
 const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
