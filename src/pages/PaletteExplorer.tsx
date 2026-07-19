@@ -6,6 +6,7 @@ import { Logotype } from "@/components/Logotype";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { loadBrandMeta, saveBrandMeta, type BrandMeta } from "@/lib/brandMeta";
 
 const supabase = _sb as any;
 
@@ -41,6 +42,7 @@ export default function PaletteExplorer() {
   const [logoAsset, setLogoAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [applyingKey, setApplyingKey] = useState<string | null>(null);
+  const [brandMeta, setBrandMeta] = useState<BrandMeta>({});
 
   useEffect(() => {
     if (!projectId) return;
@@ -48,7 +50,7 @@ export default function PaletteExplorer() {
     (async () => {
       setLoading(true);
       const [{ data: proj }, { data: assets }] = await Promise.all([
-        supabase.from("projects").select("id,name,meta").eq("id", projectId).maybeSingle(),
+        supabase.from("projects").select("id,name").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,created_at")
@@ -59,6 +61,7 @@ export default function PaletteExplorer() {
       ]);
       if (cancelled) return;
       setProject(proj || null);
+      setBrandMeta(loadBrandMeta(projectId));
       const withState = (assets || []).find((a: any) => a.editor_state?.kind === "logotype");
       setLogoAsset(withState || (assets || [])[0] || null);
       setLoading(false);
@@ -75,14 +78,11 @@ export default function PaletteExplorer() {
     if (!projectId) return;
     setApplyingKey(p.key);
     const brand = p.colors[2] || p.colors[1];
-    const nextMeta = { ...(project?.meta || {}), brand_color: brand, palette: p.colors, palette_key: p.key };
-    const { error } = await supabase.from("projects").update({ meta: nextMeta }).eq("id", projectId);
+    const next = saveBrandMeta(projectId, { brand_color: brand, palette: [...p.colors], palette_key: p.key });
+    setBrandMeta(next);
+    // Best-effort: also mirror into the projects.brand_color column when present.
+    try { await supabase.from("projects").update({ brand_color: brand }).eq("id", projectId); } catch {}
     setApplyingKey(null);
-    if (error) {
-      toast({ title: "Failed to apply", description: error.message, variant: "destructive" });
-      return;
-    }
-    setProject((prev: any) => (prev ? { ...prev, meta: nextMeta } : prev));
     toast({ title: `${p.name} palette applied`, description: `Brand color set to ${brand}.` });
     try { window.dispatchEvent(new CustomEvent("rocket:notify", { detail: { kind: "brand_updated", projectId } })); } catch {}
   };
@@ -108,7 +108,7 @@ export default function PaletteExplorer() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {PALETTES.map((p) => {
             const [bg, fg, accent, accent2] = p.colors;
-            const isCurrent = String(project?.meta?.brand_color || "").toLowerCase() === accent.toLowerCase();
+            const isCurrent = String(brandMeta.brand_color || "").toLowerCase() === accent.toLowerCase();
             const state: LogotypeState = { ...baseState, color: fg };
             return (
               <div
