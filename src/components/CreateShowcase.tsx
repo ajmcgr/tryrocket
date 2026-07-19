@@ -1,20 +1,12 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Star, ArrowRight, Shapes, Sparkles, Palette } from "lucide-react";
+import { Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/showcase/logo.png";
 import guidelinesAsset from "@/assets/showcase/guidelines.png";
 import iconsAsset from "@/assets/showcase/icons.png";
 
-const Tag = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-600">
-    {children}
-  </span>
-);
-
 const ShowcaseCard = ({
   i,
-  eyebrow,
-  eyebrowIcon: EyebrowIcon,
   title,
   description,
   bullets,
@@ -26,8 +18,6 @@ const ShowcaseCard = ({
   accent,
 }: {
   i: number;
-  eyebrow: string;
-  eyebrowIcon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
   bullets: string[];
@@ -66,11 +56,7 @@ const ShowcaseCard = ({
       </div>
 
       <div>
-        <Tag>
-          <EyebrowIcon className="h-3.5 w-3.5" />
-          {eyebrow}
-        </Tag>
-        <h3 className="mt-5 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl lg:text-5xl">
+        <h3 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl lg:text-5xl">
           {title}
         </h3>
         <p className="mt-4 text-lg leading-relaxed text-neutral-600">
@@ -102,8 +88,6 @@ const ShowcaseCard = ({
 const CARDS = [
   {
     id: "logos",
-    eyebrow: "Logos",
-    eyebrowIcon: Shapes,
     title: "Logo marks & wordmarks",
     description:
       "Generate distinctive logo directions from a URL or a few words. Get a mark, matching logotype, color palette, and typography in one pass — then refine the winner in the editor.",
@@ -122,8 +106,6 @@ const CARDS = [
   },
   {
     id: "icons",
-    eyebrow: "Icons",
-    eyebrowIcon: Sparkles,
     title: "App icons & glyphs",
     description:
       "Create crisp app icons, favicons, and custom glyph sets that match your logo system. Pick a style, generate a batch, and save the winners directly to your brand kit.",
@@ -142,8 +124,6 @@ const CARDS = [
   },
   {
     id: "brand-kits",
-    eyebrow: "Brand Kits",
-    eyebrowIcon: Palette,
     title: "Complete brand kits",
     description:
       "Turn any logo into a full brand kit: canonical colors, typography, templates, and organized files. One project, one source of truth for every launch asset.",
