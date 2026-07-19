@@ -37,6 +37,12 @@ const PRICES: Record<
     unit_amount: 2000,
     price: "price_1TgpCLL9pkHWyRRuJGdfC77g",
   },
+  starter: {
+    mode: "subscription",
+    trial_days: 7,
+    product_name: "Rocket Starter",
+    unit_amount: 1200,
+  },
   pro: {
     mode: "subscription",
     trial_days: 7,
