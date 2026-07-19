@@ -282,35 +282,6 @@ const Trash = () => {
         </div>
       </div>
 
-      {projects.length > 0 && (
-        <section className="mt-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-neutral-800">Projects <span className="text-neutral-400">({projects.length})</span></h2>
-            <button
-              onClick={() => setSelectedProjects((prev) => prev.size === projects.length ? new Set() : new Set(projects.map((p) => p.id)))}
-              className="text-xs text-neutral-500 hover:text-neutral-800"
-            >
-              {selectedProjects.size === projects.length ? "Deselect all" : "Select all"}
-            </button>
-          </div>
-          <ul className="mt-3 divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white">
-            {projects.map(p => (
-              <li key={p.id} className="flex items-center gap-3 p-3">
-                <button onClick={() => toggleProject(p.id)} className="text-neutral-400 hover:text-neutral-800">
-                  {selectedProjects.has(p.id) ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
-                </button>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-neutral-900">{p.name}</div>
-                  {p.description && <div className="truncate text-xs text-neutral-500">{p.description}</div>}
-                  <div className="mt-0.5 text-[10px] text-neutral-400">Deleted {new Date(p.deleted_at).toLocaleString()} · {daysRemaining(p.deleted_at)}d left</div>
-                </div>
-                <button onClick={() => restoreProject(p.id)} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs hover:bg-neutral-50"><RotateCcw className="h-3 w-3" /> Restore</button>
-                <button onClick={() => purgeProject(p.id)} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1 text-xs text-red-600 hover:bg-red-50"><Trash2 className="h-3 w-3" /> Delete forever</button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {loading ? (
         <AssetGridSkeleton />
