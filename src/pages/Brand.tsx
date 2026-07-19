@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng, logotypeToSvg } from "@/components/Logotype";
@@ -264,6 +264,24 @@ export default function Brand() {
     } finally {
       setBusy(null);
     }
+  };
+
+  const removeFromKit = async (assetId: string) => {
+    if (!confirm("Remove this file from the brand kit? It will stay in your Saved library.")) return;
+    const { error } = await supabase.from("assets").update({ project_id: null }).eq("id", assetId);
+    if (error) {
+      toast({ title: "Could not remove", description: error.message, variant: "destructive" });
+      return;
+    }
+    setLogoAssets((prev) => {
+      const next = prev.filter((a) => a.id !== assetId);
+      if (logoAsset?.id === assetId) {
+        const withState = next.find((a: any) => a?.editor_state?.kind === "logotype");
+        setLogoAsset(withState || next[0] || null);
+      }
+      return next;
+    });
+    toast({ title: "Removed from brand kit" });
   };
 
   return (
