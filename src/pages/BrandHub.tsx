@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { assetHref, isBrandAsset, isDesignAsset, normalizeAssetType } from "@/lib/assetExperience";
 import { ensureActiveWorkspaceId } from "@/lib/workspace";
 import BrandCover from "@/components/brand/BrandCover";
-import { ArrowRight, Check, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2, Shuffle, Globe, Lock, HeartOff } from "lucide-react";
+import { ArrowRight, Check, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { Logotype } from "@/components/Logotype";
 
 const supabase = _sb as any;
@@ -49,7 +49,7 @@ const KIT_ESSENTIALS = [
 
 export default function BrandHub() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  
   const { toast } = useToast();
   const [params] = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -268,35 +268,6 @@ export default function BrandHub() {
     { assetType: "template", label: "Refresh a template", prompt: "Create a refreshed reusable template using our current approved brand direction." },
   ];
 
-  const updateProject = (id: string, patch: any) => {
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
-  };
-
-  const toggleProjectPublic = async (project: any) => {
-    const isPublic = !project?.meta?.public;
-    const meta = { ...(project.meta || {}), public: isPublic };
-    const { error } = await supabase.from("projects").update({ meta }).eq("id", project.id);
-    if (error) {
-      toast({ title: "Couldn't update brand", description: error.message, variant: "destructive" });
-      return;
-    }
-    updateProject(project.id, { meta });
-    toast({ title: isPublic ? "Made brand public" : "Made brand private" });
-  };
-
-  const deleteProject = async (project: any) => {
-    if (!window.confirm(`Delete “${project.name || "Untitled brand"}" and all its files?`)) return;
-    const { error } = await supabase.from("projects").delete().eq("id", project.id);
-    if (error) {
-      toast({ title: "Couldn't delete brand", description: error.message, variant: "destructive" });
-      return;
-    }
-    setProjects((prev) => prev.filter((p) => p.id !== project.id));
-    setAllDesigns((prev) => prev.filter((d) => d.project_id !== project.id));
-    toast({ title: "Brand deleted" });
-  };
-
-  const remixProject = (project: any) => navigate(`/create?project=${project.id}`);
 
   const projectDesignCount = (projectId: string) => allDesigns.filter((design) => design.project_id === projectId).length;
 
@@ -370,26 +341,11 @@ export default function BrandHub() {
                     )}
                   </div>
                   <div className="border-t border-neutral-100 p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-neutral-900">{project.name || "Untitled brand"}</p>
-                        <p className="mt-0.5 truncate text-[11px] text-neutral-500">
-                          {designCount} design{designCount === 1 ? "" : "s"}
-                        </p>
-                      </div>
-                      {project?.meta?.public ? <Globe className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" /> : null}
-                    </div>
-                    <div className="mt-3 flex gap-2" onClick={(e) => e.preventDefault()}>
-                      <span className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Edit</span>
-                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); remixProject(project); }} title="Remix" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
-                        <Shuffle className="h-3.5 w-3.5" />
-                      </button>
-                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void toggleProjectPublic(project); }} title={project?.meta?.public ? "Make private" : "Make public"} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
-                        {project?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
-                      </button>
-                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); void deleteProject(project); }} title="Delete brand" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
-                        <HeartOff className="h-3.5 w-3.5" />
-                      </button>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-neutral-900">{project.name || "Untitled brand"}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-neutral-500">
+                        {designCount} design{designCount === 1 ? "" : "s"}
+                      </p>
                     </div>
                   </div>
                 </Link>
