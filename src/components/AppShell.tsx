@@ -140,13 +140,14 @@ const AppShell = () => {
           </NavLink>
           <a
             href="mailto:alex@tryrocket.ai"
-            className={`flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`}
+            className={`flex h-10 w-full items-center gap-3 rounded-xl text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950 ${collapsed ? "justify-center px-0" : "px-3"}`}
             aria-label="Email support"
             title="Email support"
           >
             <HelpCircle className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
             {!collapsed && <span className="truncate">Help</span>}
           </a>
+
         </div>
       </aside>
       <div className="min-h-screen transition-[padding] duration-200" style={{ paddingLeft: `var(--rocket-sidebar, 0px)` }}>
