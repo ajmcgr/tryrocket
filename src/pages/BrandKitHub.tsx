@@ -379,7 +379,7 @@ const BrandKitHub = () => {
         <ProjectNavigation projectId={id!} active="downloads" />
       </div>
 
-      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Link
           to={`/projects/${id}/logo-files`}
           className="group flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-neutral-300 hover:shadow-md"
@@ -429,6 +429,19 @@ const BrandKitHub = () => {
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold text-neutral-900">Font Explorer</span>
             <span className="block text-xs text-neutral-500">Try your logo across curated typefaces.</span>
+          </span>
+          <ChevronRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" />
+        </Link>
+        <Link
+          to={`/projects/${id}/social`}
+          className="group flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-neutral-300 hover:shadow-md"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-white">
+            <Megaphone className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-neutral-900">Social Media Kit</span>
+            <span className="block text-xs text-neutral-500">Ready-to-post covers, headers &amp; thumbnails.</span>
           </span>
           <ChevronRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-700" />
         </Link>
