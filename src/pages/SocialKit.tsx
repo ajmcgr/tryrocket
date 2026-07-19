@@ -187,7 +187,7 @@ export default function SocialKit() {
       <div className="mb-6 flex items-center gap-3">
         {projectId ? (
           <Link
-            to={`/projects/${projectId}/hub`}
+            to={`/brands/${projectId}`}
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition hover:bg-neutral-50"
             aria-label="Back to brand kit"
           >
