@@ -1824,6 +1824,7 @@ const Editor = () => {
           fonts={fontFamilies}
           bg={bg}
           setBg={setBg}
+          touchAutosave={() => setAutosaveTick((tick) => tick + 1)}
           update={update}
           setEls={setEls}
           addText={addText}
