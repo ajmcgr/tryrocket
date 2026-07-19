@@ -15,14 +15,6 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import JSZip from "jszip";
 import { loadBrandMeta } from "@/lib/brandMeta";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { jsPDF } from "jspdf";
 
 const supabase = _sb as any;
