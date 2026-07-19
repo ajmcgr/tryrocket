@@ -358,7 +358,7 @@ const Trash = () => {
               <div className="flex-1">
                 <h3 className="text-base font-semibold text-neutral-900">Empty trash?</h3>
                 <p className="mt-1 text-sm text-neutral-600">
-                  This will permanently delete {assets.length + projects.length} item{assets.length + projects.length === 1 ? "" : "s"}. This action cannot be undone.
+                  This will permanently delete {assets.length} item{assets.length === 1 ? "" : "s"}. This action cannot be undone.
                 </p>
               </div>
             </div>
