@@ -1090,80 +1090,47 @@ const Generate = () => {
             </form>
           </div>
 
-          {/* Right: results panel */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-            {activeBrandCtx && (
-              <div className="mb-4">
-                <BrandContextStrip ctx={activeBrandCtx} />
-              </div>
-            )}
-            {(() => {
-              const latest = [...chatAssets].reverse().find(
-                (a) => !a.image_url && (a.editor_state?.kind === "logotype" || isCanvasAsset(a) || hasVisualRenderer(a))
-              );
-              if (!latest) return null;
-              return (
-                <div className="mb-5">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Latest design</div>
-                    <Link to={assetHref(latest)} className="text-[11px] text-neutral-500 hover:text-neutral-900">
-                      Open →
+          {/* Right: results panel — Brandmark-style clean grid */}
+          <div className="rounded-2xl bg-transparent">
+            {chatAssets.length === 0 ? (
+              <p className="text-sm text-neutral-500">No designs yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {chatAssets.map((a) => (
+                  <div
+                    key={a.id}
+                    className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
+                  >
+                    <Link to={assetHref(a)} target="_blank" rel="noopener noreferrer" className="block">
+                      {a.image_url ? (
+                        <div className="aspect-square w-full bg-white">
+                          <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain p-6" />
+                        </div>
+                      ) : (
+                        <AssetCardThumb asset={a} />
+                      )}
                     </Link>
-                  </div>
-                  <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white p-4">
-                    <AssetVisual asset={latest} />
-                  </div>
-                </div>
-              );
-            })()}
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-sans text-sm font-semibold text-neutral-900">Choose a direction</h2>
-              <span className="text-xs text-neutral-500">{chatAssets.length} design{chatAssets.length === 1 ? "" : "s"}</span>
-            </div>
-            {chatAssets.some((asset) => ["logo", "logotype", "wordmark"].includes(String(asset.asset_type || "").toLowerCase())) && (
-              <div className="mb-3 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2 text-xs leading-5 text-neutral-700">
-                <span className="font-semibold text-neutral-900">Next:</span> Open a favourite to refine and download it, or keep it to build the matching brand kit.
-              </div>
-            )}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {chatAssets.map((a) => (
-                <div key={a.id} className="group overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-neutral-300 hover:shadow-sm">
-                  <Link to={assetHref(a)} className="block">
-                    {a.image_url ? (
-                      <div className="aspect-square w-full bg-neutral-50">
-                        <img src={a.thumbnail_url || a.image_url} alt={a.title} className="h-full w-full object-contain" />
-                      </div>
-                    ) : (
-                      <AssetCardThumb asset={a} />
-                    )}
-                    <div className="border-t border-neutral-100 px-3 py-2">
-                      <p className="truncate text-sm font-medium text-neutral-900">{a.title}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-neutral-400">{a.asset_type}</p>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 p-3 opacity-0 transition group-hover:opacity-100">
+                      <Link
+                        to={assetHref(a)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pointer-events-auto inline-flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-neutral-800 shadow ring-1 ring-neutral-200 hover:bg-neutral-50"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => void useAsMyBrand(a.id)}
+                        className="pointer-events-auto inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground shadow hover:bg-brand-hover"
+                      >
+                        Save
+                      </button>
                     </div>
-                  </Link>
-                  <div className="flex border-t border-neutral-100">
-                    <Link
-                      to={assetHref(a)}
-                      className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 border-r border-neutral-100 px-2 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-                    >
-                      Open & edit <ArrowRight className="h-3 w-3" />
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => void useAsMyBrand(a.id)}
-                      className="min-w-0 flex-1 px-2 py-2 text-xs font-semibold text-brand hover:bg-brand/5"
-                    >
-                      {["logo", "logotype", "wordmark"].includes(String(a.asset_type || "").toLowerCase())
-                        ? "Keep for my brand"
-                        : "Use this direction"}
-                    </button>
                   </div>
-                </div>
-              ))}
-              {chatAssets.length === 0 && (
-                <p className="col-span-full text-sm text-neutral-500">No designs in this chat.</p>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       ) : showFirstBrandOnboarding ? (
