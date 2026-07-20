@@ -504,8 +504,8 @@ const Index = () => {
                   ))}
                 </div>
               </div>
-              <Button asChild className="mt-8 w-full">
-                <Link to="/signup">Start free trial</Link>
+              <Button asChild variant="outline" className="mt-8 w-full">
+                <Link to="/signup?next=%2Fpricing%3Fbuy%3Dgrowth">Start 7-day free trial</Link>
               </Button>
             </div>
           </div>

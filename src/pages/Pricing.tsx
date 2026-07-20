@@ -143,9 +143,10 @@ const Pricing = () => {
               <Button
                 onClick={() => startCheckout("growth")}
                 disabled={loading === "growth"}
+                variant="outline"
                 className="mt-8 w-full"
               >
-                {loading === "growth" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start free trial"}
+                {loading === "growth" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start 7-day free trial"}
               </Button>
             </div>
           </div>

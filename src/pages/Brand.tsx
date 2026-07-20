@@ -335,9 +335,9 @@ export default function Brand() {
                   );
                 })}
               </div>
-              {logoAssets.length > 1 && (
+              {logoAssets.length >= 1 && (
                 <div className="mt-10">
-                  <h2 className="text-sm font-semibold text-neutral-700">All saved logos ({logoAssets.length})</h2>
+                  <h2 className="text-sm font-semibold text-neutral-700">All files in this brand kit ({logoAssets.length})</h2>
                   <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {logoAssets.map((a) => (
                       <div key={a.id} className={`group relative overflow-hidden rounded-xl border bg-white transition hover:shadow-sm ${logoAsset?.id === a.id ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
