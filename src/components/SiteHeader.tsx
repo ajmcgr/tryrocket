@@ -63,7 +63,7 @@ const SiteHeader = () => {
   return (
     <header
       className={`sticky z-50 bg-white transition-[top] duration-200 ${scrolled ? "top-0" : "top-2"}`}
-      style={{ borderBottom: "1px solid #e5e7eb" }}
+      style={user ? { borderBottom: "1px solid #e5e7eb" } : undefined}
     >
       <div className="relative mx-auto flex h-16 max-w-4xl items-center px-6">
         <Logo size="md" />

@@ -1899,6 +1899,22 @@ const Editor = () => {
                   ref={stageRef}
                   width={STAGE_W}
                   height={STAGE_H}
+                  onDblClick={(e: any) => {
+                    // Fallback: if the transformer or a wrapper eats the dblclick on a text node,
+                    // enter edit mode when the currently selected element is text/sticky.
+                    const el = els.find((x) => x.id === selectedId);
+                    if (el && (el.kind === "text" || el.kind === "sticky")) {
+                      setEditingTextId(el.id);
+                      e.cancelBubble = true;
+                    }
+                  }}
+                  onDblTap={(e: any) => {
+                    const el = els.find((x) => x.id === selectedId);
+                    if (el && (el.kind === "text" || el.kind === "sticky")) {
+                      setEditingTextId(el.id);
+                      e.cancelBubble = true;
+                    }
+                  }}
                   onContextMenu={(e) => {
                     e.cancelBubble = true;
                     if (e.target !== e.target.getStage()) return;

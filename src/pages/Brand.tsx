@@ -335,34 +335,6 @@ export default function Brand() {
                   );
                 })}
               </div>
-              {logoAssets.length > 1 && (
-                <div className="mt-10">
-                  <h2 className="text-sm font-semibold text-neutral-700">All saved logos ({logoAssets.length})</h2>
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                    {logoAssets.map((a) => (
-                      <div key={a.id} className={`group relative overflow-hidden rounded-xl border bg-white transition hover:shadow-sm ${logoAsset?.id === a.id ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
-                        <button onClick={() => setLogoAsset(a)} className="block w-full">
-                          <div className="flex aspect-square items-center justify-center bg-neutral-50 p-3">
-                            {a?.editor_state?.kind === "logotype" ? (
-                              <Logotype state={a.editor_state} fit="contain" />
-                            ) : (a.image_url || a.thumbnail_url) ? (
-                              <img src={a.image_url || a.thumbnail_url} alt="" className="max-h-full max-w-full object-contain" loading="lazy" />
-                            ) : null}
-                          </div>
-                        </button>
-                        <button
-                          type="button"
-                          title="Remove from brand kit"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFromKit(a.id); }}
-                          className="absolute right-1.5 top-1.5 rounded-full bg-white/95 p-1 text-neutral-500 opacity-0 shadow-sm transition hover:text-red-600 group-hover:opacity-100"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
@@ -438,6 +410,34 @@ export default function Brand() {
                   </div>
                 );
               })}
+            </div>
+          )}
+          {!loading && logoAssets.length >= 1 && (
+            <div className="mx-auto mt-10 max-w-5xl">
+              <h2 className="text-sm font-semibold text-neutral-700">All files in this brand kit ({logoAssets.length})</h2>
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {logoAssets.map((a) => (
+                  <div key={a.id} className={`group relative overflow-hidden rounded-xl border bg-white transition hover:shadow-sm ${logoAsset?.id === a.id ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
+                    <button onClick={() => setLogoAsset(a)} className="block w-full">
+                      <div className="flex aspect-square items-center justify-center bg-neutral-50 p-3">
+                        {a?.editor_state?.kind === "logotype" ? (
+                          <Logotype state={a.editor_state} fit="contain" />
+                        ) : (a.image_url || a.thumbnail_url) ? (
+                          <img src={a.image_url || a.thumbnail_url} alt="" className="max-h-full max-w-full object-contain" loading="lazy" />
+                        ) : null}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      title="Remove from brand kit"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFromKit(a.id); }}
+                      className="absolute right-1.5 top-1.5 rounded-full bg-white/95 p-1 text-neutral-500 opacity-0 shadow-sm transition hover:text-red-600 group-hover:opacity-100"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
