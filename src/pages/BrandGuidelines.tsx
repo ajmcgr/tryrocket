@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Download, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
@@ -9,6 +9,7 @@ import { defaultLogotypeState, LOGOTYPE_FONTS, loadGoogleFont, type LogotypeStat
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { loadBrandMeta } from "@/lib/brandMeta";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const supabase = _sb as any;
 
@@ -36,12 +37,26 @@ function shade(hex: string, amount: number) {
 export default function BrandGuidelines() {
   const { id: projectId } = useParams();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isPro, loading: subLoading } = useSubscription();
   const [project, setProject] = useState<any>(null);
   const [logoAsset, setLogoAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyPdf, setBusyPdf] = useState(false);
   const pageRef = useRef<HTMLDivElement | null>(null);
+
+  const requirePro = () => {
+    if (!subLoading && !isPro) {
+      toast({
+        title: "Pro feature",
+        description: "Brand Book downloads are available on the Pro plan. Upgrade to download PDF and PNG exports.",
+      });
+      navigate("/pricing");
+      return true;
+    }
+    return false;
+  };
 
   useEffect(() => {
     if (!projectId) return;
@@ -101,6 +116,7 @@ export default function BrandGuidelines() {
   const fontMeta = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === currentFont.toLowerCase());
 
   const download = async () => {
+    if (requirePro()) return;
     if (!pageRef.current) return;
     setBusy(true);
     try {
@@ -119,6 +135,7 @@ export default function BrandGuidelines() {
   };
 
   const downloadPdf = async () => {
+    if (requirePro()) return;
     if (!pageRef.current) return;
     setBusyPdf(true);
     try {
@@ -148,19 +165,25 @@ export default function BrandGuidelines() {
         </div>
         <button
           onClick={downloadPdf}
-          disabled={busyPdf || loading}
+          disabled={busyPdf || loading || subLoading}
           className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50"
         >
           {busyPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           Download PDF
+          {!subLoading && !isPro && (
+            <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Pro</span>
+          )}
         </button>
         <button
           onClick={download}
-          disabled={busy || loading}
+          disabled={busy || loading || subLoading}
           className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           Download PNG
+          {!subLoading && !isPro && (
+            <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Pro</span>
+          )}
         </button>
       </div>
 
