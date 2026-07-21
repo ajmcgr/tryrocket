@@ -428,7 +428,8 @@ const Index = () => {
             <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Starter</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-medium tracking-tight">Free</span>
+                <span className="text-5xl font-medium tracking-tight">$12</span>
+                <span className="text-sm text-neutral-500">/month</span>
               </div>
               <p className="mt-2 text-sm text-neutral-600">Everything you need to create your first startup brand.</p>
               <ul className="mt-6 space-y-3 text-sm">
@@ -446,7 +447,7 @@ const Index = () => {
                 ))}
               </ul>
               <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to="/signup">Get Started Free</Link>
+                <Link to="/signup">Start 7-day free trial</Link>
               </Button>
             </div>
 
