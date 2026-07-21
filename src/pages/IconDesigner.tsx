@@ -55,7 +55,7 @@ const IconDesigner = () => {
           <SparklesIcon className="h-10 w-10" strokeWidth={1.6} />
         </div>
         <span className="rounded-full bg-[#1676e3] px-4 py-1.5 text-sm font-medium text-white shadow-sm">
-          Rocket Logo Generator
+          Rocket Icon Generator
         </span>
 
         <p className="mt-8 text-sm text-neutral-500">Prompt Examples:</p>
