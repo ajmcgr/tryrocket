@@ -151,8 +151,9 @@ const ChatsSidebar = () => {
         {!isRenaming && (
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="rounded p-1 text-neutral-400 opacity-0 transition group-hover:opacity-100 hover:bg-neutral-200 hover:text-neutral-700 data-[state=open]:opacity-100"
+              className="rounded p-1 text-neutral-400 transition hover:bg-neutral-200 hover:text-neutral-700 focus:opacity-100 data-[state=open]:opacity-100 md:opacity-0 md:group-hover:opacity-100"
               aria-label="Chat actions"
+              onClick={(e) => e.stopPropagation()}
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </DropdownMenuTrigger>
