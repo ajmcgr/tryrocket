@@ -11,20 +11,26 @@ type Step = {
   placement?: "bottom" | "right" | "left" | "center";
 };
 
-const STORAGE_KEY = "rocket.onboarding.v1";
+const STORAGE_KEY = "rocket.onboarding.v2";
 
 const STEPS: Step[] = [
   {
     title: "Welcome to Rocket",
-    body: "Rocket helps founders build a complete startup brand through a simple step-by-step workflow.",
+    body: "Rocket helps founders design a complete startup brand — logos, icons, palettes, fonts and a full brand kit — in minutes.",
     placement: "center",
     cta: "Start tour",
   },
   {
     selector: '[data-tour="nav-logos"]',
     title: "Design your logo",
-    body: "Start by creating a professional logo for your company. Explore multiple concepts and choose the direction you like best.",
+    body: "Chat with Rocket to generate professional logo concepts. Regenerate, refine and star the ones you love.",
     placement: "bottom",
+  },
+  {
+    selector: '[data-tour="chats-sidebar"]',
+    title: "Your chat history",
+    body: "Every conversation is saved here. Jump back into a past chat, pin favourites or start a new one with the + New button.",
+    placement: "right",
   },
   {
     selector: '[data-tour="nav-icons"]',
@@ -33,26 +39,44 @@ const STEPS: Step[] = [
     placement: "bottom",
   },
   {
+    selector: '[data-tour="nav-wizard"]',
+    title: "Try the Wizard",
+    body: "Answer a few questions and let Rocket generate a full brand direction for you in one go.",
+    placement: "bottom",
+  },
+  {
+    selector: '[data-tour="nav-templates"]',
+    title: "Browse templates",
+    body: "Hundreds of ready-made templates for social posts, decks, business cards and more — remix any of them in the editor.",
+    placement: "bottom",
+  },
+  {
+    selector: '[data-tour="nav-saved"]',
+    title: "Saved designs",
+    body: "Star anything you like from chat and it lands here — filter, sort and remix at any time.",
+    placement: "bottom",
+  },
+  {
     selector: '[data-tour="nav-brand"]',
-    title: "Build your brand",
-    body: "Use your selected logo and icon to create a complete brand identity with colours, typography and branded assets.",
+    title: "Build your Brand Kit",
+    body: "Combine your saved logo, palette, fonts and brand book into one downloadable kit — ready for your team.",
     placement: "bottom",
   },
   {
     selector: '[data-tour="nav-editor"]',
     title: "Refine your designs",
-    body: "Edit every generated design before downloading.",
+    body: "Fine-tune any design in the editor — swap colours, edit text, resize and export.",
     placement: "bottom",
   },
   {
-    selector: '[data-tour="nav-brand"]',
-    title: "Export everything",
-    body: "Download your finished brand assets ready to use everywhere.",
+    selector: '[data-tour="nav-notifications"]',
+    title: "Stay in the loop",
+    body: "We'll ping you here when generations finish and when your kit is ready to download.",
     placement: "bottom",
   },
   {
     title: "You're ready",
-    body: "Let's design your first logo. You can replay this tour anytime from Settings.",
+    body: "Let's design your first logo. You can replay this tour any time from Settings.",
     placement: "center",
     cta: "Open Logo Designer",
   },
