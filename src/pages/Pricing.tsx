@@ -13,7 +13,7 @@ const supabase = _sb as any;
 const STARTER_FEATURES = [
   "Monthly Rocket Credits to design your first logo",
   "Logo & Icon Designer",
-  "Brand Kit essentials",
+  "Brand Kit essentials (view & share)",
   "Full template library",
   "PNG & SVG downloads",
 ];
@@ -22,6 +22,7 @@ const PRO_FEATURES = [
   "Generous monthly Rocket Credits",
   "Unlimited saved logos & brand kits",
   "Full export suite (PNG, SVG, PDF, ZIP)",
+  "Brand Kit ZIP downloads",
   "Priority generation",
   "Team workspaces (multi-seat)",
   "Brand Book & guideline export",
@@ -33,7 +34,8 @@ const COMPARE = [
   { label: "Logo Designer", starter: true, pro: true },
   { label: "Icon Designer", starter: true, pro: true },
   { label: "Templates library", starter: true, pro: true },
-  { label: "Brand Kit", starter: "Essentials", pro: "Full brand kit + Brand Book" },
+  { label: "Brand Kit", starter: "View & share", pro: "Full brand kit + Brand Book" },
+  { label: "Brand Kit ZIP download", starter: false, pro: true },
   { label: "Exports", starter: "PNG & SVG", pro: "PNG, SVG, PDF, ZIP" },
   { label: "Saved designs", starter: "Limited", pro: "Unlimited" },
   { label: "Priority generation", starter: false, pro: true },

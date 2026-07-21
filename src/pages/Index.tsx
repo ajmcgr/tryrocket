@@ -436,7 +436,7 @@ const Index = () => {
                 {[
                   "Monthly Rocket Credits to design your first logo",
                   "Logo & Icon Designer",
-                  "Brand Kit essentials",
+                  "Brand Kit essentials (view & share)",
                   "Full template library",
                   "PNG & SVG downloads",
                 ].map((f) => (
@@ -467,6 +467,7 @@ const Index = () => {
                   "Generous monthly Rocket Credits",
                   "Unlimited saved logos & brand kits",
                   "Full export suite (PNG, SVG, PDF, ZIP)",
+                  "Brand Kit ZIP downloads",
                   "Priority generation",
                   "Team workspaces (multi-seat)",
                   "Brand Book & guideline export",
