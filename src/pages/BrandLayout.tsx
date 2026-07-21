@@ -14,6 +14,8 @@ import {
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { downloadCompleteBrandKit } from "@/lib/brandKitDownload";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
 
 const supabase = _sb as any;
 
@@ -29,6 +31,8 @@ type NavKey = "logo-files" | "palette" | "fonts" | "brand-book";
 export default function BrandLayout() {
   const { id: projectId } = useParams();
   const { toast } = useToast();
+  const { isPro, loading: subLoading } = useSubscription();
+  const navigate = useNavigate();
   if (!projectId) return <Navigate to="/brands" replace />;
 
   const [project, setProject] = useState<any>(null);
@@ -59,6 +63,14 @@ export default function BrandLayout() {
   };
 
   const downloadBrandKit = async () => {
+    if (!subLoading && !isPro) {
+      toast({
+        title: "Pro feature",
+        description: "Brand kit downloads are available on the Pro plan.",
+      });
+      navigate("/pricing");
+      return;
+    }
     setZipping(true);
     try {
       const result = await downloadCompleteBrandKit({ supabase, projectId, project });
@@ -132,6 +144,9 @@ export default function BrandLayout() {
           >
             {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Download brand kit
+            {!subLoading && !isPro && (
+              <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Pro</span>
+            )}
           </button>
         </div>
       </aside>
