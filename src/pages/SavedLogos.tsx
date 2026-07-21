@@ -212,10 +212,15 @@ const SavedLogos = () => {
                 </div>
                 <div className="mt-3 flex gap-2">
                   <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Edit</button>
+                  <BrandFromAssetMenu
+                    asset={a}
+                    onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)}
+                    label="Use in brand kit"
+                    className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                  />
                   <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <Shuffle className="h-3.5 w-3.5" />
                   </button>
-                  <BrandFromAssetMenu asset={a} onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)} />
                   <button type="button" onClick={(e) => { e.stopPropagation(); void togglePublic(a); }} title={a?.meta?.public ? "Make private" : "Make public"} className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     {a?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
                   </button>
@@ -248,10 +253,15 @@ const SavedLogos = () => {
                 </div>
               </div>
               <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Edit</button>
+              <BrandFromAssetMenu
+                asset={a}
+                onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)}
+                label="Use in brand kit"
+                className="shrink-0 inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+              />
               <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Shuffle className="h-3.5 w-3.5" />
               </button>
-              <BrandFromAssetMenu asset={a} onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)} className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50" />
               <button type="button" onClick={(e) => { e.stopPropagation(); void togglePublic(a); }} title={a?.meta?.public ? "Make private" : "Make public"} className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 {a?.meta?.public ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
               </button>
