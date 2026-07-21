@@ -10,13 +10,14 @@ type Props = {
   asset: BrandableAsset;
   className?: string;
   onAssigned?: (projectId: string) => void;
+  label?: string;
 };
 
 /**
  * Small dropdown to turn a saved asset into a brand kit or attach it to an existing brand.
  * Renders a compact icon-button trigger by default.
  */
-export default function BrandFromAssetMenu({ asset, className, onAssigned }: Props) {
+export default function BrandFromAssetMenu({ asset, className, onAssigned, label }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -82,6 +83,7 @@ export default function BrandFromAssetMenu({ asset, className, onAssigned }: Pro
           className={className || "inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"}
         >
           <Package className="h-3.5 w-3.5" />
+          {label ? <span className="ml-1.5">{label}</span> : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 bg-white" onClick={(e) => e.stopPropagation()}>
