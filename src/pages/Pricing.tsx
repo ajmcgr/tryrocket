@@ -257,15 +257,3 @@ const Pricing = () => {
   );
 };
 
-export default Pricing;
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <SiteFooter />
-    </div>
-  );
-};
-
-export default Pricing;
