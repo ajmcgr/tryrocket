@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import {
   ArrowLeft, Sparkles, Palette, Type, MessageSquare, Layers, Shapes, Image as ImageIcon,
@@ -12,6 +12,7 @@ import { downloadCompleteBrandKit } from "@/lib/brandKitDownload";
 import { exportAsset } from "@/lib/exporters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 import ProjectNavigation from "@/components/ProjectNavigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -128,6 +129,8 @@ const BrandKitHub = () => {
   const [loading, setLoading] = useState(true);
   const [activeGroup, setActiveGroup] = useState<string>("brand");
   const { toast } = useToast();
+  const { isPro, loading: subLoading } = useSubscription();
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [shareOpen, setShareOpen] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
@@ -218,6 +221,14 @@ const BrandKitHub = () => {
 
   const downloadZip = async () => {
     if (!id) return;
+    if (!subLoading && !isPro) {
+      toast({
+        title: "Pro feature",
+        description: "Brand kit downloads are available on the Pro plan.",
+      });
+      navigate("/pricing");
+      return;
+    }
     if (!brandKitReady) {
       toast({ title: "Complete your brand kit first", description: "Add the remaining essentials, then download the complete kit." });
       return;
