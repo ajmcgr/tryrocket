@@ -165,19 +165,25 @@ export default function BrandGuidelines() {
         </div>
         <button
           onClick={downloadPdf}
-          disabled={busyPdf || loading}
+          disabled={busyPdf || loading || subLoading}
           className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50"
         >
           {busyPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           Download PDF
+          {!subLoading && !isPro && (
+            <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Pro</span>
+          )}
         </button>
         <button
           onClick={download}
-          disabled={busy || loading}
+          disabled={busy || loading || subLoading}
           className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           Download PNG
+          {!subLoading && !isPro && (
+            <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Pro</span>
+          )}
         </button>
       </div>
 
