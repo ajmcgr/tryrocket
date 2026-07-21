@@ -3,10 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from "react-router-do
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Pin, PinOff, Pencil, Trash2, Plus, PanelLeftClose, PanelLeft, MoreHorizontal, Zap, Sparkles, HelpCircle } from "lucide-react";
-import {
-  Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover";
+import { Pin, PinOff, Pencil, Trash2, Plus, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,12 +19,7 @@ export type Chat = {
   updated_at: string;
 };
 
-type Props = {
-  collapsed: boolean;
-  onToggle: () => void;
-};
-
-const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
+const ChatsSidebar = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const nav = useNavigate();
@@ -91,22 +83,6 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
     load();
   };
 
-  if (collapsed) {
-    return (
-      <aside className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-12 shrink-0 flex-col items-center border-r border-neutral-200 bg-white py-3">
-        <button onClick={onToggle} title="Expand chats" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
-          <PanelLeft className="h-4 w-4" />
-        </button>
-        <Link to="/create" title="New" className="mt-2 rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
-          <Plus className="h-4 w-4" />
-        </Link>
-        <div className="mt-auto">
-          <CreditsPopover compact />
-        </div>
-      </aside>
-    );
-  }
-
   const pinned = chats.filter(c => c.pinned);
   const recent = chats.filter(c => !c.pinned);
 
@@ -114,9 +90,6 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
     <aside className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
       <div className="flex items-center justify-between px-3 py-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Chats</span>
-        <button onClick={onToggle} title="Collapse" className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-100">
-          <PanelLeftClose className="h-4 w-4" />
-        </button>
       </div>
       <div className="px-3">
         <Link
@@ -140,9 +113,6 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
         {chats.length === 0 && (
           <p className="px-2 py-6 text-center text-xs text-neutral-400">No chats yet</p>
         )}
-      </div>
-      <div className="border-t border-neutral-200 p-3">
-        <CreditsPopover />
       </div>
     </aside>
   );
@@ -206,75 +176,3 @@ const ChatsSidebar = ({ collapsed, onToggle }: Props) => {
 };
 
 export default ChatsSidebar;
-
-function CreditsPopover({ compact = false }: { compact?: boolean }) {
-  const { user } = useAuth();
-  const [credits, setCredits] = useState<number | null>(null);
-  const [loading, setLoading] = useState<string | null>(null);
-  useEffect(() => {
-    if (!user) return;
-    const load = () => supabase.from("user_usage").select("*").eq("user_id", user.id).maybeSingle().then(({ data }: any) => {
-      if (!data) return;
-      setCredits((data.monthly_limit || 0) + (data.credits_extra || 0) - (data.credits_used || 0));
-    });
-    load();
-    const onRefresh = () => load();
-    window.addEventListener("credits:refresh", onRefresh);
-    return () => window.removeEventListener("credits:refresh", onRefresh);
-  }, [user]);
-  const packs = [
-    { id: "pack_500", label: "500 credits", price: "$5" },
-    { id: "pack_1500", label: "1,500 credits", price: "$10" },
-    { id: "pack_5000", label: "5,000 credits", price: "$25" },
-  ];
-  const checkout = async (product: string) => {
-    setLoading(product);
-    try {
-      const { data, error } = await (supabase as any).functions.invoke("stripe-checkout", { body: { product } });
-      if (error) throw error;
-      if (data?.url) window.location.href = data.url;
-    } catch (e) {
-      console.error(e);
-      setLoading(null);
-    }
-  };
-  const trigger = compact ? (
-    <button title="Credits" className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100">
-      <Sparkles className="h-4 w-4" />
-    </button>
-  ) : (
-    <button className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50">
-      <Sparkles className="h-4 w-4" /> Buy credits
-    </button>
-  );
-  return (
-    <Popover>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent side="top" align="start" className="w-72 rounded-xl border border-neutral-200 bg-white p-0 shadow-lg">
-        <div className="border-b border-neutral-100 px-4 py-3">
-          <p className="text-sm font-semibold text-neutral-900">{(credits ?? 0).toLocaleString()} credits left</p>
-          <p className="text-xs text-neutral-500">One-time top-up, never expires</p>
-        </div>
-        <div className="py-1">
-          {packs.map(p => (
-            <button
-              key={p.id}
-              onClick={() => checkout(p.id)}
-              disabled={!!loading}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-neutral-800 transition hover:bg-neutral-50 disabled:opacity-60"
-            >
-              <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> {p.label}</span>
-              <span className="text-neutral-500">{p.price}</span>
-            </button>
-          ))}
-        </div>
-        <Link to="/pricing" className="block border-t border-neutral-100 px-4 py-2.5 text-sm text-neutral-600 transition hover:bg-neutral-50">
-          Or upgrade your plan →
-        </Link>
-        <a href="mailto:alex@tryrocket.ai" className="flex items-center gap-2 border-t border-neutral-100 px-4 py-2.5 text-sm text-neutral-600 transition hover:bg-neutral-50">
-          <HelpCircle className="h-4 w-4" /> Support
-        </a>
-      </PopoverContent>
-    </Popover>
-  );
-}
