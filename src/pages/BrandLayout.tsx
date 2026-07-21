@@ -92,6 +92,19 @@ export default function BrandLayout() {
   return (
     <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-neutral-50 font-body">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-neutral-200 bg-white md:flex">
+        <div className="px-4 pt-4">
+          <button
+            onClick={downloadBrandKit}
+            disabled={zipping}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
+          >
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Download brand kit
+            {!subLoading && !isPro && (
+              <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Pro</span>
+            )}
+          </button>
+        </div>
         <div className="flex items-center gap-2 px-4 py-4">
           <div className="min-w-0 flex-1">
             {renaming ? (
@@ -136,19 +149,6 @@ export default function BrandLayout() {
             );
           })}
         </nav>
-        <div className="border-t border-neutral-200 p-3">
-          <button
-            onClick={downloadBrandKit}
-            disabled={zipping}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
-          >
-            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Download brand kit
-            {!subLoading && !isPro && (
-              <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Pro</span>
-            )}
-          </button>
-        </div>
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
