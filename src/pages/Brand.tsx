@@ -205,6 +205,9 @@ export default function Brand() {
         return false;
       };
       let logos = (pAssets || []).filter(Boolean).filter(isLogo);
+      // Only include designs the user explicitly saved (starred). Generated but
+      // un-saved chat outputs share the project_id but should not clutter the kit.
+      logos = logos.filter((a: any) => Boolean(a?.meta?.saved_at));
       // No cross-project fallback: only show what's actually in this brand kit.
       if (cancelled) return;
       setLogoAssets(logos);

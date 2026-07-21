@@ -275,7 +275,8 @@ export default function BrandHub() {
   ];
 
 
-  const projectDesignCount = (projectId: string) => allDesigns.filter((design) => design.project_id === projectId).length;
+  const projectDesignCount = (projectId: string) =>
+    allDesigns.filter((design) => design.project_id === projectId && Boolean(design?.meta?.saved_at)).length;
 
   // Pre-index designs by project once, so card rendering is O(P) not O(P*A).
   const designsByProject = useMemo(() => {
