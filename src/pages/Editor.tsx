@@ -1690,6 +1690,7 @@ const Editor = () => {
         fontStyle={el.fontWeight >= 600 ? "bold" : "normal"}
         fontFamily={el.fontFamily} align={el.align || "left"}
         rotation={el.rotation || 0}
+        visible={editingTextId !== el.id}
         onDblClick={() => setEditingTextId(el.id)}
         onDblTap={() => setEditingTextId(el.id)}
       />
