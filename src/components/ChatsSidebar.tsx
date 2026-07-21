@@ -89,7 +89,7 @@ const ChatsSidebar = () => {
   const newChatPath = ["/logos", "/icons"].includes(location.pathname) ? location.pathname : "/create";
 
   return (
-    <aside className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
+    <aside data-tour="chats-sidebar" className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
       <div className="px-3 pt-3">
         <Link
           to={newChatPath}
