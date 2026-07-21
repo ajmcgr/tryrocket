@@ -408,7 +408,7 @@ export default function BrandHub() {
                   to={`/projects/${selectedProject.id}/hub`}
                   className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50"
                 >
-                  <Download className="h-4 w-4" /> Download brand kit
+                  <Download className="h-4 w-4" /> Download
                 </Link>
               )}
               <Link to={createOnBrandHref} className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
@@ -458,7 +458,7 @@ export default function BrandHub() {
               to={`/projects/${selectedProject.id}/hub`}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover"
             >
-              <Download className="h-4 w-4" /> Download brand kit
+              <Download className="h-4 w-4" /> Download
             </Link>
           )}
         </section>
