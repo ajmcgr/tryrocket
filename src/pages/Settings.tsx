@@ -391,7 +391,7 @@ export const BillingSettings = () => {
           <div>
             <h2 className="text-base font-semibold">Billing</h2>
             <p className="mt-1 text-sm text-neutral-600">
-              Plan: <span className="font-medium capitalize">{usage?.plan || "free"}</span> · {remaining.toLocaleString()} credits remaining
+              Plan: <span className="font-medium">{usage?.plan === "growth" ? "Pro" : "Starter"}</span> · {remaining.toLocaleString()} Rocket Credits remaining
             </p>
             {sub?.status && <p className="mt-0.5 text-xs text-neutral-500">Status: {sub.status}{sub.cancel_at_period_end ? " (canceling)" : ""}</p>}
           </div>
@@ -401,14 +401,14 @@ export const BillingSettings = () => {
             </button>
           ) : (
             <button onClick={() => checkout("growth")} disabled={loading === "growth"} className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800">
-              {loading === "growth" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upgrade — $20/mo"}
+              {loading === "growth" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upgrade to Pro"}
             </button>
           )}
         </div>
 
         {usage?.plan !== "growth" && (
           <ul className="mt-5 space-y-1.5 text-sm text-neutral-700">
-            {["7-day free trial", "3,000 credits / month", "Unlimited saved designs", "Export tools", "Priority generation", "Early access to new generators"].map((f) => (
+            {["Everything serious founders need to build and grow their brand.", "Generous monthly Rocket Credits", "Unlimited saved logos & brand kits", "Full export suite (PNG, SVG, PDF, ZIP)", "Priority generation", "Team workspaces (multi-seat)", "Early access to new generators"].map((f) => (
               <li key={f} className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-neutral-900" /> {f}</li>
             ))}
           </ul>
