@@ -116,6 +116,7 @@ export default function BrandGuidelines() {
   const fontMeta = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === currentFont.toLowerCase());
 
   const download = async () => {
+    if (requirePro()) return;
     if (!pageRef.current) return;
     setBusy(true);
     try {
