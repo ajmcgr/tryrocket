@@ -998,7 +998,11 @@ const Generate = () => {
   })();
   return (
     <div className={`flex min-h-[calc(100vh-4rem)] w-full flex-col ${isChatView ? "px-5 py-5 lg:px-8" : "mx-auto max-w-5xl items-center px-5 py-8 sm:px-8"}`}>
-      {isChatView ? (
+      {chatId && !chatData ? (
+        <div className="flex min-h-[40vh] w-full items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+        </div>
+      ) : isChatView ? (
         <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
           {/* Left: chat panel */}
           <div className="flex h-[calc(100vh-8rem)] flex-col lg:sticky lg:top-20">
