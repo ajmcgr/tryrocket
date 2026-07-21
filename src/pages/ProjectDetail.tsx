@@ -324,7 +324,7 @@ const ProjectDetail = () => {
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{project.name}</h1>
         <div className="flex flex-wrap gap-2">
-          <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/5 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/10"><Download className="h-4 w-4" /> Download brand kit</Link>
+          <Link to={`/projects/${id}/hub`} className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/5 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/10"><Download className="h-4 w-4" /> Download</Link>
           <button onClick={openDesignPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add design</button>
           <button onClick={openPicker} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm hover:bg-neutral-50"><Plus className="h-4 w-4" /> Add brand work</button>
           {missingKit().length > 0 && (
