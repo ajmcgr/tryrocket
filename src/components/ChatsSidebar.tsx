@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from "react-router-do
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Pin, PinOff, Pencil, Trash2, Plus, MoreHorizontal } from "lucide-react";
+import { Pin, PinOff, Pencil, Trash2, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
