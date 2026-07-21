@@ -135,6 +135,7 @@ export default function BrandGuidelines() {
   };
 
   const downloadPdf = async () => {
+    if (requirePro()) return;
     if (!pageRef.current) return;
     setBusyPdf(true);
     try {
