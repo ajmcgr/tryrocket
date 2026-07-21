@@ -86,11 +86,13 @@ const ChatsSidebar = () => {
   const pinned = chats.filter(c => c.pinned);
   const recent = chats.filter(c => !c.pinned);
 
+  const newChatPath = ["/logos", "/icons"].includes(location.pathname) ? location.pathname : "/create";
+
   return (
     <aside className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
       <div className="px-3 pt-3">
         <Link
-          to="/create"
+          to={newChatPath}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
         >
           <Plus className="h-4 w-4" /> New
