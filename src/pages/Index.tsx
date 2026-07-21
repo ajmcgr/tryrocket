@@ -420,67 +420,55 @@ const Index = () => {
       <section id="pricing" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-medium tracking-tight sm:text-5xl">Simple, credit-based pricing</h2>
-            <p className="mt-4 text-lg text-neutral-600">Try any plan free for 7 days. Cancel anytime.</p>
+            <h2 className="text-4xl font-medium tracking-tight sm:text-5xl">Pricing built for founders</h2>
+            <p className="mt-4 text-lg text-neutral-600">Start free. Upgrade when your brand is ready to scale.</p>
           </div>
           <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Starter */}
             <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
-              <div className="absolute -top-3 right-6 rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">
-                7-day free trial
-              </div>
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Starter</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-medium tracking-tight">$12</span>
-                <span className="text-neutral-500">/month</span>
+                <span className="text-5xl font-medium tracking-tight">Free</span>
               </div>
-              <p className="mt-2 text-sm text-neutral-600">Free for 7 days, then $12/month.</p>
+              <p className="mt-2 text-sm text-neutral-600">Everything you need to create your first startup brand.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {["500 credits / month", "All output types", "Save & edit brands", "Full project history"].map((f) => (
+                {[
+                  "Monthly Rocket Credits to design your first logo",
+                  "Logo & Icon Designer",
+                  "Brand Kit essentials",
+                  "Full template library",
+                  "PNG & SVG downloads",
+                ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
                     <span className="text-neutral-700">{f}</span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 border-t border-neutral-200/80 pt-6">
-                <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {[
-                    "Logo/Icon Files",
-                    "Palette",
-                    "Fonts",
-                    "Brand Book",
-                  ].map((item) => (
-                    <span key={item} className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
               <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to="/signup?next=%2Fpricing%3Fbuy%3Dstarter">Start 7-day free trial</Link>
+                <Link to="/signup">Get Started Free</Link>
               </Button>
             </div>
 
             {/* Pro */}
             <div className="relative rounded-2xl border border-neutral-200 bg-neutral-100 p-8 text-neutral-900">
               <div className="absolute -top-3 right-6 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white">
-                7-day free trial
+                Most popular
               </div>
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
               <div className="mt-3 flex items-baseline gap-1">
                 <span className="text-5xl font-medium tracking-tight">$20</span>
                 <span className="text-neutral-500">/month</span>
               </div>
-              <p className="mt-2 text-sm text-neutral-600">For founders shipping fast.</p>
+              <p className="mt-2 text-sm text-neutral-600">Everything serious founders need to build and grow their brand.</p>
               <ul className="mt-6 space-y-3 text-sm">
                 {[
-                  "3,000 credits / month",
-                  "Unlimited saved designs",
-                  "Export tools",
+                  "Generous monthly Rocket Credits",
+                  "Unlimited saved logos & brand kits",
+                  "Full export suite (PNG, SVG, PDF, ZIP)",
                   "Priority generation",
-                  "Full design history",
+                  "Team workspaces (multi-seat)",
+                  "Brand Book & guideline export",
                   "Early access to new generators",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2">
@@ -489,23 +477,8 @@ const Index = () => {
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 border-t border-neutral-200/80 pt-6">
-                <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Everything you can create</div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {[
-                    "Logo/Icon Files",
-                    "Palette",
-                    "Fonts",
-                    "Brand Book",
-                  ].map((item) => (
-                    <span key={item} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-700 ring-1 ring-neutral-200">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
               <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to="/signup?next=%2Fpricing%3Fbuy%3Dgrowth">Start 7-day free trial</Link>
+                <Link to="/signup?next=%2Fpricing%3Fbuy%3Dgrowth">Upgrade to Pro</Link>
               </Button>
             </div>
           </div>

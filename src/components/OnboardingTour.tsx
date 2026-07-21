@@ -16,63 +16,45 @@ const STORAGE_KEY = "rocket.onboarding.v1";
 const STEPS: Step[] = [
   {
     title: "Welcome to Rocket",
-    body: "A quick tour of how to turn your idea into a logo, brand kit, and launch-ready designs.",
+    body: "Rocket helps founders build a complete startup brand through a simple step-by-step workflow.",
     placement: "center",
     cta: "Start tour",
   },
   {
-    selector: '[data-tour="nav-create"]',
-    title: "Start with Home",
-    body: "Your launchpad. Start a new logo, open the Wizard, or jump straight into the Logo Designer.",
-    placement: "bottom",
-  },
-  {
-    selector: '[data-tour="nav-wizard"]',
-    title: "Guided Wizard",
-    body: "Describe your company and let Rocket generate a full set of logo directions to pick from.",
-    placement: "bottom",
-  },
-  {
     selector: '[data-tour="nav-logos"]',
-    title: "Logo Designer",
-    body: "Generate precise logo styles with a dedicated prompt. Pick a style, get options, and save your favorites.",
+    title: "Design your logo",
+    body: "Start by creating a professional logo for your company. Explore multiple concepts and choose the direction you like best.",
     placement: "bottom",
   },
   {
-    selector: '[data-tour="nav-templates"]',
-    title: "Templates",
-    body: "Browse hundreds of logo and icon templates. Edit any one in a single click.",
-    placement: "bottom",
-  },
-  {
-    selector: '[data-tour="nav-saved"]',
-    title: "Saved Designs",
-    body: "Everything you manually save from generation, templates, or the editor lives here for easy access.",
-    placement: "bottom",
-  },
-  {
-    selector: '[data-tour="nav-editor"]',
-    title: "Refine in Editor",
-    body: "Tweak colors, text, layout, and export in any format. Your editor files open in their own window.",
+    selector: '[data-tour="nav-icons"]',
+    title: "Create matching icons",
+    body: "Generate app icons, favicons and symbols that complement your chosen logo.",
     placement: "bottom",
   },
   {
     selector: '[data-tour="nav-brand"]',
-    title: "Brand Kit",
-    body: "Bundle logos, colors, type, and assets into a brand kit you can share or download.",
+    title: "Build your brand",
+    body: "Use your selected logo and icon to create a complete brand identity with colours, typography and branded assets.",
     placement: "bottom",
   },
   {
-    selector: '[data-tour="nav-notifications"]',
-    title: "Stay in the loop",
-    body: "Generated designs, exports, invites, and billing updates all surface here. Click the bell anytime.",
+    selector: '[data-tour="nav-editor"]',
+    title: "Refine your designs",
+    body: "Edit every generated design before downloading.",
     placement: "bottom",
   },
   {
-    title: "You're set",
-    body: "Jump into the Logo Designer and create your first brand mark. Replay this tour anytime from Settings.",
+    selector: '[data-tour="nav-brand"]',
+    title: "Export everything",
+    body: "Download your finished brand assets ready to use everywhere.",
+    placement: "bottom",
+  },
+  {
+    title: "You're ready",
+    body: "Let's design your first logo. You can replay this tour anytime from Settings.",
     placement: "center",
-    cta: "Start creating",
+    cta: "Open Logo Designer",
   },
 ];
 
@@ -149,7 +131,7 @@ const OnboardingTour = () => {
   const next = () => {
     if (last) {
       finish();
-      nav("/create");
+      nav("/logos");
     } else setIdx(i => i + 1);
   };
 
