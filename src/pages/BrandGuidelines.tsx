@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Download, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
@@ -9,6 +9,7 @@ import { defaultLogotypeState, LOGOTYPE_FONTS, loadGoogleFont, type LogotypeStat
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { loadBrandMeta } from "@/lib/brandMeta";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const supabase = _sb as any;
 
