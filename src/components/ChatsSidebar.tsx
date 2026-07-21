@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from "react-router-do
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Pin, PinOff, Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { Pin, PinOff, Pencil, Trash2, Plus, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,6 +88,14 @@ const ChatsSidebar = () => {
 
   return (
     <aside className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
+      <div className="px-3 pt-3">
+        <Link
+          to="/create"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+        >
+          <Plus className="h-4 w-4" /> New
+        </Link>
+      </div>
       <div className="flex-1 overflow-y-auto px-2 py-3">
         {pinned.length > 0 && (
           <Section label="Pinned">
