@@ -91,13 +91,11 @@ export default function BrandGuidelines() {
   }, [project, projectId]);
 
   const baseState = useMemo<LogotypeState>(() => {
-    const base = logoAsset?.editor_state?.kind === "logotype"
-      ? (logoAsset.editor_state as LogotypeState)
-      : defaultLogotypeState(project?.name || "Brand");
-    const meta = loadBrandMeta(projectId);
-    const font = meta.font || base.font;
-    return { ...base, font, color: brandColor };
-  }, [logoAsset, project, brandColor, projectId]);
+    if (logoAsset?.editor_state?.kind === "logotype") {
+      return logoAsset.editor_state as LogotypeState;
+    }
+    return defaultLogotypeState(project?.name || "Brand");
+  }, [logoAsset, project]);
 
   const isDark = luminance(brandColor) < 0.4;
   const onBrandText = isDark ? "#ffffff" : "#0A0A0A";
@@ -166,7 +164,7 @@ export default function BrandGuidelines() {
         <button
           onClick={downloadPdf}
           disabled={busyPdf || loading || subLoading}
-          className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand-hover disabled:opacity-50"
         >
           {busyPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           Download PDF
