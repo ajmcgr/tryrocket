@@ -37,12 +37,26 @@ function shade(hex: string, amount: number) {
 export default function BrandGuidelines() {
   const { id: projectId } = useParams();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isPro, loading: subLoading } = useSubscription();
   const [project, setProject] = useState<any>(null);
   const [logoAsset, setLogoAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyPdf, setBusyPdf] = useState(false);
   const pageRef = useRef<HTMLDivElement | null>(null);
+
+  const requirePro = () => {
+    if (!subLoading && !isPro) {
+      toast({
+        title: "Pro feature",
+        description: "Brand Book downloads are available on the Pro plan. Upgrade to download PDF and PNG exports.",
+      });
+      navigate("/pricing");
+      return true;
+    }
+    return false;
+  };
 
   useEffect(() => {
     if (!projectId) return;
