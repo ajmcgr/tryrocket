@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles as SparklesIcon, Send, Image as ImageIcon, Shuffle, Minus, Sticker, Palette, PenTool, Box, Smile, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import ChatsPanelLayout from "@/components/ChatsPanelLayout";
 
 const STYLES = [
   { id: "auto", label: "Auto", icon: Shuffle, suffix: "" },
@@ -46,6 +47,7 @@ const IconDesigner = () => {
   };
 
   return (
+    <ChatsPanelLayout>
     <div className="relative flex min-h-[calc(100vh-3.5rem)] flex-col">
       {/* Centered hero */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 pb-40 text-center">
@@ -132,6 +134,7 @@ const IconDesigner = () => {
         </div>
       </form>
     </div>
+    </ChatsPanelLayout>
   );
 };
 
