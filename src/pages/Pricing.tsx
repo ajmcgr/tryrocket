@@ -103,7 +103,8 @@ const Pricing = () => {
             <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Starter</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-semibold tracking-tight">Free</span>
+                <span className="text-5xl font-semibold tracking-tight">$12</span>
+                <span className="text-sm text-neutral-500">/month</span>
               </div>
               <p className="mt-2 text-sm text-neutral-600">Everything you need to create your first startup brand.</p>
               <ul className="mt-6 space-y-3 text-sm">
@@ -115,7 +116,7 @@ const Pricing = () => {
                 ))}
               </ul>
               <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to={user ? "/create" : "/signup"}>Get Started Free</Link>
+                <Link to={user ? "/settings/billing" : "/signup"}>Start 7-day free trial</Link>
               </Button>
             </div>
 
@@ -240,10 +241,10 @@ const Pricing = () => {
       <section className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-4xl px-6 py-24 text-center">
           <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Design your startup brand today</h2>
-          <p className="mx-auto mt-4 max-w-xl text-neutral-600">Start with the free Starter plan and upgrade to Pro whenever you're ready.</p>
+          <p className="mx-auto mt-4 max-w-xl text-neutral-600">Start with a 7-day free trial on any plan. Cancel anytime.</p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg" className="bg-brand text-white hover:bg-brand/90">
-              <Link to={user ? "/create" : "/signup"}>Get Started Free</Link>
+              <Link to={user ? "/create" : "/signup"}>Start with Starter</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link to={user ? "/settings/billing" : "/signup?next=%2Fpricing%3Fbuy%3Dgrowth"}>Upgrade to Pro</Link>
