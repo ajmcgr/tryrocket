@@ -9,6 +9,7 @@ import {
   ArrowUpDown,
   Star,
   Shuffle,
+  PenTool,
 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
