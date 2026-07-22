@@ -4,7 +4,9 @@ import { Download, Loader2, X } from "lucide-react";
 import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng, logotypeToSvg } from "@/components/Logotype";
+import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
+import { isCanvasAsset } from "@/lib/canvasAsset";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -14,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
-import { pickLogoColor, isDarkBg, silhouetteImage } from "@/lib/logoContrast";
+import { pickLogoColor, isDarkBg, silhouetteImage, transparentLogo } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -76,19 +78,21 @@ function silhouetteDataUrl(img: HTMLImageElement, color: string): string {
 }
 
 function useImageVariants(url: string | undefined) {
-  const [variants, setVariants] = useState<{ black?: string; white?: string; hasAlpha: boolean } | null>(null);
+  const [variants, setVariants] = useState<{ transparent?: string; black?: string; white?: string; hasAlpha: boolean } | null>(null);
   useEffect(() => {
     if (!url) { setVariants(null); return; }
     let cancelled = false;
     (async () => {
       try {
-        const [black, white] = await Promise.all([
+        const [transparent, black, white] = await Promise.all([
+          transparentLogo(url),
           silhouetteImage(url, "#0A0A0A"),
           silhouetteImage(url, "#FFFFFF"),
         ]);
         if (cancelled) return;
         setVariants({
-          hasAlpha: black.hasAlpha,
+          hasAlpha: transparent.hasTransparency || black.hasAlpha,
+          transparent: transparent.url,
           black: black.url,
           white: white.url,
         });
@@ -234,7 +238,8 @@ export default function Brand() {
     return defaultLogotypeState(project?.name || logoAsset?.title || "Brand");
   }, [logoAsset, project]);
 
-  const logoIsImage = !logoAsset?.editor_state && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
+  const logoIsCanvas = isCanvasAsset(logoAsset);
+  const logoIsImage = !logoAsset?.editor_state?.kind && !logoIsCanvas && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
   const logoImageUrl = logoAsset?.image_url || logoAsset?.thumbnail_url;
   const imageVariants = useImageVariants(logoIsImage ? logoImageUrl : undefined);
 
@@ -334,7 +339,8 @@ export default function Brand() {
                 {cards.map((v) => {
                   let src = logoImageUrl as string;
                   if (imageVariants?.hasAlpha) {
-                    if (v.key === "black") src = imageVariants.black || src;
+                    if (v.key === "regular") src = imageVariants.transparent || src;
+                    else if (v.key === "black") src = imageVariants.black || src;
                     else if (v.key === "white" || v.key === "inverse") src = imageVariants.white || src;
                     // Inverse renders on the brand color — pick whichever
                     // silhouette contrasts against the brand color so a light
@@ -381,6 +387,23 @@ export default function Brand() {
                   );
                 })}
               </div>
+            </div>
+          ) : logoIsCanvas ? (
+            <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
+              {cards.map((v) => (
+                <div
+                  key={v.key}
+                  className={`relative overflow-hidden rounded-2xl ${v.border ? `border ${v.border}` : ""} shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)]`}
+                  style={{ backgroundColor: v.bg }}
+                >
+                  <div className="flex aspect-[16/9] items-center justify-center px-8 py-6">
+                    <CanvasAssetPreview elements={logoAsset.editor_state as any} className="h-full w-full" background="transparent" />
+                  </div>
+                  <div className="pointer-events-none absolute left-4 top-4">
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${v.chipClass}`}>{v.label}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
@@ -471,6 +494,8 @@ export default function Brand() {
                       <div className="flex aspect-square items-center justify-center bg-neutral-50 p-3">
                         {a?.editor_state?.kind === "logotype" ? (
                           <Logotype state={a.editor_state} fit="contain" />
+                        ) : isCanvasAsset(a) ? (
+                          <CanvasAssetPreview elements={a.editor_state as any} className="h-full w-full" background="transparent" />
                         ) : (a.image_url || a.thumbnail_url) ? (
                           <img src={a.image_url || a.thumbnail_url} alt="" className="max-h-full max-w-full object-contain" loading="lazy" />
                         ) : null}
