@@ -974,7 +974,28 @@ const Generate = () => {
 
   useEffect(() => {
     if (autoRan.current) return;
-    if (params.get("prompt") && user) { autoRan.current = true; submit(); }
+    if (params.get("prompt") && user) {
+      autoRan.current = true;
+      (async () => {
+        await submit();
+        // If generation failed (busy/rate-limited/etc.) and we never landed in
+        // a chat, bounce back to the referring designer screen (e.g. /logos,
+        // /icons) rather than stranding the user on the empty "Create a
+        // design" hub.
+        if (typeof window !== "undefined") {
+          const currentParams = new URLSearchParams(window.location.search);
+          const succeeded = !!currentParams.get("chat");
+          if (!succeeded) {
+            const ref = document.referrer;
+            const sameOrigin = ref && ref.startsWith(window.location.origin);
+            const from = sameOrigin ? new URL(ref).pathname : "";
+            if (from && !from.startsWith("/create")) {
+              nav(-1);
+            }
+          }
+        }
+      })();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
