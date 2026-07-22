@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Logotype } from "@/components/Logotype";
+import { Logotype, logotypeToPng, logotypeToSvg } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { AssetGridSkeleton } from "@/components/Skeletons";
@@ -18,6 +18,7 @@ import {
   Shuffle,
   Trash2,
   PenTool,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -107,6 +108,35 @@ const SavedLogos = () => {
 
   const edit = (a: any) => window.open(`/editor?id=${a.id}`, "_blank", "noopener,noreferrer");
   const remix = (a: any) => navigate(`/create?remix=${a.id}`);
+  const download = async (a: any) => {
+    const safeName = (a.title || "logo").replace(/[^\w\-]+/g, "_") || "logo";
+    try {
+      if (a?.editor_state?.kind === "logotype") {
+        const blob = await logotypeToPng(a.editor_state, 2048);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url; link.download = `${safeName}.png`;
+        document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return;
+      }
+      const src = a.image_url || a.thumbnail_url;
+      if (src) {
+        const res = await fetch(src, { mode: "cors" });
+        const blob = await res.blob();
+        const ext = (blob.type.split("/")[1] || "png").split("+")[0];
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url; link.download = `${safeName}.${ext}`;
+        document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return;
+      }
+      toast({ title: "Nothing to download", description: "Open in editor to export this design.", variant: "destructive" });
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
+    }
+  };
   const trash = async (a: any) => {
     await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", a.id);
     setItems((prev) => prev.filter((x) => x.id !== a.id));
@@ -212,6 +242,9 @@ const SavedLogos = () => {
                   {a?.meta?.public ? <Globe className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" /> : null}
                 </div>
                 <div className="mt-3 flex gap-2">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void download(a); }} title="Download" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
                   <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} title="Edit" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <PenTool className="h-3.5 w-3.5" />
                   </button>
@@ -254,6 +287,9 @@ const SavedLogos = () => {
                   {(a.asset_type || "Design").replace(/_/g, " ")} · {new Date(a.updated_at || a.created_at).toLocaleDateString()}
                 </div>
               </div>
+              <button type="button" onClick={(e) => { e.stopPropagation(); void download(a); }} title="Download" className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                <Download className="h-3.5 w-3.5" />
+              </button>
               <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} title="Edit" className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <PenTool className="h-3.5 w-3.5" />
               </button>
