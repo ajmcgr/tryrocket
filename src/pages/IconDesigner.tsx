@@ -37,7 +37,7 @@ const IconDesigner = () => {
     const finalPrompt = autoPrompt
       ? `${t}. Centered, crisp, single-object icon, transparent background, no text.${styleSuffix}`
       : styleSuffix ? `${t}.${styleSuffix}` : t;
-    const search = new URLSearchParams({ prompt: finalPrompt, asset_type: "icon", count: "4" });
+    const search = new URLSearchParams({ prompt: finalPrompt, asset_type: "icon", count: "4", from: "/icons" });
     nav(`/create?${search.toString()}`);
   };
 

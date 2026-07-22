@@ -483,6 +483,13 @@ const Generate = () => {
   const nav = useNavigate();
   const autoRan = useRef(false);
 
+  const generationReturnPath = () => {
+    const from = params.get("from");
+    if (from && /^\/(logos|icons|wizard|templates|saved)$/.test(from)) return from;
+    const currentType = params.get("asset_type") || assetType;
+    return currentType === "icon" ? "/icons" : "/logos";
+  };
+
   useEffect(() => {
     if (!loading) return;
     const t = setInterval(() => setMsgIdx((i) => (i + 1) % MESSAGES.length), 1800);
@@ -973,6 +980,10 @@ const Generate = () => {
   };
 
   useEffect(() => {
+    if (!chatId && !params.get("prompt")) {
+      nav(generationReturnPath(), { replace: true });
+      return;
+    }
     if (autoRan.current) return;
     if (params.get("prompt") && user) {
       autoRan.current = true;
@@ -986,12 +997,7 @@ const Generate = () => {
           const currentParams = new URLSearchParams(window.location.search);
           const succeeded = !!currentParams.get("chat");
           if (!succeeded) {
-            const ref = document.referrer;
-            const sameOrigin = ref && ref.startsWith(window.location.origin);
-            const from = sameOrigin ? new URL(ref).pathname : "";
-            if (from && !from.startsWith("/create")) {
-              nav(-1);
-            }
+            nav(generationReturnPath(), { replace: true });
           }
         }
       })();
@@ -1228,213 +1234,9 @@ const Generate = () => {
             )}
           </div>
         </div>
-      ) : showFirstBrandOnboarding ? (
-        <section className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center py-12">
-          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-sm sm:p-10">
-            <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-              <Sparkles className="h-3.5 w-3.5" /> Start your brand
-            </div>
-            <h1 className="mt-5 text-4xl font-semibold tracking-tight text-neutral-900">What’s your brand called?</h1>
-            <p className="mt-3 max-w-md text-sm leading-6 text-neutral-600">
-              Rocket will create a home for your brand, then help you make its first logo. Every future design can build on the style you choose.
-            </p>
-            <form onSubmit={startFirstBrand} className="mt-7 space-y-3">
-              <label htmlFor="first-brand-name" className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Brand name</label>
-              <input
-                id="first-brand-name"
-                autoFocus
-                value={brandName}
-                onChange={(event) => setBrandName(event.target.value)}
-                placeholder="e.g. TryLaunch"
-                disabled={startingBrand}
-                className="h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-base text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
-              />
-              <button
-                type="submit"
-                disabled={!brandName.trim() || startingBrand}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                {startingBrand ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Create your logo <ArrowRight className="h-4 w-4" /></>}
-              </button>
-            </form>
-            <button type="button" onClick={skipFirstBrandOnboarding} className="mt-4 w-full text-center text-xs font-medium text-neutral-500 transition hover:text-neutral-900">
-              I’ll create something without a brand first
-            </button>
-          </div>
-        </section>
       ) : (
-        <div className="flex w-full flex-1 flex-col items-center justify-center">
-          <section className="w-full rounded-[28px] border border-white/80 bg-white/75 p-5 shadow-[0_24px_70px_-38px_hsl(var(--foreground)/0.35)] backdrop-blur sm:p-8">
-      <div className="mb-8 text-center">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-          <Sparkles className="h-3.5 w-3.5" />
-          Rocket studio
-        </div>
-        <h1 className="text-4xl font-semibold tracking-tight text-neutral-900">Create a design</h1>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-500">
-          Start with a logo, icon or template. Rocket turns the direction you choose into a reusable brand system.
-        </p>
-      </div>
-
-      {brandProjects.length > 0 && (
-        <div className="mb-4 flex w-full flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand">Brand</div>
-            <div className="mt-0.5 text-sm font-medium text-neutral-900">
-              {selectedProject ? `Using ${selectedProject.name}` : "Choose a brand for this design"}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {selectedProject && <Link to={`/brands/${selectedProject.id}`} className="text-xs font-medium text-neutral-600 hover:text-neutral-900">View brand</Link>}
-            <select
-              value={projectId || ""}
-              onChange={(event) => chooseBrandProject(event.target.value)}
-              className="max-w-[200px] rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 outline-none hover:border-neutral-300"
-              aria-label="Choose brand"
-            >
-              <option value="">No brand selected</option>
-              {brandProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-            </select>
-          </div>
-        </div>
-      )}
-
-      {projectBrandContext && (
-        <div className="mb-4 w-full">
-          <BrandContextStrip ctx={projectBrandContext} compact />
-        </div>
-      )}
-
-      {directionDesign && (
-        <div className="mb-4 flex w-full items-center gap-3 rounded-2xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm">
-          <Sparkles className="h-4 w-4 shrink-0 text-brand" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-neutral-900">Style: {directionDesign.title || "Untitled design"}</p>
-            <p className="mt-0.5 text-xs text-neutral-600">New work will follow this visual direction.</p>
-          </div>
-          <Link to={assetHref(directionDesign)} className="shrink-0 text-xs font-medium text-neutral-700 hover:text-neutral-950">Review</Link>
-          <button
-            type="button"
-            onClick={() => setIgnoreSavedStyle(true)}
-            className="shrink-0 text-xs text-neutral-500 hover:text-neutral-900"
-          >
-            Use without style
-          </button>
-        </div>
-      )}
-
-      <div className="mb-4 grid w-full gap-2 sm:grid-cols-3">
-        <button
-          type="button"
-          onClick={() => {
-            setAssetType("logo");
-            if (!prompt.trim()) setPrompt(`A distinctive logo and matching logotype${selectedProject?.name ? ` for ${selectedProject.name}` : ""}`);
-          }}
-          className={`rounded-xl border p-3 text-left transition ${assetType === "logo" ? "border-brand bg-brand/5 ring-1 ring-brand/20" : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"}`}
-        >
-          <div className="text-sm font-semibold text-neutral-900">Logo identity</div>
-          <p className="mt-1 text-xs leading-5 text-neutral-500">Logo, logotype and a clear visual direction.</p>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setAssetType("icon");
-            if (!prompt.trim()) setPrompt(`A distinctive app icon${selectedProject?.name ? ` for ${selectedProject.name}` : ""}`);
-          }}
-          className={`rounded-xl border p-3 text-left transition ${assetType === "icon" ? "border-brand bg-brand/5 ring-1 ring-brand/20" : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"}`}
-        >
-          <div className="text-sm font-semibold text-neutral-900">Icon</div>
-          <p className="mt-1 text-xs leading-5 text-neutral-500">A reusable icon for product, app and favicon use.</p>
-        </button>
-        <Link
-          to="/templates"
-          className="rounded-xl border border-neutral-200 bg-white p-3 text-left transition hover:border-neutral-300 hover:bg-neutral-50"
-        >
-          <div className="text-sm font-semibold text-neutral-900">Start from a template</div>
-          <p className="mt-1 text-xs leading-5 text-neutral-500">Browse public starting points, then customize them.</p>
-        </Link>
-      </div>
-
-      <form onSubmit={submit} className="w-full">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
-          <div className="flex items-start gap-2">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g. A logo for trylaunch.ai"
-              rows={3}
-              disabled={loading}
-              className="flex-1 resize-none rounded-xl px-3 py-2 text-sm outline-none placeholder:text-neutral-400 disabled:opacity-60"
-              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit(); }}
-            />
-            <button
-              type="submit"
-              disabled={!prompt.trim() || loading}
-              className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-            </button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 px-2 pb-1 pt-2">
-            <button
-              type="button"
-              onClick={() => setShowCreateOptions((open) => !open)}
-              className="text-xs font-medium text-neutral-500 hover:text-neutral-900"
-            >
-              {showCreateOptions ? "Fewer options" : "More options"}
-            </button>
-            {assetType && (
-              <button
-                type="button"
-                onClick={() => setAssetType(null)}
-                className="rounded-full bg-brand/10 px-2 py-1 text-xs font-medium text-brand hover:bg-brand/15"
-              >
-                {ASSET_CHIPS.find((item) => item.id === assetType)?.label || "Design type"} ×
-              </button>
-            )}
-          </div>
-          {showCreateOptions && (
-            <div className="flex flex-wrap items-center gap-1.5 border-t border-neutral-100 px-2 pb-1 pt-2">
-              <span className="mr-1 text-xs text-neutral-500">Create</span>
-              {QUICK_STARTS.map((c) => {
-                const chip = ASSET_CHIPS.find((item) => item.id === c.id)!;
-                return (
-                  <button
-                    type="button"
-                    key={c.id}
-                    onClick={() => setAssetType(assetType === c.id ? null : c.id)}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition ${assetType === c.id ? "border-brand bg-brand text-brand-foreground" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"}`}
-                  >
-                    <chip.Icon className="h-3 w-3" /> {c.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </form>
-
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-xs text-neutral-500">
-        <span>Rocket creates at least 12 directions, then keeps future work consistent with the style you choose.</span>
-        <Link to="/templates" className="font-medium text-neutral-700 underline-offset-4 hover:text-neutral-950 hover:underline">Browse templates</Link>
-      </div>
-
-      {loading ? (
-        <div className="mt-6 text-sm text-neutral-500">{MESSAGES[msgIdx]}</div>
-      ) : (
-        <div className="mt-8 flex w-full flex-wrap justify-center gap-2">
-          {SAMPLE_PROMPTS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setPrompt(s)}
-              className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-          </section>
+        <div className="flex min-h-[50vh] w-full flex-col items-center justify-center gap-3 text-sm text-neutral-500">
+          <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
         </div>
       )}
 

@@ -52,7 +52,7 @@ const LogoDesigner = () => {
     const finalPrompt = autoPrompt
       ? `${t}. A polished, professional logo suitable for a real brand — crisp vector aesthetic, transparent background, no mockups.${styleSuffix}`
       : styleSuffix ? `${t}.${styleSuffix}` : t;
-    const search = new URLSearchParams({ prompt: finalPrompt, asset_type: "logo", count: "4" });
+    const search = new URLSearchParams({ prompt: finalPrompt, asset_type: "logo", count: "4", from: "/logos" });
     if (refImage) search.set("has_reference", "1");
     nav(`/create?${search.toString()}`);
   };
