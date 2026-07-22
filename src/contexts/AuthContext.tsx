@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { seedDemoBrandOnce } from "@/lib/seedDemoBrand";
 
 type Ctx = { user: User | null; session: Session | null; loading: boolean; signOut: () => Promise<void> };
 const AuthContext = createContext<Ctx>({ user: null, session: null, loading: true, signOut: async () => {} });
@@ -14,10 +15,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const ref = new URLSearchParams(window.location.search).get("ref");
       if (ref) localStorage.setItem("rocket:ref", ref);
     } catch {}
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s);
+      if (s?.user?.id) {
+        setTimeout(() => { seedDemoBrandOnce(s.user!.id); }, 0);
+      }
+    });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
+      if (data.session?.user?.id) {
+        setTimeout(() => { seedDemoBrandOnce(data.session!.user.id); }, 0);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
