@@ -363,20 +363,16 @@ export default function Brand() {
                 const state = variants[v.key];
                 const isDark = v.bg !== "#FFFFFF";
                 return (
-                  <div
-                    key={v.key}
-                    className={`relative overflow-hidden rounded-2xl ${v.border ? `border ${v.border}` : ""} shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)]`}
-                    style={{ backgroundColor: v.bg }}
-                  >
-                    <div className="flex aspect-[16/9] items-center justify-center px-10">
-                      <Logotype state={state} fit="contain" />
-                    </div>
-                    <div className="pointer-events-none absolute left-4 top-4">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${v.chipClass}`}>
-                        {v.label}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                  <div key={v.key} className="flex flex-col gap-2">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">{v.label}</div>
+                    <div
+                      className={`relative overflow-hidden rounded-2xl ${v.border ? `border ${v.border}` : ""} shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)]`}
+                      style={{ backgroundColor: v.bg }}
+                    >
+                      <div className="flex aspect-[16/9] items-center justify-center px-10">
+                        <Logotype state={state} fit="contain" />
+                      </div>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm outline-none transition ${
@@ -430,6 +426,7 @@ export default function Brand() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 );
