@@ -127,16 +127,17 @@ export default function SocialIcons() {
         supabase.from("projects").select("id,name,brand_color").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
-          .select("id,title,asset_type,editor_state,image_url,created_at")
+          .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
           .eq("project_id", projectId)
-          .in("asset_type", ["logo", "logotype", "wordmark"])
-          .order("created_at", { ascending: true })
-          .limit(50),
+          .order("created_at", { ascending: false })
+          .limit(100),
       ]);
       if (cancelled) return;
       setProject(proj || null);
-      const withState = (assets || []).find((a: any) => a.editor_state?.kind === "logotype");
-      setLogoAsset(withState || (assets || [])[0] || null);
+      // Mirror the Brand Kit filter: only designs the user explicitly saved.
+      const kit = (assets || []).filter((a: any) => Boolean(a?.meta?.saved_at));
+      const withState = kit.find((a: any) => a?.editor_state?.kind === "logotype");
+      setLogoAsset(withState || kit[0] || null);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -170,7 +171,7 @@ export default function SocialIcons() {
     if (requirePro()) return;
     setBusy(v.key);
     try {
-      const blob = await renderIconPng(baseState, v);
+      const blob = await renderVariant(v);
       downloadBlob(blob, `${safeName(project?.name || baseState.text)}-social-${v.key}.png`);
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
@@ -186,7 +187,7 @@ export default function SocialIcons() {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
       for (const v of variants) {
-        const blob = await renderIconPng(baseState, v);
+        const blob = await renderVariant(v);
         zip.file(`${safeName(project?.name || baseState.text)}-social-${v.key}.png`, blob);
       }
       const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -196,6 +197,14 @@ export default function SocialIcons() {
     } finally {
       setBusy(null);
     }
+  };
+
+  const isImageLogo = !logoAsset?.editor_state && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
+  const imageSrc: string | null = isImageLogo ? (logoAsset?.image_url || logoAsset?.thumbnail_url) : null;
+
+  const renderVariant = async (v: Variant): Promise<Blob> => {
+    if (imageSrc) return renderImageIconPng(imageSrc, v);
+    return renderIconPng(baseState, v);
   };
 
   return (
