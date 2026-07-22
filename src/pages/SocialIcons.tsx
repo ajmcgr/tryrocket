@@ -53,9 +53,23 @@ function downloadBlob(blob: Blob, name: string) {
 
 async function renderIconPng(state: LogotypeState, v: Variant, size = 1024): Promise<Blob> {
   const logoUrl = await logotypeToPng({ ...state, color: v.fg }, 4);
+  const img = await loadImage(logoUrl);
+  return await composeIcon(img, v, size);
+}
+
+async function loadImage(src: string): Promise<HTMLImageElement> {
   const img = new Image();
   img.crossOrigin = "anonymous";
-  await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; img.src = logoUrl; });
+  await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; img.src = src; });
+  return img;
+}
+
+async function renderImageIconPng(src: string, v: Variant, size = 1024): Promise<Blob> {
+  const img = await loadImage(src);
+  return await composeIcon(img, v, size);
+}
+
+async function composeIcon(img: HTMLImageElement, v: Variant, size: number): Promise<Blob> {
 
   const canvas = document.createElement("canvas");
   canvas.width = size; canvas.height = size;
