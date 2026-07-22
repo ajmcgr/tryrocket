@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logotype, logotypeToPng } from "@/components/Logotype";
@@ -252,7 +252,7 @@ const SavedLogos = () => {
             Generate logos in the Wizard or Logo Designer and save them here.
           </p>
           <Button asChild className="mt-4">
-            <a href="/create">Create your first logo</a>
+            <Link to="/logos">Create your first logo</Link>
           </Button>
         </div>
       ) : view === "card" ? (

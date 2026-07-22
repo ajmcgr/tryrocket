@@ -253,7 +253,7 @@ const Pricing = () => {
           <p className="mx-auto mt-4 max-w-xl text-neutral-600">Start with a 7-day free trial on any plan. Cancel anytime.</p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg" className="bg-brand text-white hover:bg-brand/90">
-              <Link to={user ? "/create" : "/signup"}>Start with Starter</Link>
+              <Link to={user ? "/logos" : "/signup"}>Start with Starter</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link to={user ? "/settings/billing" : "/signup?next=%2Fpricing%3Fbuy%3Dgrowth"}>Upgrade to Pro</Link>

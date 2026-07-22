@@ -48,7 +48,7 @@ const VerifyEmail = () => {
         toast({ title: "Slow down", description: "Too many requests. Try again in an hour.", variant: "destructive" });
       } else if ((data as { already_verified?: boolean })?.already_verified) {
         toast({ title: "Already verified", description: "You're good to go." });
-        nav("/create", { replace: true });
+        nav("/logos", { replace: true });
       } else {
         toast({ title: "Sent", description: "Check your inbox for the new link." });
       }
@@ -77,7 +77,7 @@ const VerifyEmail = () => {
             if (fresh.user?.email_confirmed_at) {
               if (cancelled) return;
               setState("success");
-              setTimeout(() => nav("/create", { replace: true }), 600);
+              setTimeout(() => nav("/logos", { replace: true }), 600);
               return;
             }
           } catch { /* ignore */ }
@@ -98,7 +98,7 @@ const VerifyEmail = () => {
         if (payload?.signInUrl) {
           setTimeout(() => { window.location.href = payload.signInUrl!; }, 400);
         } else {
-          setTimeout(() => nav("/create", { replace: true }), 600);
+          setTimeout(() => nav("/logos", { replace: true }), 600);
         }
       } catch (e) {
         if (!cancelled) { setState("error"); setMessage((e as Error).message || "Something went wrong."); }
@@ -138,7 +138,7 @@ const VerifyEmail = () => {
             <>
               <h1 className="text-2xl font-semibold tracking-tight">Email verified 🎉</h1>
               <p className="mt-2 text-sm text-neutral-500">You're all set. Time to launch.</p>
-              <Button asChild size="lg" className="mt-6 w-full"><Link to="/create">Go to Rocket</Link></Button>
+              <Button asChild size="lg" className="mt-6 w-full"><Link to="/logos">Go to Rocket</Link></Button>
             </>
           )}
           {mode === "verify" && state === "error" && (

@@ -67,7 +67,7 @@ const ChatsSidebar = () => {
   const remove = async (c: Chat) => {
     if (!confirm(`Delete chat "${c.title}"? Designs in it will be kept.`)) return;
     await supabase.from("chats").delete().eq("id", c.id);
-    if (activeChatId === c.id) nav("/create");
+    if (activeChatId === c.id) nav("/logos");
     load();
   };
 
@@ -86,7 +86,7 @@ const ChatsSidebar = () => {
   const pinned = chats.filter(c => c.pinned);
   const recent = chats.filter(c => !c.pinned);
 
-  const newChatPath = ["/logos", "/icons"].includes(location.pathname) ? location.pathname : "/create";
+  const newChatPath = ["/logos", "/icons"].includes(location.pathname) ? location.pathname : "/logos";
 
   return (
     <aside data-tour="chats-sidebar" className="sticky top-14 flex h-[calc(100vh-3.5rem)] w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
