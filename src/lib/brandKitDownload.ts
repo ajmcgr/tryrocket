@@ -502,7 +502,7 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     `Generated ${new Date().toISOString()}`,
     "",
     "Contents:",
-    "  /Logo-Icon Files  source logo/icon files + regular/inverse/black variants",
+    "  /Logo-Icon Files  logo/icon files as PNG, JPG, PSD, and SVG (Figma/Sketch/Canva) + regular/inverse/black variants",
     "  /Palette          palette.txt, palette.png, palette.pdf",
     "  /Fonts            fonts.txt, font-specimen.png, font-specimen.pdf",
     "  /Brand Book       brand-book.md, brand-book.png, brand-book.pdf",
