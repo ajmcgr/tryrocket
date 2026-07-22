@@ -15,6 +15,7 @@ import {
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { downloadCompleteBrandKit } from "@/lib/brandKitDownload";
+import { sendBrandKitEmail } from "@/lib/kitEmails";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 
@@ -76,6 +77,11 @@ export default function BrandLayout() {
     try {
       const result = await downloadCompleteBrandKit({ supabase, projectId, project });
       toast({ title: "Brand kit downloaded", description: `${result.included} files packed.` });
+      void sendBrandKitEmail("brand_kit_downloaded", {
+        brand_name: project?.name || "your brand",
+        brand_url: `https://tryrocket.ai/brands/${projectId}`,
+        file_count: result.included,
+      });
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
     } finally {
