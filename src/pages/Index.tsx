@@ -7,6 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 import CreateShowcase from "@/components/CreateShowcase";
 import FeaturedLogos from "@/components/FeaturedLogos";
 import SenjaWidget from "@/components/SenjaWidget";
+import rocketVideo from "@/assets/rocket.mp4.asset.json";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
