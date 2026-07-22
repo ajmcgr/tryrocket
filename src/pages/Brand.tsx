@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
-import { pickLogoColor, isDarkBg } from "@/lib/logoContrast";
+import { pickLogoColor, isDarkBg, silhouetteImage } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -82,14 +82,15 @@ function useImageVariants(url: string | undefined) {
     let cancelled = false;
     (async () => {
       try {
-        const img = await loadImage(url);
+        const [black, white] = await Promise.all([
+          silhouetteImage(url, "#0A0A0A"),
+          silhouetteImage(url, "#FFFFFF"),
+        ]);
         if (cancelled) return;
-        const info = hasAlpha(img);
-        if (!info || !info.alpha) { setVariants({ hasAlpha: false }); return; }
         setVariants({
-          hasAlpha: true,
-          black: silhouetteDataUrl(img, "#0A0A0A"),
-          white: silhouetteDataUrl(img, "#FFFFFF"),
+          hasAlpha: black.hasAlpha,
+          black: black.url,
+          white: white.url,
         });
       } catch {
         if (!cancelled) setVariants({ hasAlpha: false });
