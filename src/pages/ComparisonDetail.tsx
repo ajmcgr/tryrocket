@@ -38,7 +38,7 @@ const ComparisonDetail = () => {
               Rocket vs {comparison.tool}
             </h1>
             <p className="mt-4 text-lg text-neutral-600">
-              A quick founder-focused comparison for choosing the right logo and brand identity tool.
+              A quick founder-focused comparison for choosing the right logo, icon, and brand kit tool.
             </p>
 
             <section className="mt-10 rounded-3xl border border-neutral-200 bg-white p-8">
