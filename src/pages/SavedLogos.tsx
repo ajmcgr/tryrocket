@@ -254,12 +254,13 @@ const SavedLogos = () => {
                   {(a.asset_type || "Design").replace(/_/g, " ")} · {new Date(a.updated_at || a.created_at).toLocaleDateString()}
                 </div>
               </div>
-              <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Edit</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} title="Edit" className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                <PenTool className="h-3.5 w-3.5" />
+              </button>
               <BrandFromAssetMenu
                 asset={a}
                 onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)}
-                label="Use in brand kit"
-                className="shrink-0 inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                className="shrink-0 inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
               />
               <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Shuffle className="h-3.5 w-3.5" />
