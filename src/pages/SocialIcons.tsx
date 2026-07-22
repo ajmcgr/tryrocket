@@ -344,11 +344,14 @@ export default function SocialIcons() {
                       ? (sil?.hasAlpha ? (useWhite ? sil.white : sil.black) : imgSrc)
                       : null;
                     return (
-                      <div
-                        key={v.key}
-                        className={`relative overflow-hidden shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)] ${v.border ? "ring-1 ring-neutral-200" : ""}`}
-                        style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
-                      >
+                      <div key={v.key} className="flex flex-col gap-2">
+                        <div className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">
+                          {v.label}
+                        </div>
+                        <div
+                          className={`relative overflow-hidden shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)] ${v.border ? "ring-1 ring-neutral-200" : ""}`}
+                          style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
+                        >
                         <div className="flex h-full w-full items-center justify-center p-[18%]">
                           {isCanvas ? (
                             <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" background="transparent" />
@@ -363,11 +366,6 @@ export default function SocialIcons() {
                             <Logotype state={iconState} fit="contain" />
                           )}
                         </div>
-                        <div className="pointer-events-none absolute left-3 top-3">
-                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${isDark ? "bg-black/25 text-white" : "bg-neutral-100 text-neutral-700"}`}>
-                            {v.label}
-                          </span>
-                        </div>
                         <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
                           <button
                             onClick={() => handleDownload(asset, v)}
@@ -379,6 +377,7 @@ export default function SocialIcons() {
                             {busy === bkey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                             PNG
                           </button>
+                        </div>
                         </div>
                       </div>
                     );
