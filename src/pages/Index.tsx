@@ -434,7 +434,10 @@ const Index = () => {
                 {[
                   "Generous monthly Rocket Credits",
                   "Unlimited saved logos & brand kits",
-                  "Full export suite (PNG, SVG, PDF, ZIP)",
+                  "Multiple high-res file types (PNG, EPS, SVG, PDF)",
+                  "Multiple color variations (including transparent backgrounds)",
+                  "Unlimited post-purchase changes",
+                  "Full ownership",
                   "Brand Kit ZIP downloads",
                   "Priority generation",
                   "Team workspaces (multi-seat)",
