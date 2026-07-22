@@ -130,7 +130,9 @@ const Index = () => {
   const [url, setUrl] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [isPlaying, setIsPlaying] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const onPickFiles = async (files: FileList | null) => {
     if (!files) return;
