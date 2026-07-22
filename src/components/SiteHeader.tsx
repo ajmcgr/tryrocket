@@ -70,7 +70,7 @@ const SiteHeader = () => {
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
           {user ? (
             <>
-              <Link to="/create" className="hover:text-neutral-900">Create</Link>
+              <Link to="/logos" className="hover:text-neutral-900">Create</Link>
               <Link to="/logos" className="hover:text-neutral-900">Logos</Link>
               <Link to="/icons" className="hover:text-neutral-900">Icons</Link>
               <Link to="/brands" className="hover:text-neutral-900">Brand Kits</Link>

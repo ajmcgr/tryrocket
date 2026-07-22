@@ -313,7 +313,7 @@ export default function Brand() {
             <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
               <p className="text-sm text-neutral-600">No logo saved for this brand yet.</p>
               <Link
-                to="/create"
+                to="/logos"
                 className="mt-3 inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand-hover"
               >
                 Generate a logo

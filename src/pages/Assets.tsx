@@ -461,7 +461,7 @@ const Assets = () => {
           >
             <Trash2 className="h-4 w-4" />
           </Link>
-          <Link to="/create" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
+          <Link to="/logos" className="inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover">
             <Plus className="h-4 w-4" /> New Design
           </Link>
         </div>
@@ -596,7 +596,7 @@ const Assets = () => {
               <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
                 Your designs will appear here. Start with a logo, brand kit, social graphic, presentation, or launch asset.
               </p>
-              <Link to="/create" className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+              <Link to="/logos" className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
                 <Plus className="h-3.5 w-3.5" /> Create your first design
               </Link>
             </>

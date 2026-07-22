@@ -368,7 +368,7 @@ const Index = () => {
                       <h3 className="text-3xl font-medium tracking-tight text-neutral-900 sm:text-4xl">{row.title}</h3>
                       <p className="mt-4 text-base leading-relaxed text-neutral-600">{row.desc}</p>
                       <Button asChild className="mt-7">
-                        <Link to="/create">
+                        <Link to="/logos">
                           Start free <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>

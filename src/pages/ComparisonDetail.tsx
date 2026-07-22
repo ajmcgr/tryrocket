@@ -61,7 +61,7 @@ const ComparisonDetail = () => {
                   <Link to="/signup">Try Rocket <ArrowRight className="h-4 w-4" /></Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link to="/create">Explore tools</Link>
+                  <Link to="/logos">Explore tools</Link>
                 </Button>
               </div>
             </section>

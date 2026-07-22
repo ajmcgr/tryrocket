@@ -252,7 +252,7 @@ const SavedLogos = () => {
             Generate logos in the Wizard or Logo Designer and save them here.
           </p>
           <Button asChild className="mt-4">
-            <a href="/create">Create your first logo</a>
+            <Link to="/logos">Create your first logo</Link>
           </Button>
         </div>
       ) : view === "card" ? (

@@ -708,7 +708,7 @@ export default function BrandHub() {
         <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
           <h2 className="text-lg font-semibold">Start your brand</h2>
           <p className="mt-1 text-sm text-neutral-500">Create a logo, then choose the colours, type and voice that fit it.</p>
-          <Link to="/create" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
+          <Link to="/logos" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover">
             <Sparkles className="h-4 w-4" /> Create your first design
           </Link>
         </div>
