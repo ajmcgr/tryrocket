@@ -116,6 +116,7 @@ const CARDS = [
     image: iconsAsset,
     imageAlt: "Custom icon set",
     accent: "coral" as const,
+    imageScale: "scale-90 object-contain sm:scale-95 lg:scale-100",
   },
   {
     id: "brand-kits",
