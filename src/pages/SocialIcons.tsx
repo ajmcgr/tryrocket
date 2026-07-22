@@ -6,6 +6,7 @@ import { Logotype, logotypeToPng } from "@/components/Logotype";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
@@ -139,7 +140,20 @@ export default function SocialIcons() {
 
   const variants = useMemo(() => buildVariants(brandColor), [brandColor]);
 
+  const { isPro, loading: subLoading } = useSubscription();
+  const requirePro = () => {
+    if (!subLoading && !isPro) {
+      toast({
+        title: "Upgrade to Pro to download",
+        description: "Social icon downloads are available on the Pro plan.",
+      });
+      return true;
+    }
+    return false;
+  };
+
   const handleDownload = async (v: Variant) => {
+    if (requirePro()) return;
     setBusy(v.key);
     try {
       const blob = await renderIconPng(baseState, v);
@@ -152,6 +166,7 @@ export default function SocialIcons() {
   };
 
   const downloadAll = async () => {
+    if (requirePro()) return;
     setBusy("all");
     try {
       const { default: JSZip } = await import("jszip");
@@ -195,6 +210,9 @@ export default function SocialIcons() {
           >
             {busy === "all" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Download all
+            {!subLoading && !isPro && (
+              <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide">PRO</span>
+            )}
           </button>
         ) : null}
       </div>
