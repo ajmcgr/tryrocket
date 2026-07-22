@@ -208,6 +208,7 @@ export default function Brand() {
         const t = String(a?.asset_type || "").toLowerCase();
         if (["logo", "logotype", "wordmark", "brandmark", "icon", "app_icon", "favicon", "graphic", "photo", "image"].includes(t)) return true;
         if (a?.editor_state?.kind === "logotype") return true;
+        if (isCanvasAsset(a)) return true;
         // Anything visual saved into this project counts as its logo mark.
         if (a?.image_url || a?.thumbnail_url) return true;
         return false;
