@@ -51,7 +51,7 @@ const ShowcaseCard = ({
           src={image}
           alt={imageAlt}
           loading="lazy"
-          className="h-full w-full scale-125 object-contain sm:scale-[1.35] lg:scale-150"
+          className="h-full w-full scale-110 object-contain sm:scale-125 lg:scale-[1.35]"
         />
       </div>
 

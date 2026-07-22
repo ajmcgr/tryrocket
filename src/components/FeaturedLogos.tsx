@@ -70,7 +70,7 @@ export default function FeaturedLogos() {
                 to="/templates"
                 className="group flex shrink-0 snap-center flex-col items-center text-center"
               >
-                <div className="flex h-72 w-72 items-center justify-center sm:h-80 sm:w-80 lg:h-96 lg:w-96">
+                <div className="flex h-48 w-48 items-center justify-center sm:h-56 sm:w-56 lg:h-64 lg:w-64">
                   <img
                     src={tpl.image_url}
                     alt={tpl.title}
