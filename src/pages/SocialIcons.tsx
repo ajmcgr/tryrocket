@@ -275,7 +275,16 @@ export default function SocialIcons() {
                 style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
               >
                 <div className="flex h-full w-full items-center justify-center p-[18%]">
-                  <Logotype state={iconState} fit="contain" />
+                  {imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt=""
+                      className="max-h-full max-w-full object-contain"
+                      crossOrigin="anonymous"
+                    />
+                  ) : (
+                    <Logotype state={iconState} fit="contain" />
+                  )}
                 </div>
                 <div className="pointer-events-none absolute left-3 top-3">
                   <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${isDark ? "bg-black/25 text-white" : "bg-neutral-100 text-neutral-700"}`}>
