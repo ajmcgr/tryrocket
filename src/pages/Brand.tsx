@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const supabase = _sb as any;
 
@@ -155,6 +156,7 @@ export default function Brand() {
   const { id: projectId } = useParams();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isPro, loading: subLoading } = useSubscription();
   if (!projectId) return <Navigate to="/brands" replace />;
 
   const [project, setProject] = useState<any>(null);
@@ -253,7 +255,19 @@ export default function Brand() {
 
   const filenameFor = (v: Variant) => `${safeName(project?.name || baseState.text)}-logo-${v.key}`;
 
+  const requirePro = () => {
+    if (!subLoading && !isPro) {
+      toast({
+        title: "Upgrade to Pro to download",
+        description: "Brand kit downloads are available on the Pro plan.",
+      });
+      return true;
+    }
+    return false;
+  };
+
   const handleDownload = async (v: Variant, fmt: "png" | "svg" | "pdf") => {
+    if (requirePro()) return;
     const key = `${v.key}:${fmt}`;
     setBusy(key);
     try {
