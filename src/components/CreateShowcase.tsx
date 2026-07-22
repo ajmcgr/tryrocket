@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/showcase/logo.png";
-import guidelinesAsset from "@/assets/showcase/guidelines.png";
+import guidelinesAsset from "@/assets/showcase/guidelines.png.asset.json";
 import iconsAsset from "@/assets/showcase/icons.png";
 
 const ShowcaseCard = ({
