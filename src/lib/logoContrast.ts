@@ -73,21 +73,95 @@ function detectAlpha(img: HTMLImageElement): boolean {
 }
 
 /**
+ * If a raster logo ships with a solid near-white background (very common for
+ * generated PNGs / JPEGs), punch that background out into real transparency so
+ * the logo can sit cleanly on any color surface. Uses a flood-fill from the
+ * four corners so only *background* whites are removed — internal white pixels
+ * inside the mark itself are preserved.
+ */
+function keyOutBackground(img: HTMLImageElement): { canvas: HTMLCanvasElement; changed: boolean } {
+  const canvas = document.createElement("canvas");
+  const w = (canvas.width = img.naturalWidth || img.width);
+  const h = (canvas.height = img.naturalHeight || img.height);
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+  const image = ctx.getImageData(0, 0, w, h);
+  const data = image.data;
+  const isBg = (i: number) => {
+    // Near-white AND currently opaque.
+    return data[i] >= 240 && data[i + 1] >= 240 && data[i + 2] >= 240 && data[i + 3] >= 240;
+  };
+  // Flood fill from every border pixel.
+  const stack: number[] = [];
+  const push = (x: number, y: number) => {
+    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    const idx = (y * w + x) * 4;
+    if (data[idx + 3] === 0) return;
+    if (!isBg(idx)) return;
+    stack.push(x, y);
+  };
+  for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+  for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+  let changed = false;
+  while (stack.length) {
+    const y = stack.pop()!;
+    const x = stack.pop()!;
+    const idx = (y * w + x) * 4;
+    if (data[idx + 3] === 0) continue;
+    if (!isBg(idx)) continue;
+    data[idx + 3] = 0;
+    changed = true;
+    if (x > 0) stack.push(x - 1, y);
+    if (x < w - 1) stack.push(x + 1, y);
+    if (y > 0) stack.push(x, y - 1);
+    if (y < h - 1) stack.push(x, y + 1);
+  }
+  if (changed) ctx.putImageData(image, 0, 0);
+  return { canvas, changed };
+}
+
+/**
+ * Return a transparent-background version of the source image, whether it
+ * already had alpha or shipped with a solid white background. Falls back to
+ * the original URL if nothing could be stripped (e.g. photographic logos).
+ */
+export async function transparentLogo(src: string): Promise<{ url: string; hasTransparency: boolean; image: HTMLImageElement }> {
+  const img = await loadImage(src);
+  if (detectAlpha(img)) return { url: src, hasTransparency: true, image: img };
+  const { canvas, changed } = keyOutBackground(img);
+  if (!changed) return { url: src, hasTransparency: false, image: img };
+  return { url: canvas.toDataURL("image/png"), hasTransparency: true, image: img };
+}
+
+/**
  * Rasterize an image logo as a silhouette in `color`. If the source has no
  * meaningful alpha channel, returns the original URL — the caller should then
  * render onto a contrasting background rather than attempt an invalid recolor.
  */
 export async function silhouetteImage(src: string, color: string): Promise<{ url: string; hasAlpha: boolean; image: HTMLImageElement }> {
   const img = await loadImage(src);
-  const hasAlpha = detectAlpha(img);
-  if (!hasAlpha) return { url: src, hasAlpha: false, image: img };
-  const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(img, 0, 0);
+  // Start from a version with a proper alpha channel — either native or
+  // background-keyed — so silhouettes work on solid-white PNGs too.
+  let sourceCanvas: HTMLCanvasElement;
+  let hasAlpha = detectAlpha(img);
+  if (hasAlpha) {
+    sourceCanvas = document.createElement("canvas");
+    sourceCanvas.width = img.naturalWidth || img.width;
+    sourceCanvas.height = img.naturalHeight || img.height;
+    sourceCanvas.getContext("2d")!.drawImage(img, 0, 0);
+  } else {
+    const keyed = keyOutBackground(img);
+    if (!keyed.changed) return { url: src, hasAlpha: false, image: img };
+    sourceCanvas = keyed.canvas;
+    hasAlpha = true;
+  }
+  const out = document.createElement("canvas");
+  out.width = sourceCanvas.width;
+  out.height = sourceCanvas.height;
+  const ctx = out.getContext("2d")!;
+  ctx.drawImage(sourceCanvas, 0, 0);
   ctx.globalCompositeOperation = "source-in";
   ctx.fillStyle = color;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  return { url: canvas.toDataURL("image/png"), hasAlpha: true, image: img };
+  ctx.fillRect(0, 0, out.width, out.height);
+  return { url: out.toDataURL("image/png"), hasAlpha: true, image: img };
 }

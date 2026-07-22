@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { loadBrandMeta } from "@/lib/brandMeta";
 import { useSubscription } from "@/hooks/useSubscription";
 import { pickLogoColor, isDarkBg } from "@/lib/logoContrast";
+import { silhouetteImage } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -35,48 +36,6 @@ function shade(hex: string, amount: number) {
   return `#${to(mix(r))}${to(mix(g))}${to(mix(b))}`;
 }
 
-// Load a raster image and return an ImageElement + alpha info so we can
-// silhouette-recolour it for high-contrast placement in the Brand Book.
-async function loadImage(src: string): Promise<HTMLImageElement> {
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error("Failed to load logo image"));
-    img.src = src;
-  });
-  return img;
-}
-function detectAlpha(img: HTMLImageElement): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return false;
-    ctx.drawImage(img, 0, 0);
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let transparent = 0;
-    for (let i = 3; i < data.length; i += 16) {
-      if (data[i] < 250) transparent++;
-      if (transparent > 20) return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-function silhouetteDataUrl(img: HTMLImageElement, color: string): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(img, 0, 0);
-  ctx.globalCompositeOperation = "source-in";
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/png");
-}
 
 export default function BrandGuidelines() {
   const { id: projectId } = useParams();
@@ -228,18 +187,18 @@ export default function BrandGuidelines() {
       for (const a of targets) {
         const url = a.image_url || a.thumbnail_url;
         try {
-          const img = await loadImage(url);
+          const [black, white] = await Promise.all([
+            silhouetteImage(url, "#0A0A0A"),
+            silhouetteImage(url, "#FFFFFF"),
+          ]);
           if (cancelled) return;
-          const alpha = detectAlpha(img);
           setImageSilhouettes((prev) => ({
             ...prev,
-            [a.id]: alpha
-              ? {
-                  hasAlpha: true,
-                  black: silhouetteDataUrl(img, "#0A0A0A"),
-                  white: silhouetteDataUrl(img, "#FFFFFF"),
-                }
-              : { hasAlpha: false },
+            [a.id]: {
+              hasAlpha: black.hasAlpha,
+              black: black.url,
+              white: white.url,
+            },
           }));
         } catch {
           if (!cancelled) {
