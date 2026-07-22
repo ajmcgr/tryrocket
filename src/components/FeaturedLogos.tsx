@@ -14,17 +14,60 @@ const FEATURED: { name: string; iconOnly?: boolean }[] = [
   { name: "Vault" },
   { name: "Bloom", iconOnly: true },
   { name: "MAISON NOIR" },
+  { name: "Kernel", iconOnly: true },
+  { name: "Northwind" },
+  { name: "Lucid", iconOnly: true },
+  { name: "Momentum" },
+  { name: "Coin", iconOnly: true },
+  { name: "Atlas" },
 ];
 
+// Pure wordmark / logotype examples with no icon mark.
+const LOGOTYPE_SEEDS = [
+  { name: "Ligature", font: "Playfair Display", weight: 700, color: "#0F172A", bg: "#FAFAF9" },
+  { name: "Monument", font: "Space Grotesk", weight: 800, transform: "uppercase", letterSpacing: 0.08, color: "#111827", bg: "#FFFFFF" },
+  { name: "Northbound", font: "Inter", weight: 600, color: "#0C4A6E", bg: "#E0F2FE" },
+  { name: "Studio Mono", font: "IBM Plex Mono", weight: 700, color: "#F8FAFC", bg: "#0F172A" },
+  { name: "Serif & Co", font: "Crimson Pro", weight: 600, color: "#7F1D1D", bg: "#FFF1F2" },
+];
+
+function logotypeDataUrl(seed: typeof LOGOTYPE_SEEDS[number]): string {
+  const W = 800, H = 600;
+  const text = seed.transform === "uppercase" ? seed.name.toUpperCase() : seed.name;
+  const ls = ((seed.letterSpacing ?? 0) * 64).toFixed(2);
+  const family = `${seed.font}, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+    <rect width="${W}" height="${H}" fill="${seed.bg}"/>
+    <text x="${W / 2}" y="${H / 2 + 12}" fill="${seed.color}" text-anchor="middle" font-family='${family}' font-weight="${seed.weight}" font-size="72" letter-spacing="${ls}">${text.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 export default function FeaturedLogos() {
-  const picks = FEATURED
+  const iconPicks = FEATURED
     .map((f) => {
       const tpl = ICON_SEED_TEMPLATES.find((t) => t.title === f.name);
       if (!tpl) return null;
       const image_url = f.iconOnly ? getIconOnlyDataUrl(f.name) || tpl.image_url : tpl.image_url;
       return { ...tpl, image_url };
     })
-    .filter(Boolean) as typeof ICON_SEED_TEMPLATES;
+    .filter(Boolean);
+
+  const logotypePicks = LOGOTYPE_SEEDS.map((seed, i) => ({
+    id: `seed-logotype-${i}`,
+    title: seed.name,
+    asset_type: "logo",
+    image_url: logotypeDataUrl(seed),
+    background: seed.bg,
+    prompt: seed.name,
+    creator_username: "Rocket Studio",
+    created_at: new Date(Date.now() - (FEATURED.length + i) * 3600_000).toISOString(),
+    meta: { template_style: "Logotype", seed: true },
+    editor_state: null,
+    _seed: true as const,
+  }));
+
+  const picks = [...iconPicks, ...logotypePicks] as typeof ICON_SEED_TEMPLATES;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dir: 1 | -1) => {
