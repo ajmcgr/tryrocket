@@ -385,12 +385,12 @@ export default function BrandHub() {
               const logoState = logo?.editor_state?.kind === "logotype" ? logo.editor_state : null;
               const designCount = projectDesignCount(project.id);
               return (
-                <div key={project.id} className="group relative">
-                  <Link
-                    to={`/brands/${project.id}`}
-                    className="block overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
-                  >
-                  <div className="flex aspect-square items-center justify-center bg-neutral-50 p-6">
+                <Link
+                  key={project.id}
+                  to={`/brands/${project.id}`}
+                  className="group block cursor-pointer overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-md"
+                >
+                  <div className="flex aspect-square w-full items-center justify-center bg-neutral-50 p-4">
                     {logo && isBrandKitLogotypeAsset(logo) ? (
                       <BrandLogotypePreview asset={logo} color="#0A0A0A" fallback={project.name || "Brand"} />
                     ) : logo && isCanvasAsset(logo) ? (
@@ -410,23 +410,32 @@ export default function BrandHub() {
                         {designCount} design{designCount === 1 ? "" : "s"}
                       </p>
                     </div>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        title="Duplicate"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); void duplicateBrand(project); }}
+                        className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Move to Trash"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          await supabase.from("projects").update({ deleted_at: new Date().toISOString() }).eq("id", project.id);
+                          setProjects((prev) => prev.filter((p) => p.id !== project.id));
+                          toast({ title: "Moved to Trash" });
+                        }}
+                        className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  </Link>
-                  <button
-                    type="button"
-                    title="Move to Trash"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      await supabase.from("projects").update({ deleted_at: new Date().toISOString() }).eq("id", project.id);
-                      setProjects((prev) => prev.filter((p) => p.id !== project.id));
-                      toast({ title: "Moved to Trash" });
-                    }}
-                    className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 bg-white/90 text-red-600 opacity-0 backdrop-blur transition group-hover:opacity-100 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                </Link>
               );
             })}
           </section>
