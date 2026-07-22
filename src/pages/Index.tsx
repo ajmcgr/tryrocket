@@ -311,7 +311,7 @@ const Index = () => {
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-medium tracking-tight sm:text-5xl">Your logo first. Your brand kit next.</h2>
             <p className="mt-4 text-lg text-neutral-600">
-              Choose one direction you love, then let it guide every launch asset that follows.
+              Choose one direction you love, then let it guide your complete Brand Kit — Logo/Icon Files, Social Icons, Palette, Fonts, and Brand Book — all in one place.
             </p>
           </div>
           <div className="mt-14 space-y-6">
