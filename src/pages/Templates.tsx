@@ -200,14 +200,22 @@ const Templates = () => {
   const DesignPreview = ({ design }: { design: any }) => {
     const isLogotype = design?.editor_state?.kind === "logotype";
     const isCanvas = isCanvasAsset(design);
+    const seedImage = design?._seed && (design.thumbnail_url || design.image_url);
     // Prefer live editor_state over the seed image so edits from /editor
-    // propagate to preview cards.
-    const isImage = design.image_url && !isLogotype && !isCanvas;
+    // propagate to preview cards, but seed templates should use their finished
+    // SVG previews; rendering their editable canvas state can show only blocks
+    // while nested data-URL images/fonts are loading.
+    const isImage = (seedImage || design.image_url) && !isLogotype && (!isCanvas || seedImage);
 
     return (
       <div className="h-full w-full" style={{ background: design?.background || undefined }}>
         {isImage ? (
-          <img src={design.thumbnail_url || design.image_url} alt={design.title} className="h-full w-full object-cover" loading="lazy" />
+          <img
+            src={design.thumbnail_url || design.image_url}
+            alt={design.title}
+            className={`h-full w-full ${seedImage ? "object-contain" : "object-cover"}`}
+            loading="lazy"
+          />
         ) : isLogotype ? (
           <Logotype state={design.editor_state} fit="contain" />
         ) : isCanvas ? (
