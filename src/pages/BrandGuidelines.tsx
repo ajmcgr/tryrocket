@@ -63,20 +63,23 @@ export default function BrandGuidelines() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [{ data: proj }, { data: assets }] = await Promise.all([
+      const [{ data: proj }, assetsRes] = await Promise.all([
         supabase.from("projects").select("id,name,tagline").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
-          .select("id,title,asset_type,editor_state,created_at")
+          .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
           .eq("project_id", projectId)
-          .in("asset_type", ["logo", "logotype", "wordmark"])
-          .order("created_at", { ascending: true })
-          .limit(20),
+          .order("created_at", { ascending: false })
+          .limit(100),
       ]);
       if (cancelled) return;
       setProject(proj || null);
-      const withState = (assets || []).find((a: any) => a.editor_state?.kind === "logotype");
-      setLogoAsset(withState || (assets || [])[0] || null);
+      const all = (assetsRes?.data || []) as any[];
+      // Match Brand Kit view: only assets the user explicitly saved into the kit.
+      const saved = all.filter((a) => Boolean(a?.meta?.saved_at));
+      const withState = saved.find((a: any) => a?.editor_state?.kind === "logotype");
+      const withImage = saved.find((a: any) => a?.image_url || a?.thumbnail_url);
+      setLogoAsset(withState || withImage || saved[0] || null);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -89,6 +92,9 @@ export default function BrandGuidelines() {
     const c = String(meta.brand_color || "").trim();
     return /^#[0-9a-f]{3,8}$/i.test(c) ? c : "#0A0A0A";
   }, [project, projectId]);
+
+  const logoIsImage = !logoAsset?.editor_state && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
+  const logoImageUrl = logoAsset?.image_url || logoAsset?.thumbnail_url;
 
   const baseState = useMemo<LogotypeState>(() => {
     if (logoAsset?.editor_state?.kind === "logotype") {
@@ -214,10 +220,18 @@ export default function BrandGuidelines() {
               <div className="mb-3 text-[10px] uppercase tracking-[0.3em] text-neutral-500">Logo</div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex h-40 items-center justify-center rounded-xl border border-neutral-200 bg-white px-6">
-                  <Logotype state={baseState} fit="contain" />
+                  {logoIsImage ? (
+                    <img src={logoImageUrl} alt="Logo" className="max-h-full max-w-full object-contain" crossOrigin="anonymous" />
+                  ) : (
+                    <Logotype state={baseState} fit="contain" />
+                  )}
                 </div>
                 <div className="flex h-40 items-center justify-center rounded-xl px-6" style={{ background: brandColor }}>
-                  <Logotype state={{ ...baseState, color: onBrandText }} fit="contain" />
+                  {logoIsImage ? (
+                    <img src={logoImageUrl} alt="Logo" className="max-h-full max-w-full object-contain" crossOrigin="anonymous" />
+                  ) : (
+                    <Logotype state={{ ...baseState, color: onBrandText }} fit="contain" />
+                  )}
                 </div>
               </div>
             </section>
