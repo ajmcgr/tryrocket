@@ -35,6 +35,7 @@ import WebsiteTemplates from "./pages/WebsiteTemplates.tsx";
 import PaletteExplorer from "./pages/PaletteExplorer.tsx";
 import FontExplorer from "./pages/FontExplorer.tsx";
 import SocialKit from "./pages/SocialKit.tsx";
+import SocialIcons from "./pages/SocialIcons.tsx";
 import BrandGuidelines from "./pages/BrandGuidelines.tsx";
 import ProjectWizard from "./pages/ProjectWizard.tsx";
 import Templates from "./pages/Templates.tsx";
@@ -132,6 +133,7 @@ const App = () => (
                 <Route path="brand-book" element={<BrandGuidelines />} />
                 <Route path="palette" element={<PaletteExplorer />} />
                 <Route path="fonts" element={<FontExplorer />} />
+                <Route path="social-icons" element={<SocialIcons />} />
               </Route>
               <Route path="/brand" element={<Navigate to="/brands" replace />} />
               <Route path="/brand/:id" element={<BrandIdRedirect />} />
