@@ -1,5 +1,6 @@
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { ensureActiveWorkspaceId } from "@/lib/workspace";
+import { sendBrandKitEmail } from "@/lib/kitEmails";
 
 const supabase = _sb as any;
 
@@ -94,6 +95,10 @@ export async function createBrandFromAsset(
     await supabase.from("projects").update({ cover_url }).eq("id", data.id);
   }
   await addAssetToBrand(asset.id, data.id);
+  void sendBrandKitEmail("brand_kit_created", {
+    brand_name: name,
+    brand_url: `https://tryrocket.ai/brands/${data.id}`,
+  });
   return data.id as string;
 }
 
