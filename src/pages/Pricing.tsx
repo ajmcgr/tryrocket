@@ -53,7 +53,7 @@ const COMPARE = [
 const FAQS = [
   { q: "What is a Rocket Credit?", a: "Credits power everything you generate in Rocket — logos, icons, brand kits and exports. Every plan comes with a monthly allowance, and you can top up any time with credit packs." },
   { q: "Is there a free trial?", a: "Yes. Every plan starts with a 7-day free trial — no charge until it ends, cancel anytime." },
-  { q: "What do I get when I upgrade to Pro?", a: "Pro unlocks a much larger monthly credit allowance, unlimited saved designs, the full export suite, team workspaces, and early access to new generators." },
+  { q: "What do I get when I upgrade to Pro?", a: "Pro unlocks a much larger monthly credit allowance, unlimited saved designs, multiple high-res file types (PNG, EPS, SVG, PDF), multiple color variations including transparent backgrounds, unlimited post-purchase changes, full ownership, team workspaces, and early access to new generators." },
   { q: "Can I cancel at any time?", a: "Yes. You can cancel or downgrade from Settings → Billing any time. Your Pro features stay active until the end of your billing period." },
   { q: "Do credits roll over?", a: "Plan credits refresh each month. One-time credit packs never expire and stack on top of your plan." },
 ];
