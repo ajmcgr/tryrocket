@@ -358,7 +358,7 @@ export default function Brand() {
                           toast({ title: "Download failed", description: err?.message || String(err), variant: "destructive" });
                         }
                       }}
-                      className={`absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition ${(v.bg === "#FFFFFF") ? "bg-neutral-900 text-white hover:bg-neutral-800" : "bg-white/95 text-neutral-900 hover:bg-white"}`}
+                      className={`absolute bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition ${(v.bg === "#FFFFFF") ? "bg-neutral-900 text-white hover:bg-neutral-800" : "bg-white/95 text-neutral-900 hover:bg-white"}`}
                     >
                       <Download className="h-3.5 w-3.5" /> Download
                       {!subLoading && !isPro && (
@@ -389,7 +389,7 @@ export default function Brand() {
                         {v.label}
                       </span>
                     </div>
-                    <div className="absolute bottom-4 right-4">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm outline-none transition ${
