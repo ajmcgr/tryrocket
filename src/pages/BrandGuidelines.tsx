@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { loadBrandMeta } from "@/lib/brandMeta";
 import { useSubscription } from "@/hooks/useSubscription";
+import { pickLogoColor, isDarkBg } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -34,16 +35,63 @@ function shade(hex: string, amount: number) {
   return `#${to(mix(r))}${to(mix(g))}${to(mix(b))}`;
 }
 
+// Load a raster image and return an ImageElement + alpha info so we can
+// silhouette-recolour it for high-contrast placement in the Brand Book.
+async function loadImage(src: string): Promise<HTMLImageElement> {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Failed to load logo image"));
+    img.src = src;
+  });
+  return img;
+}
+function detectAlpha(img: HTMLImageElement): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return false;
+    ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let transparent = 0;
+    for (let i = 3; i < data.length; i += 16) {
+      if (data[i] < 250) transparent++;
+      if (transparent > 20) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+function silhouetteDataUrl(img: HTMLImageElement, color: string): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+  ctx.globalCompositeOperation = "source-in";
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/png");
+}
+
 export default function BrandGuidelines() {
   const { id: projectId } = useParams();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isPro, loading: subLoading } = useSubscription();
   const [project, setProject] = useState<any>(null);
-  const [logoAsset, setLogoAsset] = useState<any>(null);
+  const [savedAssets, setSavedAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyPdf, setBusyPdf] = useState(false);
+  const [meta, setMeta] = useState(() => loadBrandMeta(projectId));
+  const [imageSilhouettes, setImageSilhouettes] = useState<
+    Record<string, { hasAlpha: boolean; black?: string; white?: string }>
+  >({});
   const pageRef = useRef<HTMLDivElement | null>(null);
 
   const requirePro = () => {
@@ -58,55 +106,188 @@ export default function BrandGuidelines() {
     return false;
   };
 
-  useEffect(() => {
-    if (!projectId) return;
-    let cancelled = false;
-    (async () => {
+  const loadEverything = useMemo(
+    () => async () => {
+      if (!projectId) return;
       setLoading(true);
-      const [{ data: proj }, assetsRes] = await Promise.all([
-        supabase.from("projects").select("id,name,tagline").eq("id", projectId).maybeSingle(),
-        supabase
+      const loadProject = async () => {
+        let res = await supabase
+          .from("projects")
+          .select("id,name,tagline,brand_color")
+          .eq("id", projectId)
+          .maybeSingle();
+        if (res.error) {
+          res = await supabase
+            .from("projects")
+            .select("id,name,tagline")
+            .eq("id", projectId)
+            .maybeSingle();
+        }
+        return res.data || null;
+      };
+      const loadAssets = async () => {
+        let res = await supabase
           .from("assets")
           .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
           .eq("project_id", projectId)
+          .is("deleted_at", null)
           .order("created_at", { ascending: false })
-          .limit(100),
-      ]);
-      if (cancelled) return;
-      setProject(proj || null);
-      const all = (assetsRes?.data || []) as any[];
-      // Match Brand Kit view: only assets the user explicitly saved into the kit.
-      const saved = all.filter((a) => Boolean(a?.meta?.saved_at));
-      const withState = saved.find((a: any) => a?.editor_state?.kind === "logotype");
-      const withImage = saved.find((a: any) => a?.image_url || a?.thumbnail_url);
-      setLogoAsset(withState || withImage || saved[0] || null);
+          .limit(100);
+        if (res.error) {
+          res = await supabase
+            .from("assets")
+            .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
+            .eq("project_id", projectId)
+            .order("created_at", { ascending: false })
+            .limit(100);
+        }
+        return res.data || [];
+      };
+      const [proj, assets] = await Promise.all([loadProject(), loadAssets()]);
+      setProject(proj);
+      const saved = (assets || []).filter((a: any) => Boolean(a?.meta?.saved_at));
+      setSavedAssets(saved);
+      setMeta(loadBrandMeta(projectId));
       setLoading(false);
+    },
+    [projectId],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await loadEverything();
+      if (cancelled) return;
     })();
     return () => { cancelled = true; };
-  }, [projectId]);
+  }, [loadEverything]);
+
+  // Live sync: when the Brand Kit is modified anywhere (Palette / Fonts /
+  // Logo save-to-kit / cross-tab storage), refresh the Brand Book.
+  useEffect(() => {
+    if (!projectId) return;
+    const refresh = () => { loadEverything(); };
+    const onNotify = (e: Event) => {
+      const detail: any = (e as CustomEvent).detail || {};
+      if (!detail.projectId || detail.projectId === projectId) refresh();
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key && e.key.includes(`brandmeta:${projectId}`)) {
+        setMeta(loadBrandMeta(projectId));
+      }
+    };
+    window.addEventListener("rocket:notify", onNotify as EventListener);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("rocket:notify", onNotify as EventListener);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [projectId, loadEverything]);
 
   useEffect(() => { LOGOTYPE_FONTS.forEach((f) => loadGoogleFont(f.family, f.weights)); }, []);
 
+  // === Brand Kit as source of truth ===
   const brandColor = useMemo(() => {
-    const meta = loadBrandMeta(projectId);
-    const c = String(meta.brand_color || "").trim();
-    return /^#[0-9a-f]{3,8}$/i.test(c) ? c : "#0A0A0A";
-  }, [project, projectId]);
+    // Prefer project column, fall back to brandMeta.
+    const fromProject = String(project?.brand_color || "").trim();
+    const fromMeta = String(meta?.brand_color || "").trim();
+    const pick = fromProject || fromMeta;
+    return /^#[0-9a-f]{3,8}$/i.test(pick) ? pick : "#1676e3";
+  }, [project, meta]);
 
-  const logoIsImage = !logoAsset?.editor_state && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
-  const logoImageUrl = logoAsset?.image_url || logoAsset?.thumbnail_url;
+  const brandName = project?.name || "Brand";
+
+  // Primary logo = first saved logotype editor_state, else first saved image.
+  const primaryLogotype = useMemo(
+    () => savedAssets.find((a) => a?.editor_state?.kind === "logotype") || null,
+    [savedAssets],
+  );
+  const primaryImage = useMemo(
+    () => savedAssets.find((a) => !a?.editor_state && (a?.image_url || a?.thumbnail_url)) || null,
+    [savedAssets],
+  );
+  const primaryAsset = primaryLogotype || primaryImage;
+  const secondaryAsset = primaryLogotype && primaryImage
+    ? primaryImage
+    : savedAssets.filter((a) => a !== primaryAsset)[0] || null;
 
   const baseState = useMemo<LogotypeState>(() => {
-    if (logoAsset?.editor_state?.kind === "logotype") {
-      return logoAsset.editor_state as LogotypeState;
+    if (primaryLogotype?.editor_state?.kind === "logotype") {
+      return primaryLogotype.editor_state as LogotypeState;
     }
-    return defaultLogotypeState(project?.name || "Brand");
-  }, [logoAsset, project]);
+    return defaultLogotypeState(brandName);
+  }, [primaryLogotype, brandName]);
 
-  const isDark = luminance(brandColor) < 0.4;
-  const onBrandText = isDark ? "#ffffff" : "#0A0A0A";
+  // Silhouette raster logos so they contrast against brand / dark backgrounds.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const targets = savedAssets
+        .filter((a) => !a?.editor_state && (a?.image_url || a?.thumbnail_url))
+        .filter((a) => !imageSilhouettes[a.id]);
+      for (const a of targets) {
+        const url = a.image_url || a.thumbnail_url;
+        try {
+          const img = await loadImage(url);
+          if (cancelled) return;
+          const alpha = detectAlpha(img);
+          setImageSilhouettes((prev) => ({
+            ...prev,
+            [a.id]: alpha
+              ? {
+                  hasAlpha: true,
+                  black: silhouetteDataUrl(img, "#0A0A0A"),
+                  white: silhouetteDataUrl(img, "#FFFFFF"),
+                }
+              : { hasAlpha: false },
+          }));
+        } catch {
+          if (!cancelled) {
+            setImageSilhouettes((prev) => ({ ...prev, [a.id]: { hasAlpha: false } }));
+          }
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [savedAssets, imageSilhouettes]);
 
+  // Pick the correct rendering for an asset given a background hex.
+  const renderAssetOn = (asset: any, bg: string, size: "lg" | "md" = "lg") => {
+    if (!asset) return null;
+    if (asset?.editor_state?.kind === "logotype") {
+      const state: LogotypeState = {
+        ...(asset.editor_state as LogotypeState),
+        color: pickLogoColor(bg),
+      };
+      return <Logotype state={state} fit="contain" />;
+    }
+    const url = asset.image_url || asset.thumbnail_url;
+    const sil = imageSilhouettes[asset.id];
+    let src = url;
+    if (sil?.hasAlpha) {
+      src = isDarkBg(bg) ? (sil.white || url) : (sil.black || url);
+    }
+    return (
+      <img
+        src={src}
+        alt={brandName}
+        crossOrigin="anonymous"
+        className={`max-w-full object-contain ${size === "lg" ? "max-h-full" : "max-h-full"}`}
+      />
+    );
+  };
+
+  // Palette: prefer saved Brand Kit palette, fall back to shades of brand color.
   const palette = useMemo(() => {
+    const saved = Array.isArray(meta.palette) ? meta.palette.filter((c) => /^#[0-9a-f]{3,8}$/i.test(c)) : [];
+    if (saved.length >= 3) {
+      const labels = ["Primary", "Secondary", "Accent", "Highlight", "Support"];
+      const items = saved.slice(0, 4).map((hex, i) => ({ name: labels[i] || `Color ${i + 1}`, hex }));
+      // Always include ink + paper neutrals for practical usage.
+      items.push({ name: "Ink", hex: "#0A0A0A" });
+      if (items.length < 5) items.push({ name: "Paper", hex: "#F5F5F4" });
+      return items.slice(0, 5);
+    }
     return [
       { name: "Primary", hex: brandColor },
       { name: "Deep", hex: shade(brandColor, -40) },
@@ -114,10 +295,30 @@ export default function BrandGuidelines() {
       { name: "Ink", hex: "#0A0A0A" },
       { name: "Paper", hex: "#F5F5F4" },
     ];
-  }, [brandColor]);
+  }, [meta, brandColor]);
 
-  const currentFont = loadBrandMeta(projectId).font || baseState.font || "Inter";
-  const fontMeta = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === currentFont.toLowerCase());
+  // Fonts: primary from Brand Kit (meta.font), fall back to the saved logo's
+  // editor_state font. Secondary = any other logotype using a different font.
+  const primaryFont = useMemo(() => {
+    return meta.font || baseState.font || "Inter";
+  }, [meta, baseState]);
+  const secondaryFont = useMemo(() => {
+    const others = savedAssets
+      .map((a) => a?.editor_state?.font)
+      .filter((f): f is string => typeof f === "string" && !!f)
+      .filter((f) => f.toLowerCase() !== primaryFont.toLowerCase());
+    return others[0] || null;
+  }, [savedAssets, primaryFont]);
+  const primaryFontMeta = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === primaryFont.toLowerCase());
+  const secondaryFontMeta = secondaryFont
+    ? LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === secondaryFont.toLowerCase())
+    : null;
+  useEffect(() => {
+    if (secondaryFont) {
+      const m = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === secondaryFont.toLowerCase());
+      if (m) loadGoogleFont(m.family, m.weights);
+    }
+  }, [secondaryFont]);
 
   const download = async () => {
     if (requirePro()) return;
@@ -204,7 +405,7 @@ export default function BrandGuidelines() {
             <div className="flex items-start justify-between border-b border-neutral-200 pb-6">
               <div>
                 <div className="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Brand Book</div>
-                <div className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">{project?.name || "Brand"}</div>
+                <div className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">{brandName}</div>
                 {project?.tagline ? (
                   <div className="mt-1 text-sm text-neutral-500">{project.tagline}</div>
                 ) : null}
@@ -218,22 +419,33 @@ export default function BrandGuidelines() {
             {/* Logo showcase */}
             <section className="mt-8">
               <div className="mb-3 text-[10px] uppercase tracking-[0.3em] text-neutral-500">Logo</div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex h-40 items-center justify-center rounded-xl border border-neutral-200 bg-white px-6">
-                  {logoIsImage ? (
-                    <img src={logoImageUrl} alt="Logo" className="max-h-full max-w-full object-contain" crossOrigin="anonymous" />
-                  ) : (
-                    <Logotype state={baseState} fit="contain" />
-                  )}
+              {primaryAsset ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex h-40 items-center justify-center rounded-xl border border-neutral-200 bg-white px-6">
+                    {renderAssetOn(primaryAsset, "#FFFFFF")}
+                  </div>
+                  <div
+                    className="flex h-40 items-center justify-center rounded-xl px-6"
+                    style={{ background: brandColor }}
+                  >
+                    {renderAssetOn(primaryAsset, brandColor)}
+                  </div>
+                  {secondaryAsset ? (
+                    <>
+                      <div className="flex h-40 items-center justify-center rounded-xl border border-neutral-200 bg-white px-6">
+                        {renderAssetOn(secondaryAsset, "#FFFFFF")}
+                      </div>
+                      <div className="flex h-40 items-center justify-center rounded-xl px-6" style={{ background: "#0A0A0A" }}>
+                        {renderAssetOn(secondaryAsset, "#0A0A0A")}
+                      </div>
+                    </>
+                  ) : null}
                 </div>
-                <div className="flex h-40 items-center justify-center rounded-xl px-6" style={{ background: brandColor }}>
-                  {logoIsImage ? (
-                    <img src={logoImageUrl} alt="Logo" className="max-h-full max-w-full object-contain" crossOrigin="anonymous" />
-                  ) : (
-                    <Logotype state={{ ...baseState, color: onBrandText }} fit="contain" />
-                  )}
+              ) : (
+                <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-white px-6 text-sm text-neutral-500">
+                  Save a logo into your Brand Kit to see it here.
                 </div>
-              </div>
+              )}
             </section>
 
             {/* Palette */}
@@ -255,27 +467,50 @@ export default function BrandGuidelines() {
             {/* Typography */}
             <section className="mt-8">
               <div className="mb-3 text-[10px] uppercase tracking-[0.3em] text-neutral-500">Typography</div>
-              <div className="rounded-xl border border-neutral-200 p-5">
-                <div className="flex items-baseline justify-between">
-                  <div className="text-4xl tracking-tight text-neutral-900" style={{ fontFamily: `'${currentFont}', system-ui` }}>
-                    {currentFont}
+              <div className="space-y-3">
+                <div className="rounded-xl border border-neutral-200 p-5">
+                  <div className="flex items-baseline justify-between">
+                    <div
+                      className="text-4xl tracking-tight text-neutral-900"
+                      style={{ fontFamily: `'${primaryFont}', system-ui` }}
+                    >
+                      {primaryFont}
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wide text-neutral-500">
+                      Primary · {primaryFontMeta?.category || "sans"}
+                    </div>
                   </div>
-                  <div className="text-[10px] uppercase tracking-wide text-neutral-500">
-                    {fontMeta?.category || "sans"}
+                  <div className="mt-3 text-neutral-700" style={{ fontFamily: `'${primaryFont}', system-ui` }}>
+                    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
+                  </div>
+                  <div className="mt-3 text-sm text-neutral-500" style={{ fontFamily: `'${primaryFont}', system-ui` }}>
+                    The quick brown fox jumps over the lazy dog.
                   </div>
                 </div>
-                <div className="mt-3 text-neutral-700" style={{ fontFamily: `'${currentFont}', system-ui` }}>
-                  Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
-                </div>
-                <div className="mt-3 text-sm text-neutral-500" style={{ fontFamily: `'${currentFont}', system-ui` }}>
-                  The quick brown fox jumps over the lazy dog.
-                </div>
+                {secondaryFont ? (
+                  <div className="rounded-xl border border-neutral-200 p-5">
+                    <div className="flex items-baseline justify-between">
+                      <div
+                        className="text-3xl tracking-tight text-neutral-900"
+                        style={{ fontFamily: `'${secondaryFont}', system-ui` }}
+                      >
+                        {secondaryFont}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wide text-neutral-500">
+                        Secondary · {secondaryFontMeta?.category || "sans"}
+                      </div>
+                    </div>
+                    <div className="mt-3 text-neutral-700" style={{ fontFamily: `'${secondaryFont}', system-ui` }}>
+                      Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </section>
 
             {/* Footer */}
             <div className="mt-10 flex items-center justify-between border-t border-neutral-200 pt-4 text-[10px] uppercase tracking-[0.3em] text-neutral-400">
-              <span>{project?.name || "Brand"} · Brand Book</span>
+              <span>{brandName} · Brand Book</span>
               <span>Made with Rocket</span>
             </div>
           </div>
