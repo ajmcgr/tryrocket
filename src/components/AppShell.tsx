@@ -18,7 +18,6 @@ import {
   Shapes,
   LayoutTemplate,
   Star,
-  Home,
   Wand2,
   Trash2,
   PanelLeftClose,
@@ -47,7 +46,6 @@ type StudioNavItem = {
 };
 
 const studioNav: StudioNavItem[] = [
-  { label: "Home", to: "/logos", icon: Home, tour: "nav-create" },
   { label: "Logo Designer", to: "/logos", icon: Sparkles, tour: "nav-logos" },
   { label: "Icon Designer", to: "/icons", icon: Shapes, tour: "nav-icons" },
   { label: "Wizard", to: "/wizard", icon: Wand2, tour: "nav-wizard" },
