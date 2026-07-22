@@ -12,7 +12,6 @@ export function isStoredLogotypeAsset(asset: any): boolean {
 
 export function isCanvasLogotypeAsset(asset: any): boolean {
   if (!isCanvasAsset(asset)) return false;
-  const row = asset as any;
   const elements = (asset.editor_state || []) as CanvasElement[];
   const visible = elements.filter((el) => el.visible !== false);
   const text = visible.filter((el) => el.kind === "text");
@@ -22,15 +21,7 @@ export function isCanvasLogotypeAsset(asset: any): boolean {
   // assets keep using the existing image/icon pipeline.
   const hasNonTextArtwork = visible.some((el) => el.kind !== "text");
   if (hasNonTextArtwork) return false;
-
-  const assetType = String(row?.asset_type || "").toLowerCase();
-  const metaKind = String(row?.meta?.kind || row?.meta?.asset_kind || "").toLowerCase();
-  const title = String(row?.title || "").toLowerCase();
-  return (
-    LOGOTYPE_TYPES.has(assetType)
-    || LOGOTYPE_TYPES.has(metaKind)
-    || /\b(logotype|wordmark|word mark|text logo|logo)\b/.test(title)
-  );
+  return true;
 }
 
 export function isBrandKitLogotypeAsset(asset: any): boolean {
