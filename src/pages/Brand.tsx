@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
+import { pickLogoColor, isDarkBg } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -239,16 +240,18 @@ export default function Brand() {
   const variants = useMemo<Record<Variant["key"], LogotypeState>>(
     () => ({
       regular: { ...baseState, color: baseState.color || "#0A0A0A" },
-      inverse: { ...baseState, color: "#FFFFFF" },
+      // Inverse renders on the brand color. Pick the ink that yields the
+      // strongest contrast so a light brand color never gets a white logo.
+      inverse: { ...baseState, color: pickLogoColor(brandColor) },
       black: { ...baseState, color: "#0A0A0A" },
       white: { ...baseState, color: "#FFFFFF" },
     }),
-    [baseState],
+    [baseState, brandColor],
   );
 
   const cards: Variant[] = [
     { key: "regular", label: "Regular", bg: "#FFFFFF", fg: "#0A0A0A", chipClass: "bg-neutral-100 text-neutral-700", border: "border-neutral-200" },
-    { key: "inverse", label: "Inverse", bg: brandColor, fg: "#FFFFFF", chipClass: "bg-black/25 text-white" },
+    { key: "inverse", label: "Inverse", bg: brandColor, fg: pickLogoColor(brandColor), chipClass: isDarkBg(brandColor) ? "bg-black/25 text-white" : "bg-white/60 text-neutral-800" },
     { key: "black", label: "Black", bg: "#FFFFFF", fg: "#0A0A0A", chipClass: "bg-neutral-100 text-neutral-700", border: "border-neutral-200" },
     { key: "white", label: "White", bg: "#0A0A0A", fg: "#FFFFFF", chipClass: "bg-white/15 text-white" },
   ];
