@@ -327,15 +327,11 @@ export default function Brand() {
                   if (imageVariants?.hasAlpha) {
                     if (v.key === "regular") src = imageVariants.transparent || src;
                     else if (v.key === "black") src = imageVariants.black || src;
-                    else if (v.key === "white" || v.key === "inverse") src = imageVariants.white || src;
-                    // Inverse renders on the brand color — pick whichever
-                    // silhouette contrasts against the brand color so a light
-                    // brand never gets a white logo.
-                    if (v.key === "inverse") {
-                      src = isDarkBg(brandColor)
-                        ? (imageVariants.white || src)
-                        : (imageVariants.black || src);
-                    }
+                    else if (v.key === "white") src = imageVariants.white || src;
+                    // Inverse keeps the original colored icon on the brand
+                    // background — same treatment as the logotype inverse
+                    // (text keeps its readable color on the brand color).
+                    else if (v.key === "inverse") src = imageVariants.transparent || src;
                   }
                   return (
                   <div key={v.key} className="flex flex-col gap-2">
