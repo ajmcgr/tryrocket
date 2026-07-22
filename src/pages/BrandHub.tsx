@@ -309,9 +309,23 @@ export default function BrandHub() {
   if (!activeProject && !params.get("direction")) {
     return (
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Brand Kits</h1>
-          <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand kit you've saved.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Brand Kits</h1>
+            <p className="mt-1 max-w-2xl text-sm text-neutral-500">Every brand kit you've saved.</p>
+          </div>
+          <Link
+            to="/saved"
+            onClick={() => {
+              toast({
+                title: "Pick a logo to start a brand kit",
+                description: "Click ‘Use in brand kit’ on any saved logo to create a new brand.",
+              });
+            }}
+            className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> New Brand
+          </Link>
         </div>
 
         {loading ? (
