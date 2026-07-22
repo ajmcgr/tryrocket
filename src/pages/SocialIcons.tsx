@@ -83,11 +83,9 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 async function renderImageIconPng(src: string, v: Variant, size = 1024): Promise<Blob> {
-  // Silhouette the source logo into the variant's ink when the PNG has an
-  // alpha channel so image logos automatically flip black/white against
-  // dark/light backgrounds. Falls back to the original when there is no
-  // usable alpha (already-baked lockup on a bg).
-  const { url } = await silhouetteImage(src, v.fg);
+  // Key out any solid background so the logo can sit on the tile while
+  // preserving its original colors (matches wordmark treatment).
+  const { url } = await transparentLogo(src);
   const img = await loadImage(url);
   return await composeIcon(img, v, size);
 }
