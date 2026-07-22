@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Package, Plus, Loader2, Check } from "lucide-react";
+import { Palette, Plus, Loader2, Check } from "lucide-react";
 import { addAssetToBrand, createBrandFromAsset, listBrandKits, type BrandableAsset } from "@/lib/brandFromAsset";
 
 type Props = {
@@ -82,7 +82,7 @@ export default function BrandFromAssetMenu({ asset, className, onAssigned, label
           title="Use in brand kit"
           className={className || "inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"}
         >
-          <Package className="h-3.5 w-3.5" />
+          <Palette className="h-3.5 w-3.5" />
           {label ? <span className="ml-1.5">{label}</span> : null}
         </button>
       </DropdownMenuTrigger>

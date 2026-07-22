@@ -17,6 +17,7 @@ import {
   Lock,
   Shuffle,
   Trash2,
+  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -211,11 +212,12 @@ const SavedLogos = () => {
                   {a?.meta?.public ? <Globe className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" /> : null}
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Edit</button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} title="Edit" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                    <PenTool className="h-3.5 w-3.5" />
+                  </button>
                   <BrandFromAssetMenu
                     asset={a}
                     onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)}
-                    label="Use in brand kit"
                     className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
                   />
                   <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
@@ -252,12 +254,13 @@ const SavedLogos = () => {
                   {(a.asset_type || "Design").replace(/_/g, " ")} · {new Date(a.updated_at || a.created_at).toLocaleDateString()}
                 </div>
               </div>
-              <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Edit</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); edit(a); }} title="Edit" className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                <PenTool className="h-3.5 w-3.5" />
+              </button>
               <BrandFromAssetMenu
                 asset={a}
                 onAssigned={(projectId) => markAssignedToBrand(a.id, projectId)}
-                label="Use in brand kit"
-                className="shrink-0 inline-flex items-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                className="shrink-0 inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
               />
               <button type="button" onClick={(e) => { e.stopPropagation(); remix(a); }} title="Remix" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Shuffle className="h-3.5 w-3.5" />
