@@ -131,7 +131,7 @@ const SiteHeader = () => {
             </DropdownMenu>
           ) : (
             <>
-              <Link to="/login" className="hidden text-sm font-semibold text-neutral-600 hover:text-neutral-900 sm:inline">Login</Link>
+              <Link to="/login" className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 sm:inline">Login</Link>
               <Button asChild size="lg" className="h-12 px-6 text-sm">
                 <Link to="/signup">Sign up</Link>
               </Button>
