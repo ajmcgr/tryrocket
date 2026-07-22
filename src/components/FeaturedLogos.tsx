@@ -11,12 +11,6 @@ const FEATURED_NAMES = [
   "Vault",
   "Bloom",
   "Meridian",
-  "Halcyon",
-  "Pulse",
-  "Ember & Oak",
-  "Voltage",
-  "Skyline OS",
-  "MAISON NOIR",
 ];
 
 export default function FeaturedLogos() {
@@ -37,27 +31,27 @@ export default function FeaturedLogos() {
           </p>
         </div>
 
-        <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-16 grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
           {picks.map((tpl) => (
             <Link
               key={tpl.id}
               to="/templates"
-              className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group flex flex-col items-center text-center"
             >
-              <div className="aspect-[4/3] w-full overflow-hidden" style={{ backgroundColor: tpl.background }}>
+              <div
+                className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl"
+                style={{ backgroundColor: tpl.background }}
+              >
                 <img
                   src={tpl.image_url}
                   alt={tpl.title}
-                  className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
+                  className="h-full w-full object-contain p-4 transition duration-500 group-hover:scale-[1.03]"
                   loading="lazy"
                 />
               </div>
-              <div className="flex items-center justify-between border-t border-neutral-100 px-4 py-3">
-                <span className="truncate text-sm font-medium text-neutral-900">{tpl.title}</span>
-                <span className="text-[11px] uppercase tracking-wide text-neutral-400">
-                  {tpl.meta?.template_style || "Logo"}
-                </span>
-              </div>
+              <span className="mt-3 text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+                {tpl.meta?.template_style || "Logo"}
+              </span>
             </Link>
           ))}
         </div>
