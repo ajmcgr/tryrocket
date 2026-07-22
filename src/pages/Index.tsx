@@ -208,84 +208,22 @@ const Index = () => {
           <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
             Turn a URL or idea into logo directions, a matching wordmark, icon, colours and typography. Pick a favourite, refine it, and download it — then build the brand kit around it.
           </p>
-          <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl">
-            <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm focus-within:border-neutral-300 focus-within:ring-2 focus-within:ring-neutral-100">
-              {images.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-2">
-                  {images.map((src, i) => (
-                    <div key={i} className="relative h-14 w-14 overflow-hidden rounded-lg border border-neutral-200">
-                      <img src={src} alt={`upload ${i + 1}`} className="h-full w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setImages((p) => p.filter((_, j) => j !== i))}
-                        className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black"
-                        aria-label="Remove image"
-                      >
-                        <X className="h-2.5 w-2.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => { onPickFiles(e.target.files); e.target.value = ""; }}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="Attach images"
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700"
-                >
-                  <Paperclip className="h-4 w-4" />
-                </button>
-                <input
-                  type="text"
-                  placeholder="Paste your URL or describe the logo you need..."
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={!url && images.length === 0}
-                  aria-label="Generate logo directions"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-brand-foreground transition hover:bg-brand-hover disabled:opacity-40"
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </button>
-              </div>
+          <div className="mx-auto mt-10 w-full max-w-5xl overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
+            <div className="flex h-8 items-center gap-1.5 border-b border-neutral-200 bg-neutral-100 px-3">
+              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
             </div>
-            <p className="mt-2 text-center text-xs text-neutral-400">Generate 12 logo directions · Edit and download your favourite</p>
-          </form>
-          <p className="mt-7 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">What should Rocket make first?</p>
-          <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap justify-center gap-1.5">
-            {CATEGORIES.map((cat) => {
-              const isActive = selected.includes(cat.slug);
-              const Icon = cat.Icon;
-              return (
-                <button
-                  key={cat.slug}
-                  type="button"
-                  onClick={() => toggleCategory(cat.slug)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    isActive
-                      ? "border-brand bg-brand text-brand-foreground"
-                      : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {cat.label}
-                </button>
-              );
-            })}
+            <video
+              src={rocketVideo.url}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="block h-auto w-full bg-white"
+            />
           </div>
-          <div className="mx-auto mt-6 flex flex-wrap justify-center gap-2 text-xs font-medium text-neutral-600">
+          <div className="mx-auto mt-8 flex flex-wrap justify-center gap-2 text-xs font-medium text-neutral-600">
             {[
               "Logo + logotype",
               "App icon + favicon",
