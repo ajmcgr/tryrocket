@@ -47,7 +47,7 @@ const ShowcaseCard = ({
       className="grid animate-fade-in grid-cols-1 gap-8 rounded-[2rem] bg-white p-6 ring-1 ring-neutral-200/70 sm:p-10 lg:grid-cols-2 lg:items-center lg:gap-12 lg:p-12"
     >
       <div
-        className={`flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl ${accents[accent]} ring-1 ring-inset lg:aspect-[5/4] ${reversed ? "lg:order-2" : "lg:order-1"}`}
+        className={`flex aspect-[4/3] items-center justify-center overflow-hidden lg:aspect-[5/4] ${reversed ? "lg:order-2" : "lg:order-1"}`}
       >
         <img
           src={image}
