@@ -15,7 +15,7 @@ const ShowcaseCard = ({
   image,
   imageAlt,
   accent,
-  imageScale = "scale-95 object-contain sm:scale-100 lg:scale-110",
+  imageScale = "scale-80 object-contain sm:scale-90 lg:scale-95",
 }: {
   i: number;
   title: string;
@@ -116,7 +116,7 @@ const CARDS = [
     image: iconsAsset,
     imageAlt: "Custom icon set",
     accent: "coral" as const,
-    imageScale: "scale-75 object-contain sm:scale-85 lg:scale-90",
+    imageScale: "scale-65 object-contain sm:scale-75 lg:scale-80",
   },
   {
     id: "brand-kits",
