@@ -260,10 +260,10 @@ export default function BrandGuidelines() {
     ];
   }, [meta, brandColor]);
 
-  // Fonts: primary from Brand Kit (meta.font), fall back to the saved logo's
-  // editor_state font. Secondary = any other logotype using a different font.
+  // Fonts: prefer the actual font on the saved primary logotype (kept live
+  // in sync with /editor edits). Fall back to Brand Kit meta.font, then Inter.
   const primaryFont = useMemo(() => {
-    return meta.font || baseState.font || "Inter";
+    return baseState.font || meta.font || "Inter";
   }, [meta, baseState]);
   const secondaryFont = useMemo(() => {
     const others = savedAssets
@@ -280,8 +280,16 @@ export default function BrandGuidelines() {
     if (secondaryFont) {
       const m = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === secondaryFont.toLowerCase());
       if (m) loadGoogleFont(m.family, m.weights);
+      else loadGoogleFont(secondaryFont, [400, 700]);
     }
   }, [secondaryFont]);
+  useEffect(() => {
+    if (primaryFont) {
+      const m = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === primaryFont.toLowerCase());
+      if (m) loadGoogleFont(m.family, m.weights);
+      else loadGoogleFont(primaryFont, [400, 700]);
+    }
+  }, [primaryFont]);
 
   const download = async () => {
     if (requirePro()) return;
