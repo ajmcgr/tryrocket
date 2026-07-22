@@ -80,11 +80,30 @@ export default function FontExplorer() {
     setApplyingKey(family);
     const next = saveBrandMeta(projectId, { font: family });
     setBrandMeta(next);
-    if (logoAsset?.id) {
-      const nextState: LogotypeState = { ...baseState, font: family };
-      try { await supabase.from("assets").update({ editor_state: nextState }).eq("id", logoAsset.id); } catch {}
-      setLogoAsset((prev: any) => (prev ? { ...prev, editor_state: nextState } : prev));
-    }
+    // Update every logotype asset in this project so Logo/Icon Files, Brand Book,
+    // and Social Icons all reflect the new typeface.
+    try {
+      const { data: allAssets } = await supabase
+        .from("assets")
+        .select("id,editor_state")
+        .eq("project_id", projectId)
+        .in("asset_type", ["logo", "logotype", "wordmark"]);
+      const targets = (allAssets || []).filter(
+        (a: any) => a?.editor_state?.kind === "logotype",
+      );
+      await Promise.all(
+        targets.map((a: any) =>
+          supabase
+            .from("assets")
+            .update({ editor_state: { ...a.editor_state, font: family } })
+            .eq("id", a.id),
+        ),
+      );
+      if (logoAsset?.id) {
+        const nextState: LogotypeState = { ...baseState, font: family };
+        setLogoAsset((prev: any) => (prev ? { ...prev, editor_state: nextState } : prev));
+      }
+    } catch {}
     setApplyingKey(null);
     toast({ title: `${family} applied` });
     try { window.dispatchEvent(new CustomEvent("rocket:notify", { detail: { kind: "logo_updated", projectId } })); } catch {}
