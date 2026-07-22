@@ -141,7 +141,7 @@ const AppShell = () => {
                   <Link to="/settings">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
-                  <Link to="/pricing">Plans</Link>
+                  <Link to="/pricing" target="_blank" rel="noopener noreferrer">Plans</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => { await signOut(); nav("/"); }}

@@ -116,7 +116,7 @@ const SiteHeader = () => {
                   <p className="mt-0.5 truncate text-sm font-medium text-neutral-900">{user?.email}</p>
                 </div>
                 <DropdownMenuItem asChild className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
-                  <Link to="/pricing">Plans</Link>
+                  <Link to="/pricing" target="_blank" rel="noopener noreferrer">Plans</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer rounded-md px-2 py-1.5 text-sm text-neutral-700 focus:bg-neutral-100 focus:text-neutral-900">
                   <Link to="/settings">Settings</Link>
