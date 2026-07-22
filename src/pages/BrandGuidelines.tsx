@@ -187,18 +187,18 @@ export default function BrandGuidelines() {
       for (const a of targets) {
         const url = a.image_url || a.thumbnail_url;
         try {
-          const img = await loadImage(url);
+          const [black, white] = await Promise.all([
+            silhouetteImage(url, "#0A0A0A"),
+            silhouetteImage(url, "#FFFFFF"),
+          ]);
           if (cancelled) return;
-          const alpha = detectAlpha(img);
           setImageSilhouettes((prev) => ({
             ...prev,
-            [a.id]: alpha
-              ? {
-                  hasAlpha: true,
-                  black: silhouetteDataUrl(img, "#0A0A0A"),
-                  white: silhouetteDataUrl(img, "#FFFFFF"),
-                }
-              : { hasAlpha: false },
+            [a.id]: {
+              hasAlpha: black.hasAlpha,
+              black: black.url,
+              white: white.url,
+            },
           }));
         } catch {
           if (!cancelled) {
