@@ -4,6 +4,8 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logotype, logotypeToPng } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import BrandLogotypePreview from "@/components/BrandLogotypePreview";
+import { isBrandKitLogotypeAsset } from "@/lib/brandLogoAsset";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import BrandFromAssetMenu from "@/components/BrandFromAssetMenu";
@@ -142,18 +144,21 @@ const SavedLogos = () => {
   };
 
   const DesignPreview = ({ asset }: { asset: any }) => {
+    const isBrandLogotype = isBrandKitLogotypeAsset(asset);
     const isLogotype = asset?.editor_state?.kind === "logotype";
     const isCanvas = isCanvasAsset(asset);
     // Prefer live editor_state over any generated image_url so edits from
     // /editor propagate to preview cards.
-    const isImage = asset.image_url && !isLogotype && !isCanvas;
+    const isImage = asset.image_url && !isLogotype && !isCanvas && !isBrandLogotype;
 
     return (
       <div className="h-full w-full" style={{ background: asset?.meta?.background || undefined }}>
-        {isImage ? (
+        {isBrandLogotype ? (
+          <div className="flex h-full w-full items-center justify-center p-4">
+            <BrandLogotypePreview asset={asset} color="#0A0A0A" fallback={asset.title || "Logo"} />
+          </div>
+        ) : isImage ? (
           <img src={asset.thumbnail_url || asset.image_url} alt={asset.title || "Logo"} className="h-full w-full object-contain" loading="lazy" />
-        ) : isLogotype ? (
-          <Logotype state={asset.editor_state} fit="contain" />
         ) : isCanvas ? (
           <CanvasAssetPreview elements={(asset.editor_state as any) || []} className="h-full w-full" />
         ) : (
