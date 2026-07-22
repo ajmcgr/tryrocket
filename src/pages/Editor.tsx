@@ -2230,22 +2230,20 @@ const Inspector = ({ el, fonts, onChange }: { el: El; fonts: string[]; onChange:
         </select>
       </Field>
       <Field label="Font">
-        <input
-          list={FONT_DATALIST_ID}
+        <select
           value={el.fontFamily}
           onChange={(e) => {
             const nextFont = e.target.value;
-            if (fonts.includes(nextFont) || DEFAULT_FONTS.includes(nextFont)) {
-              loadGoogleFont(nextFont, [400, 500, 600, 700, 800]);
-            }
+            loadGoogleFont(nextFont, [400, 500, 600, 700, 800]);
             onChange({ fontFamily: nextFont } as any);
           }}
           className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm"
-          placeholder="Search fonts"
-        />
-        <datalist id={FONT_DATALIST_ID}>
-          {fonts.map((f) => (<option key={f} value={f} />))}
-        </datalist>
+        >
+          {!fonts.includes(el.fontFamily) && el.fontFamily && (
+            <option value={el.fontFamily}>{el.fontFamily}</option>
+          )}
+          {fonts.map((f) => (<option key={f} value={f}>{f}</option>))}
+        </select>
       </Field>
     </div>
   );
