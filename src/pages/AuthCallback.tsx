@@ -13,7 +13,7 @@ const AuthCallback = () => {
     (async () => {
       try {
         const url = new URL(window.location.href);
-        const next = url.searchParams.get("next") || "/create";
+        const next = url.searchParams.get("next") || "/logos";
         const code = url.searchParams.get("code");
         const errDesc = url.searchParams.get("error_description") || url.searchParams.get("error");
         if (errDesc) throw new Error(errDesc);

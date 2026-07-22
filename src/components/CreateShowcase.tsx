@@ -95,7 +95,7 @@ const CARDS = [
       "Works for SaaS, AI, mobile & consumer brands",
     ],
     ctaText: "Generate logos",
-    ctaLink: "/create",
+    ctaLink: "/logos",
     image: logoAsset.url,
     imageAlt: "Generated logo directions",
     accent: "blue" as const,

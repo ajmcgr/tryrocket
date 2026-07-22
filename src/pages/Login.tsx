@@ -16,7 +16,7 @@ const Login = ({ mode = "login" as "login" | "signup" }) => {
   const { toast } = useToast();
   const nav = useNavigate();
   const loc = useLocation() as { state?: { from?: string } };
-  const next = loc.state?.from || "/create";
+  const next = loc.state?.from || "/logos";
   const isSignup = mode === "signup";
 
   const submit = async (e: React.FormEvent) => {
