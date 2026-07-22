@@ -146,7 +146,7 @@ const SavedLogos = () => {
     const isCanvas = isCanvasAsset(asset);
     // Prefer live editor_state over any generated image_url so edits from
     // /editor propagate to preview cards.
-    const isImage = (asset.image_url || asset.thumbnail_url) && !isLogotype && !isCanvas;
+    const isImage = asset.image_url && !isLogotype && !isCanvas;
 
     return (
       <div className="h-full w-full" style={{ background: asset?.meta?.background || undefined }}>
