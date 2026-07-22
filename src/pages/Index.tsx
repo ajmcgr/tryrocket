@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
-import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X, BookMarked, LayoutTemplate, Shapes, Type as TypeIcon, Image as ImageIcon, Box, Sparkle, BarChart3 } from "lucide-react";
+import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X, BookMarked, LayoutTemplate, Shapes, Type as TypeIcon, Image as ImageIcon, Box, Sparkle, BarChart3, Play, Pause } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -130,7 +130,9 @@ const Index = () => {
   const [url, setUrl] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
+  const [isPlaying, setIsPlaying] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const onPickFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -227,20 +229,36 @@ const Index = () => {
               </span>
             ))}
           </div>
-          <div className="mx-auto mt-16 w-full max-w-5xl overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
+          <div className="mx-auto mt-16 w-full max-w-7xl overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
             <div className="flex h-8 items-center gap-1.5 border-b border-neutral-200 bg-neutral-100 px-3">
               <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
               <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
               <span className="h-3 w-3 rounded-full bg-[#28c840]" />
             </div>
-            <video
-              src={rocketVideo.url}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="block h-auto w-full bg-white"
-            />
+            <div className="relative">
+              <video
+                ref={videoRef}
+                src={rocketVideo.url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                className="block h-auto w-full bg-white"
+              />
+              <button
+                onClick={() => {
+                  if (!videoRef.current) return;
+                  if (isPlaying) videoRef.current.pause();
+                  else videoRef.current.play();
+                }}
+                className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-neutral-200/60 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#1676e3]"
+                aria-label={isPlaying ? "Pause video" : "Play video"}
+              >
+                {isPlaying ? <Pause className="h-6 w-6 text-neutral-800" /> : <Play className="h-6 w-6 text-neutral-800" />}
+              </button>
+            </div>
           </div>
         </div>
       </section>
