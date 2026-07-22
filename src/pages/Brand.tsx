@@ -5,8 +5,10 @@ import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng, logotypeToSvg } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import BrandLogotypePreview from "@/components/BrandLogotypePreview";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { isCanvasAsset } from "@/lib/canvasAsset";
+import { brandLogotypeToPng, isBrandKitLogotypeAsset, logotypeStateFromAsset } from "@/lib/brandLogoAsset";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -86,6 +88,12 @@ async function downloadPng(state: LogotypeState, filename: string) {
   downloadBlob(await res.blob(), `${filename}.png`);
 }
 
+async function downloadBrandLogotypePng(asset: any, color: string, filename: string, fallback: string) {
+  const dataUrl = await brandLogotypeToPng(asset, color, fallback, 4);
+  const res = await fetch(dataUrl);
+  downloadBlob(await res.blob(), `${filename}.png`);
+}
+
 function downloadSvg(state: LogotypeState, filename: string) {
   const svg = logotypeToSvg(state);
   downloadBlob(new Blob([svg], { type: "image/svg+xml" }), `${filename}.svg`);
@@ -93,6 +101,25 @@ function downloadSvg(state: LogotypeState, filename: string) {
 
 async function downloadPdf(state: LogotypeState, filename: string, bg: string) {
   const dataUrl = await logotypeToPng(state, 4);
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = rej;
+    img.src = dataUrl;
+  });
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  const pdf = new jsPDF({ orientation: w >= h ? "landscape" : "portrait", unit: "pt", format: [w, h] });
+  if (bg && bg.toLowerCase() !== "#ffffff") {
+    pdf.setFillColor(bg);
+    pdf.rect(0, 0, w, h, "F");
+  }
+  pdf.addImage(dataUrl, "PNG", 0, 0, w, h);
+  pdf.save(`${filename}.pdf`);
+}
+
+async function downloadBrandLogotypePdf(asset: any, color: string, filename: string, bg: string, fallback: string) {
+  const dataUrl = await brandLogotypeToPng(asset, color, fallback, 4);
   const img = new Image();
   await new Promise((res, rej) => {
     img.onload = res;
@@ -172,7 +199,7 @@ export default function Brand() {
       // No cross-project fallback: only show what's actually in this brand kit.
       if (cancelled) return;
       setLogoAssets(logos);
-      const withState = logos.find((a: any) => a?.editor_state?.kind === "logotype");
+      const withState = logos.find((a: any) => isBrandKitLogotypeAsset(a));
       setLogoAsset(withState || logos[0] || null);
       setLoading(false);
     })();
@@ -187,12 +214,13 @@ export default function Brand() {
   }, [project]);
 
   const baseState = useMemo<LogotypeState>(() => {
-    if (logoAsset?.editor_state?.kind === "logotype") return logoAsset.editor_state as LogotypeState;
+    if (isBrandKitLogotypeAsset(logoAsset)) return logotypeStateFromAsset(logoAsset, project?.name || "Brand");
     return defaultLogotypeState(project?.name || logoAsset?.title || "Brand");
   }, [logoAsset, project]);
 
-  const logoIsCanvas = isCanvasAsset(logoAsset);
-  const logoIsImage = !logoAsset?.editor_state?.kind && !logoIsCanvas && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
+  const logoIsBrandLogotype = isBrandKitLogotypeAsset(logoAsset);
+  const logoIsCanvas = isCanvasAsset(logoAsset) && !logoIsBrandLogotype;
+  const logoIsImage = !logoIsBrandLogotype && !logoAsset?.editor_state?.kind && !logoIsCanvas && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
   const logoImageUrl = logoAsset?.image_url || logoAsset?.thumbnail_url;
   const imageVariants = useImageVariants(logoIsImage ? logoImageUrl : undefined);
 
@@ -235,7 +263,12 @@ export default function Brand() {
     try {
       const state = variants[v.key];
       const name = filenameFor(v);
-      if (fmt === "png") await downloadPng(state, name);
+      if (logoIsBrandLogotype) {
+        if (fmt === "png") await downloadBrandLogotypePng(logoAsset, state.color, name, project?.name || baseState.text);
+        else if (fmt === "pdf") await downloadBrandLogotypePdf(logoAsset, state.color, name, v.bg, project?.name || baseState.text);
+        else if (logoAsset?.editor_state?.kind === "logotype") downloadSvg(state, name);
+        else await downloadBrandLogotypePng(logoAsset, state.color, name, project?.name || baseState.text);
+      } else if (fmt === "png") await downloadPng(state, name);
       else if (fmt === "svg") downloadSvg(state, name);
       else await downloadPdf(state, name, v.bg);
     } catch (e: any) {
@@ -255,7 +288,7 @@ export default function Brand() {
     setLogoAssets((prev) => {
       const next = prev.filter((a) => a.id !== assetId);
       if (logoAsset?.id === assetId) {
-        const withState = next.find((a: any) => a?.editor_state?.kind === "logotype");
+          const withState = next.find((a: any) => isBrandKitLogotypeAsset(a));
         setLogoAsset(withState || next[0] || null);
       }
       return next;
@@ -370,7 +403,11 @@ export default function Brand() {
                       style={{ backgroundColor: v.bg }}
                     >
                       <div className="flex aspect-[16/9] items-center justify-center px-10">
-                        <Logotype state={state} fit="contain" />
+                        {logoIsBrandLogotype ? (
+                          <BrandLogotypePreview asset={logoAsset} color={state.color} fallback={project?.name || baseState.text} />
+                        ) : (
+                          <Logotype state={state} fit="contain" />
+                        )}
                       </div>
                       <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                       <DropdownMenu>
@@ -441,8 +478,8 @@ export default function Brand() {
                   <div key={a.id} className={`group relative overflow-hidden rounded-xl border bg-white transition hover:shadow-sm ${logoAsset?.id === a.id ? "border-brand ring-2 ring-brand/30" : "border-neutral-200"}`}>
                     <button onClick={() => setLogoAsset(a)} className="block w-full">
                       <div className="flex aspect-square items-center justify-center bg-neutral-50 p-3">
-                        {a?.editor_state?.kind === "logotype" ? (
-                          <Logotype state={a.editor_state} fit="contain" />
+                        {isBrandKitLogotypeAsset(a) ? (
+                          <BrandLogotypePreview asset={a} color="#0A0A0A" fallback={project?.name || "Brand"} />
                         ) : isCanvasAsset(a) ? (
                           <CanvasAssetPreview elements={a.editor_state as any} className="h-full w-full" background="transparent" />
                         ) : (a.image_url || a.thumbnail_url) ? (

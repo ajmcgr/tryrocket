@@ -4,10 +4,11 @@ import { Download, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
-import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import BrandLogotypePreview from "@/components/BrandLogotypePreview";
 import { defaultLogotypeState, LOGOTYPE_FONTS, loadGoogleFont, type LogotypeState } from "@/lib/logotype";
 import { isCanvasAsset } from "@/lib/canvasAsset";
+import { isBrandKitLogotypeAsset, logotypeStateFromAsset } from "@/lib/brandLogoAsset";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { loadBrandMeta } from "@/lib/brandMeta";
@@ -158,13 +159,14 @@ export default function BrandGuidelines() {
 
   const brandName = project?.name || "Brand";
 
-  // Primary logo = first saved logotype editor_state, else first saved image.
+  // Primary logo = first saved logotype, including clean text-only editor
+  // canvases; icons/images keep using the existing visual pipeline.
   const primaryLogotype = useMemo(
-    () => savedAssets.find((a) => a?.editor_state?.kind === "logotype") || null,
+    () => savedAssets.find((a) => isBrandKitLogotypeAsset(a)) || null,
     [savedAssets],
   );
   const primaryVisual = useMemo(
-    () => savedAssets.find((a) => isCanvasAsset(a) || (!a?.editor_state && (a?.image_url || a?.thumbnail_url))) || null,
+    () => savedAssets.find((a) => !isBrandKitLogotypeAsset(a) && (isCanvasAsset(a) || (!a?.editor_state && (a?.image_url || a?.thumbnail_url)))) || null,
     [savedAssets],
   );
   const primaryAsset = primaryLogotype || primaryVisual;
@@ -173,8 +175,8 @@ export default function BrandGuidelines() {
     : savedAssets.filter((a) => a !== primaryAsset)[0] || null;
 
   const baseState = useMemo<LogotypeState>(() => {
-    if (primaryLogotype?.editor_state?.kind === "logotype") {
-      return primaryLogotype.editor_state as LogotypeState;
+    if (primaryLogotype) {
+      return logotypeStateFromAsset(primaryLogotype, brandName);
     }
     return defaultLogotypeState(brandName);
   }, [primaryLogotype, brandName]);
@@ -215,12 +217,8 @@ export default function BrandGuidelines() {
   // Pick the correct rendering for an asset given a background hex.
   const renderAssetOn = (asset: any, bg: string, size: "lg" | "md" = "lg") => {
     if (!asset) return null;
-    if (asset?.editor_state?.kind === "logotype") {
-      const state: LogotypeState = {
-        ...(asset.editor_state as LogotypeState),
-        color: pickLogoColor(bg),
-      };
-      return <Logotype state={state} fit="contain" />;
+    if (isBrandKitLogotypeAsset(asset)) {
+      return <BrandLogotypePreview asset={asset} color={pickLogoColor(bg)} fallback={brandName} />;
     }
     if (isCanvasAsset(asset)) {
       return <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" background="transparent" />;
