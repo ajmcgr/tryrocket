@@ -227,11 +227,6 @@ function renderSvg(spec: IconSpec): string {
   const textY = layout === "stack" ? iconY + iconSize + 90 : H / 2 + 12;
   const textCase = spec.transform === "uppercase" ? spec.name.toUpperCase() : spec.transform === "lowercase" ? spec.name.toLowerCase() : spec.name;
   const ls = ((spec.letterSpacing ?? 0) * 64).toFixed(2);
-  const tagY = textY + 40;
-  const tagCase = spec.tagline
-    ? (spec.transform === "uppercase" ? spec.tagline.toUpperCase() : spec.tagline)
-    : "";
-
   const inner = iconPath(spec.icon, spec.color);
   const family = `${spec.font}, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial`;
 
@@ -239,7 +234,6 @@ function renderSvg(spec: IconSpec): string {
     <rect width="${W}" height="${H}" fill="${spec.bg}"/>
     <g transform="translate(${iconX} ${iconY}) scale(${(iconSize / 64).toFixed(3)})">${inner}</g>
     <text x="${textX}" y="${textY}" fill="${spec.color}" text-anchor="${textAnchor}" font-family='${family}' font-weight="${spec.weight}" font-size="72" letter-spacing="${ls}">${escapeXml(textCase)}</text>
-    ${spec.tagline ? `<text x="${textX}" y="${tagY}" fill="${spec.color}" opacity="0.6" text-anchor="${textAnchor}" font-family='${family}' font-weight="500" font-size="20" letter-spacing="1">${escapeXml(tagCase)}</text>` : ""}
   </svg>`;
 }
 
