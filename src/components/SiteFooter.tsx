@@ -27,7 +27,7 @@ const SiteFooter = () => (
             <ul className="mt-4 space-y-2.5 text-sm font-normal text-neutral-600">
             <li><Link to="/about" className="hover:text-neutral-900">About</Link></li>
             <li><Link to="/blog" className="hover:text-neutral-900">Blog</Link></li>
-            <li><Link to="/media-kit" className="hover:text-neutral-900">Media Kit</Link></li>
+            <li><Link to="/brand-kit" className="hover:text-neutral-900">Brand Kit</Link></li>
           </ul>
         </div>
         <div>
