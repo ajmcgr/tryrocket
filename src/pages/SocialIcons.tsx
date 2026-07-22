@@ -11,7 +11,7 @@ import { brandLogotypeToPng, isBrandKitLogotypeAsset, logotypeLabel } from "@/li
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
-import { pickLogoColor, isDarkBg, silhouetteImage } from "@/lib/logoContrast";
+import { pickLogoColor, isDarkBg, silhouetteImage, transparentLogo } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -166,7 +166,7 @@ export default function SocialIcons() {
   const [busy, setBusy] = useState<string | null>(null);
   // Per-asset silhouettes keyed by ink color ("#0A0A0A" or "#FFFFFF") so image
   // logos automatically render in the right ink on each background.
-  const [silhouettes, setSilhouettes] = useState<Record<string, { black?: string; white?: string; hasAlpha: boolean }>>({});
+  const [silhouettes, setSilhouettes] = useState<Record<string, { transparent?: string; black?: string; white?: string; hasAlpha: boolean }>>({});
 
   useEffect(() => {
     if (!projectId) return;
@@ -204,17 +204,23 @@ export default function SocialIcons() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const next: Record<string, { black?: string; white?: string; hasAlpha: boolean }> = {};
+      const next: Record<string, { transparent?: string; black?: string; white?: string; hasAlpha: boolean }> = {};
       for (const a of logoAssets) {
         const src = isBrandKitLogotypeAsset(a) ? null : (a?.image_url || a?.thumbnail_url || null);
         if (!src) continue;
         try {
-          const [black, white] = await Promise.all([
+          const [transparent, black, white] = await Promise.all([
+            transparentLogo(src),
             silhouetteImage(src, "#0A0A0A"),
             silhouetteImage(src, "#FFFFFF"),
           ]);
           if (cancelled) return;
-          next[a.id] = { hasAlpha: black.hasAlpha, black: black.url, white: white.url };
+          next[a.id] = {
+            hasAlpha: transparent.hasTransparency || black.hasAlpha,
+            transparent: transparent.url,
+            black: black.url,
+            white: white.url,
+          };
         } catch {
           // ignore — fall back to original
         }
@@ -349,9 +355,11 @@ export default function SocialIcons() {
                     const iconState: LogotypeState = { ...state, color: v.fg };
                     const bkey = `${asset.id}:${v.key}`;
                     const sil = silhouettes[asset.id];
-                    const useWhite = isDarkBg(v.bg);
+                    // Prefer the background-keyed (transparent) source so the
+                    // logo keeps its colors on top of the tile. Fall back to
+                    // silhouettes only if the source truly has no alpha.
                     const previewSrc = imgSrc
-                      ? (sil?.hasAlpha ? (useWhite ? sil.white : sil.black) : imgSrc)
+                      ? (sil?.transparent || imgSrc)
                       : null;
                     return (
                       <div key={v.key} className="flex flex-col gap-2">
