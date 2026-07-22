@@ -343,7 +343,7 @@ export default function BrandHub() {
               const logo = projectLogos.get(project.id);
               const preview = logo?.thumbnail_url || logo?.image_url || project?.cover_url;
               const logoState = logo?.editor_state?.kind === "logotype" ? logo.editor_state : null;
-              const designCount = designsByProject.get(project.id)?.length || 0;
+              const designCount = projectDesignCount(project.id);
               return (
                 <div key={project.id} className="group relative">
                   <Link
