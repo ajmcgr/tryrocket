@@ -85,18 +85,30 @@ export default function FontExplorer() {
     try {
       const { data: allAssets } = await supabase
         .from("assets")
-        .select("id,editor_state")
-        .eq("project_id", projectId)
-        .in("asset_type", ["logo", "logotype", "wordmark"]);
-      const targets = (allAssets || []).filter(
-        (a: any) => a?.editor_state?.kind === "logotype",
-      );
+        .select("id,editor_state,asset_type")
+        .eq("project_id", projectId);
+      const updates: { id: string; editor_state: any }[] = [];
+      for (const a of allAssets || []) {
+        const state = a?.editor_state;
+        if (!state) continue;
+        if (state.kind === "logotype") {
+          updates.push({ id: a.id, editor_state: { ...state, font: family } });
+        } else if (Array.isArray(state)) {
+          // Canvas asset: update every text element's fontFamily.
+          let touched = false;
+          const next = state.map((el: any) => {
+            if (el && el.kind === "text") {
+              touched = true;
+              return { ...el, fontFamily: family };
+            }
+            return el;
+          });
+          if (touched) updates.push({ id: a.id, editor_state: next });
+        }
+      }
       await Promise.all(
-        targets.map((a: any) =>
-          supabase
-            .from("assets")
-            .update({ editor_state: { ...a.editor_state, font: family } })
-            .eq("id", a.id),
+        updates.map((u) =>
+          supabase.from("assets").update({ editor_state: u.editor_state }).eq("id", u.id),
         ),
       );
       if (logoAsset?.id) {
