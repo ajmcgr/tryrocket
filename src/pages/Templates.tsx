@@ -169,8 +169,16 @@ const Templates = () => {
           console.error(error);
           setDesigns([...SEED_TEMPLATES]);
         } else {
-          // Merge live public designs first, then seed catalog so users always see 200+.
-          setDesigns([...(data || []), ...SEED_TEMPLATES]);
+          // Prefer the curated seed catalog over any stale public rows that were
+          // generated from older template logic; those rows can render as blank
+          // blocks and duplicate the same names.
+          const seedTitles = new Set(SEED_TEMPLATES.map((template: any) => String(template.title || "").toLowerCase()));
+          const publicDesigns = (data || []).filter((design: any) => {
+            const title = String(design?.title || "").toLowerCase();
+            const isOldRocketSeed = seedTitles.has(title) || design?.meta?.seed === true;
+            return !isOldRocketSeed;
+          });
+          setDesigns([...SEED_TEMPLATES, ...publicDesigns]);
         }
         setLoading(false);
       }
