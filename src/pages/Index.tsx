@@ -205,10 +205,30 @@ const Index = () => {
           <h1 className="mx-auto max-w-4xl text-4xl font-medium tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Create a logo people remember.
           </h1>
-          <p className="mx-auto mt-6 max-w-3xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
-            Turn a URL or idea into logo directions, a matching wordmark, icon, colours and typography. Pick a favourite, refine it, and download it — then build the brand kit around it.
+          <p className="mx-auto mt-6 max-w-2xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
+            From a URL or a few words, Rocket generates logo directions, a wordmark, icon, colours and typography. Pick one, refine it, and build your brand kit.
           </p>
-          <div className="mx-auto mt-10 w-full max-w-5xl overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
+            <Link
+              to="/signup"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover"
+            >
+              Start Free Trial
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <div className="min-w-[240px]">
+              <SenjaWidget />
+            </div>
+          </div>
+          <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-neutral-600">
+            {["7-day free trial", "Secure payment", "Cancel any-time"].map((item) => (
+              <span key={item} className="inline-flex items-center gap-2">
+                <Check className="h-4 w-4 text-brand" strokeWidth={2.5} />
+                {item}
+              </span>
+            ))}
+          </div>
+          <div className="mx-auto mt-16 w-full max-w-5xl overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
             <div className="flex h-8 items-center gap-1.5 border-b border-neutral-200 bg-neutral-100 px-3">
               <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
               <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
@@ -222,25 +242,6 @@ const Index = () => {
               playsInline
               className="block h-auto w-full bg-white"
             />
-          </div>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover"
-            >
-              Start 7-day free trial
-            </Link>
-            <div className="min-w-[240px]">
-              <SenjaWidget />
-            </div>
-          </div>
-          <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-neutral-600">
-            {["7-day free trial", "Secure payment", "Cancel any-time"].map((item) => (
-              <span key={item} className="inline-flex items-center gap-2">
-                <Check className="h-4 w-4 text-brand" strokeWidth={2.5} />
-                {item}
-              </span>
-            ))}
           </div>
         </div>
       </section>
