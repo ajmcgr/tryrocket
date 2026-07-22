@@ -229,20 +229,36 @@ const Index = () => {
               </span>
             ))}
           </div>
-          <div className="mx-auto mt-16 w-full max-w-5xl overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
+          <div className="mx-auto mt-16 w-full max-w-7xl overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
             <div className="flex h-8 items-center gap-1.5 border-b border-neutral-200 bg-neutral-100 px-3">
               <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
               <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
               <span className="h-3 w-3 rounded-full bg-[#28c840]" />
             </div>
-            <video
-              src={rocketVideo.url}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="block h-auto w-full bg-white"
-            />
+            <div className="relative">
+              <video
+                ref={videoRef}
+                src={rocketVideo.url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                className="block h-auto w-full bg-white"
+              />
+              <button
+                onClick={() => {
+                  if (!videoRef.current) return;
+                  if (isPlaying) videoRef.current.pause();
+                  else videoRef.current.play();
+                }}
+                className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)] ring-1 ring-neutral-200/60 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#1676e3]"
+                aria-label={isPlaying ? "Pause video" : "Play video"}
+              >
+                {isPlaying ? <Pause className="h-6 w-6 text-neutral-800" /> : <Play className="h-6 w-6 text-neutral-800" />}
+              </button>
+            </div>
           </div>
         </div>
       </section>
