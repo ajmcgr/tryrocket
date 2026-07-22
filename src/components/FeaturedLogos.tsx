@@ -35,29 +35,28 @@ export default function FeaturedLogos() {
           </p>
         </div>
 
-        <div className="mt-16 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
-          {picks.map((tpl) => (
-            <Link
-              key={tpl.id}
-              to="/templates"
-              className="group flex flex-col items-center text-center"
-            >
-              <div
-                className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl"
-                style={{ backgroundColor: tpl.background }}
+        <div className="mt-16 -mx-6 overflow-x-auto px-6 pb-4 [scrollbar-width:thin]">
+          <div className="flex gap-10 sm:gap-14">
+            {picks.map((tpl) => (
+              <Link
+                key={tpl.id}
+                to="/templates"
+                className="group flex shrink-0 flex-col items-center text-center"
               >
-                <img
-                  src={tpl.image_url}
-                  alt={tpl.title}
-                  className="h-full w-full object-contain p-6 transition duration-500 group-hover:scale-[1.04]"
-                  loading="lazy"
-                />
-              </div>
-              <span className="mt-4 text-[11px] uppercase tracking-[0.16em] text-neutral-500">
-                {tpl.meta?.template_style || "Logo"}
-              </span>
-            </Link>
-          ))}
+                <div className="flex h-72 w-72 items-center justify-center sm:h-80 sm:w-80 lg:h-96 lg:w-96">
+                  <img
+                    src={tpl.image_url}
+                    alt={tpl.title}
+                    className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.04]"
+                    loading="lazy"
+                  />
+                </div>
+                <span className="mt-4 text-[11px] uppercase tracking-[0.16em] text-neutral-500">
+                  {tpl.meta?.template_style || "Logo"}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
 
         <div className="mt-10 flex justify-center">
