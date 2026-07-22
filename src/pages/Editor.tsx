@@ -408,6 +408,31 @@ const Editor = () => {
     return () => document.removeEventListener("fullscreenchange", onFullScreenChange);
   }, []);
 
+  /* Dynamically inject Google Fonts stylesheets for any font family used by canvas text
+     elements (e.g. "Space Mono") that isn't already in the base bundle. */
+  const loadedDynamicFontsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const inUse = new Set<string>();
+    for (const el of els) {
+      if ((el as any).kind === "text") {
+        const fam = ((el as any).fontFamily || "").trim();
+        if (fam) inUse.add(fam);
+      }
+    }
+    inUse.forEach((fam) => {
+      if (loadedDynamicFontsRef.current.has(fam)) return;
+      if (DEFAULT_FONTS.includes(fam)) { loadedDynamicFontsRef.current.add(fam); return; }
+      const id = `rocket-editor-font-${fam.replace(/\s+/g, "-")}`;
+      if (document.getElementById(id)) { loadedDynamicFontsRef.current.add(fam); return; }
+      const link = document.createElement("link");
+      link.id = id;
+      link.rel = "stylesheet";
+      link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fam).replace(/%20/g, "+")}:wght@400;500;600;700;800&display=swap`;
+      document.head.appendChild(link);
+      loadedDynamicFontsRef.current.add(fam);
+    });
+  }, [els]);
+
   /* state + history */
   const [els, _setEls] = useState<El[]>(() => {
     // If we're opening a specific asset, start empty and wait for the fetch to
