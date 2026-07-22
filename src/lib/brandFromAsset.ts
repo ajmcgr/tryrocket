@@ -38,12 +38,30 @@ export async function addAssetToBrand(assetId: string, projectId: string): Promi
   if (workspaceId && !project?.workspace_id) {
     await supabase.from("projects").update({ workspace_id: workspaceId }).eq("id", projectId);
   }
-  const patch: any = { project_id: projectId };
+
+  // Fetch existing meta so we merge, not overwrite. Every Brand Kit page
+  // (Logo/Icon Files, Social Icons, Brand Book, Downloads) filters by
+  // `meta.saved_at` — without stamping it here, an asset attached to a brand
+  // kit is invisible to the downstream pipeline.
+  const { data: existing } = await supabase
+    .from("assets")
+    .select("meta")
+    .eq("id", assetId)
+    .maybeSingle();
+  const meta = {
+    ...(existing?.meta || {}),
+    saved_at: existing?.meta?.saved_at || new Date().toISOString(),
+  };
+
+  const patch: any = { project_id: projectId, meta };
   if (workspaceId) patch.workspace_id = workspaceId;
 
   let { error } = await supabase.from("assets").update(patch).eq("id", assetId);
   if (error && isMissingColumnError(error, "workspace_id")) {
-    const retry = await supabase.from("assets").update({ project_id: projectId }).eq("id", assetId);
+    const retry = await supabase
+      .from("assets")
+      .update({ project_id: projectId, meta })
+      .eq("id", assetId);
     error = retry.error;
   }
   if (error) throw error;
