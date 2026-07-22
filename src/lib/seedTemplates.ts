@@ -259,6 +259,7 @@ export function buildSeedTemplates() {
 
 import { ICON_SEED_TEMPLATES } from "./seedIconTemplates";
 
-// Show icon-based logos first so /templates leads with actual logos, then
-// fall back to the wordmark variants.
-export const SEED_TEMPLATES = [...ICON_SEED_TEMPLATES, ...buildSeedTemplates()];
+// /templates renders SVG icon-based logos only. The wordmark-only variants
+// from buildSeedTemplates() were duplicating names and rendered inconsistently
+// (font loading, blank tiles), so they are intentionally excluded here.
+export const SEED_TEMPLATES = ICON_SEED_TEMPLATES;
