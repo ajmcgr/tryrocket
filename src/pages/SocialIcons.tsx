@@ -4,8 +4,10 @@ import { Download, Loader2 } from "lucide-react";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import BrandLogotypePreview from "@/components/BrandLogotypePreview";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { isCanvasAsset } from "@/lib/canvasAsset";
+import { brandLogotypeToPng, isBrandKitLogotypeAsset, logotypeLabel } from "@/lib/brandLogoAsset";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -63,6 +65,12 @@ function downloadBlob(blob: Blob, name: string) {
 
 async function renderIconPng(state: LogotypeState, v: Variant, size = 1024): Promise<Blob> {
   const logoUrl = await logotypeToPng({ ...state, color: v.fg }, 4);
+  const img = await loadImage(logoUrl);
+  return await composeIcon(img, v, size);
+}
+
+async function renderBrandLogotypeIconPng(asset: any, v: Variant, fallback: string, size = 1024): Promise<Blob> {
+  const logoUrl = await brandLogotypeToPng(asset, v.fg, fallback, 4);
   const img = await loadImage(logoUrl);
   return await composeIcon(img, v, size);
 }
@@ -198,7 +206,7 @@ export default function SocialIcons() {
     (async () => {
       const next: Record<string, { black?: string; white?: string; hasAlpha: boolean }> = {};
       for (const a of logoAssets) {
-        const src = a?.editor_state?.kind === "logotype" ? null : (a?.image_url || a?.thumbnail_url || null);
+        const src = isBrandKitLogotypeAsset(a) ? null : (a?.image_url || a?.thumbnail_url || null);
         if (!src) continue;
         try {
           const [black, white] = await Promise.all([
@@ -233,17 +241,18 @@ export default function SocialIcons() {
     return defaultLogotypeState(asset?.title || project?.name || "Brand");
   };
   const imageSrcForAsset = (asset: any): string | null => {
-    if (asset?.editor_state?.kind === "logotype" || isCanvasAsset(asset)) return null;
+    if (isBrandKitLogotypeAsset(asset) || isCanvasAsset(asset)) return null;
     return asset?.image_url || asset?.thumbnail_url || null;
   };
   const renderVariantForAsset = async (asset: any, v: Variant): Promise<Blob> => {
+    if (isBrandKitLogotypeAsset(asset)) return renderBrandLogotypeIconPng(asset, v, project?.name || "Brand");
     const src = imageSrcForAsset(asset);
     if (src) return renderImageIconPng(src, v);
     if (isCanvasAsset(asset)) return renderCanvasIconPng(asset, v);
     return renderIconPng(stateForAsset(asset), v);
   };
   const assetLabel = (asset: any) =>
-    asset?.title || (asset?.editor_state?.kind === "logotype" ? asset.editor_state.text : null) || project?.name || "Brand";
+    isBrandKitLogotypeAsset(asset) ? logotypeLabel(asset, project?.name || "Brand") : asset?.title || project?.name || "Brand";
 
   const handleDownload = async (asset: any, v: Variant) => {
     if (requirePro()) return;
@@ -326,7 +335,8 @@ export default function SocialIcons() {
           {logoAssets.map((asset) => {
                     const imgSrc = imageSrcForAsset(asset);
             const state = stateForAsset(asset);
-                    const isCanvas = isCanvasAsset(asset);
+                    const isBrandLogotype = isBrandKitLogotypeAsset(asset);
+                    const isCanvas = isCanvasAsset(asset) && !isBrandLogotype;
             return (
               <section key={asset.id}>
                 <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-neutral-500">
@@ -353,7 +363,9 @@ export default function SocialIcons() {
                           style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
                         >
                         <div className="flex h-full w-full items-center justify-center p-[18%]">
-                          {isCanvas ? (
+                          {isBrandLogotype ? (
+                            <BrandLogotypePreview asset={asset} color={v.fg} fallback={project?.name || "Brand"} />
+                          ) : isCanvas ? (
                             <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" background="transparent" />
                           ) : previewSrc ? (
                             <img

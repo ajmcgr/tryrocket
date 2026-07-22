@@ -1,8 +1,9 @@
 import JSZip from "jszip";
 import { jsPDF } from "jspdf";
-import { logotypeToPng, logotypeToSvg } from "@/components/Logotype";
+import { logotypeToSvg } from "@/components/Logotype";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { loadBrandMeta } from "@/lib/brandMeta";
+import { brandLogotypeToPng, isBrandKitLogotypeAsset, logotypeStateFromAsset } from "@/lib/brandLogoAsset";
 
 type BrandKitDownloadArgs = {
   supabase: any;
@@ -96,7 +97,7 @@ async function buildImageVariantBlob(url: string, variant: "regular" | "inverse"
 }
 
 const stateFromAsset = (asset: any, brandName: string): LogotypeState => {
-  if (asset?.editor_state?.kind === "logotype") return asset.editor_state as LogotypeState;
+  if (isBrandKitLogotypeAsset(asset)) return logotypeStateFromAsset(asset, brandName);
   return defaultLogotypeState(brandName || asset?.title || "Brand");
 };
 
@@ -202,8 +203,8 @@ async function buildBrandBookCanvas(brandName: string, primary: any, palette: st
   ctx.strokeStyle = "#e5e7eb";
   ctx.strokeRect(80, y, 500, 280);
   try {
-    if (primary?.editor_state?.kind === "logotype") {
-      const dataUrl = await logotypeToPng(stateFromAsset(primary, brandName), 3);
+    if (isBrandKitLogotypeAsset(primary)) {
+      const dataUrl = await brandLogotypeToPng(primary, stateFromAsset(primary, brandName).color || "#0a0a0a", brandName, 3);
       const img = await loadImage(dataUrl);
       const scale = Math.min(420 / img.naturalWidth, 190 / img.naturalHeight);
       const dw = img.naturalWidth * scale;
@@ -324,17 +325,19 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     included += 1;
   };
 
-  const logoAssets = assets.filter((a: any) => LOGO_TYPES.has(String(a?.asset_type || "").toLowerCase()) || a?.editor_state?.kind === "logotype" || a?.image_url || a?.thumbnail_url);
-  const primary = logoAssets.find((a: any) => a?.editor_state?.kind === "logotype") || logoAssets.find((a: any) => a?.image_url || a?.thumbnail_url) || logoAssets[0];
+  const logoAssets = assets.filter((a: any) => LOGO_TYPES.has(String(a?.asset_type || "").toLowerCase()) || isBrandKitLogotypeAsset(a) || a?.image_url || a?.thumbnail_url);
+  const primary = logoAssets.find((a: any) => isBrandKitLogotypeAsset(a)) || logoAssets.find((a: any) => a?.image_url || a?.thumbnail_url) || logoAssets[0];
   const logoFolder = zip.folder("Logo-Icon Files")!;
 
   for (const asset of logoAssets) {
     const base = safeFile(asset.title || asset.asset_type || "logo-icon-file");
-    if (asset?.editor_state?.kind === "logotype") {
+    if (isBrandKitLogotypeAsset(asset)) {
       const state = stateFromAsset(asset, brandName);
       try {
-        add(logoFolder, "Logo-Icon Files", `${base}.svg`, new Blob([logotypeToSvg(state)], { type: "image/svg+xml" }));
-        const png = await fetch(await logotypeToPng(state, 4)).then((r) => r.blob());
+        if (asset?.editor_state?.kind === "logotype") {
+          add(logoFolder, "Logo-Icon Files", `${base}.svg`, new Blob([logotypeToSvg(state)], { type: "image/svg+xml" }));
+        }
+        const png = await fetch(await brandLogotypeToPng(asset, state.color || "#0a0a0a", brandName, 4)).then((r) => r.blob());
         add(logoFolder, "Logo-Icon Files", `${base}.png`, png);
       } catch {
         skipped.push(asset.title || "Logotype");
@@ -348,14 +351,16 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     else skipped.push(asset.title || "Logo/Icon file");
   }
 
-  if (primary?.editor_state?.kind === "logotype") {
+  if (isBrandKitLogotypeAsset(primary)) {
     const base = stateFromAsset(primary, brandName);
     const variants: Array<["regular" | "inverse" | "black", string]> = [["regular", base.color || "#0a0a0a"], ["inverse", "#ffffff"], ["black", "#000000"]];
     for (const [variant, color] of variants) {
       try {
-        const state = { ...base, color };
-        add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.svg`, new Blob([logotypeToSvg(state)], { type: "image/svg+xml" }));
-        const png = await fetch(await logotypeToPng(state, 4)).then((r) => r.blob());
+        if (primary?.editor_state?.kind === "logotype") {
+          const state = { ...base, color };
+          add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.svg`, new Blob([logotypeToSvg(state)], { type: "image/svg+xml" }));
+        }
+        const png = await fetch(await brandLogotypeToPng(primary, color, brandName, 4)).then((r) => r.blob());
         add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.png`, png);
       } catch {
         skipped.push(`primary logo ${variant}`);
