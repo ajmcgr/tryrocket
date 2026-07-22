@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { assetHref, isBrandAsset, isDesignAsset, normalizeAssetType } from "@/lib/assetExperience";
 import { ensureActiveWorkspaceId } from "@/lib/workspace";
 import BrandCover from "@/components/brand/BrandCover";
-import { ArrowRight, Check, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Check, Copy, Download, Loader2, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { Logotype } from "@/components/Logotype";
 import BrandLogotypePreview from "@/components/BrandLogotypePreview";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
@@ -314,6 +314,36 @@ export default function BrandHub() {
       .filter((design) => design.project_id === projectId)
       .map((design) => normalizeAssetType(design.asset_type)));
     return KIT_ESSENTIALS.filter((essential) => essential.types.some((type) => types.has(type))).length;
+  };
+
+  const duplicateBrand = async (project: any) => {
+    try {
+      const { data: fullProj, error: pErr } = await supabase.from("projects").select("*").eq("id", project.id).single();
+      if (pErr || !fullProj) throw pErr || new Error("Project not found");
+      const { id: _pid, created_at: _pc, updated_at: _pu, ...projRest } = fullProj as any;
+      const { data: newProj, error: insErr } = await supabase
+        .from("projects")
+        .insert({ ...projRest, name: `${projRest.name || "Untitled"} (Copy)` })
+        .select()
+        .single();
+      if (insErr || !newProj) throw insErr || new Error("Insert failed");
+      const { data: srcAssets } = await supabase.from("assets").select("*").eq("project_id", project.id).is("deleted_at", null);
+      if (Array.isArray(srcAssets) && srcAssets.length) {
+        const rows = srcAssets.map((row: any) => {
+          const { id, created_at, updated_at, share_token, ...rest } = row;
+          return { ...rest, project_id: newProj.id, share_token: null };
+        });
+        const { data: newAssets } = await supabase.from("assets").insert(rows).select();
+        if (Array.isArray(newAssets) && newAssets.length) {
+          setAllDesigns((prev) => [...newAssets, ...prev]);
+          setAssets((prev) => [...newAssets.filter(isBrandAsset), ...prev]);
+        }
+      }
+      setProjects((prev) => [newProj, ...prev]);
+      toast({ title: "Brand duplicated" });
+    } catch (e: any) {
+      toast({ title: "Duplicate failed", description: e?.message || String(e), variant: "destructive" });
+    }
   };
 
   if (!activeProject && !params.get("direction")) {
