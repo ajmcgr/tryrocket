@@ -173,6 +173,75 @@ const SEEDS: IconSpec[] = [
   { name: "grid", tagline: "structure first", style: "Minimal", icon: "dot-grid", font: "IBM Plex Mono", weight: 500, transform: "lowercase", color: "#0B0B0B", bg: "#F5F5F5" },
   { name: "REGALIA", tagline: "Signature pieces", style: "Luxury", icon: "star", font: "Playfair Display", weight: 500, letterSpacing: 0.08, transform: "uppercase", color: "#F5E6C8", bg: "#0A0A0A" },
   { name: "OBSIDIAN", tagline: "Sharpened elegance", style: "Luxury", icon: "diamond", font: "DM Serif Display", weight: 400, letterSpacing: 0.08, transform: "uppercase", color: "#F5F5F5", bg: "#111111" },
+
+  // ── Fresh 2026 drop — 50 new templates ─────────────────────────────────
+  // Startup / SaaS
+  { name: "Stack", style: "Startup", icon: "cube", font: "Geist", weight: 700, letterSpacing: -0.02, color: "#F8FAFC", bg: "#0F172A" },
+  { name: "Draft", style: "Startup", icon: "chevron", font: "Space Grotesk", weight: 700, color: "#0F172A", bg: "#FDE68A" },
+  { name: "Basecamp Co", style: "Startup", icon: "mountain", font: "Bricolage Grotesque", weight: 700, letterSpacing: -0.02, color: "#F0FDF4", bg: "#166534" },
+  { name: "Relay", style: "Startup", icon: "arrow-right", font: "Onest", weight: 700, color: "#0F172A", bg: "#E0E7FF" },
+  { name: "Pilot", style: "Startup", icon: "triangle", font: "Manrope", weight: 800, color: "#FFFFFF", bg: "#1D4ED8" },
+  { name: "Kite Labs", style: "Startup", icon: "diamond", font: "Figtree", weight: 700, color: "#FFFFFF", bg: "#0EA5E9" },
+  { name: "Hangar", style: "Startup", icon: "rounded-square", font: "Plus Jakarta Sans", weight: 700, color: "#0F172A", bg: "#FFF7ED" },
+
+  // AI
+  { name: "GLYPH", style: "AI", icon: "hexagon", font: "IBM Plex Mono", weight: 700, transform: "uppercase", letterSpacing: 0.06, color: "#0F172A", bg: "#F5F5F5" },
+  { name: "mira", style: "AI", icon: "eye", font: "Geist", weight: 500, transform: "lowercase", color: "#F5F5F5", bg: "#0B0B0B" },
+  { name: "Parable", style: "AI", icon: "chat", font: "Instrument Serif", weight: 400, color: "#0F172A", bg: "#FEF3C7" },
+  { name: "Astra AI", style: "AI", icon: "spark", font: "Space Grotesk", weight: 700, letterSpacing: -0.03, color: "#F8FAFC", bg: "#312E81" },
+  { name: "Foxglove", style: "AI", icon: "leaf", font: "Fraunces", weight: 600, color: "#4C1D95", bg: "#EDE9FE" },
+  { name: "Loop AI", style: "AI", icon: "ring", font: "Sora", weight: 700, color: "#0F172A", bg: "#E0F2FE" },
+  { name: "Ember Reason", style: "AI", icon: "flame", font: "Onest", weight: 700, color: "#FFFFFF", bg: "#DC2626" },
+
+  // Fintech
+  { name: "Grove Bank", style: "Fintech", icon: "leaf", font: "Fraunces", weight: 600, color: "#065F46", bg: "#F0FDF4" },
+  { name: "Bullion", style: "Fintech", icon: "diamond", font: "DM Serif Display", weight: 400, letterSpacing: 0.04, transform: "uppercase", color: "#78350F", bg: "#FEF3C7" },
+  { name: "Reserve", style: "Fintech", icon: "shield", font: "IBM Plex Sans", weight: 700, transform: "uppercase", letterSpacing: 0.06, color: "#F8FAFC", bg: "#0F172A" },
+  { name: "Fable Pay", style: "Fintech", icon: "circle", font: "Manrope", weight: 800, color: "#FFFFFF", bg: "#7C3AED" },
+  { name: "Pillar", style: "Fintech", icon: "cube", font: "Space Grotesk", weight: 700, transform: "uppercase", letterSpacing: 0.04, color: "#0F172A", bg: "#E5E7EB" },
+  { name: "Sable Finance", style: "Fintech", icon: "cube", font: "Hanken Grotesk", weight: 700, color: "#F8FAFC", bg: "#1F2937" },
+
+  // Healthcare
+  { name: "Fern Health", style: "Healthcare", icon: "leaf", font: "Fraunces", weight: 600, color: "#166534", bg: "#ECFDF5" },
+  { name: "Cocoon", style: "Healthcare", icon: "moon", font: "Spectral", weight: 600, color: "#FFFFFF", bg: "#4338CA" },
+  { name: "Balm", style: "Healthcare", icon: "cross", font: "Figtree", weight: 700, color: "#7F1D1D", bg: "#FFF1F2" },
+  { name: "Willow Care", style: "Healthcare", icon: "waves", font: "Crimson Pro", weight: 600, color: "#0C4A6E", bg: "#E0F2FE" },
+  { name: "Bloom Rx", style: "Healthcare", icon: "flame", font: "Fraunces", weight: 600, color: "#FFFFFF", bg: "#EA580C" },
+
+  // Education
+  { name: "Marginalia", style: "Education", icon: "square", font: "Playfair Display", weight: 700, color: "#0F172A", bg: "#FEF3C7" },
+  { name: "Cursor & Co", style: "Education", icon: "chevron", font: "Instrument Serif", weight: 400, color: "#FFFFFF", bg: "#0F172A" },
+  { name: "Studio Athena", style: "Education", icon: "star", font: "DM Serif Display", weight: 400, letterSpacing: 0.04, transform: "uppercase", color: "#0F172A", bg: "#FFFFFF" },
+  { name: "Little Scholar", style: "Education", icon: "heart", font: "Fraunces", weight: 700, color: "#831843", bg: "#FCE7F3" },
+  { name: "Papyrus", style: "Education", icon: "leaf", font: "Playfair Display", weight: 700, color: "#78350F", bg: "#FEF3C7" },
+
+  // Consumer / Lifestyle
+  { name: "Salt & Sage", style: "Consumer", icon: "leaf", font: "Fraunces", weight: 700, color: "#166534", bg: "#F0FDF4" },
+  { name: "Nectar", style: "Consumer", icon: "hexagon", font: "DM Serif Display", weight: 400, color: "#78350F", bg: "#FEF3C7" },
+  { name: "Rove", style: "Consumer", icon: "mountain", font: "Bricolage Grotesque", weight: 700, letterSpacing: -0.02, color: "#FDE68A", bg: "#0B0B0B" },
+  { name: "Little Field", style: "Consumer", icon: "sun", font: "Fraunces", weight: 600, color: "#0F172A", bg: "#FEF08A" },
+  { name: "House of Ember", style: "Consumer", icon: "flame", font: "Playfair Display", weight: 700, letterSpacing: 0.02, color: "#FFF7ED", bg: "#9A3412" },
+  { name: "Coastline", style: "Consumer", icon: "waves", font: "Syne", weight: 700, color: "#F8FAFC", bg: "#0C4A6E" },
+
+  // Enterprise
+  { name: "MERIDIAN GROUP", style: "Enterprise", icon: "diamond", font: "IBM Plex Sans", weight: 700, transform: "uppercase", letterSpacing: 0.08, color: "#F8FAFC", bg: "#0F172A" },
+  { name: "Ledger & Sons", style: "Enterprise", icon: "cube", font: "Fraunces", weight: 600, letterSpacing: 0.02, color: "#0F172A", bg: "#E5E7EB" },
+  { name: "Sentinel Ops", style: "Enterprise", icon: "shield", font: "Space Grotesk", weight: 700, transform: "uppercase", letterSpacing: 0.06, color: "#0F172A", bg: "#F5F5F4" },
+  { name: "GRIDLINE", style: "Enterprise", icon: "dot-grid", font: "Geist", weight: 700, transform: "uppercase", letterSpacing: 0.06, color: "#F8FAFC", bg: "#111827" },
+
+  // Technology
+  { name: "Pulsecraft", style: "Technology", icon: "waves", font: "Sora", weight: 700, color: "#0F172A", bg: "#E0F2FE" },
+  { name: "Overclock", style: "Technology", icon: "bolt", font: "JetBrains Mono", weight: 700, color: "#F8FAFC", bg: "#111827" },
+  { name: "Node & Nest", style: "Technology", icon: "dot-grid", font: "IBM Plex Mono", weight: 700, color: "#0F172A", bg: "#F5F5F5" },
+  { name: "Skyline OS", style: "Technology", icon: "cloud", font: "Space Grotesk", weight: 700, letterSpacing: -0.03, color: "#F8FAFC", bg: "#1E40AF" },
+  { name: "Circuit Nine", style: "Technology", icon: "gear", font: "Sora", weight: 700, color: "#0F172A", bg: "#FDE68A" },
+
+  // Modern / Minimal / Luxury
+  { name: "arc", style: "Minimal", icon: "ring", font: "Geist", weight: 500, transform: "lowercase", color: "#0B0B0B", bg: "#FFFFFF" },
+  { name: "form.", style: "Minimal", icon: "square", font: "IBM Plex Sans", weight: 500, transform: "lowercase", color: "#0F172A", bg: "#F5F5F5" },
+  { name: "Halcyon Modern", style: "Modern", icon: "diamond", font: "Bricolage Grotesque", weight: 700, letterSpacing: -0.02, color: "#F8FAFC", bg: "#0F172A" },
+  { name: "MAISON NOIR", style: "Luxury", icon: "diamond", font: "Playfair Display", weight: 500, letterSpacing: 0.1, transform: "uppercase", color: "#F5E6C8", bg: "#0A0A0A" },
+  { name: "ATELIER", style: "Luxury", icon: "star", font: "DM Serif Display", weight: 400, letterSpacing: 0.12, transform: "uppercase", color: "#0F172A", bg: "#FAF7F2" },
 ];
 
 function iconPath(kind: IconKind, color: string): string {
