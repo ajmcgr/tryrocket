@@ -296,8 +296,14 @@ export default function BrandHub() {
   const projectLogos = useMemo(() => {
     const map = new Map<string, any>();
     for (const [pid, list] of designsByProject.entries()) {
+      // Match Brand.tsx: only consider assets explicitly saved into the brand kit.
+      const saved = list.filter((d: any) => d?.meta?.saved_at);
       const isMark = (d: any) => MARK_TYPES.has(normalizeAssetType(d.asset_type)) || d?.editor_state?.kind === "logotype";
-      const hit = list.find(isMark) || list.find((d: any) => d?.image_url || d?.editor_state);
+      const hit =
+        saved.find((d: any) => d?.editor_state?.kind === "logotype") ||
+        saved.find(isMark) ||
+        saved.find((d: any) => d?.image_url || d?.editor_state) ||
+        saved[0];
       if (hit) map.set(pid, hit);
     }
     return map;
@@ -355,8 +361,10 @@ export default function BrandHub() {
                     className="block overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
                   >
                   <div className="flex aspect-square items-center justify-center bg-neutral-50 p-6">
-                    {logoState ? (
-                      <Logotype state={logoState} fit="contain" />
+                    {logo && isBrandKitLogotypeAsset(logo) ? (
+                      <BrandLogotypePreview asset={logo} color="#0A0A0A" fallback={project.name || "Brand"} />
+                    ) : logo && isCanvasAsset(logo) ? (
+                      <CanvasAssetPreview elements={logo.editor_state as any} className="h-full w-full" background="transparent" />
                     ) : preview ? (
                       <img src={preview} alt="" className="max-h-full max-w-full object-contain" loading="lazy" />
                     ) : (
