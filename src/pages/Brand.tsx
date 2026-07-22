@@ -335,6 +335,14 @@ export default function Brand() {
                   if (imageVariants?.hasAlpha) {
                     if (v.key === "black") src = imageVariants.black || src;
                     else if (v.key === "white" || v.key === "inverse") src = imageVariants.white || src;
+                    // Inverse renders on the brand color — pick whichever
+                    // silhouette contrasts against the brand color so a light
+                    // brand never gets a white logo.
+                    if (v.key === "inverse") {
+                      src = isDarkBg(brandColor)
+                        ? (imageVariants.white || src)
+                        : (imageVariants.black || src);
+                    }
                   }
                   return (
                   <div key={v.key} className={`relative overflow-hidden rounded-2xl ${v.border ? `border ${v.border}` : ""} shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)]`} style={{ backgroundColor: v.bg }}>
