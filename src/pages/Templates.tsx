@@ -10,10 +10,13 @@ import {
   Star,
   Shuffle,
   PenTool,
+  Palette,
+  Loader2,
 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import BrandFromAssetMenu from "@/components/BrandFromAssetMenu";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
 import { matchesDesignQuery, rankDesignsByRelevance } from "@/lib/searchRelevance";
