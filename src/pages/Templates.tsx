@@ -407,6 +407,9 @@ const Templates = () => {
               <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} title="Edit" className="shrink-0 inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <PenTool className="h-3.5 w-3.5" />
               </button>
+              <div className="shrink-0">
+                <TemplateBrandFromAssetMenu design={design} />
+              </div>
               <button type="button" onClick={(e) => { e.stopPropagation(); void saveTemplateToSaved(design, e); }} title="Save to Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Star className={`h-3.5 w-3.5 ${design?.meta?.saved_at ? "fill-amber-400 text-amber-400" : ""}`} />
               </button>
