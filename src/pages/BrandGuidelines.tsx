@@ -5,7 +5,9 @@ import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype } from "@/components/Logotype";
+import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { defaultLogotypeState, LOGOTYPE_FONTS, loadGoogleFont, type LogotypeState } from "@/lib/logotype";
+import { isCanvasAsset } from "@/lib/canvasAsset";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { loadBrandMeta } from "@/lib/brandMeta";
@@ -161,13 +163,13 @@ export default function BrandGuidelines() {
     () => savedAssets.find((a) => a?.editor_state?.kind === "logotype") || null,
     [savedAssets],
   );
-  const primaryImage = useMemo(
-    () => savedAssets.find((a) => !a?.editor_state && (a?.image_url || a?.thumbnail_url)) || null,
+  const primaryVisual = useMemo(
+    () => savedAssets.find((a) => isCanvasAsset(a) || (!a?.editor_state && (a?.image_url || a?.thumbnail_url))) || null,
     [savedAssets],
   );
-  const primaryAsset = primaryLogotype || primaryImage;
-  const secondaryAsset = primaryLogotype && primaryImage
-    ? primaryImage
+  const primaryAsset = primaryLogotype || primaryVisual;
+  const secondaryAsset = primaryLogotype && primaryVisual
+    ? primaryVisual
     : savedAssets.filter((a) => a !== primaryAsset)[0] || null;
 
   const baseState = useMemo<LogotypeState>(() => {
@@ -219,6 +221,9 @@ export default function BrandGuidelines() {
         color: pickLogoColor(bg),
       };
       return <Logotype state={state} fit="contain" />;
+    }
+    if (isCanvasAsset(asset)) {
+      return <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" background="transparent" />;
     }
     const url = asset.image_url || asset.thumbnail_url;
     const sil = imageSilhouettes[asset.id];
