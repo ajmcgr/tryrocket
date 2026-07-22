@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Logotype, logotypeToPng, logotypeToSvg } from "@/components/Logotype";
+import { Logotype, logotypeToPng } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { AssetGridSkeleton } from "@/components/Skeletons";
