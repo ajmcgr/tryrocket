@@ -404,6 +404,9 @@ export default function Brand() {
                             <Download className="h-3.5 w-3.5" />
                           )}
                           Download
+                          {!subLoading && !isPro && (
+                            <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand-foreground">PRO</span>
+                          )}
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
