@@ -67,7 +67,7 @@ const SiteHeader = () => {
     >
       <div className="relative mx-auto flex h-16 max-w-4xl items-center px-6">
         <Logo size="md" />
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-semibold text-neutral-600 md:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 text-sm font-medium text-neutral-600 md:flex">
           {user ? (
             <>
               <Link to="/logos" className="hover:text-neutral-900">Create</Link>
