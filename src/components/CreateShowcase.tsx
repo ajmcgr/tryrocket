@@ -15,6 +15,7 @@ const ShowcaseCard = ({
   image,
   imageAlt,
   accent,
+  imageScale = "scale-95 object-contain sm:scale-100 lg:scale-110",
 }: {
   i: number;
   title: string;
@@ -25,6 +26,7 @@ const ShowcaseCard = ({
   image: string;
   imageAlt: string;
   accent: "blue" | "coral" | "violet";
+  imageScale?: string;
 }) => {
   const accents = {
     blue: "bg-blue-50/70 ring-blue-100",
