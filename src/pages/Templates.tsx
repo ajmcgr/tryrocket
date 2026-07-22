@@ -165,7 +165,11 @@ const Templates = () => {
         asset_type: design.asset_type || "logo",
         title: design.title || "Template",
         editor_state: design.editor_state,
-        meta: { ...(design.meta || {}), from_template: true, kind: "logotype" },
+        meta: {
+          ...(design.meta || {}),
+          from_template: true,
+          kind: Array.isArray(design.editor_state) ? "canvas" : "logotype",
+        },
       } as any).select("id").single();
       if (error || !data?.id) throw error || new Error("Couldn't open template");
       window.open(`/editor?id=${data.id}`, "_blank", "noopener,noreferrer");
