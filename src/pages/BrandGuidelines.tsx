@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { loadBrandMeta } from "@/lib/brandMeta";
 import { useSubscription } from "@/hooks/useSubscription";
 import { pickLogoColor, isDarkBg } from "@/lib/logoContrast";
-import { silhouetteImage } from "@/lib/logoContrast";
+import { silhouetteImage, transparentLogo } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -191,7 +191,8 @@ export default function BrandGuidelines() {
       for (const a of targets) {
         const url = a.image_url || a.thumbnail_url;
         try {
-          const [black, white] = await Promise.all([
+          const [transparent, black, white] = await Promise.all([
+            transparentLogo(url),
             silhouetteImage(url, "#0A0A0A"),
             silhouetteImage(url, "#FFFFFF"),
           ]);
@@ -199,7 +200,8 @@ export default function BrandGuidelines() {
           setImageSilhouettes((prev) => ({
             ...prev,
             [a.id]: {
-              hasAlpha: black.hasAlpha,
+              hasAlpha: transparent.hasTransparency || black.hasAlpha,
+              transparent: transparent.url,
               black: black.url,
               white: white.url,
             },
@@ -225,10 +227,9 @@ export default function BrandGuidelines() {
     }
     const url = asset.image_url || asset.thumbnail_url;
     const sil = imageSilhouettes[asset.id];
-    let src = url;
-    if (sil?.hasAlpha) {
-      src = isDarkBg(bg) ? (sil.white || url) : (sil.black || url);
-    }
+    // Prefer the background-keyed transparent source so the icon keeps its
+    // real colors while sitting cleanly on any tile.
+    const src = sil?.transparent || url;
     return (
       <img
         src={src}
