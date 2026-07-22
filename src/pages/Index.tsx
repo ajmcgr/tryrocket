@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import CreateShowcase from "@/components/CreateShowcase";
+import FeaturedLogos from "@/components/FeaturedLogos";
 import SenjaWidget from "@/components/SenjaWidget";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -300,6 +301,9 @@ const Index = () => {
 
       {/* What you can create */}
       <CreateShowcase />
+
+      {/* Featured logos made with Rocket */}
+      <FeaturedLogos />
 
       {/* Use Cases */}
       <section id="use-cases" className="border-t border-neutral-200/60">
