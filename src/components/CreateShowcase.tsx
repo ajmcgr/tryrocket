@@ -128,7 +128,7 @@ const CARDS = [
     ],
     ctaText: "Create brand kit",
     ctaLink: "/brands",
-    image: guidelinesAsset,
+    image: guidelinesAsset.url,
     imageAlt: "Brand kit spread",
     accent: "violet" as const,
   },
