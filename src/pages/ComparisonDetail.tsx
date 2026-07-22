@@ -54,16 +54,14 @@ const ComparisonDetail = () => {
             <section className="mt-8 rounded-3xl border border-brand/20 bg-brand/5 p-8">
               <h2 className="text-2xl font-semibold tracking-tight">Where Rocket fits</h2>
               <p className="mt-4 text-base leading-8 text-neutral-700">
-                Rocket is best when you want more than a logo file. Instead of stopping at a mark,
-                it helps you build the wider brand system around it — identity directions, launch
-                assets, copy, and the rest of the things founders actually need to ship.
+                Rocket is best when you want a logo-first brand system, not just a one-off file. Start with a mark, wordmark, or icon, then turn the winner into a full Brand Kit with Logo/Icon Files, Social Icons, Palette, Fonts, and a Brand Book — all in one project. Every asset can be refined in the canvas editor and exported as PNG, SVG, PDF, or a complete ZIP.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button asChild size="lg">
                   <Link to="/signup">Try Rocket <ArrowRight className="h-4 w-4" /></Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link to="/tools">Explore free tools</Link>
+                  <Link to="/create">Explore tools</Link>
                 </Button>
               </div>
             </section>
