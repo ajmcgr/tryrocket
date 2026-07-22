@@ -85,11 +85,30 @@ function keyOutBackground(img: HTMLImageElement): { canvas: HTMLCanvasElement; c
   const h = (canvas.height = img.naturalHeight || img.height);
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(img, 0, 0);
-  const image = ctx.getImageData(0, 0, w, h);
+  let image: ImageData;
+  try {
+    image = ctx.getImageData(0, 0, w, h);
+  } catch {
+    return { canvas, changed: false };
+  }
   const data = image.data;
+
+  const px = (x: number, y: number) => (y * w + x) * 4;
+  const cornerSamples = [px(0, 0), px(w - 1, 0), px(0, h - 1), px(w - 1, h - 1)];
+  const lightCorner = cornerSamples.find((i) => data[i] >= 220 && data[i + 1] >= 220 && data[i + 2] >= 220 && data[i + 3] >= 220);
+  const bg = lightCorner == null
+    ? { r: 248, g: 248, b: 248 }
+    : { r: data[lightCorner], g: data[lightCorner + 1], b: data[lightCorner + 2] };
+
   const isBg = (i: number) => {
-    // Near-white AND currently opaque.
-    return data[i] >= 240 && data[i + 1] >= 240 && data[i + 2] >= 240 && data[i + 3] >= 240;
+    if (data[i + 3] < 180) return false;
+    const nearWhite = data[i] >= 232 && data[i + 1] >= 232 && data[i + 2] >= 232;
+    const nearCornerBg =
+      Math.abs(data[i] - bg.r) <= 34 &&
+      Math.abs(data[i + 1] - bg.g) <= 34 &&
+      Math.abs(data[i + 2] - bg.b) <= 34 &&
+      bg.r >= 220 && bg.g >= 220 && bg.b >= 220;
+    return nearWhite || nearCornerBg;
   };
   // Flood fill from every border pixel.
   const stack: number[] = [];
@@ -98,6 +117,9 @@ function keyOutBackground(img: HTMLImageElement): { canvas: HTMLCanvasElement; c
     const idx = (y * w + x) * 4;
     if (data[idx + 3] === 0) return;
     if (!isBg(idx)) return;
+    // Mark when queued, not when popped, so large white canvases do not enqueue
+    // the same pixel thousands of times and stall preview rendering.
+    data[idx + 3] = 0;
     stack.push(x, y);
   };
   for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
@@ -106,10 +128,6 @@ function keyOutBackground(img: HTMLImageElement): { canvas: HTMLCanvasElement; c
   while (stack.length) {
     const y = stack.pop()!;
     const x = stack.pop()!;
-    const idx = (y * w + x) * 4;
-    if (data[idx + 3] === 0) continue;
-    if (!isBg(idx)) continue;
-    data[idx + 3] = 0;
     changed = true;
     if (x > 0) stack.push(x - 1, y);
     if (x < w - 1) stack.push(x + 1, y);
@@ -127,9 +145,9 @@ function keyOutBackground(img: HTMLImageElement): { canvas: HTMLCanvasElement; c
  */
 export async function transparentLogo(src: string): Promise<{ url: string; hasTransparency: boolean; image: HTMLImageElement }> {
   const img = await loadImage(src);
-  if (detectAlpha(img)) return { url: src, hasTransparency: true, image: img };
+  const nativeAlpha = detectAlpha(img);
   const { canvas, changed } = keyOutBackground(img);
-  if (!changed) return { url: src, hasTransparency: false, image: img };
+  if (!changed) return { url: src, hasTransparency: nativeAlpha, image: img };
   return { url: canvas.toDataURL("image/png"), hasTransparency: true, image: img };
 }
 
@@ -144,16 +162,17 @@ export async function silhouetteImage(src: string, color: string): Promise<{ url
   // background-keyed — so silhouettes work on solid-white PNGs too.
   let sourceCanvas: HTMLCanvasElement;
   let hasAlpha = detectAlpha(img);
-  if (hasAlpha) {
+  const keyed = keyOutBackground(img);
+  if (keyed.changed) {
+    sourceCanvas = keyed.canvas;
+    hasAlpha = true;
+  } else if (hasAlpha) {
     sourceCanvas = document.createElement("canvas");
     sourceCanvas.width = img.naturalWidth || img.width;
     sourceCanvas.height = img.naturalHeight || img.height;
     sourceCanvas.getContext("2d")!.drawImage(img, 0, 0);
   } else {
-    const keyed = keyOutBackground(img);
-    if (!keyed.changed) return { url: src, hasAlpha: false, image: img };
-    sourceCanvas = keyed.canvas;
-    hasAlpha = true;
+    return { url: src, hasAlpha: false, image: img };
   }
   const out = document.createElement("canvas");
   out.width = sourceCanvas.width;
