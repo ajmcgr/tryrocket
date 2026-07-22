@@ -139,7 +139,7 @@ const CreateShowcase = () => {
     <section id="create" className="overflow-hidden border-t border-neutral-200/60 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-28 sm:py-32">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
+          <h2 className="font-display text-3xl font-semibold leading-[1.05] tracking-tight text-neutral-900 sm:text-5xl md:text-6xl">
             What can you create<br /> with <span className="italic">Rocket?</span>
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-neutral-600 sm:text-xl">
