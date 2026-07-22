@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { assetHref } from "@/lib/assetExperience";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes, LayoutGrid, List as ListIcon, Star, MoreHorizontal, Copy } from "lucide-react";
+import { ArrowUp, Loader2, Sparkles, Wand2, Image as ImageIcon, Type, Palette, Megaphone, Rocket as RocketIcon, Wand, Paintbrush, Send, Radio, FileText, LayoutTemplate, Camera, Layers, Shapes, LayoutGrid, List as ListIcon, Star, MoreHorizontal, Copy } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import OutOfCreditsModal from "@/components/OutOfCreditsModal";
 import { Logotype } from "@/components/Logotype";
@@ -12,13 +12,11 @@ import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { tryJson, type ColorSystem, type FontSystem, type BrandVoiceData, type BrandGuidelinesData, type LaunchCopyData, type ProductHuntCopyData, type SocialPostData, type FounderBio, type PresentationData, type TemplateLibraryData } from "@/lib/assetSchemas";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { buildLogotypeVariants, pickLogotypeText } from "@/lib/logotype";
-import BrandContextStrip from "@/components/BrandContextStrip";
 import AssetVisual, { hasVisualRenderer } from "@/components/visuals/AssetVisual";
 import { handleAiError } from "@/lib/aiErrors";
 import { track } from "@/lib/analytics";
 
 const supabase = _sb as any;
-const FIRST_BRAND_ONBOARDING_SKIP_KEY = "rocket:first-brand-onboarding-skipped";
 
 function withResolvedLogotypeText(asset: any) {
   const state = asset?.editor_state;
@@ -308,20 +306,6 @@ const WORKFLOW_PLAN: Record<Exclude<WF, "auto">, { asset_type: string; count?: n
   promote: [{ asset_type: "social_post" }, { asset_type: "social_post" }, { asset_type: "social_post" }, { asset_type: "founder_bio" }],
 };
 
-const SAMPLE_PROMPTS = [
-  "A logo for trylaunch.ai",
-  "Color system for raycast.com",
-  "Product Hunt copy for typingmind.com",
-  "Brand voice for an indie newsletter app",
-];
-
-const QUICK_STARTS = [
-  { id: "logo", label: "Logo" },
-  { id: "color_system", label: "Colours" },
-  { id: "social_post", label: "Social post" },
-  { id: "launch_copy", label: "Launch copy" },
-] as const;
-
 function isLogotypeOnlyPrompt(text: string) {
   const lower = text.toLowerCase();
   const wantsTextLogo = /\b(logotype|logotypes|wordmark|word\s*mark|word-mark|text[- ]?based\s+logo|text\s+logo|type[- ]?based\s+logo|typographic\s+logo|typography\s+logo|lettering|letters\s+only|name\s+only)\b/.test(lower);
@@ -462,20 +446,12 @@ const Generate = () => {
   const [chatData, setChatData] = useState<any>(null);
   const [chatAssets, setChatAssets] = useState<any[]>([]);
   const [directionDesign, setDirectionDesign] = useState<any>(null);
-  const [brandProjects, setBrandProjects] = useState<any[]>([]);
-  const [projectsLoaded, setProjectsLoaded] = useState(false);
-  const [brandName, setBrandName] = useState("");
-  const [startingBrand, setStartingBrand] = useState(false);
-  const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
-    try { return localStorage.getItem(FIRST_BRAND_ONBOARDING_SKIP_KEY) === "1"; } catch { return false; }
-  });
   const [projectBrandContext, setProjectBrandContext] = useState<any>(null);
   const [ignoreSavedStyle, setIgnoreSavedStyle] = useState(false);
   const [resultsView, setResultsView] = useState<"grid" | "list">(() => {
     try { return (localStorage.getItem("rocket.generate.view") as "grid" | "list") || "grid"; } catch { return "grid"; }
   });
   useEffect(() => { try { localStorage.setItem("rocket.generate.view", resultsView); } catch {} }, [resultsView]);
-  const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState<{ text: string; at: string } | null>(null);
   const [pendingPrompts, setPendingPrompts] = useState<{ text: string; at: string }[]>([]);
   const { toast } = useToast();
@@ -510,23 +486,6 @@ const Generate = () => {
       setChatAssets(a || []);
     })();
   }, [chatId, user]);
-
-  useEffect(() => {
-    if (!user) { setBrandProjects([]); setProjectsLoaded(false); return; }
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("projects")
-        .select("id,name,created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (!cancelled) {
-        setBrandProjects(data || []);
-        setProjectsLoaded(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
 
   useEffect(() => {
     if (!projectId || !user) { setProjectBrandContext(null); return; }
@@ -577,60 +536,6 @@ const Generate = () => {
     });
     return recent ? { ...(recent.meta?.brand_context || {}), url: recent.meta?.brand_context?.url || recent.source_url || undefined } : null;
   })();
-
-  const selectedProject = useMemo(() => brandProjects.find((project) => project.id === projectId) || null, [brandProjects, projectId]);
-  const showFirstBrandOnboarding = projectsLoaded && !!user && brandProjects.length === 0 && !projectId && !chatId && !directionId && !onboardingDismissed;
-
-  const chooseBrandProject = (nextProjectId: string) => {
-    const next = new URLSearchParams(params);
-    if (nextProjectId) next.set("project", nextProjectId);
-    else next.delete("project");
-    next.delete("chat");
-    nav(`/create${next.toString() ? `?${next.toString()}` : ""}`);
-  };
-
-  const startFirstBrand = async (event?: React.FormEvent) => {
-    event?.preventDefault();
-    const name = brandName.trim();
-    if (!name || !user || startingBrand) return;
-
-    setStartingBrand(true);
-    try {
-      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
-      const workspaceId = await ensureActiveWorkspaceId();
-      const { data: project, error } = await supabase
-        .from("projects")
-        .insert({
-          user_id: user.id,
-          workspace_id: workspaceId,
-          name,
-        } as any)
-        .select("id,name,created_at")
-        .single();
-
-      if (error || !project?.id) throw error || new Error("Rocket couldn't create your brand.");
-
-      try { localStorage.setItem(FIRST_BRAND_ONBOARDING_SKIP_KEY, "1"); } catch { /* noop */ }
-      setOnboardingDismissed(true);
-      setBrandProjects((projects) => [project, ...projects]);
-      setPrompt(`Create a logo for ${name}`);
-      setAssetType("logo");
-      nav(`/create?project=${project.id}&asset_type=logo`);
-    } catch (error: any) {
-      toast({
-        title: "Couldn't create your brand",
-        description: error?.message || "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setStartingBrand(false);
-    }
-  };
-
-  const skipFirstBrandOnboarding = () => {
-    try { localStorage.setItem(FIRST_BRAND_ONBOARDING_SKIP_KEY, "1"); } catch { /* noop */ }
-    setOnboardingDismissed(true);
-  };
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
