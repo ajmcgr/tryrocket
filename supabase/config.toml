@@ -45,6 +45,9 @@ verify_jwt = true
 [functions.create-workspace]
 verify_jwt = true
 
+[functions.seed-demo-brand]
+verify_jwt = true
+
 [functions.scrape-url]
 verify_jwt = true
 
