@@ -7,6 +7,7 @@ import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
+import { pickLogoColor, isDarkBg, silhouetteImage } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -21,16 +22,24 @@ type Variant = {
   border?: boolean;
 };
 
-const buildVariants = (brandColor: string): Variant[] => [
-  { key: "circle-brand", label: "Circle · Brand", shape: "circle", bg: brandColor, fg: "#FFFFFF" },
-  { key: "circle-white", label: "Circle · Light", shape: "circle", bg: "#FFFFFF", fg: brandColor, border: true },
-  { key: "circle-black", label: "Circle · Dark", shape: "circle", bg: "#0A0A0A", fg: "#FFFFFF" },
-  { key: "rounded-brand", label: "Rounded · Brand", shape: "rounded", bg: brandColor, fg: "#FFFFFF" },
-  { key: "rounded-white", label: "Rounded · Light", shape: "rounded", bg: "#FFFFFF", fg: brandColor, border: true },
-  { key: "rounded-black", label: "Rounded · Dark", shape: "rounded", bg: "#0A0A0A", fg: "#FFFFFF" },
-  { key: "square-brand", label: "Square · Brand", shape: "square", bg: brandColor, fg: "#FFFFFF" },
-  { key: "square-white", label: "Square · Light", shape: "square", bg: "#FFFFFF", fg: brandColor, border: true },
-];
+const buildVariants = (brandColor: string): Variant[] => {
+  // Always pick the ink/paper that yields the strongest contrast on each
+  // background so no variant ever renders white-on-white or black-on-black.
+  const onBrand = pickLogoColor(brandColor);
+  // For light-tinted brand colors, keep the brand-mark readable by pairing
+  // with black ink; for dark brand colors, pair with white paper.
+  const onLightPaper = isDarkBg(brandColor) ? brandColor : "#0A0A0A";
+  return [
+    { key: "circle-brand", label: "Circle · Brand", shape: "circle", bg: brandColor, fg: onBrand },
+    { key: "circle-white", label: "Circle · Light", shape: "circle", bg: "#FFFFFF", fg: onLightPaper, border: true },
+    { key: "circle-black", label: "Circle · Dark", shape: "circle", bg: "#0A0A0A", fg: "#FFFFFF" },
+    { key: "rounded-brand", label: "Rounded · Brand", shape: "rounded", bg: brandColor, fg: onBrand },
+    { key: "rounded-white", label: "Rounded · Light", shape: "rounded", bg: "#FFFFFF", fg: onLightPaper, border: true },
+    { key: "rounded-black", label: "Rounded · Dark", shape: "rounded", bg: "#0A0A0A", fg: "#FFFFFF" },
+    { key: "square-brand", label: "Square · Brand", shape: "square", bg: brandColor, fg: onBrand },
+    { key: "square-white", label: "Square · Light", shape: "square", bg: "#FFFFFF", fg: onLightPaper, border: true },
+  ];
+};
 
 const safeName = (s: string) => s.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "icon";
 
@@ -64,7 +73,12 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 async function renderImageIconPng(src: string, v: Variant, size = 1024): Promise<Blob> {
-  const img = await loadImage(src);
+  // Silhouette the source logo into the variant's ink when the PNG has an
+  // alpha channel so image logos automatically flip black/white against
+  // dark/light backgrounds. Falls back to the original when there is no
+  // usable alpha (already-baked lockup on a bg).
+  const { url } = await silhouetteImage(src, v.fg);
+  const img = await loadImage(url);
   return await composeIcon(img, v, size);
 }
 
@@ -116,6 +130,9 @@ export default function SocialIcons() {
   const [logoAssets, setLogoAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  // Per-asset silhouettes keyed by ink color ("#0A0A0A" or "#FFFFFF") so image
+  // logos automatically render in the right ink on each background.
+  const [silhouettes, setSilhouettes] = useState<Record<string, { black?: string; white?: string; hasAlpha: boolean }>>({});
 
   useEffect(() => {
     if (!projectId) return;
@@ -147,6 +164,31 @@ export default function SocialIcons() {
   }, [project]);
 
   const variants = useMemo(() => buildVariants(brandColor), [brandColor]);
+
+  // Build black/white silhouettes for every image-based logo so previews
+  // never render a dark logo on dark or light-on-light.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const next: Record<string, { black?: string; white?: string; hasAlpha: boolean }> = {};
+      for (const a of logoAssets) {
+        const src = a?.editor_state?.kind === "logotype" ? null : (a?.image_url || a?.thumbnail_url || null);
+        if (!src) continue;
+        try {
+          const [black, white] = await Promise.all([
+            silhouetteImage(src, "#0A0A0A"),
+            silhouetteImage(src, "#FFFFFF"),
+          ]);
+          if (cancelled) return;
+          next[a.id] = { hasAlpha: black.hasAlpha, black: black.url, white: white.url };
+        } catch {
+          // ignore — fall back to original
+        }
+      }
+      if (!cancelled) setSilhouettes(next);
+    })();
+    return () => { cancelled = true; };
+  }, [logoAssets]);
 
   const { isPro, loading: subLoading } = useSubscription();
   const requirePro = () => {
@@ -268,6 +310,11 @@ export default function SocialIcons() {
                     const radius = v.shape === "circle" ? "9999px" : v.shape === "rounded" ? "22%" : "0px";
                     const iconState: LogotypeState = { ...state, color: v.fg };
                     const bkey = `${asset.id}:${v.key}`;
+                    const sil = silhouettes[asset.id];
+                    const useWhite = isDarkBg(v.bg);
+                    const previewSrc = imgSrc
+                      ? (sil?.hasAlpha ? (useWhite ? sil.white : sil.black) : imgSrc)
+                      : null;
                     return (
                       <div
                         key={v.key}
@@ -275,9 +322,9 @@ export default function SocialIcons() {
                         style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
                       >
                         <div className="flex h-full w-full items-center justify-center p-[18%]">
-                          {imgSrc ? (
+                          {previewSrc ? (
                             <img
-                              src={imgSrc}
+                              src={previewSrc}
                               alt=""
                               className="max-h-full max-w-full object-contain"
                               crossOrigin="anonymous"
