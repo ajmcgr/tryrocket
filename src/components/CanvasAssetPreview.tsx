@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Layer, Stage, Rect, Circle as KCircle, Text as KText, Line as KLine, RegularPolygon, Star as KStar } from "react-konva";
 import { type CanvasElement } from "@/lib/canvasAsset";
 import { loadGoogleFont } from "@/lib/logotype";
@@ -6,6 +6,32 @@ import KonvaImage from "@/components/KonvaImage";
 
 const STAGE_W = 800;
 const STAGE_H = 600;
+const PADDING = 40;
+
+/**
+ * Compute an axis-aligned bounding box for the visible artwork. Saved canvas
+ * assets store elements in absolute coordinates that rarely fill the 800x600
+ * stage — without this fit-and-center step, a logo can render as a tiny mark
+ * in a corner of every Brand Kit preview.
+ */
+function computeBounds(elements: CanvasElement[]) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const el of elements) {
+    if (el.visible === false) continue;
+    const x = Number(el.x) || 0;
+    const y = Number(el.y) || 0;
+    const w = Number(el.w) || 0;
+    const h = Number(el.h) || 0;
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (x + w > maxX) maxX = x + w;
+    if (y + h > maxY) maxY = y + h;
+  }
+  if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) return null;
+  const w = Math.max(1, maxX - minX);
+  const h = Math.max(1, maxY - minY);
+  return { x: minX, y: minY, w, h };
+}
 
 function RenderEl({ el }: { el: CanvasElement }) {
   if (el.visible === false) return null;
@@ -77,6 +103,20 @@ export default function CanvasAssetPreview({
 }) {
   const [, setFontRenderTick] = useState(0);
 
+  // Fit-and-center transform for the artwork layer. Computed once per
+  // elements array so every Brand Kit surface (Logo/Icon Files, Social
+  // Icons, Brand Book) renders the same normalized preview.
+  const fit = useMemo(() => {
+    const b = computeBounds(elements);
+    if (!b) return { scale: 1, offsetX: 0, offsetY: 0 };
+    const availW = STAGE_W - PADDING * 2;
+    const availH = STAGE_H - PADDING * 2;
+    const scale = Math.min(availW / b.w, availH / b.h);
+    const offsetX = (STAGE_W - b.w * scale) / 2 - b.x * scale;
+    const offsetY = (STAGE_H - b.h * scale) / 2 - b.y * scale;
+    return { scale, offsetX, offsetY };
+  }, [elements]);
+
   useEffect(() => {
     const textElements = elements.filter((el): el is Extract<CanvasElement, { kind: "text" }> => el.kind === "text");
     if (!textElements.length) return;
@@ -118,6 +158,8 @@ export default function CanvasAssetPreview({
         <Stage width={STAGE_W} height={STAGE_H} scaleX={1} scaleY={1} style={{ width: "100%", height: "100%" }}>
           <Layer>
             <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={background} />
+          </Layer>
+          <Layer x={fit.offsetX} y={fit.offsetY} scaleX={fit.scale} scaleY={fit.scale}>
             {elements.map((el) => <RenderEl key={el.id} el={el} />)}
           </Layer>
         </Stage>
