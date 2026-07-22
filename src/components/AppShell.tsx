@@ -47,7 +47,7 @@ type StudioNavItem = {
 };
 
 const studioNav: StudioNavItem[] = [
-  { label: "Home", to: "/create", icon: Home, tour: "nav-create" },
+  { label: "Home", to: "/logos", icon: Home, tour: "nav-create" },
   { label: "Logo Designer", to: "/logos", icon: Sparkles, tour: "nav-logos" },
   { label: "Icon Designer", to: "/icons", icon: Shapes, tour: "nav-icons" },
   { label: "Wizard", to: "/wizard", icon: Wand2, tour: "nav-wizard" },
@@ -89,7 +89,7 @@ const AppShell = () => {
     <div className="app-shell min-h-screen bg-[#f5f7fb] font-body text-neutral-900">
       <header className="sticky top-0 z-50 bg-white" style={{ boxShadow: "inset 0 -1px 0 #d4d4d8" }}>
         <div className="relative flex h-14 w-full items-center px-4 sm:px-5">
-          <Logo to="/create" size="md" className="shrink-0" />
+          <Logo to="/logos" size="md" className="shrink-0" />
           {headerLeft && <div className="ml-2 flex shrink-0 items-center gap-2">{headerLeft}</div>}
           <div className="ml-4 hidden items-center gap-1 md:flex lg:hidden">
             {studioNav.slice(0, 3).map((item) => (
