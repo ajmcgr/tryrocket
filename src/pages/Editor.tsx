@@ -2399,19 +2399,20 @@ function QuickEditPanel({ els, fonts, bg, setBg, touchAutosave, update, setEls, 
                 className="w-full resize-y rounded-md border border-neutral-200 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
               />
               <label className="block text-[11px] font-medium text-neutral-600">Font</label>
-              <input
-                list={FONT_DATALIST_ID}
+              <select
                 value={title.fontFamily}
                 onChange={(e) => {
                   const nextFont = e.target.value;
-                  if (fonts.includes(nextFont) || DEFAULT_FONTS.includes(nextFont)) {
-                    loadGoogleFont(nextFont, [400, 500, 600, 700, 800]);
-                  }
+                  loadGoogleFont(nextFont, [400, 500, 600, 700, 800]);
                   update(title.id, { fontFamily: nextFont } as any);
                 }}
                 className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-sm"
-                placeholder="Search fonts"
-              />
+              >
+                {!fonts.includes(title.fontFamily) && title.fontFamily && (
+                  <option value={title.fontFamily}>{title.fontFamily}</option>
+                )}
+                {fonts.map((f) => (<option key={f} value={f}>{f}</option>))}
+              </select>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-medium text-neutral-600">Color</span>
                 <input type="color" value={title.color} onChange={(e) => update(title.id, { color: e.target.value } as any)} className="h-8 w-12 cursor-pointer rounded-md border border-neutral-200" />
