@@ -223,17 +223,24 @@ const Index = () => {
               className="block h-auto w-full bg-white"
             />
           </div>
-          <div className="mx-auto mt-8 flex flex-wrap justify-center gap-2 text-xs font-medium text-neutral-600">
-            {[
-              "Logo + logotype",
-              "App icon + favicon",
-              "PNG, SVG & PDF exports",
-            ].map((item) => (
-              <span key={item} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5">{item}</span>
-            ))}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
+            <Link
+              to="/signup"
+              className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover"
+            >
+              Start 7-day free trial
+            </Link>
+            <div className="min-w-[240px]">
+              <SenjaWidget />
+            </div>
           </div>
-          <div className="mt-12">
-            <SenjaWidget />
+          <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-neutral-600">
+            {["7-day free trial", "Secure payment", "Cancel any-time"].map((item) => (
+              <span key={item} className="inline-flex items-center gap-2">
+                <Check className="h-4 w-4 text-brand" strokeWidth={2.5} />
+                {item}
+              </span>
+            ))}
           </div>
         </div>
       </section>
