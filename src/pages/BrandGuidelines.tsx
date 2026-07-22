@@ -280,8 +280,16 @@ export default function BrandGuidelines() {
     if (secondaryFont) {
       const m = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === secondaryFont.toLowerCase());
       if (m) loadGoogleFont(m.family, m.weights);
+      else loadGoogleFont(secondaryFont, [400, 700]);
     }
   }, [secondaryFont]);
+  useEffect(() => {
+    if (primaryFont) {
+      const m = LOGOTYPE_FONTS.find((f) => f.family.toLowerCase() === primaryFont.toLowerCase());
+      if (m) loadGoogleFont(m.family, m.weights);
+      else loadGoogleFont(primaryFont, [400, 700]);
+    }
+  }, [primaryFont]);
 
   const download = async () => {
     if (requirePro()) return;
