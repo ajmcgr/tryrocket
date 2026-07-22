@@ -203,7 +203,7 @@ const Index = () => {
               "radial-gradient(closest-side, rgba(59,130,246,0.30), rgba(59,130,246,0) 70%), radial-gradient(closest-side, rgba(120,140,255,0.20), rgba(120,140,255,0) 70%)",
           }}
         />
-        <div className="mx-auto max-w-6xl px-6 pt-20 pb-24 text-center sm:pt-28 sm:pb-32">
+        <div className="mx-auto max-w-6xl px-6 pt-20 pb-16 text-center sm:pt-28 sm:pb-20">
           <h1 className="mx-auto max-w-4xl text-4xl font-medium tracking-tight text-neutral-900 sm:text-6xl md:text-7xl">
             Create a logo people remember.
           </h1>
@@ -229,7 +229,9 @@ const Index = () => {
               </span>
             ))}
           </div>
-          <div className="mx-auto mt-16 w-full max-w-[96rem] overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
+        </div>
+        <div className="mx-auto mt-6 w-full max-w-[84rem] px-6 pb-24 sm:pb-32">
+          <div className="mx-auto w-full overflow-hidden rounded-xl bg-neutral-100 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] ring-1 ring-neutral-200">
             <div className="flex h-8 items-center gap-1.5 border-b border-neutral-200 bg-neutral-100 px-3">
               <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
               <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
