@@ -112,12 +112,10 @@ const SavedLogos = () => {
     const safeName = (a.title || "logo").replace(/[^\w\-]+/g, "_") || "logo";
     try {
       if (a?.editor_state?.kind === "logotype") {
-        const blob = await logotypeToPng(a.editor_state, 2048);
-        const url = URL.createObjectURL(blob);
+        const dataUrl = await logotypeToPng(a.editor_state, 4);
         const link = document.createElement("a");
-        link.href = url; link.download = `${safeName}.png`;
+        link.href = dataUrl; link.download = `${safeName}.png`;
         document.body.appendChild(link); link.click(); link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
         return;
       }
       const src = a.image_url || a.thumbnail_url;
