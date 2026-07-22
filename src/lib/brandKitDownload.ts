@@ -39,6 +39,70 @@ const canvasToBlob = (canvas: HTMLCanvasElement, type = "image/png") =>
     canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Canvas export failed")), type);
   });
 
+async function canvasToJpgBlob(canvas: HTMLCanvasElement, background = "#ffffff") {
+  const flat = document.createElement("canvas");
+  flat.width = canvas.width;
+  flat.height = canvas.height;
+  const ctx = flat.getContext("2d")!;
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, flat.width, flat.height);
+  ctx.drawImage(canvas, 0, 0);
+  return canvasToBlob(flat, "image/jpeg");
+}
+
+async function canvasToPsdBlob(canvas: HTMLCanvasElement, layerName = "Logo"): Promise<Blob> {
+  const { writePsd } = await import("ag-psd");
+  const bg = document.createElement("canvas");
+  bg.width = canvas.width;
+  bg.height = canvas.height;
+  const bgCtx = bg.getContext("2d")!;
+  bgCtx.fillStyle = "#ffffff";
+  bgCtx.fillRect(0, 0, bg.width, bg.height);
+  const psd = {
+    width: canvas.width,
+    height: canvas.height,
+    canvas,
+    children: [
+      { name: "Background", canvas: bg },
+      { name: layerName, canvas, left: 0, top: 0, right: canvas.width, bottom: canvas.height },
+    ],
+  } as any;
+  const buffer = writePsd(psd);
+  return new Blob([buffer], { type: "image/vnd.adobe.photoshop" });
+}
+
+function canvasToEmbeddedSvg(canvas: HTMLCanvasElement, title: string): string {
+  const dataUrl = canvas.toDataURL("image/png");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}"><title>${title}</title><image href="${dataUrl}" width="${canvas.width}" height="${canvas.height}"/></svg>`;
+}
+
+async function urlToCanvas(url: string): Promise<HTMLCanvasElement> {
+  const img = await loadImage(url);
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth || 1024;
+  c.height = img.naturalHeight || 1024;
+  c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+
+async function addAllFormatsFromCanvas(
+  folder: JSZip,
+  folderName: string,
+  base: string,
+  canvas: HTMLCanvasElement,
+  add: (folder: JSZip, folderName: string, name: string, data: string | Blob | ArrayBuffer) => void,
+  nativeSvg?: string,
+) {
+  add(folder, folderName, `${base}.png`, await canvasToBlob(canvas));
+  try { add(folder, folderName, `${base}.jpg`, await canvasToJpgBlob(canvas)); } catch {}
+  try { add(folder, folderName, `${base}.psd`, await canvasToPsdBlob(canvas, base)); } catch {}
+  const svgMarkup = nativeSvg || canvasToEmbeddedSvg(canvas, base);
+  const svgBlob = () => new Blob([svgMarkup], { type: "image/svg+xml" });
+  add(folder, folderName, `${base}.figma.svg`, svgBlob());
+  add(folder, folderName, `${base}.sketch.svg`, svgBlob());
+  add(folder, folderName, `${base}.canva.svg`, svgBlob());
+}
+
 const triggerDownload = (blob: Blob, filename: string) => {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -334,11 +398,10 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     if (isBrandKitLogotypeAsset(asset)) {
       const state = stateFromAsset(asset, brandName);
       try {
-        if (asset?.editor_state?.kind === "logotype") {
-          add(logoFolder, "Logo-Icon Files", `${base}.svg`, new Blob([logotypeToSvg(state)], { type: "image/svg+xml" }));
-        }
-        const png = await fetch(await brandLogotypeToPng(asset, state.color || "#0a0a0a", brandName, 4)).then((r) => r.blob());
-        add(logoFolder, "Logo-Icon Files", `${base}.png`, png);
+        const dataUrl = await brandLogotypeToPng(asset, state.color || "#0a0a0a", brandName, 4);
+        const canvas = await urlToCanvas(dataUrl);
+        const nativeSvg = asset?.editor_state?.kind === "logotype" ? logotypeToSvg(state) : undefined;
+        await addAllFormatsFromCanvas(logoFolder, "Logo-Icon Files", base, canvas, add, nativeSvg);
       } catch {
         skipped.push(asset.title || "Logotype");
       }
@@ -346,9 +409,14 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     }
     const url = asset.image_url || asset.thumbnail_url;
     if (!url) continue;
-    const got = await fetchBytes(url);
-    if (got) add(logoFolder, "Logo-Icon Files", `${base}.${got.ext}`, got.bytes);
-    else skipped.push(asset.title || "Logo/Icon file");
+    try {
+      const canvas = await urlToCanvas(url);
+      await addAllFormatsFromCanvas(logoFolder, "Logo-Icon Files", base, canvas, add);
+    } catch {
+      const got = await fetchBytes(url);
+      if (got) add(logoFolder, "Logo-Icon Files", `${base}.${got.ext}`, got.bytes);
+      else skipped.push(asset.title || "Logo/Icon file");
+    }
   }
 
   if (isBrandKitLogotypeAsset(primary)) {
@@ -356,12 +424,10 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     const variants: Array<["regular" | "inverse" | "black", string]> = [["regular", base.color || "#0a0a0a"], ["inverse", "#ffffff"], ["black", "#000000"]];
     for (const [variant, color] of variants) {
       try {
-        if (primary?.editor_state?.kind === "logotype") {
-          const state = { ...base, color };
-          add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.svg`, new Blob([logotypeToSvg(state)], { type: "image/svg+xml" }));
-        }
-        const png = await fetch(await brandLogotypeToPng(primary, color, brandName, 4)).then((r) => r.blob());
-        add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.png`, png);
+        const dataUrl = await brandLogotypeToPng(primary, color, brandName, 4);
+        const canvas = await urlToCanvas(dataUrl);
+        const nativeSvg = primary?.editor_state?.kind === "logotype" ? logotypeToSvg({ ...base, color }) : undefined;
+        await addAllFormatsFromCanvas(logoFolder, "Logo-Icon Files", `primary-logo-${variant}`, canvas, add, nativeSvg);
       } catch {
         skipped.push(`primary logo ${variant}`);
       }
@@ -370,7 +436,9 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     const url = primary.image_url || primary.thumbnail_url;
     for (const variant of ["regular", "inverse", "black"] as const) {
       try {
-        add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.png`, await buildImageVariantBlob(url, variant));
+        const blob = await buildImageVariantBlob(url, variant);
+        const canvas = await urlToCanvas(URL.createObjectURL(blob));
+        await addAllFormatsFromCanvas(logoFolder, "Logo-Icon Files", `primary-logo-${variant}`, canvas, add);
       } catch {
         skipped.push(`primary logo ${variant}`);
       }
@@ -434,7 +502,7 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     `Generated ${new Date().toISOString()}`,
     "",
     "Contents:",
-    "  /Logo-Icon Files  source logo/icon files + regular/inverse/black variants",
+    "  /Logo-Icon Files  logo/icon files as PNG, JPG, PSD, and SVG (Figma/Sketch/Canva) + regular/inverse/black variants",
     "  /Palette          palette.txt, palette.png, palette.pdf",
     "  /Fonts            fonts.txt, font-specimen.png, font-specimen.pdf",
     "  /Brand Book       brand-book.md, brand-book.png, brand-book.pdf",
