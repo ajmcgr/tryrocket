@@ -96,7 +96,7 @@ const CARDS = [
     ],
     ctaText: "Generate logos",
     ctaLink: "/create",
-    image: logoAsset,
+    image: logoAsset.url,
     imageAlt: "Generated logo directions",
     accent: "blue" as const,
   },
