@@ -314,6 +314,7 @@ function toDataUrl(svg: string): string {
 export function buildIconSeedTemplates() {
   return SEEDS.map((spec, i) => {
     const stack = renderSvg({ ...spec, layout: "stack" });
+    const editor_state = buildCanvasEditorState(spec);
     return {
       id: `seed-icon-${i}`,
       title: spec.name,
@@ -324,12 +325,47 @@ export function buildIconSeedTemplates() {
       creator_username: "Rocket Studio",
       created_at: new Date(Date.now() - i * 3600_000).toISOString(),
       meta: { template_style: spec.style, seed: true, tagline: spec.tagline, icon: spec.icon },
+      editor_state,
       _seed: true as const,
     };
   });
 }
 
 export const ICON_SEED_TEMPLATES = buildIconSeedTemplates();
+
+// Build an El[] canvas state (matching src/pages/Editor.tsx types) so that
+// opening an icon template in /editor faithfully reproduces icon + wordmark
+// + background instead of falling back to a plain logotype.
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function buildCanvasEditorState(spec: IconSpec): any[] {
+  const W = 800, H = 600;
+  const iconSize = 180;
+  const iconX = (W - iconSize) / 2;
+  const iconY = 120;
+  const textCase = spec.transform === "uppercase" ? spec.name.toUpperCase()
+    : spec.transform === "lowercase" ? spec.name.toLowerCase()
+    : spec.name;
+  const inner = iconPath(spec.icon, spec.color);
+  const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="${iconSize}" height="${iconSize}">${inner}</svg>`;
+  const iconUrl = toDataUrl(iconSvg);
+  const bgRect = {
+    id: uid(), kind: "rect", x: 0, y: 0, w: W, h: H,
+    visible: true, locked: false, fill: spec.bg, radius: 0,
+  };
+  const iconEl = {
+    id: uid(), kind: "image", x: iconX, y: iconY, w: iconSize, h: iconSize,
+    visible: true, locked: false, src: iconUrl, color: spec.color,
+  };
+  const textW = 640;
+  const textEl = {
+    id: uid(), kind: "text",
+    x: (W - textW) / 2, y: iconY + iconSize + 40, w: textW, h: 110,
+    visible: true, locked: false,
+    text: textCase, color: spec.color, fontSize: 72,
+    fontWeight: spec.weight, fontFamily: spec.font, align: "center",
+  };
+  return [bgRect, iconEl, textEl];
+}
 
 // Build an icon-only (no wordmark) data URL for a seed by name.
 export function getIconOnlyDataUrl(name: string): string | null {
