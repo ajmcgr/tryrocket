@@ -7,6 +7,7 @@ import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
+import { pickLogoColor, isDarkBg, silhouetteImage } from "@/lib/logoContrast";
 
 const supabase = _sb as any;
 
@@ -21,16 +22,24 @@ type Variant = {
   border?: boolean;
 };
 
-const buildVariants = (brandColor: string): Variant[] => [
-  { key: "circle-brand", label: "Circle · Brand", shape: "circle", bg: brandColor, fg: "#FFFFFF" },
-  { key: "circle-white", label: "Circle · Light", shape: "circle", bg: "#FFFFFF", fg: brandColor, border: true },
-  { key: "circle-black", label: "Circle · Dark", shape: "circle", bg: "#0A0A0A", fg: "#FFFFFF" },
-  { key: "rounded-brand", label: "Rounded · Brand", shape: "rounded", bg: brandColor, fg: "#FFFFFF" },
-  { key: "rounded-white", label: "Rounded · Light", shape: "rounded", bg: "#FFFFFF", fg: brandColor, border: true },
-  { key: "rounded-black", label: "Rounded · Dark", shape: "rounded", bg: "#0A0A0A", fg: "#FFFFFF" },
-  { key: "square-brand", label: "Square · Brand", shape: "square", bg: brandColor, fg: "#FFFFFF" },
-  { key: "square-white", label: "Square · Light", shape: "square", bg: "#FFFFFF", fg: brandColor, border: true },
-];
+const buildVariants = (brandColor: string): Variant[] => {
+  // Always pick the ink/paper that yields the strongest contrast on each
+  // background so no variant ever renders white-on-white or black-on-black.
+  const onBrand = pickLogoColor(brandColor);
+  // For light-tinted brand colors, keep the brand-mark readable by pairing
+  // with black ink; for dark brand colors, pair with white paper.
+  const onLightPaper = isDarkBg(brandColor) ? brandColor : "#0A0A0A";
+  return [
+    { key: "circle-brand", label: "Circle · Brand", shape: "circle", bg: brandColor, fg: onBrand },
+    { key: "circle-white", label: "Circle · Light", shape: "circle", bg: "#FFFFFF", fg: onLightPaper, border: true },
+    { key: "circle-black", label: "Circle · Dark", shape: "circle", bg: "#0A0A0A", fg: "#FFFFFF" },
+    { key: "rounded-brand", label: "Rounded · Brand", shape: "rounded", bg: brandColor, fg: onBrand },
+    { key: "rounded-white", label: "Rounded · Light", shape: "rounded", bg: "#FFFFFF", fg: onLightPaper, border: true },
+    { key: "rounded-black", label: "Rounded · Dark", shape: "rounded", bg: "#0A0A0A", fg: "#FFFFFF" },
+    { key: "square-brand", label: "Square · Brand", shape: "square", bg: brandColor, fg: onBrand },
+    { key: "square-white", label: "Square · Light", shape: "square", bg: "#FFFFFF", fg: onLightPaper, border: true },
+  ];
+};
 
 const safeName = (s: string) => s.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "icon";
 
@@ -64,7 +73,12 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 async function renderImageIconPng(src: string, v: Variant, size = 1024): Promise<Blob> {
-  const img = await loadImage(src);
+  // Silhouette the source logo into the variant's ink when the PNG has an
+  // alpha channel so image logos automatically flip black/white against
+  // dark/light backgrounds. Falls back to the original when there is no
+  // usable alpha (already-baked lockup on a bg).
+  const { url } = await silhouetteImage(src, v.fg);
+  const img = await loadImage(url);
   return await composeIcon(img, v, size);
 }
 
