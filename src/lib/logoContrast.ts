@@ -73,82 +73,13 @@ function detectAlpha(img: HTMLImageElement): boolean {
 }
 
 /**
- * If a raster logo ships with a solid near-white background (very common for
- * generated PNGs / JPEGs), punch that background out into real transparency so
- * the logo can sit cleanly on any color surface. Uses a flood-fill from the
- * four corners so only *background* whites are removed — internal white pixels
- * inside the mark itself are preserved.
- */
-function keyOutBackground(img: HTMLImageElement): { canvas: HTMLCanvasElement; changed: boolean } {
-  const canvas = document.createElement("canvas");
-  const w = (canvas.width = img.naturalWidth || img.width);
-  const h = (canvas.height = img.naturalHeight || img.height);
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(img, 0, 0);
-  let image: ImageData;
-  try {
-    image = ctx.getImageData(0, 0, w, h);
-  } catch {
-    return { canvas, changed: false };
-  }
-  const data = image.data;
-
-  const px = (x: number, y: number) => (y * w + x) * 4;
-  const cornerSamples = [px(0, 0), px(w - 1, 0), px(0, h - 1), px(w - 1, h - 1)];
-  const lightCorner = cornerSamples.find((i) => data[i] >= 220 && data[i + 1] >= 220 && data[i + 2] >= 220 && data[i + 3] >= 220);
-  const bg = lightCorner == null
-    ? { r: 248, g: 248, b: 248 }
-    : { r: data[lightCorner], g: data[lightCorner + 1], b: data[lightCorner + 2] };
-
-  const isBg = (i: number) => {
-    if (data[i + 3] < 180) return false;
-    const nearWhite = data[i] >= 232 && data[i + 1] >= 232 && data[i + 2] >= 232;
-    const nearCornerBg =
-      Math.abs(data[i] - bg.r) <= 34 &&
-      Math.abs(data[i + 1] - bg.g) <= 34 &&
-      Math.abs(data[i + 2] - bg.b) <= 34 &&
-      bg.r >= 220 && bg.g >= 220 && bg.b >= 220;
-    return nearWhite || nearCornerBg;
-  };
-  // Flood fill from every border pixel.
-  const stack: number[] = [];
-  const push = (x: number, y: number) => {
-    if (x < 0 || y < 0 || x >= w || y >= h) return;
-    const idx = (y * w + x) * 4;
-    if (data[idx + 3] === 0) return;
-    if (!isBg(idx)) return;
-    // Mark when queued, not when popped, so large white canvases do not enqueue
-    // the same pixel thousands of times and stall preview rendering.
-    data[idx + 3] = 0;
-    stack.push(x, y);
-  };
-  for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
-  for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
-  let changed = false;
-  while (stack.length) {
-    const y = stack.pop()!;
-    const x = stack.pop()!;
-    changed = true;
-    if (x > 0) stack.push(x - 1, y);
-    if (x < w - 1) stack.push(x + 1, y);
-    if (y > 0) stack.push(x, y - 1);
-    if (y < h - 1) stack.push(x, y + 1);
-  }
-  if (changed) ctx.putImageData(image, 0, 0);
-  return { canvas, changed };
-}
-
-/**
- * Return a transparent-background version of the source image, whether it
- * already had alpha or shipped with a solid white background. Falls back to
- * the original URL if nothing could be stripped (e.g. photographic logos).
+ * Return the source image untouched. Background-keying was too aggressive and
+ * ate real logo pixels, so we now trust the source PNG's alpha channel and let
+ * the caller pick a light/dark tile that reads well.
  */
 export async function transparentLogo(src: string): Promise<{ url: string; hasTransparency: boolean; image: HTMLImageElement }> {
   const img = await loadImage(src);
-  const nativeAlpha = detectAlpha(img);
-  const { canvas, changed } = keyOutBackground(img);
-  if (!changed) return { url: src, hasTransparency: nativeAlpha, image: img };
-  return { url: canvas.toDataURL("image/png"), hasTransparency: true, image: img };
+  return { url: src, hasTransparency: detectAlpha(img), image: img };
 }
 
 /**
@@ -158,22 +89,12 @@ export async function transparentLogo(src: string): Promise<{ url: string; hasTr
  */
 export async function silhouetteImage(src: string, color: string): Promise<{ url: string; hasAlpha: boolean; image: HTMLImageElement }> {
   const img = await loadImage(src);
-  // Start from a version with a proper alpha channel — either native or
-  // background-keyed — so silhouettes work on solid-white PNGs too.
-  let sourceCanvas: HTMLCanvasElement;
-  let hasAlpha = detectAlpha(img);
-  const keyed = keyOutBackground(img);
-  if (keyed.changed) {
-    sourceCanvas = keyed.canvas;
-    hasAlpha = true;
-  } else if (hasAlpha) {
-    sourceCanvas = document.createElement("canvas");
-    sourceCanvas.width = img.naturalWidth || img.width;
-    sourceCanvas.height = img.naturalHeight || img.height;
-    sourceCanvas.getContext("2d")!.drawImage(img, 0, 0);
-  } else {
-    return { url: src, hasAlpha: false, image: img };
-  }
+  const hasAlpha = detectAlpha(img);
+  if (!hasAlpha) return { url: src, hasAlpha: false, image: img };
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = img.naturalWidth || img.width;
+  sourceCanvas.height = img.naturalHeight || img.height;
+  sourceCanvas.getContext("2d")!.drawImage(img, 0, 0);
   const out = document.createElement("canvas");
   out.width = sourceCanvas.width;
   out.height = sourceCanvas.height;
