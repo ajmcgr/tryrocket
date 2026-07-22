@@ -10,7 +10,6 @@ const ShowcaseCard = ({
   title,
   description,
   bullets,
-  meta,
   ctaText,
   ctaLink,
   image,
@@ -21,7 +20,6 @@ const ShowcaseCard = ({
   title: string;
   description: string;
   bullets: string[];
-  meta: string;
   ctaText: string;
   ctaLink: string;
   image: string;
@@ -77,11 +75,6 @@ const ShowcaseCard = ({
             </li>
           ))}
         </ul>
-        <div className="mt-8 border-t border-neutral-100 pt-5">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-500">
-            {meta}
-          </p>
-        </div>
       </div>
     </article>
   );
