@@ -3,7 +3,9 @@ import { Link, useParams } from "react-router-dom";
 import { Download, Loader2 } from "lucide-react";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng } from "@/components/Logotype";
+import CanvasAssetPreview from "@/components/CanvasAssetPreview";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
+import { isCanvasAsset } from "@/lib/canvasAsset";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -80,6 +82,30 @@ async function renderImageIconPng(src: string, v: Variant, size = 1024): Promise
   const { url } = await silhouetteImage(src, v.fg);
   const img = await loadImage(url);
   return await composeIcon(img, v, size);
+}
+
+async function renderCanvasIconPng(asset: any, v: Variant, size = 1024): Promise<Blob> {
+  const node = document.createElement("div");
+  node.style.position = "fixed";
+  node.style.left = "-10000px";
+  node.style.top = "0";
+  node.style.width = "800px";
+  node.style.height = "600px";
+  node.style.background = "transparent";
+  document.body.appendChild(node);
+  try {
+    const { createRoot } = await import("react-dom/client");
+    const { toPng } = await import("html-to-image");
+    const root = createRoot(node);
+    root.render(<CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" background="transparent" />);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: "transparent", cacheBust: true });
+    root.unmount();
+    const img = await loadImage(dataUrl);
+    return await composeIcon(img, v, size);
+  } finally {
+    node.remove();
+  }
 }
 
 async function composeIcon(img: HTMLImageElement, v: Variant, size: number): Promise<Blob> {
@@ -207,12 +233,13 @@ export default function SocialIcons() {
     return defaultLogotypeState(asset?.title || project?.name || "Brand");
   };
   const imageSrcForAsset = (asset: any): string | null => {
-    if (asset?.editor_state?.kind === "logotype") return null;
+    if (asset?.editor_state?.kind === "logotype" || isCanvasAsset(asset)) return null;
     return asset?.image_url || asset?.thumbnail_url || null;
   };
   const renderVariantForAsset = async (asset: any, v: Variant): Promise<Blob> => {
     const src = imageSrcForAsset(asset);
     if (src) return renderImageIconPng(src, v);
+    if (isCanvasAsset(asset)) return renderCanvasIconPng(asset, v);
     return renderIconPng(stateForAsset(asset), v);
   };
   const assetLabel = (asset: any) =>
@@ -297,8 +324,9 @@ export default function SocialIcons() {
       ) : (
         <div className="space-y-10">
           {logoAssets.map((asset) => {
-            const imgSrc = imageSrcForAsset(asset);
+                    const imgSrc = imageSrcForAsset(asset);
             const state = stateForAsset(asset);
+                    const isCanvas = isCanvasAsset(asset);
             return (
               <section key={asset.id}>
                 <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-neutral-500">
@@ -322,7 +350,9 @@ export default function SocialIcons() {
                         style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
                       >
                         <div className="flex h-full w-full items-center justify-center p-[18%]">
-                          {previewSrc ? (
+                          {isCanvas ? (
+                            <CanvasAssetPreview elements={asset.editor_state as any} className="h-full w-full" background="transparent" />
+                          ) : previewSrc ? (
                             <img
                               src={previewSrc}
                               alt=""
