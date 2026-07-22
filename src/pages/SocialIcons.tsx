@@ -210,6 +210,9 @@ export default function SocialIcons() {
           >
             {busy === "all" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Download all
+            {!subLoading && !isPro && (
+              <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide">PRO</span>
+            )}
           </button>
         ) : null}
       </div>
