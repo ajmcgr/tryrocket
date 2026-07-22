@@ -337,13 +337,13 @@ export default function BrandHub() {
               </div>
             ))}
           </section>
-        ) : projects.length ? (
+        ) : projects.filter((p) => (designsByProject.get(p.id) || []).some((d: any) => d?.meta?.saved_at)).length ? (
           <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {projects.map((project) => {
+            {projects.filter((p) => (designsByProject.get(p.id) || []).some((d: any) => d?.meta?.saved_at)).map((project) => {
               const logo = projectLogos.get(project.id);
               const preview = logo?.thumbnail_url || logo?.image_url || project?.cover_url;
               const logoState = logo?.editor_state?.kind === "logotype" ? logo.editor_state : null;
-              const designCount = designsByProject.get(project.id)?.length || 0;
+              const designCount = projectDesignCount(project.id);
               return (
                 <div key={project.id} className="group relative">
                   <Link
