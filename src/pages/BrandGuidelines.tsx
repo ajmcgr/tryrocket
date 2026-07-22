@@ -260,10 +260,10 @@ export default function BrandGuidelines() {
     ];
   }, [meta, brandColor]);
 
-  // Fonts: primary from Brand Kit (meta.font), fall back to the saved logo's
-  // editor_state font. Secondary = any other logotype using a different font.
+  // Fonts: prefer the actual font on the saved primary logotype (kept live
+  // in sync with /editor edits). Fall back to Brand Kit meta.font, then Inter.
   const primaryFont = useMemo(() => {
-    return meta.font || baseState.font || "Inter";
+    return baseState.font || meta.font || "Inter";
   }, [meta, baseState]);
   const secondaryFont = useMemo(() => {
     const others = savedAssets
