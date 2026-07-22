@@ -2,8 +2,6 @@ import { logotypeToPng } from "@/components/Logotype";
 import { isCanvasAsset, type CanvasElement } from "@/lib/canvasAsset";
 import { defaultLogotypeState, loadGoogleFont, type LogotypeState } from "@/lib/logotype";
 
-const LOGOTYPE_TYPES = new Set(["logo", "logotype", "wordmark", "brandmark"]);
-
 type CanvasText = Extract<CanvasElement, { kind: "text" }>;
 
 export function isStoredLogotypeAsset(asset: any): boolean {
