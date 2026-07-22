@@ -4,6 +4,8 @@ import { supabase as _sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logotype, logotypeToPng } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import BrandLogotypePreview from "@/components/BrandLogotypePreview";
+import { isBrandKitLogotypeAsset } from "@/lib/brandLogoAsset";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import BrandFromAssetMenu from "@/components/BrandFromAssetMenu";
