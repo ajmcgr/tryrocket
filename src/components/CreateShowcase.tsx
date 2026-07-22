@@ -15,7 +15,7 @@ const ShowcaseCard = ({
   image,
   imageAlt,
   accent,
-  imageScale = "scale-95 object-contain sm:scale-100 lg:scale-110",
+  imageScale = "scale-80 object-contain sm:scale-90 lg:scale-95",
 }: {
   i: number;
   title: string;
