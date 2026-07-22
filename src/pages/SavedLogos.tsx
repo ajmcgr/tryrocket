@@ -54,10 +54,12 @@ const SavedLogos = () => {
       const ws = await ensureActiveWorkspaceId();
       let q = supabase
         .from("assets")
-        .select("id,title,asset_type,image_url,thumbnail_url,editor_state,meta,prompt,created_at,updated_at")
+        .select("id,title,asset_type,image_url,thumbnail_url,editor_state,meta,prompt,created_at,updated_at,workspace_id")
         .eq("user_id", user.id);
-      if (ws) q = q.eq("workspace_id", ws);
-      const { data } = await q.is("deleted_at", null).order("created_at", { ascending: false }).limit(200);
+      // Include assets in the active workspace AND legacy assets with no workspace assigned,
+      // so items saved from older chats still surface on /saved.
+      if (ws) q = q.or(`workspace_id.eq.${ws},workspace_id.is.null`);
+      const { data } = await q.is("deleted_at", null).order("created_at", { ascending: false }).limit(400);
       if (!cancelled) {
         // Only items the user has explicitly saved (via Save button or by opening/editing in /editor).
         setItems((data || []).filter((asset: any) => Boolean(asset?.meta?.saved_at)));

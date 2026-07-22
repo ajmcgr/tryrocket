@@ -875,6 +875,7 @@ const Generate = () => {
       toast({ title: "Could not save", description: updateError.message, variant: "destructive" });
       return;
     }
+    setChatAssets((prev) => prev.map((x) => x.id === chosen.id ? { ...x, meta: { ...(x.meta || {}), saved_at: new Date().toISOString(), saved_from_chat: true } } : x));
     toast({ title: "Saved", description: "Added to Saved." });
     window.dispatchEvent(new CustomEvent("rocket:notify", { detail: {
       kind: "asset",
