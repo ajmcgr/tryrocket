@@ -53,9 +53,23 @@ function downloadBlob(blob: Blob, name: string) {
 
 async function renderIconPng(state: LogotypeState, v: Variant, size = 1024): Promise<Blob> {
   const logoUrl = await logotypeToPng({ ...state, color: v.fg }, 4);
+  const img = await loadImage(logoUrl);
+  return await composeIcon(img, v, size);
+}
+
+async function loadImage(src: string): Promise<HTMLImageElement> {
   const img = new Image();
   img.crossOrigin = "anonymous";
-  await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; img.src = logoUrl; });
+  await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; img.src = src; });
+  return img;
+}
+
+async function renderImageIconPng(src: string, v: Variant, size = 1024): Promise<Blob> {
+  const img = await loadImage(src);
+  return await composeIcon(img, v, size);
+}
+
+async function composeIcon(img: HTMLImageElement, v: Variant, size: number): Promise<Blob> {
 
   const canvas = document.createElement("canvas");
   canvas.width = size; canvas.height = size;
@@ -113,16 +127,17 @@ export default function SocialIcons() {
         supabase.from("projects").select("id,name,brand_color").eq("id", projectId).maybeSingle(),
         supabase
           .from("assets")
-          .select("id,title,asset_type,editor_state,image_url,created_at")
+          .select("id,title,asset_type,editor_state,image_url,thumbnail_url,meta,created_at")
           .eq("project_id", projectId)
-          .in("asset_type", ["logo", "logotype", "wordmark"])
-          .order("created_at", { ascending: true })
-          .limit(50),
+          .order("created_at", { ascending: false })
+          .limit(100),
       ]);
       if (cancelled) return;
       setProject(proj || null);
-      const withState = (assets || []).find((a: any) => a.editor_state?.kind === "logotype");
-      setLogoAsset(withState || (assets || [])[0] || null);
+      // Mirror the Brand Kit filter: only designs the user explicitly saved.
+      const kit = (assets || []).filter((a: any) => Boolean(a?.meta?.saved_at));
+      const withState = kit.find((a: any) => a?.editor_state?.kind === "logotype");
+      setLogoAsset(withState || kit[0] || null);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -156,7 +171,7 @@ export default function SocialIcons() {
     if (requirePro()) return;
     setBusy(v.key);
     try {
-      const blob = await renderIconPng(baseState, v);
+      const blob = await renderVariant(v);
       downloadBlob(blob, `${safeName(project?.name || baseState.text)}-social-${v.key}.png`);
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
@@ -172,7 +187,7 @@ export default function SocialIcons() {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
       for (const v of variants) {
-        const blob = await renderIconPng(baseState, v);
+        const blob = await renderVariant(v);
         zip.file(`${safeName(project?.name || baseState.text)}-social-${v.key}.png`, blob);
       }
       const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -182,6 +197,14 @@ export default function SocialIcons() {
     } finally {
       setBusy(null);
     }
+  };
+
+  const isImageLogo = !logoAsset?.editor_state && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
+  const imageSrc: string | null = isImageLogo ? (logoAsset?.image_url || logoAsset?.thumbnail_url) : null;
+
+  const renderVariant = async (v: Variant): Promise<Blob> => {
+    if (imageSrc) return renderImageIconPng(imageSrc, v);
+    return renderIconPng(baseState, v);
   };
 
   return (
@@ -252,7 +275,16 @@ export default function SocialIcons() {
                 style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
               >
                 <div className="flex h-full w-full items-center justify-center p-[18%]">
-                  <Logotype state={iconState} fit="contain" />
+                  {imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt=""
+                      className="max-h-full max-w-full object-contain"
+                      crossOrigin="anonymous"
+                    />
+                  ) : (
+                    <Logotype state={iconState} fit="contain" />
+                  )}
                 </div>
                 <div className="pointer-events-none absolute left-3 top-3">
                   <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${isDark ? "bg-black/25 text-white" : "bg-neutral-100 text-neutral-700"}`}>
