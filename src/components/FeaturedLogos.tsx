@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ICON_SEED_TEMPLATES, getIconOnlyDataUrl } from "@/lib/seedIconTemplates";
 
 // A hand-picked shortlist of the strongest icon templates — spans styles,
@@ -60,12 +61,11 @@ export default function FeaturedLogos() {
         </div>
 
         <div className="mt-10 flex justify-center">
-          <Link
-            to="/templates"
-            className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-white hover:opacity-90"
-          >
-            Browse templates <ArrowRight className="h-4 w-4" />
-          </Link>
+          <Button asChild>
+            <Link to="/templates">
+              Browse templates <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
         </div>
       </div>
     </section>
