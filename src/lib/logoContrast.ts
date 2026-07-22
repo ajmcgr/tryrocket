@@ -52,6 +52,73 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   return img;
 }
 
+/**
+ * Remove a solid/near-solid background from a raster logo via corner-seeded
+ * flood fill. Only runs when all four corners agree on roughly the same color
+ * (a strong signal the image was exported on a flat background). Uses a tight
+ * tolerance so real logo pixels are preserved. Falls back to the original
+ * image if the corners disagree or the sampled color is close to black.
+ */
+function keyOutBackground(img: HTMLImageElement): { url: string; changed: boolean } {
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  if (!w || !h) return { url: img.src, changed: false };
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return { url: img.src, changed: false };
+  ctx.drawImage(img, 0, 0);
+  let imageData: ImageData;
+  try { imageData = ctx.getImageData(0, 0, w, h); } catch { return { url: img.src, changed: false }; }
+  const data = imageData.data;
+
+  const idx = (x: number, y: number) => (y * w + x) * 4;
+  const corners: [number, number][] = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]];
+  const samples = corners.map(([x, y]) => {
+    const i = idx(x, y);
+    return { r: data[i], g: data[i + 1], b: data[i + 2], a: data[i + 3] };
+  });
+  // Require all corners opaque and mutually similar.
+  const c0 = samples[0];
+  if (c0.a < 240) return { url: img.src, changed: false };
+  for (let k = 1; k < samples.length; k++) {
+    const c = samples[k];
+    if (c.a < 240) return { url: img.src, changed: false };
+    if (Math.abs(c.r - c0.r) > 12 || Math.abs(c.g - c0.g) > 12 || Math.abs(c.b - c0.b) > 12) {
+      return { url: img.src, changed: false };
+    }
+  }
+  // Don't key out near-black backgrounds — those are legitimate dark tiles.
+  const brightness = (c0.r + c0.g + c0.b) / 3;
+  if (brightness < 40) return { url: img.src, changed: false };
+
+  const tol = 28;
+  const targetR = c0.r, targetG = c0.g, targetB = c0.b;
+  const visited = new Uint8Array(w * h);
+  const stack: number[] = [];
+  for (const [x, y] of corners) stack.push(x, y);
+  while (stack.length) {
+    const y = stack.pop()!;
+    const x = stack.pop()!;
+    if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const p = y * w + x;
+    if (visited[p]) continue;
+    const i = p * 4;
+    if (data[i + 3] < 8) { visited[p] = 1; continue; }
+    if (
+      Math.abs(data[i] - targetR) > tol ||
+      Math.abs(data[i + 1] - targetG) > tol ||
+      Math.abs(data[i + 2] - targetB) > tol
+    ) continue;
+    visited[p] = 1;
+    data[i + 3] = 0;
+    stack.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return { url: canvas.toDataURL("image/png"), changed: true };
+}
+
 function detectAlpha(img: HTMLImageElement): boolean {
   try {
     const canvas = document.createElement("canvas");
@@ -79,7 +146,15 @@ function detectAlpha(img: HTMLImageElement): boolean {
  */
 export async function transparentLogo(src: string): Promise<{ url: string; hasTransparency: boolean; image: HTMLImageElement }> {
   const img = await loadImage(src);
-  return { url: src, hasTransparency: detectAlpha(img), image: img };
+  if (detectAlpha(img)) return { url: src, hasTransparency: true, image: img };
+  const keyed = keyOutBackground(img);
+  if (keyed.changed) {
+    try {
+      const nextImg = await loadImage(keyed.url);
+      return { url: keyed.url, hasTransparency: true, image: nextImg };
+    } catch {}
+  }
+  return { url: src, hasTransparency: false, image: img };
 }
 
 /**
@@ -89,12 +164,19 @@ export async function transparentLogo(src: string): Promise<{ url: string; hasTr
  */
 export async function silhouetteImage(src: string, color: string): Promise<{ url: string; hasAlpha: boolean; image: HTMLImageElement }> {
   const img = await loadImage(src);
-  const hasAlpha = detectAlpha(img);
+  let workingImg = img;
+  let hasAlpha = detectAlpha(img);
+  if (!hasAlpha) {
+    const keyed = keyOutBackground(img);
+    if (keyed.changed) {
+      try { workingImg = await loadImage(keyed.url); hasAlpha = true; } catch {}
+    }
+  }
   if (!hasAlpha) return { url: src, hasAlpha: false, image: img };
   const sourceCanvas = document.createElement("canvas");
-  sourceCanvas.width = img.naturalWidth || img.width;
-  sourceCanvas.height = img.naturalHeight || img.height;
-  sourceCanvas.getContext("2d")!.drawImage(img, 0, 0);
+  sourceCanvas.width = workingImg.naturalWidth || workingImg.width;
+  sourceCanvas.height = workingImg.naturalHeight || workingImg.height;
+  sourceCanvas.getContext("2d")!.drawImage(workingImg, 0, 0);
   const out = document.createElement("canvas");
   out.width = sourceCanvas.width;
   out.height = sourceCanvas.height;
@@ -103,5 +185,5 @@ export async function silhouetteImage(src: string, color: string): Promise<{ url
   ctx.globalCompositeOperation = "source-in";
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, out.width, out.height);
-  return { url: out.toDataURL("image/png"), hasAlpha: true, image: img };
+  return { url: out.toDataURL("image/png"), hasAlpha: true, image: workingImg };
 }
