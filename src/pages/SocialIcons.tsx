@@ -291,7 +291,7 @@ export default function SocialIcons() {
                             {v.label}
                           </span>
                         </div>
-                        <div className="absolute bottom-3 right-3">
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
                           <button
                             onClick={() => handleDownload(asset, v)}
                             disabled={busy === bkey}
