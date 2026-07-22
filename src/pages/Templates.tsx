@@ -10,10 +10,13 @@ import {
   Star,
   Shuffle,
   PenTool,
+  Palette,
+  Loader2,
 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
 import CanvasAssetPreview from "@/components/CanvasAssetPreview";
+import BrandFromAssetMenu from "@/components/BrandFromAssetMenu";
 import { isCanvasAsset } from "@/lib/canvasAsset";
 import { CollectionView, DesignSort, sortByOption } from "@/lib/designCollections";
 import { matchesDesignQuery, rankDesignsByRelevance } from "@/lib/searchRelevance";
@@ -50,6 +53,77 @@ const matchesTemplateStyle = (design: any, style: TemplateStyle) => {
     Education: ["education", "learning", "school", "academy"],
   };
   return terms[style].some((term) => searchable.includes(term));
+};
+
+const TemplateBrandFromAssetMenu = ({ design }: { design: any }) => {
+  const [asset, setAsset] = useState<any>(null);
+  const [cloning, setCloning] = useState(false);
+
+  if (!design._seed) {
+    return (
+      <BrandFromAssetMenu
+        asset={design}
+        className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+      />
+    );
+  }
+
+  if (asset) {
+    return (
+      <BrandFromAssetMenu
+        asset={asset}
+        className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+      />
+    );
+  }
+
+  const clone = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) {
+      toast({ title: "Sign in to use this template in a brand kit", variant: "destructive" });
+      return;
+    }
+    setCloning(true);
+    try {
+      const { ensureActiveWorkspaceId } = await import("@/lib/workspace");
+      const workspace_id = await ensureActiveWorkspaceId();
+      const { data, error } = await supabase.from("assets").insert({
+        user_id: auth.user.id,
+        workspace_id,
+        asset_type: design.asset_type || "logo",
+        title: design.title || "Template",
+        editor_state: design.editor_state,
+        image_url: design.image_url || null,
+        thumbnail_url: design.thumbnail_url || null,
+        meta: {
+          ...(design.meta || {}),
+          from_template: true,
+          saved_at: new Date().toISOString(),
+          kind: design.editor_state?.kind || (design.image_url ? undefined : "logotype"),
+        },
+      } as any).select("*").single();
+      if (error) throw error;
+      setAsset(data);
+      window.dispatchEvent(new CustomEvent("rocket:notify", { detail: { kind: "asset", title: "Template saved", body: design.title || "Added to Saved.", href: "/saved" }}));
+    } catch (err: any) {
+      toast({ title: "Could not save template", description: err?.message, variant: "destructive" });
+    } finally {
+      setCloning(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={clone}
+      title="Use in brand kit"
+      disabled={cloning}
+      className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+    >
+      {cloning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Palette className="h-3.5 w-3.5" />}
+    </button>
+  );
 };
 
 const Templates = () => {
@@ -301,6 +375,7 @@ const Templates = () => {
                   <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} title="Edit" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <PenTool className="h-3.5 w-3.5" />
                   </button>
+                  <TemplateBrandFromAssetMenu design={design} />
                   <button type="button" onClick={(e) => { e.stopPropagation(); void saveTemplateToSaved(design, e); }} title="Save to Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <Star className={`h-3.5 w-3.5 ${design?.meta?.saved_at ? "fill-amber-400 text-amber-400" : ""}`} />
                   </button>
@@ -332,6 +407,9 @@ const Templates = () => {
               <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} title="Edit" className="shrink-0 inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <PenTool className="h-3.5 w-3.5" />
               </button>
+              <div className="shrink-0">
+                <TemplateBrandFromAssetMenu design={design} />
+              </div>
               <button type="button" onClick={(e) => { e.stopPropagation(); void saveTemplateToSaved(design, e); }} title="Save to Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Star className={`h-3.5 w-3.5 ${design?.meta?.saved_at ? "fill-amber-400 text-amber-400" : ""}`} />
               </button>
