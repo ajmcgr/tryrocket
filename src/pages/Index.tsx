@@ -321,12 +321,7 @@ const Index = () => {
                 accent: "bg-indigo-500",
                 tint: "bg-indigo-50",
                 title: "SaaS products",
-                desc: "Launch your next software empire with a complete brand system — positioning, identity, and launch materials ready in minutes.",
-                bullets: [
-                  "Logo, colors & type that look investor-ready",
-                  "Landing page copy + Product Hunt kit",
-                  "Onboarding emails and lifecycle templates",
-                ],
+                desc: "Launch your next software empire with a logo, icon, wordmark, colour palette, typography and a shareable Brand Book — all in one kit.",
                 visual: "saas",
               },
               {
@@ -334,12 +329,7 @@ const Index = () => {
                 accent: "bg-violet-600",
                 tint: "bg-fuchsia-50",
                 title: "AI tools",
-                desc: "Stand out in a sea of GPT wrappers. Rocket gives your AI product a sharp positioning and a brand that feels native to 2026.",
-                bullets: [
-                  "Differentiated one-liner & taglines",
-                  "Demo-ready hero copy and screenshots",
-                  "X / LinkedIn launch threads written for you",
-                ],
+                desc: "Stand out in a sea of GPT wrappers. Rocket gives your AI product a distinctive logo, wordmark, social icons and a complete Brand Kit.",
                 visual: "ai",
               },
               {
@@ -347,12 +337,7 @@ const Index = () => {
                 accent: "bg-rose-500",
                 tint: "bg-rose-50",
                 title: "E-commerce stores",
-                desc: "Conversion-focused retail branding — from your logo and packaging palette to PDP copy that actually sells.",
-                bullets: [
-                  "Product page descriptions, FAQs, reviews",
-                  "Ad creative templates for Meta & TikTok",
-                  "Email flows: welcome, abandoned cart, win-back",
-                ],
+                desc: "Build a conversion-ready brand identity — logo, favicon, colour palette, typography and a Brand Book you can use across every channel.",
                 visual: "ecom",
               },
               {
@@ -360,12 +345,7 @@ const Index = () => {
                 accent: "bg-sky-500",
                 tint: "bg-sky-50",
                 title: "Mobile apps",
-                desc: "App Store-ready branding. We generate your icon direction, screenshots, ASO copy, and the launch posts to back it.",
-                bullets: [
-                  "App Store / Play Store metadata",
-                  "Screenshot frames + feature captions",
-                  "Press kit for indie & startup reviewers",
-                ],
+                desc: "App Store-ready branding. Generate your app icon, logo, wordmark, colours, fonts and a Brand Book for launch.",
                 visual: "mobile",
               },
               {
@@ -373,12 +353,7 @@ const Index = () => {
                 accent: "bg-blue-600",
                 tint: "bg-blue-50",
                 title: "Side projects",
-                desc: "Turn weekend ideas into polished ventures. Rocket gives every side project the brand polish of a funded startup.",
-                bullets: [
-                  "Name + tagline + one-liner in seconds",
-                  "Directory submissions auto-filled",
-                  "Launch checklist you can ship over a weekend",
-                ],
+                desc: "Turn weekend ideas into polished ventures. Rocket gives every side project a logo, icon, wordmark and a brand kit that looks funded.",
                 visual: "side",
               },
             ].map((row, i) => {
@@ -397,14 +372,6 @@ const Index = () => {
                           Start free <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
-                      <ul className="mt-7 space-y-3">
-                        {row.bullets.map((b) => (
-                          <li key={b} className="flex items-start gap-2.5 text-sm text-neutral-700">
-                            <span className="mt-0.5 text-brand">↳</span>
-                            <span>{b}</span>
-                          </li>
-                        ))}
-                      </ul>
                     </div>
                     <div className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${row.tint} ring-1 ring-neutral-200/70`}>
                       <UseCaseVisual kind={row.visual} accent={row.accent} />
