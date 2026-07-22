@@ -7,23 +7,20 @@ import { loadBrandMeta } from "@/lib/brandMeta";
 
 const supabase = _sb as any;
 
-function collectFontsFromState(state: any, out: Set<string>) {
-  if (!state) return;
-  const push = (v: unknown) => {
-    if (typeof v !== "string") return;
-    const s = v.trim();
-    if (s) out.add(s);
-  };
-  if (state.kind === "logotype") {
-    push(state.font);
-    return;
+function fontFromState(state: any): string | null {
+  if (!state) return null;
+  if (state.kind === "logotype" && typeof state.font === "string" && state.font.trim()) {
+    return state.font.trim();
   }
   if (Array.isArray(state)) {
     for (const el of state) {
-      if (!el || typeof el !== "object") continue;
-      if ((el as any).kind === "text") push((el as any).fontFamily);
+      if (el && typeof el === "object" && (el as any).kind === "text") {
+        const fam = (el as any).fontFamily;
+        if (typeof fam === "string" && fam.trim()) return fam.trim();
+      }
     }
   }
+  return null;
 }
 
 export default function FontExplorer() {
@@ -38,17 +35,22 @@ export default function FontExplorer() {
       setLoading(true);
       const { data: assets } = await supabase
         .from("assets")
-        .select("id,editor_state,meta")
-        .eq("project_id", projectId);
+        .select("id,editor_state,meta,updated_at")
+        .eq("project_id", projectId)
+        .order("updated_at", { ascending: false });
       if (cancelled) return;
-      const set = new Set<string>();
-      const meta = loadBrandMeta(projectId);
-      if (meta.font) set.add(meta.font);
+      // Only show the font in use on the most recently saved brand-kit asset.
+      let current: string | null = null;
       for (const a of assets || []) {
         if (!a?.meta?.saved_at) continue;
-        collectFontsFromState(a.editor_state, set);
+        const f = fontFromState(a.editor_state);
+        if (f) { current = f; break; }
       }
-      const list = Array.from(set);
+      if (!current) {
+        const meta = loadBrandMeta(projectId);
+        if (meta.font) current = meta.font;
+      }
+      const list = current ? [current] : [];
       list.forEach((f) => loadGoogleFont(f, [400, 500, 600, 700]));
       setFonts(list);
       setLoading(false);
