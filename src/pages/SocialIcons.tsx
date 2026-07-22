@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { Logotype, logotypeToPng } from "@/components/Logotype";
 import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
-import ProjectNavigation from "@/components/ProjectNavigation";
 
 const supabase = _sb as any;
 
@@ -114,7 +113,7 @@ export default function SocialIcons() {
   const { id: projectId } = useParams();
   const { toast } = useToast();
   const [project, setProject] = useState<any>(null);
-  const [logoAsset, setLogoAsset] = useState<any>(null);
+  const [logoAssets, setLogoAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -136,8 +135,7 @@ export default function SocialIcons() {
       setProject(proj || null);
       // Mirror the Brand Kit filter: only designs the user explicitly saved.
       const kit = (assets || []).filter((a: any) => Boolean(a?.meta?.saved_at));
-      const withState = kit.find((a: any) => a?.editor_state?.kind === "logotype");
-      setLogoAsset(withState || kit[0] || null);
+      setLogoAssets(kit);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -147,11 +145,6 @@ export default function SocialIcons() {
     const c = String(project?.brand_color || "").trim();
     return /^#[0-9a-f]{3,8}$/i.test(c) ? c : "#1676e3";
   }, [project]);
-
-  const baseState = useMemo<LogotypeState>(() => {
-    if (logoAsset?.editor_state?.kind === "logotype") return logoAsset.editor_state as LogotypeState;
-    return defaultLogotypeState(project?.name || logoAsset?.title || "Brand");
-  }, [logoAsset, project]);
 
   const variants = useMemo(() => buildVariants(brandColor), [brandColor]);
 
@@ -167,12 +160,29 @@ export default function SocialIcons() {
     return false;
   };
 
-  const handleDownload = async (v: Variant) => {
+  const stateForAsset = (asset: any): LogotypeState => {
+    if (asset?.editor_state?.kind === "logotype") return asset.editor_state as LogotypeState;
+    return defaultLogotypeState(asset?.title || project?.name || "Brand");
+  };
+  const imageSrcForAsset = (asset: any): string | null => {
+    if (asset?.editor_state?.kind === "logotype") return null;
+    return asset?.image_url || asset?.thumbnail_url || null;
+  };
+  const renderVariantForAsset = async (asset: any, v: Variant): Promise<Blob> => {
+    const src = imageSrcForAsset(asset);
+    if (src) return renderImageIconPng(src, v);
+    return renderIconPng(stateForAsset(asset), v);
+  };
+  const assetLabel = (asset: any) =>
+    asset?.title || (asset?.editor_state?.kind === "logotype" ? asset.editor_state.text : null) || project?.name || "Brand";
+
+  const handleDownload = async (asset: any, v: Variant) => {
     if (requirePro()) return;
-    setBusy(v.key);
+    const key = `${asset.id}:${v.key}`;
+    setBusy(key);
     try {
-      const blob = await renderVariant(v);
-      downloadBlob(blob, `${safeName(project?.name || baseState.text)}-social-${v.key}.png`);
+      const blob = await renderVariantForAsset(asset, v);
+      downloadBlob(blob, `${safeName(assetLabel(asset))}-social-${v.key}.png`);
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
     } finally {
@@ -186,12 +196,15 @@ export default function SocialIcons() {
     try {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
-      for (const v of variants) {
-        const blob = await renderVariant(v);
-        zip.file(`${safeName(project?.name || baseState.text)}-social-${v.key}.png`, blob);
+      for (const asset of logoAssets) {
+        const folder = zip.folder(safeName(assetLabel(asset))) || zip;
+        for (const v of variants) {
+          const blob = await renderVariantForAsset(asset, v);
+          folder.file(`${safeName(assetLabel(asset))}-social-${v.key}.png`, blob);
+        }
       }
       const zipBlob = await zip.generateAsync({ type: "blob" });
-      downloadBlob(zipBlob, `${safeName(project?.name || baseState.text)}-social-icons.zip`);
+      downloadBlob(zipBlob, `${safeName(project?.name || "brand")}-social-icons.zip`);
     } catch (e: any) {
       toast({ title: "Download failed", description: e?.message || String(e), variant: "destructive" });
     } finally {
@@ -199,37 +212,20 @@ export default function SocialIcons() {
     }
   };
 
-  const isImageLogo = !logoAsset?.editor_state && Boolean(logoAsset?.image_url || logoAsset?.thumbnail_url);
-  const imageSrc: string | null = isImageLogo ? (logoAsset?.image_url || logoAsset?.thumbnail_url) : null;
-
-  const renderVariant = async (v: Variant): Promise<Blob> => {
-    if (imageSrc) return renderImageIconPng(imageSrc, v);
-    return renderIconPng(baseState, v);
-  };
-
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mb-6 flex items-center gap-3">
-        {projectId ? (
-          <Link
-            to={`/brands/${projectId}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition hover:bg-neutral-50"
-            aria-label="Back to brand"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        ) : null}
-        <div className="flex-1">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:py-10">
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Social Icons</h1>
-          <p className="mt-0.5 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-neutral-500">
             Download square profile icons sized for social media in every shape and color.
           </p>
         </div>
-        {logoAsset ? (
+        {logoAssets.length > 0 ? (
           <button
             onClick={downloadAll}
             disabled={busy === "all"}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand-hover disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-foreground transition hover:bg-brand-hover disabled:opacity-60"
           >
             {busy === "all" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Download all
@@ -240,19 +236,13 @@ export default function SocialIcons() {
         ) : null}
       </div>
 
-      {projectId ? (
-        <div className="mb-6">
-          <ProjectNavigation projectId={projectId} active="downloads" />
-        </div>
-      ) : null}
-
       {loading ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
             <Skeleton key={i} className="aspect-square w-full rounded-2xl" />
           ))}
         </div>
-      ) : !logoAsset ? (
+      ) : logoAssets.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-12 text-center">
           <p className="text-sm text-neutral-600">No logo saved for this brand yet.</p>
           <Link
@@ -263,47 +253,61 @@ export default function SocialIcons() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {variants.map((v) => {
-            const isDark = v.bg !== "#FFFFFF";
-            const radius = v.shape === "circle" ? "9999px" : v.shape === "rounded" ? "22%" : "0px";
-            const iconState: LogotypeState = { ...baseState, color: v.fg };
+        <div className="space-y-10">
+          {logoAssets.map((asset) => {
+            const imgSrc = imageSrcForAsset(asset);
+            const state = stateForAsset(asset);
             return (
-              <div
-                key={v.key}
-                className={`relative overflow-hidden shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)] ${v.border ? "ring-1 ring-neutral-200" : ""}`}
-                style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
-              >
-                <div className="flex h-full w-full items-center justify-center p-[18%]">
-                  {imageSrc ? (
-                    <img
-                      src={imageSrc}
-                      alt=""
-                      className="max-h-full max-w-full object-contain"
-                      crossOrigin="anonymous"
-                    />
-                  ) : (
-                    <Logotype state={iconState} fit="contain" />
-                  )}
+              <section key={asset.id}>
+                <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-neutral-500">
+                  {assetLabel(asset)}
+                </h2>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                  {variants.map((v) => {
+                    const isDark = v.bg !== "#FFFFFF";
+                    const radius = v.shape === "circle" ? "9999px" : v.shape === "rounded" ? "22%" : "0px";
+                    const iconState: LogotypeState = { ...state, color: v.fg };
+                    const bkey = `${asset.id}:${v.key}`;
+                    return (
+                      <div
+                        key={v.key}
+                        className={`relative overflow-hidden shadow-[0_10px_40px_-20px_rgba(15,23,42,0.15)] ${v.border ? "ring-1 ring-neutral-200" : ""}`}
+                        style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
+                      >
+                        <div className="flex h-full w-full items-center justify-center p-[18%]">
+                          {imgSrc ? (
+                            <img
+                              src={imgSrc}
+                              alt=""
+                              className="max-h-full max-w-full object-contain"
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <Logotype state={iconState} fit="contain" />
+                          )}
+                        </div>
+                        <div className="pointer-events-none absolute left-3 top-3">
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${isDark ? "bg-black/25 text-white" : "bg-neutral-100 text-neutral-700"}`}>
+                            {v.label}
+                          </span>
+                        </div>
+                        <div className="absolute bottom-3 right-3">
+                          <button
+                            onClick={() => handleDownload(asset, v)}
+                            disabled={busy === bkey}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition ${
+                              isDark ? "bg-white/95 text-neutral-900 hover:bg-white" : "bg-neutral-900 text-white hover:bg-neutral-800"
+                            } disabled:opacity-60`}
+                          >
+                            {busy === bkey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                            PNG
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="pointer-events-none absolute left-3 top-3">
-                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${isDark ? "bg-black/25 text-white" : "bg-neutral-100 text-neutral-700"}`}>
-                    {v.label}
-                  </span>
-                </div>
-                <div className="absolute bottom-3 right-3">
-                  <button
-                    onClick={() => handleDownload(v)}
-                    disabled={busy === v.key}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition ${
-                      isDark ? "bg-white/95 text-neutral-900 hover:bg-white" : "bg-neutral-900 text-white hover:bg-neutral-800"
-                    } disabled:opacity-60`}
-                  >
-                    {busy === v.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                    PNG
-                  </button>
-                </div>
-              </div>
+              </section>
             );
           })}
         </div>
