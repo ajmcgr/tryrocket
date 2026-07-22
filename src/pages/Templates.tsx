@@ -271,12 +271,14 @@ const Templates = () => {
   const DesignPreview = ({ design }: { design: any }) => {
     const isLogotype = design?.editor_state?.kind === "logotype";
     const isCanvas = isCanvasAsset(design);
-    const isImage = design.image_url && !isLogotype;
+    // Prefer live editor_state over the seed image so edits from /editor
+    // propagate to preview cards.
+    const isImage = design.image_url && !isLogotype && !isCanvas;
 
     return (
       <div className="h-full w-full" style={{ background: design?.background || undefined }}>
         {isImage ? (
-          <img src={design.image_url} alt={design.title} className="h-full w-full object-cover" loading="lazy" />
+          <img src={design.thumbnail_url || design.image_url} alt={design.title} className="h-full w-full object-cover" loading="lazy" />
         ) : isLogotype ? (
           <Logotype state={design.editor_state} fit="contain" />
         ) : isCanvas ? (
