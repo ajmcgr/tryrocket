@@ -1,5 +1,6 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ICON_SEED_TEMPLATES, getIconOnlyDataUrl } from "@/lib/seedIconTemplates";
 
@@ -25,6 +26,13 @@ export default function FeaturedLogos() {
     })
     .filter(Boolean) as typeof ICON_SEED_TEMPLATES;
 
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.8), behavior: "smooth" });
+  };
+
   return (
     <section className="border-t border-neutral-200/60 bg-neutral-50/60">
       <div className="mx-auto max-w-6xl px-6 py-24">
@@ -35,13 +43,32 @@ export default function FeaturedLogos() {
           </p>
         </div>
 
-        <div className="mt-16 -mx-6 overflow-x-auto px-6 pb-4 [scrollbar-width:thin]">
-          <div className="flex gap-10 sm:gap-14">
+        <div className="relative mt-16">
+          <button
+            type="button"
+            aria-label="Previous logos"
+            onClick={() => scrollBy(-1)}
+            className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-neutral-200 bg-white p-3 shadow-md transition hover:bg-neutral-50"
+          >
+            <ChevronLeft className="h-5 w-5 text-neutral-700" />
+          </button>
+          <button
+            type="button"
+            aria-label="Next logos"
+            onClick={() => scrollBy(1)}
+            className="absolute right-0 top-1/2 z-10 translate-x-1/2 -translate-y-1/2 rounded-full border border-neutral-200 bg-white p-3 shadow-md transition hover:bg-neutral-50"
+          >
+            <ChevronRight className="h-5 w-5 text-neutral-700" />
+          </button>
+          <div
+            ref={scrollerRef}
+            className="-mx-6 flex snap-x snap-mandatory gap-10 overflow-x-auto scroll-smooth px-6 pb-2 sm:gap-14 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+          >
             {picks.map((tpl) => (
               <Link
                 key={tpl.id}
                 to="/templates"
-                className="group flex shrink-0 flex-col items-center text-center"
+                className="group flex shrink-0 snap-center flex-col items-center text-center"
               >
                 <div className="flex h-72 w-72 items-center justify-center sm:h-80 sm:w-80 lg:h-96 lg:w-96">
                   <img
