@@ -38,10 +38,10 @@ const Blog = () => {
             className="mt-6 max-w-3xl text-5xl font-medium leading-[1.05] tracking-tight text-neutral-900 sm:text-6xl"
             style={{ fontFamily: "Reckless, ui-serif, Georgia, serif" }}
           >
-            Playbooks for founders shipping in public.
+            Build a brand that ships before you launch.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-neutral-600">
-            Tactics, case studies, and field notes on launching, distribution, and building durable brands.
+            Guides, case studies, and playbooks for founders using Rocket to create logos, icons, brand kits, and launch assets in one workspace.
           </p>
         </header>
 

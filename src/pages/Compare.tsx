@@ -14,10 +14,10 @@ const Compare = () => (
         </div>
         <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">Rocket vs other branding tools</h1>
         <p className="mt-4 text-lg text-neutral-600">
-          Quick founder-friendly breakdowns of the tools people compare Rocket against most often — logos, Brand Kits, editors, and full launch workflows.
+          Quick founder-friendly breakdowns of the tools people compare Rocket against most often — logo makers, icon generators, brand kit builders, and full identity platforms.
         </p>
         <p className="mx-auto mt-3 max-w-2xl text-sm text-neutral-500">
-          Where Rocket stands out: a logo-first workflow (Wizard, Logo Designer, Icon Designer, 200+ templates), a canonical Brand Kit per project (one logo, palette, typeface), and a Canva-style editor with color overlays, multi-select, and PNG/SVG/PDF/ZIP export.
+          Where Rocket stands out: a logo-first workflow that starts with a mark or wordmark (Wizard, Logo Designer, Icon Designer, 300+ templates), then turns it into a canonical Brand Kit with Logo/Icon Files, Social Icons, Palette, Fonts, and a Brand Book — all editable in a canvas editor with PNG/SVG/PDF/ZIP export.
         </p>
       </header>
 
