@@ -9,6 +9,7 @@ import {
   ArrowUpDown,
   Star,
   Shuffle,
+  PenTool,
 } from "lucide-react";
 import { AssetGridSkeleton } from "@/components/Skeletons";
 import { Logotype } from "@/components/Logotype";
@@ -297,7 +298,9 @@ const Templates = () => {
                   <span className="shrink-0 text-[10px] text-neutral-400">{new Date(design.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} className="inline-flex flex-1 items-center justify-center rounded-lg bg-brand px-2 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover">Edit</button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} title="Edit" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                    <PenTool className="h-3.5 w-3.5" />
+                  </button>
                   <button type="button" onClick={(e) => { e.stopPropagation(); void saveTemplateToSaved(design, e); }} title="Save to Saved" className="inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                     <Star className={`h-3.5 w-3.5 ${design?.meta?.saved_at ? "fill-amber-400 text-amber-400" : ""}`} />
                   </button>
@@ -326,7 +329,9 @@ const Templates = () => {
                   {(design.asset_type || "Design").replace(/_/g, " ")} · by {design.creator_username || "Rocket creator"}
                 </div>
               </div>
-              <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} className="shrink-0 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Edit</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); void openTemplateInEditor(design, e); }} title="Edit" className="shrink-0 inline-flex items-center justify-center rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                <PenTool className="h-3.5 w-3.5" />
+              </button>
               <button type="button" onClick={(e) => { e.stopPropagation(); void saveTemplateToSaved(design, e); }} title="Save to Saved" className="shrink-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
                 <Star className={`h-3.5 w-3.5 ${design?.meta?.saved_at ? "fill-amber-400 text-amber-400" : ""}`} />
               </button>
