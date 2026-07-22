@@ -5,7 +5,6 @@ import { defaultLogotypeState, type LogotypeState } from "@/lib/logotype";
 import { loadBrandMeta } from "@/lib/brandMeta";
 import { brandLogotypeToPng, isBrandKitLogotypeAsset, logotypeStateFromAsset } from "@/lib/brandLogoAsset";
 import { pickLogoColor, isDarkBg, silhouetteImage, transparentLogo } from "@/lib/logoContrast";
-import { isCanvasAsset } from "@/lib/canvasAsset";
 
 type BrandKitDownloadArgs = {
   supabase: any;
