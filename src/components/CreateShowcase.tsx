@@ -10,7 +10,6 @@ const ShowcaseCard = ({
   title,
   description,
   bullets,
-  meta,
   ctaText,
   ctaLink,
   image,
@@ -21,7 +20,6 @@ const ShowcaseCard = ({
   title: string;
   description: string;
   bullets: string[];
-  meta: string;
   ctaText: string;
   ctaLink: string;
   image: string;
@@ -77,11 +75,6 @@ const ShowcaseCard = ({
             </li>
           ))}
         </ul>
-        <div className="mt-8 border-t border-neutral-100 pt-5">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-500">
-            {meta}
-          </p>
-        </div>
       </div>
     </article>
   );
@@ -99,7 +92,6 @@ const CARDS = [
       "One-click color reskinning",
       "Works for SaaS, AI, mobile & consumer brands",
     ],
-    meta: "Logo marks · Logotypes · Variants",
     ctaText: "Generate logos",
     ctaLink: "/create",
     image: logoAsset,
@@ -117,7 +109,6 @@ const CARDS = [
       "Scalable vector output",
       "Auto-matched to your brand palette",
     ],
-    meta: "App icons · Favicons · Glyph sets",
     ctaText: "Generate icons",
     ctaLink: "/icons",
     image: iconsAsset,
@@ -135,7 +126,6 @@ const CARDS = [
       "Password-protected share links",
       "Export the whole kit as a ZIP",
     ],
-    meta: "Colors · Typography · Templates · Share",
     ctaText: "Create brand kit",
     ctaLink: "/brands",
     image: guidelinesAsset,
