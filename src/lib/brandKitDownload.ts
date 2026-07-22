@@ -398,11 +398,10 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     if (isBrandKitLogotypeAsset(asset)) {
       const state = stateFromAsset(asset, brandName);
       try {
-        if (asset?.editor_state?.kind === "logotype") {
-          add(logoFolder, "Logo-Icon Files", `${base}.svg`, new Blob([logotypeToSvg(state)], { type: "image/svg+xml" }));
-        }
-        const png = await fetch(await brandLogotypeToPng(asset, state.color || "#0a0a0a", brandName, 4)).then((r) => r.blob());
-        add(logoFolder, "Logo-Icon Files", `${base}.png`, png);
+        const dataUrl = await brandLogotypeToPng(asset, state.color || "#0a0a0a", brandName, 4);
+        const canvas = await urlToCanvas(dataUrl);
+        const nativeSvg = asset?.editor_state?.kind === "logotype" ? logotypeToSvg(state) : undefined;
+        await addAllFormatsFromCanvas(logoFolder, "Logo-Icon Files", base, canvas, add, nativeSvg);
       } catch {
         skipped.push(asset.title || "Logotype");
       }
@@ -410,9 +409,14 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     }
     const url = asset.image_url || asset.thumbnail_url;
     if (!url) continue;
-    const got = await fetchBytes(url);
-    if (got) add(logoFolder, "Logo-Icon Files", `${base}.${got.ext}`, got.bytes);
-    else skipped.push(asset.title || "Logo/Icon file");
+    try {
+      const canvas = await urlToCanvas(url);
+      await addAllFormatsFromCanvas(logoFolder, "Logo-Icon Files", base, canvas, add);
+    } catch {
+      const got = await fetchBytes(url);
+      if (got) add(logoFolder, "Logo-Icon Files", `${base}.${got.ext}`, got.bytes);
+      else skipped.push(asset.title || "Logo/Icon file");
+    }
   }
 
   if (isBrandKitLogotypeAsset(primary)) {
@@ -420,12 +424,10 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     const variants: Array<["regular" | "inverse" | "black", string]> = [["regular", base.color || "#0a0a0a"], ["inverse", "#ffffff"], ["black", "#000000"]];
     for (const [variant, color] of variants) {
       try {
-        if (primary?.editor_state?.kind === "logotype") {
-          const state = { ...base, color };
-          add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.svg`, new Blob([logotypeToSvg(state)], { type: "image/svg+xml" }));
-        }
-        const png = await fetch(await brandLogotypeToPng(primary, color, brandName, 4)).then((r) => r.blob());
-        add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.png`, png);
+        const dataUrl = await brandLogotypeToPng(primary, color, brandName, 4);
+        const canvas = await urlToCanvas(dataUrl);
+        const nativeSvg = primary?.editor_state?.kind === "logotype" ? logotypeToSvg({ ...base, color }) : undefined;
+        await addAllFormatsFromCanvas(logoFolder, "Logo-Icon Files", `primary-logo-${variant}`, canvas, add, nativeSvg);
       } catch {
         skipped.push(`primary logo ${variant}`);
       }
@@ -434,7 +436,9 @@ export async function downloadCompleteBrandKit({ supabase, projectId, project }:
     const url = primary.image_url || primary.thumbnail_url;
     for (const variant of ["regular", "inverse", "black"] as const) {
       try {
-        add(logoFolder, "Logo-Icon Files", `primary-logo-${variant}.png`, await buildImageVariantBlob(url, variant));
+        const blob = await buildImageVariantBlob(url, variant);
+        const canvas = await urlToCanvas(URL.createObjectURL(blob));
+        await addAllFormatsFromCanvas(logoFolder, "Logo-Icon Files", `primary-logo-${variant}`, canvas, add);
       } catch {
         skipped.push(`primary logo ${variant}`);
       }
