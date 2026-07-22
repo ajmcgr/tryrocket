@@ -330,3 +330,19 @@ export function buildIconSeedTemplates() {
 }
 
 export const ICON_SEED_TEMPLATES = buildIconSeedTemplates();
+
+// Build an icon-only (no wordmark) data URL for a seed by name.
+export function getIconOnlyDataUrl(name: string): string | null {
+  const spec = SEEDS.find((s) => s.name === name);
+  if (!spec) return null;
+  const W = 600, H = 600;
+  const size = 320;
+  const x = (W - size) / 2;
+  const y = (H - size) / 2;
+  const inner = iconPath(spec.icon, spec.color);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+    <rect width="${W}" height="${H}" fill="${spec.bg}"/>
+    <g transform="translate(${x} ${y}) scale(${(size / 64).toFixed(3)})">${inner}</g>
+  </svg>`;
+  return toDataUrl(svg);
+}
