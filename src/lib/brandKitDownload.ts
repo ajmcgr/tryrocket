@@ -39,6 +39,70 @@ const canvasToBlob = (canvas: HTMLCanvasElement, type = "image/png") =>
     canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Canvas export failed")), type);
   });
 
+async function canvasToJpgBlob(canvas: HTMLCanvasElement, background = "#ffffff") {
+  const flat = document.createElement("canvas");
+  flat.width = canvas.width;
+  flat.height = canvas.height;
+  const ctx = flat.getContext("2d")!;
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, flat.width, flat.height);
+  ctx.drawImage(canvas, 0, 0);
+  return canvasToBlob(flat, "image/jpeg");
+}
+
+async function canvasToPsdBlob(canvas: HTMLCanvasElement, layerName = "Logo"): Promise<Blob> {
+  const { writePsd } = await import("ag-psd");
+  const bg = document.createElement("canvas");
+  bg.width = canvas.width;
+  bg.height = canvas.height;
+  const bgCtx = bg.getContext("2d")!;
+  bgCtx.fillStyle = "#ffffff";
+  bgCtx.fillRect(0, 0, bg.width, bg.height);
+  const psd = {
+    width: canvas.width,
+    height: canvas.height,
+    canvas,
+    children: [
+      { name: "Background", canvas: bg },
+      { name: layerName, canvas, left: 0, top: 0, right: canvas.width, bottom: canvas.height },
+    ],
+  } as any;
+  const buffer = writePsd(psd);
+  return new Blob([buffer], { type: "image/vnd.adobe.photoshop" });
+}
+
+function canvasToEmbeddedSvg(canvas: HTMLCanvasElement, title: string): string {
+  const dataUrl = canvas.toDataURL("image/png");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}"><title>${title}</title><image href="${dataUrl}" width="${canvas.width}" height="${canvas.height}"/></svg>`;
+}
+
+async function urlToCanvas(url: string): Promise<HTMLCanvasElement> {
+  const img = await loadImage(url);
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth || 1024;
+  c.height = img.naturalHeight || 1024;
+  c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+
+async function addAllFormatsFromCanvas(
+  folder: JSZip,
+  folderName: string,
+  base: string,
+  canvas: HTMLCanvasElement,
+  add: (folder: JSZip, folderName: string, name: string, data: string | Blob | ArrayBuffer) => void,
+  nativeSvg?: string,
+) {
+  add(folder, folderName, `${base}.png`, await canvasToBlob(canvas));
+  try { add(folder, folderName, `${base}.jpg`, await canvasToJpgBlob(canvas)); } catch {}
+  try { add(folder, folderName, `${base}.psd`, await canvasToPsdBlob(canvas, base)); } catch {}
+  const svgMarkup = nativeSvg || canvasToEmbeddedSvg(canvas, base);
+  const svgBlob = () => new Blob([svgMarkup], { type: "image/svg+xml" });
+  add(folder, folderName, `${base}.figma.svg`, svgBlob());
+  add(folder, folderName, `${base}.sketch.svg`, svgBlob());
+  add(folder, folderName, `${base}.canva.svg`, svgBlob());
+}
+
 const triggerDownload = (blob: Blob, filename: string) => {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
