@@ -345,9 +345,26 @@ export default function Brand() {
                     <div className="pointer-events-none absolute left-4 top-4">
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${v.chipClass}`}>{v.label}</span>
                     </div>
-                    <a href={src} download={`${filenameFor(v)}.png`} target="_blank" rel="noreferrer" className={`absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition ${(v.bg === "#FFFFFF") ? "bg-neutral-900 text-white hover:bg-neutral-800" : "bg-white/95 text-neutral-900 hover:bg-white"}`}>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        if (requirePro()) return;
+                        try {
+                          const res = await fetch(src, { mode: "cors" });
+                          const blob = await res.blob();
+                          downloadBlob(blob, `${filenameFor(v)}.png`);
+                        } catch (err: any) {
+                          toast({ title: "Download failed", description: err?.message || String(err), variant: "destructive" });
+                        }
+                      }}
+                      className={`absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-sm transition ${(v.bg === "#FFFFFF") ? "bg-neutral-900 text-white hover:bg-neutral-800" : "bg-white/95 text-neutral-900 hover:bg-white"}`}
+                    >
                       <Download className="h-3.5 w-3.5" /> Download
-                    </a>
+                      {!subLoading && !isPro && (
+                        <span className="ml-1 rounded-full bg-brand px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand-foreground">PRO</span>
+                      )}
+                    </button>
                   </div>
                   );
                 })}
