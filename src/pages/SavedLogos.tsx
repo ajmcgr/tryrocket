@@ -110,7 +110,21 @@ const SavedLogos = () => {
   };
 
   const edit = (a: any) => window.open(`/editor?id=${a.id}`, "_blank", "noopener,noreferrer");
-  const remix = (a: any) => navigate(`/create?remix=${a.id}`);
+  const remix = async (a: any) => {
+    try {
+      const { data: full, error: fetchErr } = await supabase.from("assets").select("*").eq("id", a.id).single();
+      if (fetchErr || !full) throw fetchErr || new Error("Asset not found");
+      const { id, created_at, updated_at, share_token, ...rest } = full as any;
+      const meta = { ...(rest.meta || {}), saved_at: new Date().toISOString(), remixed_from: id };
+      const insert = { ...rest, meta, share_token: null, title: `${rest.title || "Untitled"} (Remix)` };
+      const { data: created, error: insertErr } = await supabase.from("assets").insert(insert).select().single();
+      if (insertErr || !created) throw insertErr || new Error("Insert failed");
+      setItems((prev) => [created, ...prev]);
+      window.open(`/editor?id=${created.id}`, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({ title: "Remix failed", description: e?.message || String(e), variant: "destructive" });
+    }
+  };
   const duplicate = async (a: any) => {
     try {
       const { data: full, error: fetchErr } = await supabase.from("assets").select("*").eq("id", a.id).single();
