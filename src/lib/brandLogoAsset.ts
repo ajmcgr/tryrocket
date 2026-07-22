@@ -1,6 +1,6 @@
 import { logotypeToPng } from "@/components/Logotype";
 import { isCanvasAsset, type CanvasElement } from "@/lib/canvasAsset";
-import { defaultLogotypeState, loadGoogleFont, type LogotypeState } from "@/lib/logotype";
+import { defaultLogotypeState, loadGoogleFont, normalizeLogotypeText, type LogotypeState } from "@/lib/logotype";
 
 type CanvasText = Extract<CanvasElement, { kind: "text" }>;
 
@@ -27,6 +27,14 @@ export function isBrandKitLogotypeAsset(asset: any): boolean {
 }
 
 export function logotypeLabel(asset: any, fallback = "Brand") {
+  if (isCanvasLogotypeAsset(asset)) {
+    const text = ((asset.editor_state || []) as CanvasElement[])
+      .filter((el): el is CanvasText => el.kind === "text" && el.visible !== false)
+      .map((el) => String(el.text || "").trim())
+      .filter(Boolean)
+      .join(" ");
+    return text || fallback;
+  }
   return String(
     asset?.editor_state?.kind === "logotype"
       ? asset.editor_state.text
@@ -36,6 +44,19 @@ export function logotypeLabel(asset: any, fallback = "Brand") {
 
 export function logotypeStateFromAsset(asset: any, fallback = "Brand"): LogotypeState {
   if (asset?.editor_state?.kind === "logotype") return asset.editor_state as LogotypeState;
+  if (isCanvasLogotypeAsset(asset)) {
+    const elements = (asset.editor_state || []) as CanvasElement[];
+    const firstText = elements.find((el): el is CanvasText => el.kind === "text" && el.visible !== false && Boolean(String(el.text || "").trim()));
+    return {
+      kind: "logotype",
+      text: normalizeLogotypeText(logotypeLabel(asset, fallback)) || logotypeLabel(asset, fallback),
+      font: firstText?.fontFamily || "Space Grotesk",
+      weight: Number(firstText?.fontWeight) || 700,
+      color: firstText?.color || "#0a0a0a",
+      letterSpacing: 0,
+      transform: "none",
+    };
+  }
   return defaultLogotypeState(logotypeLabel(asset, fallback));
 }
 
