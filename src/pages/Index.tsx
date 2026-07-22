@@ -208,16 +208,37 @@ const Index = () => {
           <p className="mx-auto mt-6 max-w-2xl text-lg font-normal leading-relaxed text-neutral-500 sm:text-xl">
             From a URL or a few words, Rocket generates logo directions, a wordmark, icon, colours and typography. Pick one, refine it, and build your brand kit.
           </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
+          <div className="mt-10 flex flex-col items-center justify-center gap-6 sm:flex-row">
             <Link
               to="/signup"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-foreground shadow-sm transition hover:bg-brand-hover"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brand px-8 text-sm font-semibold text-brand-foreground shadow-sm transition hover:bg-brand-hover"
             >
               Start Free Trial
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <div className="min-w-[240px]">
-              <SenjaWidget />
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {[
+                  { bg: "bg-gradient-to-br from-orange-300 to-rose-400", text: "text-white" },
+                  { bg: "bg-gradient-to-br from-sky-300 to-indigo-400", text: "text-white" },
+                  { bg: "bg-gradient-to-br from-emerald-300 to-teal-400", text: "text-white" },
+                ].map((a, i) => (
+                  <div
+                    key={i}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full ring-2 ring-white ${a.bg} ${a.text}`}
+                  >
+                    <span className="text-xs font-semibold">{["SM", "JD", "AR"][i]}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col items-start text-left">
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <span className="text-xs text-neutral-500">Founders & designers love us :)</span>
+              </div>
             </div>
           </div>
           <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-neutral-600">
