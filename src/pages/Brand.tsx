@@ -29,54 +29,6 @@ const isMissingColumnError = (error: any, column: string) => {
   );
 };
 
-// Try to detect and use alpha channel to render silhouettes of raster logos.
-// If the source PNG has no meaningful transparency, silhouette effects can't
-// be derived — we fall back to displaying the original logo on the variant's
-// background so cards never render as solid rectangles.
-async function loadImage(src: string): Promise<HTMLImageElement> {
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error("Failed to load logo image"));
-    img.src = src;
-  });
-  return img;
-}
-
-function hasAlpha(img: HTMLImageElement): { alpha: boolean; canvas: HTMLCanvasElement } | null {
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(img, 0, 0);
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let transparentPixels = 0;
-    // Sample every 4th pixel for speed.
-    for (let i = 3; i < data.length; i += 16) {
-      if (data[i] < 250) transparentPixels++;
-      if (transparentPixels > 20) return { alpha: true, canvas };
-    }
-    return { alpha: false, canvas };
-  } catch {
-    return null;
-  }
-}
-
-function silhouetteDataUrl(img: HTMLImageElement, color: string): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(img, 0, 0);
-  ctx.globalCompositeOperation = "source-in";
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/png");
-}
-
 function useImageVariants(url: string | undefined) {
   const [variants, setVariants] = useState<{ transparent?: string; black?: string; white?: string; hasAlpha: boolean } | null>(null);
   useEffect(() => {
