@@ -52,7 +52,7 @@ export default function BrandGuidelines() {
   const [busyPdf, setBusyPdf] = useState(false);
   const [meta, setMeta] = useState(() => loadBrandMeta(projectId));
   const [imageSilhouettes, setImageSilhouettes] = useState<
-    Record<string, { hasAlpha: boolean; black?: string; white?: string }>
+    Record<string, { hasAlpha: boolean; transparent?: string; black?: string; white?: string }>
   >({});
   const pageRef = useRef<HTMLDivElement | null>(null);
 
