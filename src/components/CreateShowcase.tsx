@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoAsset from "@/assets/showcase/logo.png";
+import logoAsset from "@/assets/showcase/logo.png.asset.json";
 import guidelinesAsset from "@/assets/showcase/guidelines.png.asset.json";
 import iconsAsset from "@/assets/showcase/icons.png";
 
@@ -96,7 +96,7 @@ const CARDS = [
     ],
     ctaText: "Generate logos",
     ctaLink: "/create",
-    image: logoAsset,
+    image: logoAsset.url,
     imageAlt: "Generated logo directions",
     accent: "blue" as const,
   },
