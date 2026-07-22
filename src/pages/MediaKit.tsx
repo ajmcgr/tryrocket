@@ -14,7 +14,7 @@ const MediaKit = () => (
   <div className="min-h-screen bg-white text-neutral-900">
     <SiteHeader />
     <main className="mx-auto max-w-5xl px-6 py-16">
-      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Media Kit</h1>
+      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Brand Kit</h1>
       <p className="mt-3 text-lg text-neutral-600">Logos, colors, and usage guidelines for press, partners, and reviewers.</p>
 
       <section className="mt-14">

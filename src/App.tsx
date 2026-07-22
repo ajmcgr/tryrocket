@@ -108,7 +108,8 @@ const App = () => (
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/compare/:slug" element={<ComparisonDetail />} />
-            <Route path="/media-kit" element={<MediaKit />} />
+            <Route path="/brand-kit" element={<MediaKit />} />
+            <Route path="/media-kit" element={<Navigate to="/brand-kit" replace />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/tools/:slug" element={<ToolDetail />} />
             <Route path="/pricing" element={<Pricing />} />
