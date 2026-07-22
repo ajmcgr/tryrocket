@@ -130,6 +130,9 @@ export default function SocialIcons() {
   const [logoAssets, setLogoAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  // Per-asset silhouettes keyed by ink color ("#0A0A0A" or "#FFFFFF") so image
+  // logos automatically render in the right ink on each background.
+  const [silhouettes, setSilhouettes] = useState<Record<string, { black?: string; white?: string; hasAlpha: boolean }>>({});
 
   useEffect(() => {
     if (!projectId) return;
@@ -161,6 +164,31 @@ export default function SocialIcons() {
   }, [project]);
 
   const variants = useMemo(() => buildVariants(brandColor), [brandColor]);
+
+  // Build black/white silhouettes for every image-based logo so previews
+  // never render a dark logo on dark or light-on-light.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const next: Record<string, { black?: string; white?: string; hasAlpha: boolean }> = {};
+      for (const a of logoAssets) {
+        const src = a?.editor_state?.kind === "logotype" ? null : (a?.image_url || a?.thumbnail_url || null);
+        if (!src) continue;
+        try {
+          const [black, white] = await Promise.all([
+            silhouetteImage(src, "#0A0A0A"),
+            silhouetteImage(src, "#FFFFFF"),
+          ]);
+          if (cancelled) return;
+          next[a.id] = { hasAlpha: black.hasAlpha, black: black.url, white: white.url };
+        } catch {
+          // ignore — fall back to original
+        }
+      }
+      if (!cancelled) setSilhouettes(next);
+    })();
+    return () => { cancelled = true; };
+  }, [logoAssets]);
 
   const { isPro, loading: subLoading } = useSubscription();
   const requirePro = () => {
@@ -282,6 +310,11 @@ export default function SocialIcons() {
                     const radius = v.shape === "circle" ? "9999px" : v.shape === "rounded" ? "22%" : "0px";
                     const iconState: LogotypeState = { ...state, color: v.fg };
                     const bkey = `${asset.id}:${v.key}`;
+                    const sil = silhouettes[asset.id];
+                    const useWhite = isDarkBg(v.bg);
+                    const previewSrc = imgSrc
+                      ? (sil?.hasAlpha ? (useWhite ? sil.white : sil.black) : imgSrc)
+                      : null;
                     return (
                       <div
                         key={v.key}
@@ -289,9 +322,9 @@ export default function SocialIcons() {
                         style={{ backgroundColor: v.bg, borderRadius: radius, aspectRatio: "1 / 1" }}
                       >
                         <div className="flex h-full w-full items-center justify-center p-[18%]">
-                          {imgSrc ? (
+                          {previewSrc ? (
                             <img
-                              src={imgSrc}
+                              src={previewSrc}
                               alt=""
                               className="max-h-full max-w-full object-contain"
                               crossOrigin="anonymous"
