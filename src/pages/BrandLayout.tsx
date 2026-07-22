@@ -10,6 +10,7 @@ import {
   Pencil,
   Check as CheckIcon,
   X as XIcon,
+  Share2,
 } from "lucide-react";
 import { supabase as _sb } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +27,7 @@ const isMissingColumnError = (error: any, column: string) => {
   );
 };
 
-type NavKey = "logo-files" | "palette" | "fonts" | "brand-book";
+type NavKey = "logo-files" | "social-icons" | "palette" | "fonts" | "brand-book";
 
 export default function BrandLayout() {
   const { id: projectId } = useParams();
@@ -84,6 +85,7 @@ export default function BrandLayout() {
 
   const nav: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }>; to: string; end?: boolean }[] = useMemo(() => ([
     { key: "logo-files", label: "Logo/Icon Files", icon: ImageIcon, to: `/brands/${projectId}`, end: true },
+    { key: "social-icons", label: "Social Icons", icon: Share2, to: `/brands/${projectId}/social-icons` },
     { key: "palette", label: "Palette", icon: PaletteIcon, to: `/brands/${projectId}/palette` },
     { key: "fonts", label: "Fonts", icon: Type, to: `/brands/${projectId}/fonts` },
     { key: "brand-book", label: "Brand Book", icon: BookOpen, to: `/brands/${projectId}/brand-book` },
