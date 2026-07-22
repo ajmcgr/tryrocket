@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const supabase = _sb as any;
 
-export type Plan = "free" | "pro" | "business" | "enterprise";
+export type Plan = "free" | "starter" | "growth" | "pro" | "business" | "enterprise";
 
 export interface Subscription {
   plan: Plan;
@@ -13,7 +13,8 @@ export interface Subscription {
   loading: boolean;
 }
 
-const PRO_PLANS: Plan[] = ["pro", "business", "enterprise"];
+// "growth" is the Stripe product id for our paid tier (labeled "Pro" in the UI).
+const PRO_PLANS: Plan[] = ["growth", "pro", "business", "enterprise"];
 const ACTIVE_STATUSES = ["active", "trialing"];
 
 // Session cache so navigating between pages doesn't re-query.
