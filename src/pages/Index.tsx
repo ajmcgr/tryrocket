@@ -217,7 +217,7 @@ const Index = () => {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <div className="w-full max-w-[260px]">
+            <div className="w-auto">
               <SenjaWidget />
             </div>
           </div>
