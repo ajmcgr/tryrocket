@@ -32,6 +32,14 @@ const PRO_FEATURES = [
   "Early access to new generators",
 ];
 
+const BUSINESS_FEATURES = [
+  "Everything in Pro",
+  "5× the monthly Rocket Credits",
+  "Highest priority generation queue",
+  "Larger team workspaces",
+  "Dedicated onboarding & support",
+];
+
 const COMPARE = [
   { label: "Rocket Credits", starter: "Monthly starter allowance", pro: "Generous monthly allowance" },
   { label: "Logo Designer", starter: true, pro: true },
@@ -63,6 +71,16 @@ const Pricing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+
+  const priceFor = (base: "starter" | "growth" | "business") => {
+    const monthly = base === "starter" ? 12 : base === "growth" ? 20 : 50;
+    if (billing === "monthly") return { display: `$${monthly}`, suffix: "/month" };
+    const yearly = base === "starter" ? 99 : base === "growth" ? 166 : 415;
+    return { display: `$${yearly}`, suffix: "/year" };
+  };
+  const productId = (base: "starter" | "growth" | "business") =>
+    billing === "yearly" ? `${base}_yearly` : base;
 
   const startCheckout = async (product: string) => {
     if (!user) {
@@ -112,8 +130,8 @@ const Pricing = () => {
             <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Starter</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-semibold tracking-tight">$12</span>
-                <span className="text-sm text-neutral-500">/month</span>
+                <span className="text-5xl font-semibold tracking-tight">{priceFor("starter").display}</span>
+                <span className="text-sm text-neutral-500">{priceFor("starter").suffix}</span>
               </div>
               <p className="mt-2 text-sm text-neutral-600">Everything you need to create your first startup brand.</p>
               <ul className="mt-6 space-y-3 text-sm">
@@ -124,8 +142,13 @@ const Pricing = () => {
                   </li>
                 ))}
               </ul>
-              <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to={user ? "/settings/billing" : "/signup"}>Start 7-day free trial</Link>
+              <Button
+                onClick={() => startCheckout(productId("starter"))}
+                disabled={loading === productId("starter")}
+                variant="outline"
+                className="mt-8 w-full"
+              >
+                {loading === productId("starter") ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start 7-day free trial"}
               </Button>
             </div>
 
@@ -136,8 +159,8 @@ const Pricing = () => {
               </div>
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-semibold tracking-tight">$20</span>
-                <span className="text-neutral-500">/month</span>
+                <span className="text-5xl font-semibold tracking-tight">{priceFor("growth").display}</span>
+                <span className="text-neutral-500">{priceFor("growth").suffix}</span>
               </div>
               <p className="mt-2 text-sm text-neutral-600">Everything serious founders need to build and grow their brand.</p>
               <ul className="mt-6 space-y-3 text-sm">
@@ -149,12 +172,38 @@ const Pricing = () => {
                 ))}
               </ul>
               <Button
-                onClick={() => startCheckout("growth")}
-                disabled={loading === "growth"}
+                onClick={() => startCheckout(productId("growth"))}
+                disabled={loading === productId("growth")}
                 variant="outline"
                 className="mt-8 w-full"
               >
-                {loading === "growth" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upgrade to Pro"}
+                {loading === productId("growth") ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upgrade to Pro"}
+              </Button>
+            </div>
+
+            {/* Business */}
+            <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Business</div>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-5xl font-semibold tracking-tight">{priceFor("business").display}</span>
+                <span className="text-sm text-neutral-500">{priceFor("business").suffix}</span>
+              </div>
+              <p className="mt-2 text-sm text-neutral-600">For teams and agencies building multiple brands at scale.</p>
+              <ul className="mt-6 space-y-3 text-sm">
+                {BUSINESS_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
+                    <span className="text-neutral-700">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                onClick={() => startCheckout(productId("business"))}
+                disabled={loading === productId("business")}
+                variant="outline"
+                className="mt-8 w-full"
+              >
+                {loading === productId("business") ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upgrade to Business"}
               </Button>
             </div>
           </div>
