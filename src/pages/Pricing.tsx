@@ -119,13 +119,29 @@ const Pricing = () => {
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-16 text-center">
           <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Pricing built for founders</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-neutral-600">Start free and design your first brand today. Upgrade to Pro when you're ready to grow.</p>
+          <div className="mt-8 inline-flex items-center rounded-full border border-neutral-200 bg-white p-1 text-sm">
+            <button
+              type="button"
+              onClick={() => setBilling("monthly")}
+              className={`rounded-full px-4 py-1.5 font-medium transition ${billing === "monthly" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:text-neutral-900"}`}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setBilling("yearly")}
+              className={`rounded-full px-4 py-1.5 font-medium transition ${billing === "yearly" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:text-neutral-900"}`}
+            >
+              Yearly <span className={billing === "yearly" ? "text-white/70" : "text-brand"}>Save ~17%</span>
+            </button>
+          </div>
         </div>
       </section>
 
       {/* Plans */}
       <section>
-        <div className="mx-auto max-w-5xl px-6 py-16">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Starter */}
             <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Starter</div>
