@@ -278,18 +278,21 @@ Deno.serve(async (req) => {
               sendBranded(RESEND_API_KEY, FROM_EMAIL, email, "credits_purchased", { credits }).catch(console.error);
           }
         }
-        if (s.mode === "subscription" && product === "growth") {
+        if (s.mode === "subscription" && product) {
+          const base = product.replace(/_yearly$/, "");
+          const plan = base === "pro" ? "growth" : base; // "growth" | "starter" | "business"
+          const monthly_limit = plan === "business" ? 15000 : plan === "growth" ? 3000 : 500;
           await admin.from("subscriptions").upsert(
             {
               user_id: userId,
               stripe_customer_id: typeof s.customer === "string" ? s.customer : null,
               stripe_subscription_id: typeof s.subscription === "string" ? s.subscription : null,
-              plan: "growth",
+              plan,
               status: "active",
             },
             { onConflict: "user_id" },
           );
-          await admin.from("user_usage").update({ plan: "growth", monthly_limit: 3000 }).eq("user_id", userId);
+          await admin.from("user_usage").update({ plan, monthly_limit }).eq("user_id", userId);
           if (RESEND_API_KEY) {
             const email = await getEmail(admin, userId);
             if (email) sendBranded(RESEND_API_KEY, FROM_EMAIL, email, "trial_started", {}).catch(console.error);
