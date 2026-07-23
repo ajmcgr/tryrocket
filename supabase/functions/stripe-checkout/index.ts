@@ -28,6 +28,7 @@ const PRICES: Record<
     credits?: number;
     product_name: string;
     unit_amount: number;
+    interval?: "month" | "year";
   }
 > = {
   growth: {
@@ -49,6 +50,40 @@ const PRICES: Record<
     product_name: "Rocket Pro",
     unit_amount: 2000,
     price: "price_1TgpCLL9pkHWyRRuJGdfC77g",
+  },
+  business: {
+    mode: "subscription",
+    trial_days: 7,
+    product_name: "Rocket Business",
+    unit_amount: 5000,
+  },
+  starter_yearly: {
+    mode: "subscription",
+    trial_days: 7,
+    product_name: "Rocket Starter (Yearly)",
+    unit_amount: 9900,
+    interval: "year",
+  },
+  growth_yearly: {
+    mode: "subscription",
+    trial_days: 7,
+    product_name: "Rocket Pro (Yearly)",
+    unit_amount: 16600,
+    interval: "year",
+  },
+  pro_yearly: {
+    mode: "subscription",
+    trial_days: 7,
+    product_name: "Rocket Pro (Yearly)",
+    unit_amount: 16600,
+    interval: "year",
+  },
+  business_yearly: {
+    mode: "subscription",
+    trial_days: 7,
+    product_name: "Rocket Business (Yearly)",
+    unit_amount: 41500,
+    interval: "year",
   },
   pack_500: { mode: "payment", credits: 500, product_name: "500 Rocket Credits", unit_amount: 500 },
   pack_1500: { mode: "payment", credits: 1500, product_name: "1,500 Rocket Credits", unit_amount: 1000 },
@@ -112,7 +147,7 @@ Deno.serve(async (req) => {
                 currency: "usd",
                 product_data: { name: p.product_name },
                 unit_amount: p.unit_amount,
-                ...(p.mode === "subscription" ? { recurring: { interval: "month" } } : {}),
+                ...(p.mode === "subscription" ? { recurring: { interval: p.interval || "month" } } : {}),
               },
               quantity: 1,
             },
