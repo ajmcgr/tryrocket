@@ -19,7 +19,7 @@ export default function SenjaWidget() {
       data-id="fddaae27-ef94-4488-b97e-ad90a0e0192d"
       data-mode="shadow"
       data-lazyload="false"
-      style={{ display: "block", width: "100%" }}
+      style={{ display: "inline-block", width: "auto", whiteSpace: "nowrap" }}
     />
   );
 }
