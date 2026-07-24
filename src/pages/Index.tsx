@@ -160,12 +160,40 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
 const Index = () => {
   const { user } = useAuth();
   const nav = useNavigate();
+  const { toast } = useToast();
   const [url, setUrl] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const [loading, setLoading] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const priceFor = (base: "starter" | "growth" | "business") => {
+    const monthly = base === "starter" ? 12 : base === "growth" ? 20 : 50;
+    if (billing === "monthly") return { display: `$${monthly}`, suffix: "/month" };
+    const yearly = base === "starter" ? 99 : base === "growth" ? 166 : 415;
+    return { display: `$${yearly}`, suffix: "/year" };
+  };
+  const productId = (base: "starter" | "growth" | "business") =>
+    billing === "yearly" ? `${base}_yearly` : base;
+
+  const startCheckout = async (product: string) => {
+    if (!user) {
+      nav(`/signup?next=${encodeURIComponent(`/pricing?buy=${product}`)}`);
+      return;
+    }
+    setLoading(product);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe-checkout", { body: { product } });
+      if (error) throw error;
+      if ((data as any)?.url) window.location.href = (data as any).url;
+    } catch (e: any) {
+      toast({ title: "Checkout failed", description: e.message, variant: "destructive" });
+      setLoading(null);
+    }
+  };
 
   const onPickFiles = async (files: FileList | null) => {
     if (!files) return;
