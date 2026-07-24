@@ -1,7 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
-import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X, BookMarked, LayoutTemplate, Shapes, Type as TypeIcon, Image as ImageIcon, Box, Sparkle, BarChart3, Play, Pause } from "lucide-react";
+import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Loader2, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X, BookMarked, LayoutTemplate, Shapes, Type as TypeIcon, Image as ImageIcon, Box, Sparkle, BarChart3, Play, Pause } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase as _sb } from "@/integrations/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import CreateShowcase from "@/components/CreateShowcase";
@@ -10,6 +12,7 @@ import SenjaWidget from "@/components/SenjaWidget";
 import rocketVideo from "@/assets/rocket.mp4.asset.json";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+const supabase = _sb as any;
 
 const FAQS = [
   { q: "What does Rocket generate?", a: "Rocket is a logo-first design tool. Start with logo directions — a logo mark, matching wordmark, icon, colours and typography — then refine your favourite in the editor and roll it into a Brand Kit." },
@@ -22,6 +25,36 @@ const FAQS = [
   { q: "How does sharing and export work?", a: "Every design opens in the editor via a shareable link (new tab). Export PNG, SVG, PDF, or a full ZIP of your Brand Kit. Pro adds password-protected share links and PDF/Markdown brand guidelines." },
   { q: "What's included in Pro?", a: "3,000 credits/month, workspaces & multi-seat, password-protected share links, brand guideline exports, and priority AI capacity. 7 days free, cancel anytime." },
   { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You keep access until the end of the period." },
+];
+
+const STARTER_FEATURES = [
+  "Monthly Rocket Credits to design your first logo",
+  "Logo & Icon Designer",
+  "Brand Kit essentials (view & share)",
+  "Full template library",
+  "PNG & SVG downloads",
+];
+
+const PRO_FEATURES = [
+  "Generous monthly Rocket Credits",
+  "Unlimited saved logos & brand kits",
+  "Multiple high-res file types (PNG, EPS, SVG, PDF)",
+  "Multiple color variations (including transparent backgrounds)",
+  "Unlimited post-purchase changes",
+  "Full ownership",
+  "Brand Kit ZIP downloads",
+  "Priority generation",
+  "Team workspaces (multi-seat)",
+  "Brand Book & guideline export",
+  "Early access to new generators",
+];
+
+const BUSINESS_FEATURES = [
+  "Everything in Pro",
+  "5× the monthly Rocket Credits",
+  "Highest priority generation queue",
+  "Larger team workspaces",
+  "Dedicated onboarding & support",
 ];
 
 const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
@@ -127,12 +160,40 @@ const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
 const Index = () => {
   const { user } = useAuth();
   const nav = useNavigate();
+  const { toast } = useToast();
   const [url, setUrl] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const [loading, setLoading] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const priceFor = (base: "starter" | "growth" | "business") => {
+    const monthly = base === "starter" ? 12 : base === "growth" ? 20 : 50;
+    if (billing === "monthly") return { display: `$${monthly}`, suffix: "/month" };
+    const yearly = base === "starter" ? 99 : base === "growth" ? 166 : 415;
+    return { display: `$${yearly}`, suffix: "/year" };
+  };
+  const productId = (base: "starter" | "growth" | "business") =>
+    billing === "yearly" ? `${base}_yearly` : base;
+
+  const startCheckout = async (product: string) => {
+    if (!user) {
+      nav(`/signup?next=${encodeURIComponent(`/pricing?buy=${product}`)}`);
+      return;
+    }
+    setLoading(product);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe-checkout", { body: { product } });
+      if (error) throw error;
+      if ((data as any)?.url) window.location.href = (data as any).url;
+    } catch (e: any) {
+      toast({ title: "Checkout failed", description: e.message, variant: "destructive" });
+      setLoading(null);
+    }
+  };
 
   const onPickFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -354,34 +415,49 @@ const Index = () => {
       <section id="pricing" className="border-t border-neutral-200/60">
         <div className="mx-auto max-w-6xl px-6 py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-medium tracking-tight sm:text-5xl">Pricing built for founders</h2>
-            <p className="mt-4 text-lg text-neutral-600">Start free. Upgrade when your brand is ready to scale.</p>
+            <h2 className="text-4xl font-semibold tracking-tight sm:text-6xl">Pricing built for founders</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-lg text-neutral-600">Start free and design your first brand today. Upgrade to Pro when you're ready to grow.</p>
+            <div className="mt-8 inline-flex items-center rounded-full border border-neutral-200 bg-white p-1 text-sm">
+              <button
+                type="button"
+                onClick={() => setBilling("monthly")}
+                className={`rounded-full px-4 py-1.5 font-medium transition ${billing === "monthly" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:text-neutral-900"}`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setBilling("yearly")}
+                className={`rounded-full px-4 py-1.5 font-medium transition ${billing === "yearly" ? "bg-neutral-900 text-white" : "text-neutral-600 hover:text-neutral-900"}`}
+              >
+                Yearly <span className={billing === "yearly" ? "text-white/70" : "text-brand"}>Save ~17%</span>
+              </button>
+            </div>
           </div>
-          <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Starter */}
             <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Starter</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-medium tracking-tight">$12</span>
-                <span className="text-sm text-neutral-500">/month</span>
+                <span className="text-5xl font-semibold tracking-tight">{priceFor("starter").display}</span>
+                <span className="text-sm text-neutral-500">{priceFor("starter").suffix}</span>
               </div>
               <p className="mt-2 text-sm text-neutral-600">Everything you need to create your first startup brand.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {[
-                  "Monthly Rocket Credits to design your first logo",
-                  "Logo & Icon Designer",
-                  "Brand Kit essentials (view & share)",
-                  "Full template library",
-                  "PNG & SVG downloads",
-                ].map((f) => (
+                {STARTER_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
                     <span className="text-neutral-700">{f}</span>
                   </li>
                 ))}
               </ul>
-              <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to="/signup">Start 7-day free trial</Link>
+              <Button
+                onClick={() => startCheckout(productId("starter"))}
+                disabled={loading === productId("starter")}
+                variant="outline"
+                className="mt-8 w-full"
+              >
+                {loading === productId("starter") ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start 7-day free trial"}
               </Button>
             </div>
 
@@ -392,55 +468,89 @@ const Index = () => {
               </div>
               <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-5xl font-medium tracking-tight">$20</span>
-                <span className="text-neutral-500">/month</span>
+                <span className="text-5xl font-semibold tracking-tight">{priceFor("growth").display}</span>
+                <span className="text-neutral-500">{priceFor("growth").suffix}</span>
               </div>
               <p className="mt-2 text-sm text-neutral-600">Everything serious founders need to build and grow their brand.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {[
-                  "Generous monthly Rocket Credits",
-                  "Unlimited saved logos & brand kits",
-                  "Multiple high-res file types (PNG, EPS, SVG, PDF)",
-                  "Multiple color variations (including transparent backgrounds)",
-                  "Unlimited post-purchase changes",
-                  "Full ownership",
-                  "Brand Kit ZIP downloads",
-                  "Priority generation",
-                  "Team workspaces (multi-seat)",
-                  "Brand Book & guideline export",
-                  "Early access to new generators",
-                ].map((f) => (
+                {PRO_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-              <Button asChild variant="outline" className="mt-8 w-full">
-                <Link to="/signup?next=%2Fpricing%3Fbuy%3Dgrowth">Upgrade to Pro</Link>
+              <Button
+                onClick={() => startCheckout(productId("growth"))}
+                disabled={loading === productId("growth")}
+                variant="outline"
+                className="mt-8 w-full"
+              >
+                {loading === productId("growth") ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upgrade to Pro"}
               </Button>
             </div>
+
+            {/* Business */}
+            <div className="relative rounded-2xl border border-neutral-200 bg-white p-8">
+              <div className="text-sm font-semibold uppercase tracking-wider text-neutral-500">Business</div>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-5xl font-semibold tracking-tight">{priceFor("business").display}</span>
+                <span className="text-sm text-neutral-500">{priceFor("business").suffix}</span>
+              </div>
+              <p className="mt-2 text-sm text-neutral-600">For teams and agencies building multiple brands at scale.</p>
+              <ul className="mt-6 space-y-3 text-sm">
+                {BUSINESS_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-neutral-900" />
+                    <span className="text-neutral-700">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                onClick={() => startCheckout(productId("business"))}
+                disabled={loading === productId("business")}
+                variant="outline"
+                className="mt-8 w-full"
+              >
+                {loading === productId("business") ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upgrade to Business"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center">
+            <Link to="/pricing" className="text-sm font-medium text-brand hover:underline">
+              Compare all features
+            </Link>
           </div>
 
           {/* Credit packs */}
           <div className="mt-14">
             <div className="text-center">
-              <h2 className="text-3xl font-medium tracking-tight">Need more credits?</h2>
+              <h2 className="text-3xl font-semibold tracking-tight">Need more credits?</h2>
               <p className="mt-2 text-neutral-600">One-time credit packs. Never expire. Stack with your plan.</p>
             </div>
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
               {[
-                { credits: "500", price: "$5", note: "Starter pack" },
-                { credits: "1,500", price: "$10", note: "Most popular", highlight: true },
-                { credits: "5,000", price: "$25", note: "Best value" },
+                { id: "pack_500", credits: "500", price: "$5", note: "Starter pack" },
+                { id: "pack_1500", credits: "1,500", price: "$10", note: "Most popular", highlight: true },
+                { id: "pack_5000", credits: "5,000", price: "$25", note: "Best value" },
               ].map((p) => (
-                <div key={p.credits} className={`rounded-2xl border p-6 ${p.highlight ? "border-brand bg-brand/5" : "border-neutral-200 bg-white"}`}>
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => startCheckout(p.id)}
+                  disabled={loading === p.id}
+                  className={`rounded-2xl border p-6 text-left transition hover:shadow-sm disabled:opacity-60 ${p.highlight ? "border-brand bg-brand/5 hover:bg-brand/10" : "border-neutral-200 bg-white hover:border-neutral-300"}`}
+                >
                   <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">{p.note}</div>
                   <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-4xl font-medium tracking-tight">{p.price}</span>
+                    <span className="text-4xl font-semibold tracking-tight">{p.price}</span>
                   </div>
-                  <div className="mt-1 text-sm font-medium text-neutral-900">{p.credits} credits</div>
-                </div>
+                  <div className="mt-1 flex items-center gap-2 text-sm font-medium text-neutral-900">
+                    {loading === p.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    {p.credits} credits
+                  </div>
+                </button>
               ))}
             </div>
           </div>
