@@ -65,6 +65,7 @@ import Pricing from "./pages/Pricing.tsx";
 import FAQ from "./pages/FAQ.tsx";
 import AppShell from "./components/AppShell.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
+import { ScrollToTop } from "./components/ScrollToTop.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import { NotificationsProvider } from "./contexts/NotificationsContext.tsx";
 
