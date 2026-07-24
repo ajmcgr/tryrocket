@@ -1,7 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
-import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X, BookMarked, LayoutTemplate, Shapes, Type as TypeIcon, Image as ImageIcon, Box, Sparkle, BarChart3, Play, Pause } from "lucide-react";
+import { ArrowRight, ArrowUp, Sparkles, Zap, Target, Rocket as RocketIcon, Megaphone, ListChecks, Check, Loader2, Smartphone, Mail, Palette, ShoppingBag, Building2, Puzzle, Mic, BookOpen, Wrench, Lightbulb, Paperclip, X, BookMarked, LayoutTemplate, Shapes, Type as TypeIcon, Image as ImageIcon, Box, Sparkle, BarChart3, Play, Pause } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase as _sb } from "@/integrations/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import CreateShowcase from "@/components/CreateShowcase";
@@ -10,6 +12,7 @@ import SenjaWidget from "@/components/SenjaWidget";
 import rocketVideo from "@/assets/rocket.mp4.asset.json";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+const supabase = _sb as any;
 
 const FAQS = [
   { q: "What does Rocket generate?", a: "Rocket is a logo-first design tool. Start with logo directions — a logo mark, matching wordmark, icon, colours and typography — then refine your favourite in the editor and roll it into a Brand Kit." },
