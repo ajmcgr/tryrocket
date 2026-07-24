@@ -27,6 +27,36 @@ const FAQS = [
   { q: "Can I cancel anytime?", a: "Yes, from Settings → Manage Billing. You keep access until the end of the period." },
 ];
 
+const STARTER_FEATURES = [
+  "Monthly Rocket Credits to design your first logo",
+  "Logo & Icon Designer",
+  "Brand Kit essentials (view & share)",
+  "Full template library",
+  "PNG & SVG downloads",
+];
+
+const PRO_FEATURES = [
+  "Generous monthly Rocket Credits",
+  "Unlimited saved logos & brand kits",
+  "Multiple high-res file types (PNG, EPS, SVG, PDF)",
+  "Multiple color variations (including transparent backgrounds)",
+  "Unlimited post-purchase changes",
+  "Full ownership",
+  "Brand Kit ZIP downloads",
+  "Priority generation",
+  "Team workspaces (multi-seat)",
+  "Brand Book & guideline export",
+  "Early access to new generators",
+];
+
+const BUSINESS_FEATURES = [
+  "Everything in Pro",
+  "5× the monthly Rocket Credits",
+  "Highest priority generation queue",
+  "Larger team workspaces",
+  "Dedicated onboarding & support",
+];
+
 const UseCaseVisual = ({ kind, accent }: { kind: string; accent: string }) => {
   if (kind === "saas") {
     return (
