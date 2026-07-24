@@ -94,6 +94,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <NotificationsProvider>
+            <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/reserve" element={<Reserve />} />
